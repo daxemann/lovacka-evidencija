@@ -49,6 +49,8 @@ Radi na običnom PHP webhostingu (bez baze podataka na poslužitelju, bez naredb
 4. Otvorite `https://vasa-domena.hr/evidencija/` → **Prvo pokretanje**: naziv udruge, sekcije, glavni administrator.
 5. Prijavite se → *Sustav → E-pošta i adresa* (neobavezno, za slanje e-pošte i pozivnica) → *Sustav → Uvoz* (Google kontakti) ili ručni unos članova.
 
+**Još jednostavnije:** učitajte samo datoteku [`instaliraj.php`](instaliraj.php) u `public_html/` i otvorite `https://vasa-domena.hr/instaliraj.php` – provjeri poslužitelj, preuzme aplikaciju s GitHuba, raspakira je u mapu `evidencija` i sama se obriše.
+
 Detaljne upute (hrvatski): [INSTALACIJA.md](INSTALACIJA.md)
 
 ### Važno: zaštita podataka
