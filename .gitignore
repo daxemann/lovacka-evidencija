@@ -1,0 +1,10 @@
+# Podaci udruge – NIKAD na GitHub (osobni podaci članova)
+/podaci/*
+!/podaci/.htaccess
+/config.php
+*.db
+*.db-shm
+*.db-wal
+/izdanje/
+.DS_Store
+Thumbs.db
