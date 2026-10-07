@@ -43,7 +43,7 @@ Radi na običnom PHP webhostingu (bez baze podataka na poslužitelju, bez naredb
 
 ## Instalacija na webhosting (FTP)
 
-1. Preuzmite **lovacka-evidencija-vX.Y.Z.zip** s [Releases](../../releases) (sadrži sve potrebno, uključujući mapu `vendor`).
+1. Preuzmite aplikaciju: zeleni gumb **Code → Download ZIP** na ovoj stranici (ili ZIP s [Releases](../../releases), ako postoji) – sadrži sve potrebno, uključujući mapu `vendor`.
 2. Raspakirajte i preko FTP-a (npr. FileZilla) učitajte cijeli sadržaj u mapu na webspaceu, npr. `public_html/evidencija/`.
 3. Mapa `podaci/` mora biti **zapisiva** za PHP (prava 755 ili 775; kod većine hostinga je već u redu).
 4. Otvorite `https://vasa-domena.hr/evidencija/` → **Prvo pokretanje**: naziv udruge, sekcije, glavni administrator.

@@ -8,7 +8,7 @@
 Besplatni webspace često **nema** potrebna PHP proširenja ili ne dopušta slanje e-pošte – za udrugu je bolji mali plaćeni paket (nekoliko eura mjesečno).
 
 ## 2. Učitavanje
-1. Preuzmite `lovacka-evidencija-vX.Y.Z.zip` (Releases na GitHubu) i raspakirajte na računalu.
+1. Na GitHubu (github.com/daxemann/lovacka-evidencija) kliknite **Code → Download ZIP** (ili ZIP iz Releases) i raspakirajte na računalu.
 2. FileZilla → spojite se na hosting → otvorite `public_html` (ili `htdocs`, `www`).
 3. Napravite mapu, npr. `evidencija`, i u nju povucite **sve** datoteke i mape iz raspakiranog ZIP-a (`index.php`, `app`, `assets`, `podaci`, `vendor`, `.htaccess` …).
    - u FileZilli uključite prikaz skrivenih datoteka (*Poslužitelj → Prikaži skrivene datoteke*) da se vidi `.htaccess`
