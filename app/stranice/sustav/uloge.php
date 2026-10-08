@@ -73,7 +73,8 @@ if (je_post()) {
 $uloge = redovi('SELECT u.*, (SELECT COUNT(*) FROM KorisnikUloge ku WHERE ku.UlogaId=u.Id) AS Broj FROM Uloge u ORDER BY u.Id');
 $funkcije = redovi('SELECT f.*, (SELECT COUNT(*) FROM ClanFunkcije cf WHERE cf.FunkcijaId=f.Id AND cf.Do IS NULL) AS Broj FROM Funkcije f ORDER BY f.Redoslijed, f.Naziv');
 $kratko = [P_CLANOVI_CITAJ => 'Članovi<br>pregled', P_CLANOVI_UREDI => 'Članovi<br>uređ.', P_CLANARINA_CITAJ => 'Članarina<br>pregled', P_CLANARINA_UREDI => 'Članarina<br>uređ.',
-    P_AKCIJE_CITAJ => 'Akcije<br>pregled', P_AKCIJE_ODOBRI => 'Akcije<br>unos/odobr.', P_IZVJESTAJI => 'Izvještaji<br>poruke', P_SUSTAV => 'Sustav'];
+    P_AKCIJE_CITAJ => 'Akcije<br>pregled', P_AKCIJE_ODOBRI => 'Akcije<br>unos/odobr.', P_IZVJESTAJI => 'Izvještaji<br>poruke', P_SUSTAV => 'Sustav',
+    P_KALENDAR => 'Kalendar<br>uređ.', P_IMENIK_SVI => 'Imenik<br>svi kontakti'];
 ob_start(); ?>
 <h1 class="h3 mb-1">Uloge i prava</h1>
 <p class="text-muted">Uloge se dodjeljuju na kartici člana (Članovi → član → Pristup i uloge). Sekcije su odvojene: uloga vrijedi samo za odabranu sekciju, osim ako je označeno „Smije sve sekcije“ (npr. Glavni admin, Blagajnik). Ne zaboravite „Spremi“ nakon promjene. Obični član bez uloge vidi samo svoje podatke.</p>

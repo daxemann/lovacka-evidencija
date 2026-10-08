@@ -15,4 +15,10 @@ if ($n > 0) {
               'link' => url('poruke/razgovor', ['id' => $p['RazgovorId']]), 'razgovor' => (int) $p['RazgovorId']];
     }
 }
+$p2 = $n > 0 ? red('SELECT p.Id, p.Tekst, p.RazgovorId, p.PosiljateljId, p.Vrijeme FROM Poruke2 p JOIN Razgovori2 r ON r.Id=p.RazgovorId
+    WHERE p.Procitano=0 AND p.PosiljateljId<>? AND (r.KorisnikA=? OR r.KorisnikB=?) ORDER BY p.Id DESC LIMIT 1', [$k['Id'], $k['Id'], $k['Id']]) : null;
+if ($p2) {
+    $z = ['naslov' => 'Nova poruka – ' . ime_korisnika((int) $p2['PosiljateljId']), 'tekst' => mb_strimwidth($p2['Tekst'], 0, 90, '…'),
+          'link' => url('poruke/osoba', ['r' => $p2['RazgovorId']]), 'razgovor' => -(int) $p2['RazgovorId']];
+}
 json(['n' => $n, 'zadnja' => $z]);

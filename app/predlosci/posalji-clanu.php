@@ -4,7 +4,7 @@ $zatvori = url('clanovi/uredi', ['id' => $id, 'kartica' => $kartica]);
 ?>
 <div class="card border-success mb-3 no-print"><div class="card-body">
     <div class="d-flex align-items-center mb-2">
-        <h2 class="h6 mb-0"><?= $posalji === 'bodovi' ? 'Pošalji popis bodova' : 'Prijateljska info o članarini' ?> <span class="text-muted">→ <?= e(puno_ime($clan)) ?></span></h2>
+        <h2 class="h6 mb-0"><?= ['bodovi' => 'Pošalji popis bodova', 'clanarina' => 'Prijateljska info o članarini', 'rata' => 'Podsjetnik – dospjela rata'][$posalji] ?> <span class="text-muted">→ <?= e(puno_ime($clan)) ?></span></h2>
         <a href="<?= e($zatvori) ?>" class="btn-close ms-auto" aria-label="Zatvori"></a>
     </div>
 <?php if ($posalji === 'bodovi'):
@@ -42,13 +42,13 @@ $zatvori = url('clanovi/uredi', ['id' => $id, 'kartica' => $kartica]);
     $godina = (int) ($_GET['godina'] ?? date('Y'));
     $godine = array_map('intval', array_column(redovi('SELECT DISTINCT Godina FROM Clanarine WHERE ClanId=? ORDER BY Godina DESC', [$id]), 'Godina')) ?: [(int) date('Y')]; ?>
     <form method="get" action="<?= e(url()) ?>" class="row g-2 align-items-end mb-3">
-        <input type="hidden" name="p" value="clanovi/uredi"><input type="hidden" name="id" value="<?= $id ?>"><input type="hidden" name="posalji" value="clanarina"><input type="hidden" name="kartica" value="<?= e($kartica) ?>">
+        <input type="hidden" name="p" value="clanovi/uredi"><input type="hidden" name="id" value="<?= $id ?>"><input type="hidden" name="posalji" value="<?= e($posalji) ?>"><input type="hidden" name="kartica" value="<?= e($kartica) ?>">
         <div class="col-sm-3"><label class="form-label small">Godina</label>
             <select name="godina" class="form-select form-select-sm" data-auto><?php foreach ($godine as $g): ?><option<?= sel($g, $godina) ?>><?= $g ?></option><?php endforeach; ?></select></div>
     </form>
     <?php if (isset(oslobodjeni_clanarine($godina)[$id])): ?>
         <div class="alert alert-info mb-0">Počasni član – oslobođen članarine za <?= $godina ?>. Info se ne šalje.</div>
-    <?php elseif (!($p = poruka_clanarina($clan, $godina))): ?>
+    <?php elseif (!($p = $posalji === 'rata' ? poruka_rata($clan, $godina) : poruka_clanarina($clan, $godina))): ?>
         <div class="alert alert-secondary mb-0">Za <?= $godina ?>. nema evidentirane članarine za ovog člana.</div>
     <?php else: ?>
         <?= kanali_slanja($clan, $p[0], $p[1], ['clanovi/uredi', ['id' => $id, 'kartica' => $kartica]], 11) ?>
@@ -57,7 +57,7 @@ $zatvori = url('clanovi/uredi', ['id' => $id, 'kartica' => $kartica]);
 <?php if (!$clan['Email'] && !whatsapp_broj($clan)): ?>
     <p class="small text-danger mt-2 mb-0">Član nema ni e-mail ni broj telefona – tekst kopirajte i pošaljite drugim putem.</p>
 <?php elseif (!$clan['Email']): ?>
-    <p class="small text-muted mt-2 mb-0">Član nema e-mail adresu – pošaljite putem WhatsAppa ili SMS-a.</p>
+    <p class="small text-muted mt-2 mb-0">Član nema e-mail adresu – pošaljite putem WhatsAppa, Vibera ili SMS-a.</p>
 <?php elseif (!posta_dostupna()): ?>
     <p class="small text-muted mt-2 mb-0">Izravno slanje e-pošte nije podešeno – „E-mail program“ otvara vaš Outlook/Gmail s gotovim tekstom.</p>
 <?php endif; ?>

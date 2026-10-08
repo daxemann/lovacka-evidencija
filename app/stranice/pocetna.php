@@ -1,8 +1,10 @@
 <?php
 $k = korisnik();
-if (!$k['Prava']) {
-    preusmjeri($k['ClanId'] ? 'moje-akcije' : 'oglasnik');
+if (!$k['Prava'] || ($_GET['pogled'] ?? '') === 'clan') {
+    require __DIR__ . '/moja-pocetna.php';
+    exit;
 }
+$termini = dogadjaji(danas(), null, null, 4);
 $op = opseg_sql('c');
 $clanovi = redovi("SELECT c.* FROM Clanovi c WHERE c.Status=0 AND $op");
 $aktivni = count($clanovi);
@@ -68,6 +70,19 @@ ob_start(); ?>
     <div class="alert alert-warning d-flex align-items-center"><span><b><?= $cekaju ?></b> <?= $cekaju === 1 ? 'član čeka' : 'članova čeka' ?> odobrenje pristupa.</span>
         <a href="<?= e(url('sustav/korisnici')) ?>" class="btn btn-sm btn-warning ms-auto">Pregledaj</a></div>
 <?php endif; ?>
+<?php if ($termini || ima(P_KALENDAR)): ?>
+<div class="card mb-3"><div class="card-header d-flex align-items-center"><b class="me-auto">📅 Nadolazeći termini</b>
+    <?php if (ima(P_KALENDAR)): ?><a class="btn btn-sm btn-outline-primary me-2" href="<?= e(url('kalendar/uredi')) ?>">+ Novi termin</a><?php endif; ?><a class="small" href="<?= e(url('kalendar')) ?>">kalendar →</a></div>
+    <div class="list-group list-group-flush">
+    <?php foreach ($termini as $d): ?>
+        <a class="list-group-item list-group-item-action d-flex gap-3" href="<?= e(url('kalendar/termin', ['id' => $d['Id']])) ?>" style="border-left:4px solid <?= e(vrsta_dogadjaja($d['Vrsta'])['boja']) ?>">
+            <span class="text-nowrap fw-semibold"><?= e(oznaka_vremena($d)) ?></span><span class="flex-grow-1 text-truncate"><?= e($d['Naslov']) ?></span>
+            <span class="small text-muted text-nowrap"><?= $d['ZaSve'] ? 'svi' : e(implode(', ', $d['Sekcije'])) ?> · 👥 <?= (int) $d['Dolazi'] ?></span></a>
+    <?php endforeach; ?>
+    <?php if (!$termini): ?><div class="list-group-item small text-muted">Nema najavljenih termina.</div><?php endif; ?>
+    </div></div>
+<?php endif; ?>
+<?php if ($k['ClanId']): ?><div class="mb-3"><?= predlozak('moja-clanarina', ['clanId' => $k['ClanId']]) ?></div><?php endif; ?>
 <div class="row g-3 mb-4">
     <?php if (ima(P_CLANOVI_CITAJ)): ?>
         <div class="col-6 col-lg-3"><a href="<?= e(url('clanovi')) ?>" class="card text-decoration-none h-100"><div class="card-body">

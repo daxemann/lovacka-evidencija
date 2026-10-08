@@ -83,7 +83,7 @@ if (isset($_SESSION['moja_akcija'])) {
 }
 ob_start(); ?>
 <h1 class="h4 mb-3">Moje radne akcije</h1>
-<div class="card mb-4">
+<div class="card mb-4" id="nova">
     <div class="card-header"><?= $ur ? 'Izmjena radne akcije' : 'Nova radna akcija' ?></div>
     <div class="card-body">
         <form method="post" action="<?= e(url('moje-akcije')) ?>" enctype="multipart/form-data"><?= csrf() ?>

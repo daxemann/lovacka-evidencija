@@ -7,6 +7,8 @@ const PREDLOSCI_ZADANO = [
     'Predlozak.Bodovi' => "Pozdrav {ime},\n\nšaljemo ti pregled tvojih radnih akcija za razdoblje {razdoblje}:\n\n{popis}\n\nUkupno: {bodovi} bodova.\n\nHvala ti na trudu i pomoći udruzi!\n\n{potpis}",
     'Predlozak.Clanarina.Naslov' => 'Članarina {godina}. – kratka informacija',
     'Predlozak.Clanarina' => "Pozdrav {ime},\n\nsamo kratka informacija: prema našoj evidenciji članarina za {godina}. godinu iznosi {iznos} €, a do sada je evidentirano {uplaceno} € (preostalo {preostalo} €).\n\nAko si već platio, slobodno zanemari ovu poruku – možda uplata još nije upisana.\n\nHvala i lijep pozdrav!\n\n{potpis}",
+    'Predlozak.Rata.Naslov' => 'Članarina {godina}. – podsjetnik',
+    'Predlozak.Rata' => "Pozdrav {ime},\n\nmali podsjetnik: {rata} članarine za {godina}. ({iznos_rate} €) dospjela je {dospijece}. Prema evidenciji je otvoreno još {preostalo} €.\n\nAko si već platio, zanemari poruku – uplata možda još nije upisana.\n\nHvala!\n\n{potpis}",
     'Predlozak.Pozivnica' => "Pozdrav {ime},\n\nudruga ima novu evidenciju članova. Preko ove poveznice možeš sam postaviti svoju lozinku (poveznica vrijedi 7 dana i samo je za tebe):\n\n{link}\n\nNakon toga administrator još odobri pristup, a ti onda možeš vidjeti svoje podatke i upisivati radne akcije.\n\n{potpis}",
     'Predlozak.Odobreno' => "Pozdrav {ime},\n\ntvoj pristup evidenciji je odobren. Prijava: {link}\nKorisničko ime: {korisnik}\n\n{potpis}",
     'Predlozak.Potpis' => '{udruga}',
@@ -15,7 +17,8 @@ const OZNAKE_PREDLOZAKA = [
     '{ime}' => 'ime člana', '{prezime}' => 'prezime', '{razdoblje}' => 'razdoblje (bodovi)', '{popis}' => 'popis akcija (bodovi)',
     '{bodovi}' => 'zbroj bodova', '{godina}' => 'godina članarine', '{iznos}' => 'iznos članarine', '{uplaceno}' => 'uplaćeno',
     '{preostalo}' => 'preostalo', '{link}' => 'poveznica (pozivnica / prijava)', '{korisnik}' => 'korisničko ime',
-    '{potpis}' => 'potpis udruge', '{udruga}' => 'naziv udruge',
+    '{potpis}' => 'potpis udruge', '{udruga}' => 'naziv udruge', '{rata}' => 'dospjela rata (npr. „2. rata“)', '{iznos_rate}' => 'iznos rate',
+    '{dospijece}' => 'datum dospijeća rate',
 ];
 
 function predlosci_poruka(): array
@@ -79,6 +82,26 @@ function poruka_clanarina(array $c, int $godina): ?array
     return [zamijeni_oznake($p['Predlozak.Clanarina.Naslov'], $z), zamijeni_oznake($p['Predlozak.Clanarina'], $z)];
 }
 
+/** Podsjetnik za dospjelu ratu (prva dospjela neplaćena). */
+function poruka_rata(array $c, int $godina): ?array
+{
+    $cl = clanarina_clana((int) $c['Id'], $godina);
+    if (!$cl) {
+        return null;
+    }
+    $rate = rate_clanarine($cl);
+    $d = array_values(array_filter($rate, fn($r) => $r['Status'] === 'dospjelo'));
+    $r = $d[0] ?? null;
+    if (!$r) {
+        return poruka_clanarina($c, $godina);
+    }
+    $p = predlosci_poruka();
+    $z = osnovne_oznake($c, $p) + ['{godina}' => (string) $godina, '{iznos}' => novac($cl['Iznos']), '{uplaceno}' => novac($cl['Uplaceno']),
+        '{preostalo}' => novac(array_sum(array_column($d, 'Preostalo'))), '{rata}' => count($rate) > 1 ? $r['RedniBroj'] . '. rata' : 'uplata',
+        '{iznos_rate}' => novac($r['Iznos']), '{dospijece}' => datum($r['Dospijece'])];
+    return [zamijeni_oznake($p['Predlozak.Rata.Naslov'], $z), zamijeni_oznake($p['Predlozak.Rata'], $z)];
+}
+
 function poruka_pozivnica(array $c, string $link): string
 {
     $p = predlosci_poruka();
@@ -137,7 +160,8 @@ function kanali_slanja(array $c, string $naslov, string $tekst, array $povratak,
             <?php if ($email !== '' && posta_dostupna()): ?><button class="btn btn-primary btn-sm">Pošalji e-mail</button><?php endif; ?>
             <?php if ($email !== ''): ?><a class="btn btn-outline-primary btn-sm" data-kanal="mailto" href="#">E-mail program</a><?php endif; ?>
             <?php if ($wa): ?>
-                <a class="btn btn-success btn-sm" data-kanal="wa" href="#" target="_blank" rel="noopener">WhatsApp</a>
+                <?php if (kanal_ukljucen('whatsapp')): ?><a class="btn btn-success btn-sm" data-kanal="wa" href="#" target="_blank" rel="noopener">WhatsApp</a><?php endif; ?>
+                <?php if (kanal_ukljucen('viber')): ?><a class="btn btn-sm text-white" style="background:#7360f2" data-kanal="viber" href="#" title="Tekst se kopira – u Viberu ga samo zalijepite">Viber</a><?php endif; ?>
                 <a class="btn btn-outline-secondary btn-sm" data-kanal="sms" href="#">SMS</a>
             <?php endif; ?>
             <button type="button" class="btn btn-outline-secondary btn-sm" data-kopiraj="#<?= $id ?>">Kopiraj tekst</button>
@@ -150,10 +174,49 @@ function kanali_slanja(array $c, string $naslov, string $tekst, array $povratak,
         if (!a) return;
         var f = a.closest('form.kanali'), t = f.querySelector('textarea').value, s = f.querySelector('[name=naslov]').value, k = a.getAttribute('data-kanal');
         if (k === 'wa') a.href = 'https://wa.me/' + f.dataset.wa + '?text=' + encodeURIComponent(t);
+        if (k === 'viber') { e.preventDefault(); kopirajTekst(t); viberPoruka(f.dataset.wa); return; }
         if (k === 'sms') a.href = 'sms:+' + f.dataset.wa + '?body=' + encodeURIComponent(t);
         if (k === 'mailto') a.href = 'mailto:' + f.dataset.email + '?subject=' + encodeURIComponent(s) + '&body=' + encodeURIComponent(t);
     }, true);
     </script>
     <?php endif;
     return (string) ob_get_clean();
+}
+
+/** Je li kanal (whatsapp / viber) uključen u Sustav → Predlošci poruka. */
+function kanal_ukljucen(string $kanal): bool
+{
+    return postavka('Kanal.' . $kanal, '1') === '1';
+}
+
+/** Gumbi za dijeljenje teksta bez primatelja (grupa, više ljudi): WhatsApp, Viber, kopiraj. */
+function gumbi_dijeljenja(string $tekst, string $vel = 'btn-sm'): string
+{
+    static $n = 0;
+    $id = 'dijeli' . (++$n);
+    $o = '<textarea id="' . $id . '" class="d-none">' . e($tekst) . '</textarea>';
+    if (kanal_ukljucen('whatsapp')) {
+        $o .= '<a class="btn btn-success ' . $vel . '" target="_blank" rel="noopener" href="https://wa.me/?text=' . e(rawurlencode($tekst)) . '">Podijeli na WhatsApp</a>';
+    }
+    if (kanal_ukljucen('viber')) {
+        $o .= '<a class="btn ' . $vel . ' text-white" style="background:#7360f2" href="viber://forward?text=' . e(rawurlencode($tekst)) . '">Podijeli na Viber</a>';
+    }
+    return $o . '<button type="button" class="btn btn-outline-secondary ' . $vel . '" data-kopiraj="#' . $id . '">Kopiraj tekst</button>';
+}
+
+/** Gumbi za kontakt s jednim članom (broj): poziv, WhatsApp, Viber, SMS. */
+function gumbi_kontakta(?string $broj, bool $poziv = true): string
+{
+    if (!$broj) {
+        return '';
+    }
+    $z = whatsapp_broj(['MobilniTelefon' => $broj, 'FiksniTelefon' => null]);
+    $o = $poziv ? '<a class="btn btn-sm btn-outline-primary" href="tel:+' . e($z) . '">📞 Nazovi</a>' : '';
+    if (kanal_ukljucen('whatsapp')) {
+        $o .= '<a class="btn btn-sm btn-success" target="_blank" rel="noopener" href="https://wa.me/' . e($z) . '">WhatsApp</a>';
+    }
+    if (kanal_ukljucen('viber')) {
+        $o .= '<a class="btn btn-sm text-white" style="background:#7360f2" href="viber://chat?number=%2B' . e($z) . '">Viber</a>';
+    }
+    return $o;
 }

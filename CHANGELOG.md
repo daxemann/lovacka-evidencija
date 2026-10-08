@@ -1,5 +1,18 @@
 # Promjene
 
+## 1.2.0 – 2026-10
+- **Kalendar** termina: cijela udruga ili odabrane sekcije (ostale sekcije ih ne vide), vrste s bojama (Sustav → Kalendar – vrste),
+  „dolazim / ne dolazim“ (nije obavezno), popis dolazaka, navigacija (Google Maps), dodaj u kalendar (.ics), osobna pretplata za kalendar mobitela,
+  dijeljenje na WhatsApp/Viber, nakon radne akcije upis akcije jednim klikom za sve koji su potvrdili dolazak. Novo pravo „Kalendar – uređivanje“.
+- **Članarina u ratama**: planovi plaćanja po godini (jednokratno ili 1–12 rata s vlastitim iznosom i datumom), plan po članu i prilagodba samo za jednog člana,
+  uplate se raspoređuju redom po ratama, filtar „Dospjela rata“, predložak „Podsjetnik – dospjela rata“.
+- **Članova početna stranica** (mobitel): termini, radne akcije, oglasnik, članarina u jednoj liniji s diskretnim podsjetnikom kad rata dospije.
+- **Imenik** cijele udruge: član sam odlučuje što dijeli (mobitel, fiksni, e-mail, mjesto, adresa); uprava vidi sve; novo pravo „Imenik – vidi sve kontakte“.
+- **Poruke među članovima** unutar aplikacije (ne samo u oglasniku).
+- **Viber** uz WhatsApp (uključivanje u Sustav → Predlošci poruka).
+- **Dodaj na početni zaslon** (Android i iPhone): gumb, upute, vlastita ikona (ili logo udruge).
+- Baza: nove tablice se dodaju automatski (PRAGMA user_version); .NET verzija ih zanemaruje.
+
 ## 1.1.0 – 2026-10
 - **Samoprijava**: jedna zajednička poveznica za sve članove (npr. za WhatsApp grupu). Svatko upiše ime, mobitel, korisničko ime i lozinku;
   administrator u *Sustav → Samoprijava* prijavu poveže s postojećim članom (prijedlozi po imenu/mobitelu) ili upiše novog člana, pa odobri pristup.

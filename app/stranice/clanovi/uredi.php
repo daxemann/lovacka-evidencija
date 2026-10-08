@@ -107,13 +107,42 @@ if (je_post()) {
             $treba(P_CLANARINA_UREDI);
             $god = (int) ($_POST['Godina'] ?? date('Y'));
             $izn = u_broj($_POST['Iznos'] ?? '');
-            if ($izn === null || $izn < 0) {
-                poruka('Unesite iznos.', 'warning');
+            if (!plan_po_id($god, (string) ($_POST['plan'] ?? '')) && ($izn === null || $izn <= 0)) {
+                poruka(isset($_POST['plan']) ? "Za $god. nema tog plana plaćanja – postavite planove ili upišite iznos." : 'Unesite iznos.', 'warning');
             } elseif (vrijednost('SELECT 1 FROM Clanarine WHERE ClanId=? AND Godina=?', [$id, $god])) {
                 poruka("Članarina za $god. već postoji.", 'warning');
             } else {
-                umetni('Clanarine', ['ClanId' => $id, 'Godina' => $god, 'Iznos' => dec($izn), 'Valuta' => 'EUR', 'Napomena' => null]);
-                dnevnik('Zadužena članarina', 'Clan', $id, puno_ime($clan) . ": $god. – " . novac($izn) . ' €');
+                $plan = plan_po_id($god, (string) ($_POST['plan'] ?? ''));
+                zaduzi_clanarinu($id, $god, $plan, $izn);
+                dnevnik('Zadužena članarina', 'Clan', $id, puno_ime($clan) . ": $god. – " . ($plan ? opis_plana($plan) : novac($izn) . ' €'));
+            }
+            $natrag('clanarina');
+        case 'clanarina-plan':
+        case 'clanarina-rate':
+            $treba(P_CLANARINA_UREDI);
+            $cl = red('SELECT * FROM Clanarine WHERE Id=? AND ClanId=?', [(int) $_POST['cid'], $id]);
+            if ($cl) {
+                if ($radnja === 'clanarina-plan') {
+                    $plan = plan_po_id((int) $cl['Godina'], (string) ($_POST['plan'] ?? ''));
+                    $rate = $plan['rate'] ?? [];
+                    $opis = $plan ? opis_plana($plan) : '';
+                } else {
+                    $rate = [];
+                    foreach ((array) ($_POST['rate'] ?? []) as $r) {
+                        $iz = u_broj($r['iznos'] ?? '');
+                        $dt = u_datum($r['datum'] ?? '');
+                        if ($iz !== null && $iz > 0 && $dt) {
+                            $rate[] = ['iznos' => $iz, 'datum' => $dt];
+                        }
+                    }
+                    $rate = array_slice($rate, 0, 12);
+                    $opis = 'prilagođeno: ' . implode(' + ', array_map(fn($r) => novac($r['iznos']) . ' (' . datum($r['datum']) . ')', $rate));
+                }
+                if ($rate) {
+                    postavi_rate((int) $cl['Id'], $rate);
+                    dnevnik('Plan plaćanja članarine', 'Clan', $id, puno_ime($clan) . ": {$cl['Godina']}. – $opis");
+                    poruka('Plan plaćanja je spremljen.');
+                }
             }
             $natrag('clanarina');
         case 'clanarina-obrisi':
@@ -167,7 +196,7 @@ if (je_post()) {
                 q('DELETE FROM PlaniraneUloge WHERE Id=? AND ClanId=?', [(int) $_POST['ulid'], $id]);
             } elseif ($racun) {
                 $ku = red('SELECT ku.*, u.Prava FROM KorisnikUloge ku JOIN Uloge u ON u.Id=ku.UlogaId WHERE ku.Id=? AND ku.KorisnikId=?', [(int) $_POST['ulid'], $racun['Id']]);
-                if ($ku && ((int) $ku['Prava'] & P_SVE) === P_SVE && $ku['SekcijaId'] === null && broj_glavnih_admina($racun['Id']) === 0) {
+                if ($ku && ((int) $ku['Prava'] & P_OSNOVNA) === P_OSNOVNA && $ku['SekcijaId'] === null && broj_glavnih_admina($racun['Id']) === 0) {
                     poruka('Ovo je zadnji glavni administrator – uloga se ne može ukloniti.', 'danger');
                     $natrag('racun');
                 }
@@ -286,7 +315,7 @@ ob_start(); ?>
         <button class="btn btn-sm btn-outline-secondary no-print" onclick="window.print()">Ispis</button>
     <?php endif; ?>
 </div>
-<?php if ($id && in_array($posalji, ['bodovi', 'clanarina'], true)) {
+<?php if ($id && in_array($posalji, ['bodovi', 'clanarina', 'rata'], true)) {
     require __DIR__ . '/../../predlosci/posalji-clanu.php';
 } ?>
 <?php if ($id): ?>

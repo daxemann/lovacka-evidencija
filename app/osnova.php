@@ -5,7 +5,7 @@
  */
 declare(strict_types=1);
 
-const VERZIJA = '1.1.0';
+const VERZIJA = '1.2.0';
 const KORIJEN = __DIR__ . '/..';
 
 // ---------- Prava (bit-zastavice, iste kao u .NET verziji) ----------
@@ -17,7 +17,10 @@ const P_AKCIJE_CITAJ = 16;
 const P_AKCIJE_ODOBRI = 32;
 const P_IZVJESTAJI = 64;
 const P_SUSTAV = 128;
-const P_SVE = 255;
+const P_KALENDAR = 256;
+const P_IMENIK_SVI = 512;
+const P_OSNOVNA = 255; // prava iz .NET verzije
+const P_SVE = 1023;
 
 const PRAVA_OPIS = [
     P_CLANOVI_CITAJ => ['Članovi – pregled', 'vidi popis članova i njihove podatke'],
@@ -28,6 +31,8 @@ const PRAVA_OPIS = [
     P_AKCIJE_ODOBRI => ['Radne akcije – unos i odobravanje', 'upisuje radne akcije i bodove (i za grupu), odobrava i odbija prijave članova'],
     P_IZVJESTAJI => ['Izvještaji i poruke', 'izvještaji, ispis, PDF, Excel, slanje poruka'],
     P_SUSTAV => ['Sustav', 'pristup članova (pozivnice, odobrenje, uloge), sekcije, uloge, uvoz, duplikati, sigurnosne kopije, dnevnik'],
+    P_KALENDAR => ['Kalendar – uređivanje', 'dodaje, mijenja i briše termine u kalendaru (za sekcije u svom opsegu)'],
+    P_IMENIK_SVI => ['Imenik – vidi sve kontakte', 'u imeniku vidi telefon, e-mail i adresu svih članova, i kad ih član nije podijelio'],
 ];
 
 // Statusi (enum vrijednosti kao u .NET verziji)
@@ -92,8 +97,94 @@ function db(): PDO
     if ($nova) {
         $pdo->exec((string) file_get_contents(__DIR__ . '/shema.sql'));
     }
+    nadogradi_bazu($pdo);
     $pdo->sqliteCreateFunction('kljuc', fn($s) => kljuc((string) $s), 1);
     return $pdo;
+}
+
+/**
+ * Dodatne tablice PHP verzije (PRAGMA user_version). .NET verzija ih ne poznaje i zanemaruje,
+ * pa baza i dalje radi u oba smjera.
+ */
+const SHEMA_PHP = 1;
+function nadogradi_bazu(PDO $pdo): void
+{
+    $v = (int) $pdo->query('PRAGMA user_version')->fetchColumn();
+    if ($v >= SHEMA_PHP) {
+        return;
+    }
+    $pdo->beginTransaction();
+    if ($v < 1) {
+        $pdo->exec(<<<'SQL'
+CREATE TABLE IF NOT EXISTS "Dogadjaji" (
+    "Id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "Naslov" TEXT NOT NULL,
+    "Vrsta" TEXT NOT NULL,
+    "Pocetak" TEXT NOT NULL,
+    "Kraj" TEXT NULL,
+    "CijeliDan" INTEGER NOT NULL DEFAULT 0,
+    "Mjesto" TEXT NULL,
+    "Opis" TEXT NULL,
+    "ZaSve" INTEGER NOT NULL DEFAULT 1,
+    "KreiraoId" INTEGER NULL,
+    "KreiraoIme" TEXT NULL,
+    "Kreirano" TEXT NOT NULL,
+    "Azurirano" TEXT NULL,
+    "AkcijeUpisane" TEXT NULL
+);
+CREATE INDEX IF NOT EXISTS "IX_Dogadjaji_Pocetak" ON "Dogadjaji" ("Pocetak");
+CREATE TABLE IF NOT EXISTS "DogadjajSekcije" (
+    "DogadjajId" INTEGER NOT NULL REFERENCES "Dogadjaji" ("Id") ON DELETE CASCADE,
+    "SekcijaId" INTEGER NOT NULL REFERENCES "Sekcije" ("Id") ON DELETE CASCADE,
+    PRIMARY KEY ("DogadjajId", "SekcijaId")
+);
+CREATE TABLE IF NOT EXISTS "DogadjajOdgovori" (
+    "DogadjajId" INTEGER NOT NULL REFERENCES "Dogadjaji" ("Id") ON DELETE CASCADE,
+    "ClanId" INTEGER NOT NULL REFERENCES "Clanovi" ("Id") ON DELETE CASCADE,
+    "Dolazi" INTEGER NOT NULL,
+    "Vrijeme" TEXT NOT NULL,
+    PRIMARY KEY ("DogadjajId", "ClanId")
+);
+CREATE TABLE IF NOT EXISTS "ClanarinaRate" (
+    "Id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "ClanarinaId" INTEGER NOT NULL REFERENCES "Clanarine" ("Id") ON DELETE CASCADE,
+    "RedniBroj" INTEGER NOT NULL,
+    "Iznos" TEXT NOT NULL,
+    "Dospijece" TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS "IX_ClanarinaRate_ClanarinaId" ON "ClanarinaRate" ("ClanarinaId");
+CREATE TABLE IF NOT EXISTS "ClanVidljivost" (
+    "ClanId" INTEGER NOT NULL PRIMARY KEY REFERENCES "Clanovi" ("Id") ON DELETE CASCADE,
+    "Mobitel" INTEGER NOT NULL DEFAULT 0,
+    "Fiksni" INTEGER NOT NULL DEFAULT 0,
+    "Email" INTEGER NOT NULL DEFAULT 0,
+    "Mjesto" INTEGER NOT NULL DEFAULT 0,
+    "Adresa" INTEGER NOT NULL DEFAULT 0,
+    "Azurirano" TEXT NULL
+);
+CREATE TABLE IF NOT EXISTS "Razgovori2" (
+    "Id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "KorisnikA" INTEGER NOT NULL REFERENCES "Korisnici" ("Id") ON DELETE CASCADE,
+    "KorisnikB" INTEGER NOT NULL REFERENCES "Korisnici" ("Id") ON DELETE CASCADE,
+    "Kreirano" TEXT NOT NULL,
+    "ZadnjaPoruka" TEXT NOT NULL,
+    UNIQUE ("KorisnikA", "KorisnikB")
+);
+CREATE TABLE IF NOT EXISTS "Poruke2" (
+    "Id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "RazgovorId" INTEGER NOT NULL REFERENCES "Razgovori2" ("Id") ON DELETE CASCADE,
+    "PosiljateljId" INTEGER NOT NULL,
+    "Tekst" TEXT NOT NULL,
+    "Vrijeme" TEXT NOT NULL,
+    "Procitano" INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS "IX_Poruke2_RazgovorId" ON "Poruke2" ("RazgovorId");
+UPDATE "Uloge" SET "Prava" = "Prava" | 768 WHERE ("Prava" & 255) = 255;
+UPDATE "Uloge" SET "Prava" = "Prava" | 256 WHERE "Naziv" LIKE 'Predsjednik%' OR "Naziv" LIKE 'Lovnik%' OR "Naziv" = 'Domar';
+SQL);
+    }
+    $pdo->exec('PRAGMA user_version = ' . SHEMA_PHP);
+    $pdo->commit();
 }
 
 function q(string $sql, array $p = []): PDOStatement

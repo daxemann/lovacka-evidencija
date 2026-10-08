@@ -17,8 +17,9 @@ Radi na običnom PHP webhostingu (bez baze podataka na poslužitelju, bez naredb
 - **Sekcije / lovne jedinice** – međusobno odvojene: administrator jedne sekcije ne vidi drugu
 - **Radne akcije i bodovi** – Domar / voditelj radova upiše akciju jednom i označi sve koji su bili; članovi sami prijavljuju akcije (s fotografijom), administrator odobrava i dodjeljuje bodove
 - **Izvještaji** – ovaj mjesec, godina, **lovna godina (1.4.–31.3.)**, odabrani mjeseci ili datumi; grupiranje po članu, mjesecu, vrsti, sekciji; ispis, **PDF**, Excel (CSV), slanje e-poštom, „svakom članu njegov izvadak“
-- **Članarina** – skupno zaduženje, uplate, pregled tko nije platio, počasni članovi oslobođeni, prijateljska info članu (bez opomene)
-- **Poruke članovima** – WhatsApp, SMS, e-pošta ili kopirani tekst; predlošci se mogu urediti
+- **Kalendar** – termini za cijelu udrugu ili odabrane sekcije (ostali ih ne vide), „dolazim / ne dolazim“, pretplata u kalendar mobitela, radna akcija jednim klikom za sve koji su došli
+- **Članarina** – isti iznos za sve, plaćanje jednokratno ili u 1–12 rata (svaka s vlastitim iznosom i datumom), plan po članu, diskretan podsjetnik članu kad rata dospije, pregled dospjelih
+- **Poruke članovima** – WhatsApp, Viber, SMS, e-pošta ili kopirani tekst; predlošci se mogu urediti
 - **Uvoz iz Google kontakata** – prepoznaje ista imena unatoč č/ć/š/ž/đ, zamijenjenom imenu i prezimenu i tipfelerima; ništa se ne sprema bez potvrde
 - **Provjera duplikata** i spajanje dvaju zapisa iste osobe
 - **Uloge i prava** – Glavni admin, Predsjednik/Tajnik, Blagajnik, Domar, Admin sekcije… i vlastite uloge
@@ -26,7 +27,10 @@ Radi na običnom PHP webhostingu (bez baze podataka na poslužitelju, bez naredb
 - **Dnevnik promjena** – tko je što promijenio
 
 **Za članove (mobitel)**
+- početna stranica: nadolazeći termini, radne akcije, oglasnik, članarina u jednoj liniji
+- ikona na početnom zaslonu („Dodaj na početni zaslon“ – Android i iPhone), otvara se kao aplikacija
 - vlastiti podaci i fotografija, upis radnih akcija, bodovi u lovnoj godini
+- **Imenik** cijele udruge – svaki član sam odlučuje dijeli li mobitel, e-mail, mjesto/adresu; uprava vidi sve; **poruke unutar aplikacije** svakom članu
 - **Oglasnik „Kupujem / prodajem“** – oružje, streljivo, optika, pribor, odjeća, psi… sa slikama i porukama među članovima
 
 **Sigurnost**

@@ -26,6 +26,42 @@ $f = fn(string $r, array $skriveno, string $tekst, string $klasa, string $potvrd
             <?php else: ?><span class="badge bg-danger ms-auto">Nije plaćeno</span><?php endif; ?>
             <?php if ($moze && !$c2['Uplate']) echo $f('clanarina-obrisi', ['cid' => $cl['Id']], 'Ukloni zaduženje', 'btn-link text-danger', 'Ukloniti zaduženje za ' . $cl['Godina'] . '.?'); ?>
         </div>
+        <?php $rate = rate_clanarine($c2); $planoviGod = planovi_clanarine((int) $cl['Godina']); if ($rate): ?>
+            <table class="table table-sm mb-2"><thead><tr><th>Rata</th><th>Dospijeće</th><th class="text-end">Iznos</th><th class="text-end">Plaćeno</th><th>Status</th></tr></thead><tbody>
+            <?php foreach ($rate as $r): ?>
+                <tr><td><?= count($rate) > 1 ? (int) $r['RedniBroj'] . '.' : 'jednokratno' ?></td><td><?= e(datum($r['Dospijece'])) ?></td>
+                    <td class="text-end"><?= novac($r['Iznos']) ?></td><td class="text-end"><?= novac($r['Placeno']) ?></td><td><?= oznaka_statusa_rate($r['Status']) ?></td></tr>
+            <?php endforeach; ?>
+            </tbody></table>
+        <?php endif; ?>
+        <?php if ($moze && !$osl): ?>
+            <details class="mb-2 no-print"><summary class="small">Plan plaćanja za ovog člana<?= $rate ? '' : ' (nije postavljen – bez datuma dospijeća)' ?></summary>
+                <div class="border rounded p-2 mt-1">
+                <?php if ($planoviGod): ?>
+                    <form method="post" action="<?= e(url('clanovi/uredi', ['id' => $id])) ?>" class="d-flex flex-wrap gap-2 align-items-end mb-2"><?= csrf() ?>
+                        <input type="hidden" name="radnja" value="clanarina-plan"><input type="hidden" name="cid" value="<?= (int) $cl['Id'] ?>">
+                        <div><label class="form-label small mb-0">Plan</label><select name="plan" class="form-select form-select-sm"><?php foreach ($planoviGod as $pl): ?><option value="<?= e($pl['id']) ?>"><?= e(opis_plana($pl)) ?></option><?php endforeach; ?></select></div>
+                        <button class="btn btn-sm btn-outline-primary">Primijeni plan</button>
+                    </form>
+                <?php else: ?>
+                    <p class="small text-muted mb-2">Za <?= (int) $cl['Godina'] ?>. nema planova – <a href="<?= e(url('clanarina/planovi', ['godina' => $cl['Godina']])) ?>">postavite ih</a> ili upišite rate ručno:</p>
+                <?php endif; ?>
+                <form method="post" action="<?= e(url('clanovi/uredi', ['id' => $id])) ?>" class="rate-clana"><?= csrf() ?>
+                    <input type="hidden" name="radnja" value="clanarina-rate"><input type="hidden" name="cid" value="<?= (int) $cl['Id'] ?>">
+                    <div class="small fw-semibold mb-1">Prilagodi samo za ovog člana (iznos se usklađuje sa zbrojem rata)</div>
+                    <?php $ured = $rate ?: [['Iznos' => $c2['Iznos'], 'Dospijece' => $cl['Godina'] . '-03-31']]; for ($i = 0; $i < 12; $i++): $r = $ured[$i] ?? null; ?>
+                        <div class="row g-1 mb-1 rr" <?= $r || $i === 0 ? '' : 'style="display:none"' ?>>
+                            <div class="col-1 small pt-1 text-end"><?= $i + 1 ?>.</div>
+                            <div class="col-5"><input name="rate[<?= $i ?>][iznos]" type="number" step="0.01" min="0" class="form-control form-control-sm" value="<?= $r ? e(number_format((float) $r['Iznos'], 2, '.', '')) : '' ?>" placeholder="iznos €"></div>
+                            <div class="col-6"><input name="rate[<?= $i ?>][datum]" type="date" class="form-control form-control-sm" value="<?= $r ? e(substr($r['Dospijece'], 0, 10)) : '' ?>"></div>
+                        </div>
+                    <?php endfor; ?>
+                    <button type="button" class="btn btn-sm btn-link" onclick="var h=[...this.form.querySelectorAll('.rr')].find(x=>x.style.display==='none'); if(h) h.style.display='';">+ rata</button>
+                    <button class="btn btn-sm btn-outline-primary">Spremi rate</button>
+                </form>
+                </div>
+            </details>
+        <?php endif; ?>
         <?php if ($c2['Uplate']): ?>
             <ul class="list-group list-group-flush mb-2">
             <?php foreach ($c2['Uplate'] as $u): ?>
@@ -52,7 +88,12 @@ $f = fn(string $r, array $skriveno, string $tekst, string $klasa, string $potvrd
 <form method="post" action="<?= e(url('clanovi/uredi', ['id' => $id])) ?>" class="row g-2 align-items-end no-print"><?= csrf() ?>
     <input type="hidden" name="radnja" value="clanarina-dodaj">
     <div class="col-sm-3"><label class="form-label">Godina</label><input type="number" name="Godina" class="form-control" value="<?= date('Y') ?>" min="2000" max="2100"></div>
+    <?php $pl = planovi_clanarine((int) date('Y')); if ($pl): ?>
+        <div class="col-sm-5"><label class="form-label">Plan (<?= date('Y') ?>.)</label><select name="plan" class="form-select"><?php foreach ($pl as $x): ?><option value="<?= e($x['id']) ?>"<?= !empty($x['zadano']) ? ' selected' : '' ?>><?= e(opis_plana($x)) ?></option><?php endforeach; ?></select>
+            <input type="hidden" name="Iznos" value="0"></div>
+    <?php else: ?>
     <div class="col-sm-3"><label class="form-label">Iznos (EUR)</label><input type="number" step="0.01" name="Iznos" class="form-control" value="<?= $zadnjiIznos !== null ? number_format((float) $zadnjiIznos, 2, '.', '') : '' ?>" required></div>
+    <?php endif; ?>
     <div class="col-sm-3"><button class="btn btn-primary">Dodaj članarinu</button></div>
 </form>
 <?php endif;

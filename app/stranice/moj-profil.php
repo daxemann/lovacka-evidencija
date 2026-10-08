@@ -17,6 +17,10 @@ if (je_post()) {
         } catch (Throwable $e) {
             poruka(e($e->getMessage()), 'danger');
         }
+    } elseif ($radnja === 'dijeljenje') {
+        spremi_vidljivost((int) $c['Id'], array_map(fn($f) => isset($_POST['v'][$f]), array_combine(array_keys(POLJA_VIDLJIVOSTI), array_keys(POLJA_VIDLJIVOSTI))));
+        dnevnik('Član promijenio dijeljenje kontakata', 'Clan', (int) $c['Id'], puno_ime($c));
+        poruka('Spremljeno – imenik prikazuje samo ono što ste označili.');
     } elseif ($radnja === 'obrisi-foto') {
         obrisi_sliku($c['FotoDatoteka']);
         azuriraj('Clanovi', (int) $c['Id'], ['FotoDatoteka' => null, 'Azurirano' => sada()]);
@@ -42,6 +46,7 @@ $lg = pocetak_lovne_godine();
 $bodovi = (float) vrijednost('SELECT COALESCE(SUM(CAST(Bodovi AS REAL)),0) FROM RadneAkcije WHERE ClanId=? AND Status=1 AND substr(Datum,1,10) BETWEEN ? AND ?', [$c['Id'], $lg->format('Y-m-d'), $lg->modify('+1 year -1 day')->format('Y-m-d')]);
 $ceka = (int) vrijednost('SELECT COUNT(*) FROM RadneAkcije WHERE ClanId=? AND Status=0', [$c['Id']]);
 $pv = fn($f) => e($c[$f] ?? '');
+$vid = vidljivost_clana((int) $c['Id']);
 ob_start(); ?>
 <div class="d-flex align-items-center gap-3 mb-3">
     <div class="text-center">
@@ -62,11 +67,15 @@ ob_start(); ?>
     </div>
 </div>
 <div class="row g-4">
+    <div class="col-12 instal-gumb" hidden><div class="card border-success"><div class="card-body d-flex align-items-center gap-3">
+        <div class="flex-grow-1"><b>📲 Aplikacija na mobitelu</b><div class="small text-muted">Dodajte ikonu na početni zaslon – otvara se bez preglednika, kao prava aplikacija.</div></div>
+        <button type="button" class="btn btn-success" data-instaliraj>Dodaj na početni zaslon</button>
+    </div></div></div>
     <div class="col-12"><div class="card"><div class="card-body d-flex flex-wrap align-items-center gap-3">
         <div><div class="kartica-broj"><?= e(broj($bodovi, 2)) ?></div>
             <div class="text-muted small">bodova u tekućoj lovnoj godini · <?= $ceka ?> na čekanju</div></div>
         <a href="<?= e(url('moje-akcije')) ?>" class="btn btn-primary ms-auto">Moje radne akcije</a>
-    </div></div></div>
+    </div><div class="card-footer bg-white"><?= predlozak('moja-clanarina', ['clanId' => (int) $c['Id']]) ?></div></div></div>
     <div class="col-lg-6"><div class="card"><div class="card-header">Moji kontakt podaci</div><div class="card-body">
         <form method="post" action="<?= e(url('moj-profil')) ?>"><?= csrf() ?>
             <div class="row g-2">
@@ -79,6 +88,18 @@ ob_start(); ?>
                 <div class="col-12"><label class="form-label small">E-mail</label><input name="Email" type="email" class="form-control" value="<?= $pv('Email') ?>"></div>
             </div>
             <button type="submit" class="btn btn-primary mt-3 w-100">Spremi promjene</button>
+        </form>
+    </div></div></div>
+    <div class="col-lg-6" id="dijeljenje"><div class="card"><div class="card-header">Što vide ostali članovi (imenik)</div><div class="card-body">
+        <form method="post" action="<?= e(url('moj-profil')) ?>"><?= csrf() ?><input type="hidden" name="radnja" value="dijeljenje">
+            <p class="small text-muted">Ime, nadimak, slika i sekcija su vidljivi svima. Ostalo odlučujete vi – neoznačeno piše „nije podijelio“.
+                Poruka unutar aplikacije uvijek radi. Uprava udruge (tajnik, blagajnik, lovnik…) vidi vaše podatke zbog vođenja evidencije.</p>
+            <?php foreach (POLJA_VIDLJIVOSTI as $f => $n): ?>
+                <div class="form-check form-switch mb-1"><input class="form-check-input" type="checkbox" role="switch" name="v[<?= $f ?>]" id="v<?= $f ?>" value="1"<?= chk($vid[$f]) ?>>
+                    <label class="form-check-label" for="v<?= $f ?>"><?= e($n) ?></label></div>
+            <?php endforeach; ?>
+            <button class="btn btn-outline-primary btn-sm mt-2">Spremi</button>
+            <a class="btn btn-link btn-sm mt-2" href="<?= e(url('imenik')) ?>">Otvori imenik</a>
         </form>
     </div></div></div>
     <div class="col-lg-6"><div class="card"><div class="card-header">Moji podaci (mijenja ih udruga)</div>

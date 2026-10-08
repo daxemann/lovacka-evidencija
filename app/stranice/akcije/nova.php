@@ -10,6 +10,18 @@ $v = ['datum' => danas(), 'vrsta' => '', 'naziv' => '', 'sati' => '', 'bodovi' =
 if (($c0 = ul_int('clan')) !== null) {
     $v['odabrani'] = [$c0];
 }
+$dogId = ul_int('dogadjaj');
+$dog = $dogId ? dogadjaj($dogId) : null;
+if ($dog && !je_post()) {
+    $v['datum'] = min(substr($dog['Pocetak'], 0, 10), danas());
+    $v['opis'] = $dog['Naslov'] . ($dog['Mjesto'] ? ' – ' . $dog['Mjesto'] : '');
+    $v['odabrani'] = array_map('intval', array_column(redovi('SELECT ClanId FROM DogadjajOdgovori WHERE DogadjajId=? AND Dolazi=1', [$dogId]), 'ClanId'));
+    foreach ($vrste as $vr) {
+        if (kljuc($vr['Naziv']) === kljuc($dog['Naslov'])) {
+            $v['vrsta'] = (string) $vr['Id'];
+        }
+    }
+}
 
 if (je_post()) {
     $v = [
@@ -64,6 +76,10 @@ if (je_post()) {
             dnevnik('Grupni unos radne akcije', null, null, date('d.m.Y', strtotime($v['datum'])) . " $naziv: " . count($novi) . ' članova × ' . broj($bod, 2) . ' b.');
             poruka(e("Spremljeno: $naziv, " . date('d.m.Y', strtotime($v['datum'])) . ' – ' . count($novi) . ' članova × ' . broj($bod, 2) . ' b.'
                 . ($vec ? ' Preskočeno (već upisano za taj dan): ' . $imena($vec) . '.' : '')));
+            if ($dog) {
+                q('UPDATE Dogadjaji SET AkcijeUpisane=? WHERE Id=?', [sada(), $dog['Id']]);
+                preusmjeri('kalendar/termin', ['id' => $dog['Id']]);
+            }
             preusmjeri('akcije/nova');
         }
     }
@@ -73,7 +89,8 @@ $sekcije = moje_sekcije();
 ob_start(); ?>
 <h1 class="h3 mb-1">Nova radna akcija</h1>
 <p class="text-muted">Upišite akciju jednom i označite sve koji su bili – svi dobiju iste bodove (odmah odobreno).</p>
-<form method="post" action="<?= e(url('akcije/nova')) ?>" id="obrazac"><?= csrf() ?>
+<?php if ($dog): ?><div class="alert alert-info py-2">Iz kalendara: <b><?= e($dog['Naslov']) ?></b> (<?= e(datum($dog['Pocetak'])) ?>) – označeni su članovi koji su potvrdili dolazak.</div><?php endif; ?>
+<form method="post" action="<?= e(url('akcije/nova', $dog ? ['dogadjaj' => $dog['Id']] : [])) ?>" id="obrazac"><?= csrf() ?>
 <div class="card mb-3">
     <div class="card-header"><b>1. Akcija</b></div>
     <div class="card-body"><div class="row g-2">

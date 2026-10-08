@@ -10,7 +10,7 @@ const STATUSI_OGLASA = ['Aktivan', 'Rezervirano', 'Prodano', 'Uklonjeno'];
 function broj_neprocitanih(int $korisnikId): int
 {
     return (int) vrijednost('SELECT COUNT(*) FROM PorukeRazgovora p JOIN Razgovori r ON r.Id=p.RazgovorId JOIN Oglasi o ON o.Id=r.OglasId
-        WHERE p.Procitano=0 AND p.PosiljateljId<>? AND (r.KupacId=? OR o.KorisnikId=?)', [$korisnikId, $korisnikId, $korisnikId]);
+        WHERE p.Procitano=0 AND p.PosiljateljId<>? AND (r.KupacId=? OR o.KorisnikId=?)', [$korisnikId, $korisnikId, $korisnikId]) + broj_neprocitanih_izravno($korisnikId);
 }
 
 /** Briše sve oglase korisnika sa slikama (razgovori i poruke se brišu kaskadno). */

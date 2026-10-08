@@ -223,7 +223,7 @@ function oznaka_uloge(): array
     if (!$k || !$k['Prava']) {
         return ['Član', 'bg-secondary'];
     }
-    if (($k['Prava'] & P_SVE) === P_SVE && $k['SveSekcije']) {
+    if (($k['Prava'] & P_OSNOVNA) === P_OSNOVNA && $k['SveSekcije']) {
         return ['Glavni admin', 'bg-danger'];
     }
     return [$k['Uloge'][0] ?? 'Admin', 'bg-success'];

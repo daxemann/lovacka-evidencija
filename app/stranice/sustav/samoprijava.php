@@ -69,7 +69,7 @@ $clanovi = redovi('SELECT c.* FROM Clanovi c WHERE c.Status=0 AND NOT EXISTS (SE
 $poruka = "Pozdrav,\n\nudruga ima novu evidenciju članova. Ovdje se možeš sam prijaviti (ime, mobitel, korisničko ime i lozinka):\n\n{$link}\n\nNakon toga administrator odobri pristup, a ti onda možeš vidjeti svoje podatke i upisivati radne akcije.";
 ob_start(); ?>
 <h1 class="h3 mb-1">Samoprijava članova</h1>
-<p class="text-muted">Jedna zajednička poveznica za sve (npr. u WhatsApp grupu). Svatko se sam prijavi, a vi ga ovdje povežete s članom i odobrite.
+<p class="text-muted">Jedna zajednička poveznica za sve (npr. u WhatsApp ili Viber grupu). Svatko se sam prijavi, a vi ga ovdje povežete s članom i odobrite.
     Bez vašeg odobrenja nitko ne vidi ništa.</p>
 
 <div class="card mb-4"><div class="card-body">
@@ -79,8 +79,7 @@ ob_start(); ?>
             <button type="button" class="btn btn-outline-secondary" data-kopiraj="#sp-link">Kopiraj</button></div>
         <textarea id="sp-poruka" class="form-control mb-2" rows="6"><?= e($poruka) ?></textarea>
         <div class="d-flex flex-wrap gap-2">
-            <a class="btn btn-success btn-sm" target="_blank" rel="noopener" href="https://wa.me/?text=<?= e(rawurlencode($poruka)) ?>">Podijeli na WhatsApp</a>
-            <button type="button" class="btn btn-outline-secondary btn-sm" data-kopiraj="#sp-poruka">Kopiraj poruku</button>
+            <?= gumbi_dijeljenja($poruka) ?>
             <form method="post" class="d-inline"><?= csrf() ?><button name="radnja" value="ukljuci" class="btn btn-outline-primary btn-sm" data-potvrda="Napraviti novu poveznicu? Stara odmah prestaje vrijediti.">Nova poveznica</button></form>
             <form method="post" class="d-inline"><?= csrf() ?><button name="radnja" value="iskljuci" class="btn btn-outline-danger btn-sm" data-potvrda="Isključiti samoprijavu? Poveznica prestaje vrijediti.">Isključi</button></form>
         </div>

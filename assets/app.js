@@ -1,4 +1,16 @@
 /* Lovačka evidencija – mali pomoćnici u pregledniku (bez okvira). */
+window.kopirajTekst = function (t) {
+    if (navigator.clipboard && window.isSecureContext) { return navigator.clipboard.writeText(t).catch(function () {}); }
+    var ta = document.createElement('textarea'); ta.value = t; document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); } catch (x) { /* ništa */ }
+    ta.remove(); return Promise.resolve();
+};
+/* Viber ne prima tekst kroz poveznicu – tekst se kopira, Viber otvara razgovor, korisnik samo zalijepi. */
+window.viberPoruka = function (broj) {
+    var t = document.getElementById('obavijest');
+    if (t) { t.innerHTML = '<div class="flex-grow-1"><b>Tekst je kopiran</b><div class="small text-muted">U Viberu dugo pritisnite polje za poruku → Zalijepi.</div></div>'; t.style.display = 'flex'; setTimeout(function () { t.style.display = 'none'; }, 6000); }
+    setTimeout(function () { location.href = 'viber://chat?number=%2B' + broj; }, 400);
+};
 (function () {
     'use strict';
     // potvrda prije opasnih radnji: <button data-potvrda="Sigurno?">
@@ -60,4 +72,38 @@
         setInterval(provjeri, 20000);
         document.addEventListener('visibilitychange', function () { if (!document.hidden) provjeri(); });
     }
+
+    // ---------- "Dodaj na početni zaslon" (PWA) ----------
+    var ls = { get: function (k) { try { return localStorage.getItem(k); } catch (x) { return null; } }, set: function (k, v) { try { localStorage.setItem(k, v); } catch (x) { /* privatni način */ } } };
+    if ('serviceWorker' in navigator && window.EV && EV.sw && window.isSecureContext) { navigator.serviceWorker.register(EV.sw).catch(function () {}); }
+    var ua = navigator.userAgent || '';
+    var instalirano = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+    var ios = /iphone|ipad|ipod/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    var android = /android/i.test(ua);
+    var uAplikaciji = /FBAN|FBAV|Instagram|Viber|WhatsApp|Line\/|; wv\)|GSA\//i.test(ua);
+    var mobitel = ios || android;
+    var odgodeno = null;
+    var traka = document.getElementById('instal-traka');
+    var upute = document.getElementById('instal-upute');
+    var prikaziGumbe = function () {
+        if (instalirano) return;
+        document.querySelectorAll('.instal-gumb').forEach(function (g) { g.hidden = false; });
+        if (traka && mobitel && ls.get('ev-instal-skriveno') !== '1') traka.hidden = false;
+    };
+    var pokaziUpute = function (s) {
+        if (!upute) return;
+        upute.querySelectorAll('[data-sustav]').forEach(function (d) { d.hidden = d.getAttribute('data-sustav') !== s; });
+        upute.hidden = false;
+    };
+    window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); odgodeno = e; prikaziGumbe(); });
+    window.addEventListener('appinstalled', function () { instalirano = true; if (traka) traka.hidden = true; document.querySelectorAll('.instal-gumb').forEach(function (g) { g.hidden = true; }); });
+    if (!instalirano && (ios || uAplikaciji || android)) prikaziGumbe();
+    document.addEventListener('click', function (e) {
+        if (e.target.closest('[data-instaliraj]')) {
+            if (odgodeno) { odgodeno.prompt(); odgodeno.userChoice.then(function (r) { if (r.outcome === 'accepted' && traka) traka.hidden = true; odgodeno = null; }); }
+            else pokaziUpute(uAplikaciji ? 'app' : (ios ? 'ios' : 'android'));
+        }
+        if (e.target.closest('[data-instal-zatvori]')) { traka.hidden = true; ls.set('ev-instal-skriveno', '1'); }
+        if (e.target.closest('[data-upute-zatvori]') || e.target === upute) upute.hidden = true;
+    });
 })();

@@ -12,6 +12,8 @@ if (je_post()) {
             $v = str_replace("\r\n", "\n", (string) ($_POST[str_replace('.', '_', $kl)] ?? ''));
             spremi_postavku($kl, trim($v) === '' || $v === $zad ? null : $v);
         }
+        spremi_postavku('Kanal.whatsapp', isset($_POST['kanal_wa']) ? '1' : '0');
+        spremi_postavku('Kanal.viber', isset($_POST['kanal_viber']) ? '1' : '0');
         dnevnik('Uređeni predlošci poruka');
         poruka('Spremljeno.');
     }
@@ -23,12 +25,20 @@ $polje = fn(string $kl, int $redaka = 0) => $redaka
     : '<input name="' . str_replace('.', '_', $kl) . '" class="form-control mb-2" value="' . e($p[$kl]) . '">';
 ob_start(); ?>
 <h1 class="h3 mb-1">Predlošci poruka članovima</h1>
-<p class="text-muted">Tekstovi za „Pošalji popis bodova“, „Info o članarini“, pozivnicu i obavijest o odobrenju. Prije slanja se tekst uvijek još može izmijeniti.</p>
+<p class="text-muted">Tekstovi za „Pošalji popis bodova“, „Info o članarini“, podsjetnik za ratu, pozivnicu i obavijest o odobrenju. Prije slanja se tekst uvijek još može izmijeniti.</p>
 <div class="row g-4">
 <div class="col-lg-8">
 <form method="post" action="<?= e(url('sustav/poruke')) ?>"><?= csrf() ?>
+    <div class="card mb-3"><div class="card-body py-2"><b class="small">Gumbi za slanje</b>
+        <div class="d-flex flex-wrap gap-3 mt-1">
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="kanal_wa" id="kwa" value="1"<?= chk(kanal_ukljucen('whatsapp')) ?>><label class="form-check-label" for="kwa">WhatsApp</label></div>
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="kanal_viber" id="kvi" value="1"<?= chk(kanal_ukljucen('viber')) ?>><label class="form-check-label" for="kvi">Viber</label></div>
+        </div>
+        <div class="form-text">Viber ne prima tekst kroz poveznicu: tekst se kopira, Viber otvori razgovor, tekst samo zalijepite (dugi pritisak → Zalijepi).</div>
+    </div></div>
     <h2 class="h6 mt-2">Popis bodova</h2><?= $polje('Predlozak.Bodovi.Naslov') ?><?= $polje('Predlozak.Bodovi', 10) ?>
     <h2 class="h6">Info o članarini (prijateljski, bez opomene)</h2><?= $polje('Predlozak.Clanarina.Naslov') ?><?= $polje('Predlozak.Clanarina', 9) ?>
+    <h2 class="h6">Podsjetnik – dospjela rata</h2><?= $polje('Predlozak.Rata.Naslov') ?><?= $polje('Predlozak.Rata', 8) ?>
     <h2 class="h6">Pozivnica (poveznica za postavljanje lozinke)</h2><?= $polje('Predlozak.Pozivnica', 8) ?>
     <h2 class="h6">Pristup odobren</h2><?= $polje('Predlozak.Odobreno', 5) ?>
     <h2 class="h6">Potpis</h2><?= $polje('Predlozak.Potpis', 2) ?>

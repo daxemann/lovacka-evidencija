@@ -42,9 +42,9 @@ if ($p === '' || !preg_match('#^[a-z0-9\-]+(/[a-z0-9\-]+)*$#', $p)) {
     $p = 'pocetna';
 }
 
-$javne = ['prijava', 'odjava', 'postavljanje', 'pozivnica', 'samoprijava', 'zaboravljena-lozinka', 'nova-lozinka', 'logo', 'vrati', 'manifest'];
+$javne = ['prijava', 'odjava', 'postavljanje', 'pozivnica', 'samoprijava', 'kalendar-pretplata', 'ikona', 'zaboravljena-lozinka', 'nova-lozinka', 'logo', 'vrati', 'manifest'];
 $nemaKorisnika = !vrijednost('SELECT 1 FROM Korisnici LIMIT 1');
-if ($nemaKorisnika && !in_array($p, ['postavljanje', 'vrati', 'logo', 'manifest'], true)) {
+if ($nemaKorisnika && !in_array($p, ['postavljanje', 'vrati', 'logo', 'manifest', 'ikona'], true)) {
     preusmjeri('postavljanje');
 }
 

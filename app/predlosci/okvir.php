@@ -21,7 +21,10 @@ $neprocitano = $k ? broj_neprocitanih((int) $k['Id']) : 0;
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#1f3d1f">
     <link rel="manifest" href="<?= e(url('manifest')) ?>">
-    <link rel="apple-touch-icon" href="<?= e(ima_logo() ? url('logo') : asset('assets/favicon.png')) ?>">
+    <link rel="apple-touch-icon" href="<?= e(url('ikona', ['v' => 180, 'x' => postavka('Udruga.Logo')])) ?>">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="<?= e(udruga_kratko()) ?>">
     <title><?= e($naslov) ?> – <?= e(udruga_kratko()) ?></title>
     <link rel="stylesheet" href="<?= e(asset('assets/bootstrap.min.css')) ?>">
     <link rel="stylesheet" href="<?= e(asset('assets/app.css')) ?>">
@@ -43,16 +46,18 @@ $neprocitano = $k ? broj_neprocitanih((int) $k['Id']) : 0;
         <div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
             <nav class="nav flex-column">
                 <?php if ($k): ?>
-                    <?php if ($k['Prava']): ?><?= $stavka('pocetna', 'Početna', 0, true) ?><?php endif; ?>
+                    <?= $stavka('pocetna', 'Početna', 0, true) ?>
+                    <?= $stavka('kalendar', 'Kalendar') ?>
                     <?php if ($k['ClanId']): ?>
                         <?= $naslovIzb('Moje') ?>
                         <?= $stavka('moje-akcije', 'Moje radne akcije') ?>
                         <?= $stavka('moj-profil', 'Moj profil') ?>
                         <?= $stavka('moja-prava', 'Moja prava') ?>
                     <?php endif; ?>
-                    <?= $naslovIzb('Oglasnik') ?>
-                    <?= $stavka('oglasnik', 'Kupujem / prodajem') ?>
+                    <?= $naslovIzb('Članovi') ?>
+                    <?= $stavka('imenik', 'Imenik') ?>
                     <?= $stavka('poruke', 'Poruke', $neprocitano) ?>
+                    <?= $stavka('oglasnik', 'Oglasnik') ?>
                     <?php if ($k['Prava']): ?>
                         <?= $naslovIzb('Udruga') ?>
                         <?php if (ima(P_CLANOVI_CITAJ)) echo $stavka('clanovi', 'Članovi'); ?>
@@ -71,6 +76,7 @@ $neprocitano = $k ? broj_neprocitanih((int) $k['Id']) : 0;
                         <?= $stavka('sustav/sekcije', 'Sekcije') ?>
                         <?= $stavka('akcije/vrste', 'Vrste radnih akcija') ?>
                         <?= $stavka('sustav/poruke', 'Predlošci poruka') ?>
+                        <?= $stavka('sustav/kalendar', 'Kalendar – vrste') ?>
                         <?= $stavka('sustav/uvoz', 'Uvoz (Google kontakti)') ?>
                         <?= $stavka('sustav/duplikati', 'Provjera duplikata') ?>
                         <?= $stavka('sustav/kopije', 'Sigurnosne kopije') ?>
@@ -94,6 +100,14 @@ $neprocitano = $k ? broj_neprocitanih((int) $k['Id']) : 0;
             <?php endif; ?>
         </div>
         <article class="content px-4 pb-5">
+            <?php if ($k): ?>
+            <div id="instal-traka" class="instal-traka no-print" hidden>
+                <img src="<?= e(url('ikona', ['v' => 192, 'x' => postavka('Udruga.Logo')])) ?>" alt="" width="40" height="40">
+                <div class="flex-grow-1 small"><b>Aplikacija na mobitelu</b><div class="text-muted">Ikona na početnom zaslonu – otvara se kao prava aplikacija.</div></div>
+                <button type="button" class="btn btn-sm btn-success" data-instaliraj>📲 Dodaj</button>
+                <button type="button" class="btn-close ms-1" aria-label="Zatvori" data-instal-zatvori></button>
+            </div>
+            <?php endif; ?>
             <?php foreach (poruke() as [$vrsta, $tekst]): ?>
                 <div class="alert alert-<?= e($vrsta) ?> alert-dismissible fade show no-print" role="alert">
                     <?= $tekst ?>
@@ -105,7 +119,19 @@ $neprocitano = $k ? broj_neprocitanih((int) $k['Id']) : 0;
     </main>
 </div>
 <div id="obavijest" class="lf-toast" style="display:none"></div>
-<script>window.EV = { api: <?= json_encode(url('api/obavijesti')) ?>, poruke: <?= json_encode(url('poruke')) ?>, n: <?= (int) $neprocitano ?> };</script>
+<div class="modal-pozadina" id="instal-upute" hidden><div class="modal-okvir">
+    <button type="button" class="btn-close float-end" aria-label="Zatvori" data-upute-zatvori></button>
+    <h2 class="h5 mb-3">📲 Dodaj na početni zaslon</h2>
+    <div data-sustav="ios"><ol class="mb-2"><li>Dolje u Safariju dodirnite <b>Dijeli</b> <span class="ios-dijeli">⬆︎</span> (kvadrat sa strelicom).</li>
+        <li>Pomaknite se i odaberite <b>Dodaj na početni zaslon</b>.</li><li>Dodirnite <b>Dodaj</b> – ikona je na početnom zaslonu.</li></ol>
+        <p class="small text-muted mb-0">Na iPhoneu to radi samo u Safariju.</p></div>
+    <div data-sustav="android"><ol class="mb-2"><li>Gore desno u pregledniku dodirnite <b>⋮</b> (izbornik).</li>
+        <li>Odaberite <b>Dodaj na početni zaslon</b> ili <b>Instaliraj aplikaciju</b>.</li><li>Potvrdite s <b>Dodaj / Instaliraj</b>.</li></ol></div>
+    <div data-sustav="app"><p>Stranica je otvorena unutar druge aplikacije (WhatsApp, Viber, Facebook…), odakle se ne može dodati na početni zaslon.</p>
+        <p><b>Otvorite je u Chromeu (Android) ili Safariju (iPhone):</b> dodirnite <b>⋮</b> ili <b>…</b> → „Otvori u pregledniku“, ili kopirajte adresu:</p>
+        <div class="input-group"><input class="form-control form-control-sm" id="instal-adresa" readonly value="<?= e(javna_adresa()) ?>"><button class="btn btn-sm btn-outline-secondary" type="button" data-kopiraj="#instal-adresa">Kopiraj</button></div></div>
+</div></div>
+<script>window.EV = { api: <?= json_encode(url('api/obavijesti')) ?>, poruke: <?= json_encode(url('poruke')) ?>, n: <?= (int) $neprocitano ?>, sw: <?= json_encode(bazni_put() . 'sw.js') ?> };</script>
 <script src="<?= e(asset('assets/app.js')) ?>"></script>
 </body>
 </html>
