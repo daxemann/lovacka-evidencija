@@ -1,5 +1,8 @@
 # Promjene
 
+## 1.2.3 – 2026-10
+- Novo: **Pomoć i kontakt** u izborniku – prijava greške, prijedlog ili pitanje autoru e-poštom (verzija programa se automatski dodaje), poveznice na GitHub.
+
 ## 1.2.2 – 2026-10
 - Poruke (članovi i oglasnik): vlastitu poruku možete obrisati (nestaje i kod sugovornika); cijeli razgovor možete obrisati za sebe (sugovornik ga i dalje vidi; kad ga obrišu oba, poruke se trajno brišu).
 

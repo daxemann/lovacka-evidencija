@@ -89,3 +89,13 @@ Baza podataka je **ista kao u Windows i Home Assistant verziji** (ASP.NET). Komp
 ## Licenca
 [MIT](LICENSE) – slobodno za korištenje, mijenjanje i dijeljenje, i za druge udruge.
 Udruga koja koristi aplikaciju odgovorna je za zakonitu obradu osobnih podataka svojih članova (GDPR).
+
+## Kontakt i pomoć
+
+Pronašli ste grešku, trebate pomoć ili imate prijedlog?
+
+- ✉️ E-pošta: **daxemann@googlemail.com**
+- 🐞 GitHub: [Issues](https://github.com/daxemann/lovacka-evidencija/issues)
+- U samom programu: izbornik **Pomoć i kontakt** (verzija programa se automatski dodaje u poruku)
+
+Autor nema pristup podacima vaše udruge – svi podaci ostaju na vašem poslužitelju.

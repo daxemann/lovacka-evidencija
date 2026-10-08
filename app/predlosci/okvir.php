@@ -82,6 +82,8 @@ $neprocitano = $k ? broj_neprocitanih((int) $k['Id']) : 0;
                         <?= $stavka('sustav/kopije', 'Sigurnosne kopije') ?>
                         <?= $stavka('sustav/dnevnik', 'Dnevnik promjena') ?>
                     <?php endif; ?>
+                    <?= $naslovIzb('Program') ?>
+                    <?= $stavka('pomoc', 'Pomoć i kontakt') ?>
                 <?php endif; ?>
             </nav>
         </div>
