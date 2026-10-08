@@ -9,6 +9,8 @@ Radi na običnom PHP webhostingu (bez baze podataka na poslužitelju, bez naredb
 | Administrator | Član na mobitelu |
 |---|---|
 | ![Članovi](docs/clanovi.png) | ![Moje radne akcije](docs/mobitel-akcije.png) |
+| ![Kalendar](docs/kalendar.png) | ![Početna člana](docs/mobitel-pocetna.png) |
+| ![Članarina u ratama](docs/clanarina-rate.png) | ![Termin](docs/mobitel-termin.png) ![Imenik](docs/mobitel-imenik.png) |
 
 ## Što sve može
 
