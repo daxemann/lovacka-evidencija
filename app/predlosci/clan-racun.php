@@ -95,6 +95,11 @@ if ($arhiviran): ?>
         <h2 class="h6">Račun čeka vaše odobrenje</h2>
         <p class="small mb-2">Korisničko ime: <b><?= e($racun['KorisnickoIme']) ?></b> · registriran <?= e(datum_vrijeme($racun['Kreirano'])) ?>
             <?php if ($racun['SuglasnostDatum']): ?> · suglasnost dana <?= e(datum($racun['SuglasnostDatum'])) ?><?php endif; ?></p>
+        <?php if ($sp = samoprijava_podaci((int) $racun['Id'])): ?>
+            <p class="small mb-2">Samoprijava: <b><?= e($sp['Ime'] . ' ' . $sp['Prezime']) ?></b> · 📱 <?= e($sp['Mobilni'] ?? '') ?><?php if (!empty($sp['Email'])): ?> · ✉ <?= e($sp['Email']) ?><?php endif; ?>
+                <?php if (!empty($sp['Napomena'])): ?> · „<?= e($sp['Napomena']) ?>“<?php endif; ?><br>
+                <span class="text-muted">Usporedite s podacima člana prije odobrenja.</span></p>
+        <?php endif; ?>
         <?= $gumb('odobri', 'Odobri pristup', 'btn-success') ?>
         <?= $gumb('odbij', 'Odbij', 'btn-outline-danger ms-2', [], 'Odbiti? Račun se briše.') ?>
     </div>

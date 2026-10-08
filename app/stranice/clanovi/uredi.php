@@ -192,6 +192,7 @@ if (je_post()) {
             $racun = racun_clana($id);
             if ($racun && !$racun['Odobren']) {
                 azuriraj('Korisnici', (int) $racun['Id'], ['Odobren' => 1, 'OdobrenDatum' => sada(), 'OdobrioIme' => $k['Naziv']]);
+                samoprijava_spremi((int) $racun['Id'], null);
                 $_SESSION['odobreno_tekst'][$id] = poruka_odobreno($clan, $racun['KorisnickoIme']);
                 dnevnik('Odobren pristup', 'Clan', $id, puno_ime($clan) . ' (' . $racun['KorisnickoIme'] . ')');
                 poruka('Pristup je odobren.');
@@ -210,6 +211,7 @@ if (je_post()) {
                 q('DELETE FROM ResetiLozinki WHERE KorisnikId=?', [$racun['Id']]);
                 q('DELETE FROM PorukeRazgovora WHERE PosiljateljId=?', [$racun['Id']]);
                 q('DELETE FROM Korisnici WHERE Id=?', [$racun['Id']]);
+                samoprijava_spremi((int) $racun['Id'], null);
                 dnevnik($radnja === 'odbij' ? 'Odbijena registracija' : 'Obrisan korisnički račun', 'Clan', $id, puno_ime($clan) . ' (' . $racun['KorisnickoIme'] . ')');
                 poruka($radnja === 'odbij' ? 'Registracija je odbijena, račun obrisan.' : 'Račun je obrisan. Podaci člana su sačuvani.');
             }

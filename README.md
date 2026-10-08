@@ -30,7 +30,7 @@ Radi na običnom PHP webhostingu (bez baze podataka na poslužitelju, bez naredb
 - **Oglasnik „Kupujem / prodajem“** – oružje, streljivo, optika, pribor, odjeća, psi… sa slikama i porukama među članovima
 
 **Sigurnost**
-- pristup samo putem **pozivnice** (član sam postavlja lozinku) + **odobrenje administratora**
+- pristup putem osobne **pozivnice** ili jedne **zajedničke poveznice za samoprijavu** (npr. u WhatsApp grupi) – uvijek uz **odobrenje administratora**
 - lozinke šifrirane (PBKDF2), zaključavanje nakon 5 pogrešnih pokušaja, zaštita od CSRF-a
 - arhivirani član automatski gubi pristup
 

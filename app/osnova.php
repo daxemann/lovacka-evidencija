@@ -5,7 +5,7 @@
  */
 declare(strict_types=1);
 
-const VERZIJA = '1.0.0';
+const VERZIJA = '1.1.0';
 const KORIJEN = __DIR__ . '/..';
 
 // ---------- Prava (bit-zastavice, iste kao u .NET verziji) ----------

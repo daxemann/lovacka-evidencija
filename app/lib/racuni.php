@@ -92,3 +92,56 @@ function povezi_racune(): int
     }
     return $n;
 }
+
+// ---------- Samoprijava (zajednička poveznica za sve članove) ----------
+const SAMOPRIJAVA_MAX_NA_CEKANJU = 30;
+
+/** Važeći token zajedničke poveznice ili null ako je isključena. */
+function samoprijava_token(): ?string
+{
+    return postavka('Samoprijava.Token');
+}
+function samoprijava_link(): ?string
+{
+    $t = samoprijava_token();
+    return $t ? apsolutni_url('samoprijava', ['k' => $t]) : null;
+}
+function samoprijava_ukljuci(): string
+{
+    spremi_postavku('Samoprijava.Token', substr(bin2hex(random_bytes(12)), 0, 20));
+    return (string) samoprijava_link();
+}
+function samoprijava_iskljuci(): void
+{
+    spremi_postavku('Samoprijava.Token', null);
+}
+/** Podaci koje je osoba sama upisala (Ime, Prezime, Mobilni, Email, SekcijaId, Napomena, Kreirano). */
+function samoprijava_podaci(int $korisnikId): ?array
+{
+    $j = postavka('Samoprijava.K' . $korisnikId);
+    return $j ? (json_decode($j, true) ?: null) : null;
+}
+function samoprijava_spremi(int $korisnikId, ?array $podaci): void
+{
+    spremi_postavku('Samoprijava.K' . $korisnikId, $podaci ? json_encode($podaci, JSON_UNESCAPED_UNICODE) : null);
+}
+/** Računi iz samoprijave koji čekaju odobrenje (povezani i nepovezani s članom). */
+function samoprijave_na_cekanju(): array
+{
+    $rez = [];
+    foreach (redovi('SELECT k.*, c.Ime AS CIme, c.Prezime AS CPrezime FROM Korisnici k LEFT JOIN Clanovi c ON c.Id=k.ClanId WHERE k.Odobren=0 ORDER BY k.Kreirano') as $k) {
+        $p = samoprijava_podaci((int) $k['Id']);
+        if ($p) {
+            $rez[] = $k + ['Podaci' => $p];
+        }
+    }
+    return $rez;
+}
+/** Briše račun koji još nije odobren (odbijena registracija). */
+function obrisi_neodobreni_racun(int $korisnikId): void
+{
+    q('DELETE FROM KorisnikUloge WHERE KorisnikId=?', [$korisnikId]);
+    q('DELETE FROM ResetiLozinki WHERE KorisnikId=?', [$korisnikId]);
+    q('DELETE FROM Korisnici WHERE Id=? AND Odobren=0', [$korisnikId]);
+    samoprijava_spremi($korisnikId, null);
+}

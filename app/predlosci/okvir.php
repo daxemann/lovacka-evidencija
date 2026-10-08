@@ -66,6 +66,7 @@ $neprocitano = $k ? broj_neprocitanih((int) $k['Id']) : 0;
                         <?= $stavka('sustav/udruga', 'Podaci o udruzi') ?>
                         <?= $stavka('sustav/postavke', 'E-pošta i adresa') ?>
                         <?= $stavka('sustav/korisnici', 'Korisnici', (int) vrijednost('SELECT COUNT(*) FROM Korisnici WHERE Odobren=0 AND Aktivan=1')) ?>
+                        <?= $stavka('sustav/samoprijava', 'Samoprijava', (int) vrijednost('SELECT COUNT(*) FROM Korisnici WHERE Odobren=0 AND ClanId IS NULL')) ?>
                         <?= $stavka('sustav/uloge', 'Uloge i prava') ?>
                         <?= $stavka('sustav/sekcije', 'Sekcije') ?>
                         <?= $stavka('akcije/vrste', 'Vrste radnih akcija') ?>

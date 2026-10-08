@@ -12,16 +12,17 @@ $bezRacuna = (int) vrijednost('SELECT COUNT(*) FROM Clanovi c WHERE c.Status=0 A
 $pozivnice = (int) vrijednost('SELECT COUNT(*) FROM Pozivnice WHERE Iskoristena IS NULL AND Opozvana=0 AND VrijediDo>?', [sada()]);
 ob_start(); ?>
 <h1 class="h3 mb-1">Korisnici (pregled)</h1>
-<p class="text-muted">Pristup se dodjeljuje samo na jednom mjestu: <b>Članovi → član → Pristup i uloge</b> (pozivnica, odobrenje, uloge, lozinka, brisanje). Klik na redak otvara člana.</p>
+<p class="text-muted">Pristup se dodjeljuje na kartici člana: <b>Članovi → član → Pristup i uloge</b> (pozivnica, odobrenje, uloge, lozinka, brisanje). Klik na redak otvara člana.
+    Za sve odjednom: <a href="<?= e(url('sustav/samoprijava')) ?>">zajednička poveznica za samoprijavu</a>.</p>
 <?php if ($cekaju): ?>
     <div class="alert alert-warning"><b>Čekaju odobrenje:</b>
-        <?php foreach ($cekaju as $r): ?> <a href="<?= e(url('clanovi/uredi', ['id' => $r['ClanId'], 'kartica' => 'racun'])) ?>" class="ms-2"><?= e(trim($r['Ime'] . ' ' . $r['Prezime'])) ?> (<?= e($r['KorisnickoIme']) ?>)</a><?php endforeach; ?></div>
+        <?php foreach ($cekaju as $r): ?> <a href="<?= e($r['ClanId'] ? url('clanovi/uredi', ['id' => $r['ClanId'], 'kartica' => 'racun']) : url('sustav/samoprijava')) ?>" class="ms-2"><?= e(trim($r['Ime'] . ' ' . $r['Prezime']) ?: (string) $r['PrikaznoIme']) ?> (<?= e($r['KorisnickoIme']) ?>)</a><?php endforeach; ?></div>
 <?php endif; ?>
 <div class="d-flex flex-wrap gap-4 mb-2 small"><span>Računa: <b><?= count($racuni) ?></b></span><span>Aktivnih članova bez računa: <b><?= $bezRacuna ?></b></span><span>Važećih pozivnica (čekaju člana): <b><?= $pozivnice ?></b></span></div>
 <div class="table-responsive"><table class="table table-hover align-middle">
     <thead><tr><th>Član</th><th>Sekcija</th><th>Korisničko ime</th><th>Status</th><th>Uloge</th><th>Zadnja prijava</th></tr></thead>
     <tbody>
-    <?php foreach ($racuni as $r): $href = $r['ClanId'] ? url('clanovi/uredi', ['id' => $r['ClanId'], 'kartica' => 'racun']) : ''; ?>
+    <?php foreach ($racuni as $r): $href = $r['ClanId'] ? url('clanovi/uredi', ['id' => $r['ClanId'], 'kartica' => 'racun']) : (!$r['Odobren'] ? url('sustav/samoprijava') : ''); ?>
         <tr class="<?= $href ? 'klikabilno' : '' ?>" <?= $href ? 'onclick="location.href=\'' . e($href) . '\'"' : '' ?>>
             <td><?= $r['ClanId'] ? e(trim($r['Prezime'] . ' ' . $r['Ime'])) : e($r['PrikaznoIme'] ?: '—') . ' <span class="badge bg-danger ms-1" title="Račun nije povezan s članom">nije povezan</span>' ?></td>
             <td><?= e($r['Sekcija'] ?? '') ?></td>

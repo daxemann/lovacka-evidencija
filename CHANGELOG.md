@@ -1,5 +1,10 @@
 # Promjene
 
+## 1.1.0 – 2026-10
+- **Samoprijava**: jedna zajednička poveznica za sve članove (npr. za WhatsApp grupu). Svatko upiše ime, mobitel, korisničko ime i lozinku;
+  administrator u *Sustav → Samoprijava* prijavu poveže s postojećim članom (prijedlozi po imenu/mobitelu) ili upiše novog člana, pa odobri pristup.
+  Poveznica se može u svakom trenutku zamijeniti novom ili isključiti. Zaštita: zamka za robote, najviše 5 pokušaja na sat, najviše 30 prijava na čekanju.
+
 ## 1.0.0 – 2026-10
 Prva PHP verzija (prijenos s ASP.NET / Blazor verzije „Evidencija 2.0“).
 
