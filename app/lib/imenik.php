@@ -75,3 +75,45 @@ function posalji_izravnu_poruku(int $razgovorId, int $posiljateljId, string $tek
         }
     }
 }
+
+// ---------- Brisanje poruka ----------
+// Vrsta 'o' = oglasnik (Razgovori / PorukeRazgovora), 'c' = članovi (Razgovori2 / Poruke2)
+const TABLICE_PORUKA = ['o' => ['Razgovori', 'PorukeRazgovora'], 'c' => ['Razgovori2', 'Poruke2']];
+
+/** Do koje poruke je korisnik "obrisao" razgovor za sebe (0 = ništa). */
+function skriveno_do(string $vrsta, int $razgovorId, int $korisnikId): int
+{
+    return (int) vrijednost('SELECT DoPorukeId FROM SkriveniRazgovori WHERE Vrsta=? AND RazgovorId=? AND KorisnikId=?', [$vrsta, $razgovorId, $korisnikId]);
+}
+/** Briše razgovor za korisnika (drugi ga i dalje vidi). Kad su ga obrisala oba sudionika, brišu se i poruke. */
+function obrisi_razgovor_za_mene(string $vrsta, int $razgovorId, int $korisnikId, array $sudionici): void
+{
+    [$tR, $tP] = TABLICE_PORUKA[$vrsta];
+    $max = (int) vrijednost("SELECT COALESCE(MAX(Id),0) FROM \"$tP\" WHERE RazgovorId=?", [$razgovorId]);
+    q("UPDATE \"$tP\" SET Procitano=1 WHERE RazgovorId=? AND PosiljateljId<>?", [$razgovorId, $korisnikId]);
+    q('INSERT INTO SkriveniRazgovori (Vrsta, RazgovorId, KorisnikId, DoPorukeId) VALUES (?,?,?,?)
+       ON CONFLICT(Vrsta, RazgovorId, KorisnikId) DO UPDATE SET DoPorukeId=excluded.DoPorukeId', [$vrsta, $razgovorId, $korisnikId, $max]);
+    $min = $max;
+    foreach ($sudionici as $s) {
+        $min = min($min, skriveno_do($vrsta, $razgovorId, (int) $s));
+    }
+    if ($min > 0) {
+        q("DELETE FROM \"$tP\" WHERE RazgovorId=? AND Id<=?", [$razgovorId, $min]);
+    }
+}
+/** Briše vlastitu poruku (za oba sudionika). */
+function obrisi_svoju_poruku(string $vrsta, int $razgovorId, int $porukaId, int $korisnikId): void
+{
+    $tP = TABLICE_PORUKA[$vrsta][1];
+    q("DELETE FROM \"$tP\" WHERE Id=? AND RazgovorId=? AND PosiljateljId=?", [$porukaId, $razgovorId, $korisnikId]);
+}
+
+/** Oblačić poruke; vlastitu poruku pošiljatelj može obrisati (×). */
+function oblak_poruke(array $p, int $ja, string $akcija): string
+{
+    $moja = (int) $p['PosiljateljId'] === $ja;
+    $brisi = $moja ? '<form method="post" action="' . e($akcija) . '" class="chat-brisi">' . csrf() . '<input type="hidden" name="radnja" value="obrisi-poruku"><input type="hidden" name="pid" value="' . (int) $p['Id'] . '">'
+        . '<button class="btn btn-link btn-sm p-0" title="Obriši poruku" data-potvrda="Obrisati ovu poruku? Nestaje i kod sugovornika.">×</button></form>' : '';
+    return '<div class="chat-red ' . ($moja ? 'moja' : '') . '" data-id="' . (int) $p['Id'] . '"><div class="chat-oblak">' . $brisi . '<div style="white-space:pre-wrap">'
+        . e($p['Tekst']) . '</div><div class="chat-vrijeme">' . e(date('d.m. H:i', strtotime($p['Vrijeme']))) . ($moja && $p['Procitano'] ? ' ✓✓' : '') . '</div></div></div>';
+}

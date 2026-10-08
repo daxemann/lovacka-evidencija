@@ -6,6 +6,15 @@ $r = razgovor_za($id, $k['Id']);
 if (!$r) {
     stranica('Razgovor', '<a href="' . e(url('poruke')) . '" class="small">← Sve poruke</a><p class="text-muted mt-2">Razgovor ne postoji.</p>');
 }
+if (je_post() && ($_POST['radnja'] ?? '') === 'obrisi-poruku') {
+    obrisi_svoju_poruku('o', $id, (int) ($_POST['pid'] ?? 0), $k['Id']);
+    preusmjeri('poruke/razgovor', ['id' => $id]);
+}
+if (je_post() && ($_POST['radnja'] ?? '') === 'obrisi-razgovor') {
+    obrisi_razgovor_za_mene('o', $id, $k['Id'], [(int) $r['KupacId'], (int) $r['ProdavateljId']]);
+    poruka('Razgovor je obrisan (kod vas).');
+    preusmjeri('poruke');
+}
 if (je_post()) {
     posalji_poruku($id, $k['Id'], (string) ($_POST['tekst'] ?? ''));
     if (($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'fetch') {
@@ -17,17 +26,19 @@ oznaci_procitano($id, $k['Id']);
 $jaProdajem = (int) $r['ProdavateljId'] === $k['Id'];
 $drugi = ime_korisnika($jaProdajem ? (int) $r['KupacId'] : (int) $r['ProdavateljId']);
 $slika = slike_oglasa((int) $r['OglasId'])[0] ?? null;
-$poruke = redovi('SELECT * FROM PorukeRazgovora WHERE RazgovorId=? ORDER BY Id', [$id]);
-$oblak = fn($p) => '<div class="chat-red ' . ((int) $p['PosiljateljId'] === $k['Id'] ? 'moja' : '') . '" data-id="' . (int) $p['Id'] . '"><div class="chat-oblak"><div style="white-space:pre-wrap">'
-    . e($p['Tekst']) . '</div><div class="chat-vrijeme">' . e(date('d.m. H:i', strtotime($p['Vrijeme']))) . ((int) $p['PosiljateljId'] === $k['Id'] && $p['Procitano'] ? ' ✓✓' : '') . '</div></div></div>';
+$skr = skriveno_do('o', $id, $k['Id']);
+$poruke = redovi('SELECT * FROM PorukeRazgovora WHERE RazgovorId=? AND Id>? ORDER BY Id', [$id, $skr]);
+$oblak = fn($p) => oblak_poruke($p, $k['Id'], url('poruke/razgovor', ['id' => $id]));
 if (isset($_GET['nakon'])) { // AJAX: nove poruke
     session_write_close();
     $nove = redovi('SELECT * FROM PorukeRazgovora WHERE RazgovorId=? AND Id>? ORDER BY Id', [$id, (int) $_GET['nakon']]);
     json(['html' => implode('', array_map($oblak, $nove)), 'zadnji' => $nove ? (int) end($nove)['Id'] : (int) $_GET['nakon'],
-          'procitano' => array_map('intval', array_column(redovi('SELECT Id FROM PorukeRazgovora WHERE RazgovorId=? AND PosiljateljId=? AND Procitano=1', [$id, $k['Id']]), 'Id'))]);
+          'procitano' => array_map('intval', array_column(redovi('SELECT Id FROM PorukeRazgovora WHERE RazgovorId=? AND PosiljateljId=? AND Procitano=1', [$id, $k['Id']]), 'Id')),
+          'ids' => array_map('intval', array_column(redovi('SELECT Id FROM PorukeRazgovora WHERE RazgovorId=? AND Id>?', [$id, $skr]), 'Id'))]);
 }
 ob_start(); ?>
-<a href="<?= e(url('poruke')) ?>" class="small">← Sve poruke</a>
+<div class="d-flex align-items-center"><a href="<?= e(url('poruke')) ?>" class="small me-auto">← Sve poruke</a>
+    <form method="post" action="<?= e(url('poruke/razgovor', ['id' => $id])) ?>"><?= csrf() ?><button name="radnja" value="obrisi-razgovor" class="btn btn-sm btn-link text-danger" data-potvrda="Obrisati cijeli razgovor? Briše se samo kod vas – sugovornik ga i dalje vidi.">🗑 Obriši razgovor</button></form></div>
 <div class="d-flex align-items-center gap-3 my-2">
     <div class="oglas-mini-slika"><?php if ($slika): ?><img src="<?= e(foto_url($slika)) ?>" alt=""><?php endif; ?></div>
     <div class="overflow-hidden">
@@ -53,6 +64,7 @@ ob_start(); ?>
         fetch(adresa + '&nakon=' + zadnji, { credentials: 'same-origin' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
             if (!j) return;
             if (j.html) { var dno = chat.scrollTop + chat.clientHeight >= chat.scrollHeight - 30; chat.insertAdjacentHTML('beforeend', j.html); zadnji = j.zadnji; if (dno) chat.scrollTop = chat.scrollHeight; }
+            if (j.ids) chat.querySelectorAll('.chat-red[data-id]').forEach(function (el) { if (j.ids.indexOf(+el.dataset.id) < 0) el.remove(); });
             (j.procitano || []).forEach(function (pid) { var v = chat.querySelector('.chat-red.moja[data-id="' + pid + '"] .chat-vrijeme'); if (v && v.textContent.indexOf('✓✓') < 0) v.textContent += ' ✓✓'; });
         }).catch(function () {});
     };

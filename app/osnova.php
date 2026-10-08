@@ -5,7 +5,7 @@
  */
 declare(strict_types=1);
 
-const VERZIJA = '1.2.1';
+const VERZIJA = '1.2.2';
 const KORIJEN = __DIR__ . '/..';
 
 // ---------- Prava (bit-zastavice, iste kao u .NET verziji) ----------
@@ -106,7 +106,7 @@ function db(): PDO
  * Dodatne tablice PHP verzije (PRAGMA user_version). .NET verzija ih ne poznaje i zanemaruje,
  * pa baza i dalje radi u oba smjera.
  */
-const SHEMA_PHP = 1;
+const SHEMA_PHP = 2;
 function nadogradi_bazu(PDO $pdo): void
 {
     $v = (int) $pdo->query('PRAGMA user_version')->fetchColumn();
@@ -182,6 +182,10 @@ CREATE INDEX IF NOT EXISTS "IX_Poruke2_RazgovorId" ON "Poruke2" ("RazgovorId");
 UPDATE "Uloge" SET "Prava" = "Prava" | 768 WHERE ("Prava" & 255) = 255;
 UPDATE "Uloge" SET "Prava" = "Prava" | 256 WHERE "Naziv" LIKE 'Predsjednik%' OR "Naziv" LIKE 'Lovnik%' OR "Naziv" = 'Domar';
 SQL);
+    }
+    if ($v < 2) {
+        $pdo->exec('CREATE TABLE IF NOT EXISTS "SkriveniRazgovori" ("Vrsta" TEXT NOT NULL, "RazgovorId" INTEGER NOT NULL, "KorisnikId" INTEGER NOT NULL,
+            "DoPorukeId" INTEGER NOT NULL, PRIMARY KEY ("Vrsta", "RazgovorId", "KorisnikId"))');
     }
     $pdo->exec('PRAGMA user_version = ' . SHEMA_PHP);
     $pdo->commit();

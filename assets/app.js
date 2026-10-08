@@ -73,6 +73,13 @@ window.viberPoruka = function (broj) {
         document.addEventListener('visibilitychange', function () { if (!document.hidden) provjeri(); });
     }
 
+    // dodir na vlastitu poruku prikazuje gumb za brisanje (mobitel nema "hover")
+    document.addEventListener('click', function (e) {
+        if (e.target.closest('.chat-brisi')) return;
+        var r = e.target.closest('.chat-red.moja');
+        document.querySelectorAll('.chat-red.aktivna').forEach(function (x) { if (x !== r) x.classList.remove('aktivna'); });
+        if (r) r.classList.toggle('aktivna');
+    });
     // ---------- "Dodaj na početni zaslon" (PWA) ----------
     var ls = { get: function (k) { try { return localStorage.getItem(k); } catch (x) { return null; } }, set: function (k, v) { try { localStorage.setItem(k, v); } catch (x) { /* privatni način */ } } };
     if ('serviceWorker' in navigator && window.EV && EV.sw && window.isSecureContext) { navigator.serviceWorker.register(EV.sw).catch(function () {}); }

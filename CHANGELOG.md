@@ -1,5 +1,8 @@
 # Promjene
 
+## 1.2.2 – 2026-10
+- Poruke (članovi i oglasnik): vlastitu poruku možete obrisati (nestaje i kod sugovornika); cijeli razgovor možete obrisati za sebe (sugovornik ga i dalje vidi; kad ga obrišu oba, poruke se trajno brišu).
+
 ## 1.2.1 – 2026-10
 - Članarina: postojećim zaduženjima bez plana jednim klikom dodijeliti plan plaćanja (npr. nakon nadogradnje).
 

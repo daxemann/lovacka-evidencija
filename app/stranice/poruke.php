@@ -4,12 +4,17 @@ $k = korisnik();
 $izravni = redovi('SELECT r.*, CASE WHEN r.KorisnikA=? THEN r.KorisnikB ELSE r.KorisnikA END AS Drugi,
         (SELECT Tekst FROM Poruke2 p WHERE p.RazgovorId=r.Id ORDER BY p.Id DESC LIMIT 1) AS Zadnja,
         (SELECT COUNT(*) FROM Poruke2 p WHERE p.RazgovorId=r.Id AND p.PosiljateljId<>? AND p.Procitano=0) AS Novih
-    FROM Razgovori2 r WHERE (r.KorisnikA=? OR r.KorisnikB=?) AND EXISTS (SELECT 1 FROM Poruke2 p WHERE p.RazgovorId=r.Id) ORDER BY r.ZadnjaPoruka DESC', [$k['Id'], $k['Id'], $k['Id'], $k['Id']]);
+    FROM Razgovori2 r WHERE (r.KorisnikA=? OR r.KorisnikB=?)
+      AND EXISTS (SELECT 1 FROM Poruke2 p WHERE p.RazgovorId=r.Id AND p.Id > COALESCE((SELECT s.DoPorukeId FROM SkriveniRazgovori s WHERE s.Vrsta=\'c\' AND s.RazgovorId=r.Id AND s.KorisnikId=?),0))
+    ORDER BY r.ZadnjaPoruka DESC', [$k['Id'], $k['Id'], $k['Id'], $k['Id'], $k['Id']]);
 $lista = redovi('SELECT r.*, o.Naslov, o.KorisnikId AS ProdavateljId,
         (SELECT Datoteka FROM OglasSlike s WHERE s.OglasId=o.Id ORDER BY s.Redoslijed, s.Id LIMIT 1) AS Slika,
         (SELECT Tekst FROM PorukeRazgovora p WHERE p.RazgovorId=r.Id ORDER BY p.Id DESC LIMIT 1) AS Zadnja,
         (SELECT COUNT(*) FROM PorukeRazgovora p WHERE p.RazgovorId=r.Id AND p.PosiljateljId<>? AND p.Procitano=0) AS Novih
-    FROM Razgovori r JOIN Oglasi o ON o.Id=r.OglasId WHERE r.KupacId=? OR o.KorisnikId=? ORDER BY r.ZadnjaPoruka DESC', [$k['Id'], $k['Id'], $k['Id']]);
+    FROM Razgovori r JOIN Oglasi o ON o.Id=r.OglasId WHERE (r.KupacId=? OR o.KorisnikId=?)
+      AND (NOT EXISTS (SELECT 1 FROM SkriveniRazgovori s WHERE s.Vrsta=\'o\' AND s.RazgovorId=r.Id AND s.KorisnikId=?)
+           OR EXISTS (SELECT 1 FROM PorukeRazgovora p WHERE p.RazgovorId=r.Id AND p.Id > (SELECT s.DoPorukeId FROM SkriveniRazgovori s WHERE s.Vrsta=\'o\' AND s.RazgovorId=r.Id AND s.KorisnikId=?)))
+    ORDER BY r.ZadnjaPoruka DESC', [$k['Id'], $k['Id'], $k['Id'], $k['Id'], $k['Id']]);
 ob_start(); ?>
 <div class="d-flex align-items-center mb-3"><h1 class="h4 mb-0 me-auto">Poruke</h1><a class="btn btn-sm btn-primary" href="<?= e(url('imenik')) ?>">+ Nova poruka (imenik)</a></div>
 <?php if ($izravni): ?><h2 class="h6 text-muted">Članovi</h2>

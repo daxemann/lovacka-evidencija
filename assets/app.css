@@ -332,3 +332,7 @@ main {
 .podsjetnik { border-left: 3px solid #f0ad4e; padding-left: .5rem; }
 .border-dashed { border-style: dashed !important; }
 @media (max-width: 640px) { .kal-sat { display: none; } .kal-dog { white-space: normal; line-height: 1.1; padding: 1px 2px; max-height: 2.3em; } }
+.chat-oblak { position: relative; }
+.chat-brisi { position: absolute; top: -.35rem; right: -.35rem; display: none; }
+.chat-brisi button { background: #fff; border-radius: 50%; width: 1.4rem; height: 1.4rem; line-height: 1; color: #c62828; box-shadow: 0 1px 3px rgba(0,0,0,.25); text-decoration: none; }
+.chat-red.moja:hover .chat-brisi, .chat-red.moja:focus-within .chat-brisi, .chat-red.moja.aktivna .chat-brisi { display: block; }

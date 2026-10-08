@@ -22,6 +22,15 @@ if (!$r) {
     stranica('Razgovor', '<a href="' . e(url('poruke')) . '" class="small">← Sve poruke</a><p class="text-muted mt-2">Razgovor ne postoji.</p>');
 }
 $id = (int) $r['Id'];
+if ($id && je_post() && ($_POST['radnja'] ?? '') === 'obrisi-poruku') {
+    obrisi_svoju_poruku('c', $id, (int) ($_POST['pid'] ?? 0), $k['Id']);
+    preusmjeri('poruke/osoba', ['r' => $id]);
+}
+if ($id && je_post() && ($_POST['radnja'] ?? '') === 'obrisi-razgovor') {
+    obrisi_razgovor_za_mene('c', $id, $k['Id'], [(int) $r['KorisnikA'], (int) $r['KorisnikB']]);
+    poruka('Razgovor je obrisan (kod vas).');
+    preusmjeri('poruke');
+}
 if ($id && je_post()) {
     posalji_izravnu_poruku($id, $k['Id'], (string) ($_POST['tekst'] ?? ''));
     if (($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'fetch') {
@@ -32,19 +41,21 @@ if ($id && je_post()) {
 if ($id) {
     q('UPDATE Poruke2 SET Procitano=1 WHERE RazgovorId=? AND PosiljateljId<>? AND Procitano=0', [$id, $k['Id']]);
 }
-$poruke = $id ? redovi('SELECT * FROM Poruke2 WHERE RazgovorId=? ORDER BY Id', [$id]) : [];
-$oblak = fn($p) => '<div class="chat-red ' . ((int) $p['PosiljateljId'] === $k['Id'] ? 'moja' : '') . '" data-id="' . (int) $p['Id'] . '"><div class="chat-oblak"><div style="white-space:pre-wrap">'
-    . e($p['Tekst']) . '</div><div class="chat-vrijeme">' . e(date('d.m. H:i', strtotime($p['Vrijeme']))) . ((int) $p['PosiljateljId'] === $k['Id'] && $p['Procitano'] ? ' ✓✓' : '') . '</div></div></div>';
+$skr = $id ? skriveno_do('c', $id, $k['Id']) : 0;
+$poruke = $id ? redovi('SELECT * FROM Poruke2 WHERE RazgovorId=? AND Id>? ORDER BY Id', [$id, $skr]) : [];
+$oblak = fn($p) => oblak_poruke($p, $k['Id'], url('poruke/osoba', ['r' => $id]));
 if ($id && isset($_GET['nakon'])) {
     session_write_close();
     $nove = redovi('SELECT * FROM Poruke2 WHERE RazgovorId=? AND Id>? ORDER BY Id', [$id, (int) $_GET['nakon']]);
     json(['html' => implode('', array_map($oblak, $nove)), 'zadnji' => $nove ? (int) end($nove)['Id'] : (int) $_GET['nakon'],
-          'procitano' => array_map('intval', array_column(redovi('SELECT Id FROM Poruke2 WHERE RazgovorId=? AND PosiljateljId=? AND Procitano=1', [$id, $k['Id']]), 'Id'))]);
+          'procitano' => array_map('intval', array_column(redovi('SELECT Id FROM Poruke2 WHERE RazgovorId=? AND PosiljateljId=? AND Procitano=1', [$id, $k['Id']]), 'Id')),
+          'ids' => array_map('intval', array_column(redovi('SELECT Id FROM Poruke2 WHERE RazgovorId=? AND Id>?', [$id, $skr]), 'Id'))]);
 }
 $dc = red('SELECT c.* FROM Korisnici k JOIN Clanovi c ON c.Id=k.ClanId WHERE k.Id=?', [$r['Drugi']]);
 $adresa = $id ? url('poruke/osoba', ['r' => $id]) : url('poruke/osoba', ['k' => $r['Drugi']]);
 ob_start(); ?>
-<a href="<?= e(url('poruke')) ?>" class="small">← Sve poruke</a>
+<div class="d-flex align-items-center"><a href="<?= e(url('poruke')) ?>" class="small me-auto">← Sve poruke</a>
+    <?php if ($id): ?><form method="post" action="<?= e($adresa) ?>"><?= csrf() ?><button name="radnja" value="obrisi-razgovor" class="btn btn-sm btn-link text-danger" data-potvrda="Obrisati cijeli razgovor? Briše se samo kod vas – sugovornik ga i dalje vidi.">🗑 Obriši razgovor</button></form><?php endif; ?></div>
 <div class="d-flex align-items-center gap-3 my-2">
     <?= $dc ? avatar($dc) : '' ?>
     <div class="fw-semibold"><?= e(ime_korisnika((int) $r['Drugi'])) ?></div>
@@ -67,6 +78,7 @@ ob_start(); ?>
         fetch(adresa + '&nakon=' + zadnji, { credentials: 'same-origin' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
             if (!j) return;
             if (j.html) { var dno = chat.scrollTop + chat.clientHeight >= chat.scrollHeight - 30; chat.insertAdjacentHTML('beforeend', j.html); zadnji = j.zadnji; if (dno) chat.scrollTop = chat.scrollHeight; }
+            if (j.ids) chat.querySelectorAll('.chat-red[data-id]').forEach(function (el) { if (j.ids.indexOf(+el.dataset.id) < 0) el.remove(); });
             (j.procitano || []).forEach(function (pid) { var v = chat.querySelector('.chat-red.moja[data-id="' + pid + '"] .chat-vrijeme'); if (v && v.textContent.indexOf('✓✓') < 0) v.textContent += ' ✓✓'; });
         }).catch(function () {});
     };
