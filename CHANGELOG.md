@@ -1,5 +1,8 @@
 # Promjene
 
+## 1.2.1 – 2026-10
+- Članarina: postojećim zaduženjima bez plana jednim klikom dodijeliti plan plaćanja (npr. nakon nadogradnje).
+
 ## 1.2.0 – 2026-10
 - **Kalendar** termina: cijela udruga ili odabrane sekcije (ostale sekcije ih ne vide), vrste s bojama (Sustav → Kalendar – vrste),
   „dolazim / ne dolazim“ (nije obavezno), popis dolazaka, navigacija (Google Maps), dodaj u kalendar (.ics), osobna pretplata za kalendar mobitela,

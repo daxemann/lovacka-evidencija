@@ -25,6 +25,18 @@ if (je_post() && $moze) {
             dnevnik('Skupno zaduženje članarine', null, null, "$godina: $n × " . novac($izn) . ' €' . ($plan ? ' – ' . opis_plana($plan) : ''));
             poruka("Zaduženo $n članova za $godina.");
         }
+    } elseif (($_POST['radnja'] ?? '') === 'plan-postojecima') {
+        $plan = plan_po_id($godina, (string) ($_POST['plan'] ?? ''));
+        if ($plan) {
+            $bez = redovi("SELECT x.Id FROM Clanarine x JOIN Clanovi c ON c.Id=x.ClanId WHERE x.Godina=? AND $op AND NOT EXISTS (SELECT 1 FROM ClanarinaRate r WHERE r.ClanarinaId=x.Id)", [$godina]);
+            transakcija(function () use ($bez, $plan) {
+                foreach ($bez as $x) {
+                    postavi_rate((int) $x['Id'], $plan['rate']);
+                }
+            });
+            dnevnik('Plan plaćanja za postojeća zaduženja', null, null, "$godina: " . count($bez) . ' × ' . opis_plana($plan));
+            poruka(count($bez) . ' zaduženja dobilo je plan „' . e($plan['naziv']) . '“.');
+        }
     } elseif (isset($_POST['placeno'])) {
         $cl = red("SELECT x.*, c.Ime, c.Prezime FROM Clanarine x JOIN Clanovi c ON c.Id=x.ClanId WHERE x.Id=? AND $op", [(int) $_POST['placeno']]);
         if ($cl) {
@@ -95,6 +107,15 @@ ob_start(); ?>
         <div class="col-md-3"><button class="btn btn-primary w-100" <?= $sviZaSkupno ? '' : 'disabled' ?> data-potvrda="Zadužiti <?= $sviZaSkupno ?> članova?">Zaduži (<?= $sviZaSkupno ?> članova)</button></div>
     </form>
 </div></div>
+<?php endif; ?>
+<?php $bezRata = $moze ? (int) vrijednost("SELECT COUNT(*) FROM Clanarine x JOIN Clanovi c ON c.Id=x.ClanId WHERE x.Godina=? AND $op AND NOT EXISTS (SELECT 1 FROM ClanarinaRate r WHERE r.ClanarinaId=x.Id)", [$godina]) : 0;
+if ($bezRata && ($planoviGod = planovi_clanarine($godina))): ?>
+<div class="alert alert-info no-print"><form method="post" action="<?= e(url('clanarina', ['godina' => $godina, 'filter' => $filter])) ?>" class="d-flex flex-wrap gap-2 align-items-center"><?= csrf() ?>
+    <input type="hidden" name="radnja" value="plan-postojecima">
+    <span><b><?= $bezRata ?></b> zaduženja za <?= $godina ?>. još nema plan plaćanja (ni datume dospijeća). Dodijeli plan:</span>
+    <select name="plan" class="form-select form-select-sm" style="width:auto"><?php foreach ($planoviGod as $pl): ?><option value="<?= e($pl['id']) ?>"<?= !empty($pl['zadano']) ? ' selected' : '' ?>><?= e(opis_plana($pl)) ?></option><?php endforeach; ?></select>
+    <button class="btn btn-sm btn-primary" data-potvrda="Dodijeliti plan svim zaduženjima bez plana? Pojedinačno se može promijeniti na kartici člana.">Dodijeli</button>
+</form></div>
 <?php endif; ?>
 <div class="d-flex gap-4 mb-2">
     <span>Zaduženo: <b><?= novac(array_sum(array_map(fn($r) => (float) $r['cl']['Iznos'], $placaju))) ?> €</b></span>
