@@ -1,5 +1,8 @@
 # Promjene
 
+## 1.7.0 – 2026-10
+- Dezinfekcija: **potpis odgovorne osobe** – jednom prstom/mišem ili fotografija potpisa (Stanice i QR); automatski na svakom PDF-u evidencije uz napomenu „elektronički generirano“. Kod promjene odgovorne osobe potpis se briše.
+
 ## 1.6.0 – 2026-10
 - Dezinfekcija: **papirnate liste** za lovce bez mobitela – fotografija liste (više stranica) po stanici i razdoblju, prilaže se knjizi, PDF-u (dodatne stranice), e-pošti i pregledu za inspekciju. Učitava lovočuvar (pravo „naknadni upis“).
 

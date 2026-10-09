@@ -538,7 +538,7 @@ function dez_pdf(array $upisi, array $stanice, string $razdoblje, string $sekcij
     <div class="zag">' . $logo . '<div class="n">' . e(udruga_naziv()) . '</div><div class="p">'
         . e(($loviste ? 'Lovište: ' . $loviste . "\n" : '') . dez_opis_stanica($stanice, $upisi)) . '</div></div>'
         . dez_html($upisi, 'Evidencija dezinfekcije vozila, obuće i opreme (ASK)' . ($stanice && $stanice[0]['Vrsta'] === 'M' ? ' – mobilna stanica' : ''), 'Razdoblje: ' . $razdoblje . ' · ' . $sekcijaOpis . ' · upisa: ' . count($upisi), true, count($stanice) > 1 || ($stanice && $stanice[0]['Vrsta'] === 'M'))
-        . '<div class="potpis">Odgovorna osoba: ' . ($odg !== '' ? e($odg) : '______________________') . ' &nbsp;&nbsp;&nbsp; Potpis: ______________________</div>'
+        . dez_potpis_pdf_html($odg)
         . ($liste ? '<div class="pod" style="margin-top:6px">Prilog: ' . count($liste) . ' fotografija papirnatih lista (sljedeće stranice).</div>' . dez_liste_pdf_html($liste) : '')
         . '</body></html>';
     $opt = new Dompdf\Options();
@@ -661,3 +661,22 @@ function dez_liste_pdf_html(array $liste): string
     return $o;
 }
 
+// ---------- Potpis odgovorne osobe ----------
+function dez_potpis_datauri(): ?string
+{
+    $p = postavka('Dez.Potpis');
+    if (!$p || !postavka('Dez.OdgovornaOsoba')) {
+        return null;
+    }
+    $put = podaci('foto/' . basename($p));
+    return is_file($put) ? 'data:image/png;base64,' . base64_encode((string) file_get_contents($put)) : null;
+}
+function dez_potpis_pdf_html(string $odg): string
+{
+    $slika = dez_potpis_datauri();
+    if ($slika) {
+        return '<table style="margin-top:14px; border-collapse:collapse"><tr><td style="vertical-align:bottom; padding-right:14px">Odgovorna osoba: <b>' . e($odg) . '</b></td>'
+            . '<td style="text-align:center"><img src="' . $slika . '" style="height:16mm"><div style="border-top:0.5pt solid #555; font-size:7pt; color:#666; padding-top:1px">potpis · elektronički generirano iz evidencije ' . date('d.m.Y. H:i') . '</div></td></tr></table>';
+    }
+    return '<div class="potpis">Odgovorna osoba: ' . ($odg !== '' ? e($odg) : '______________________') . ' &nbsp;&nbsp;&nbsp; Potpis: ______________________</div>';
+}

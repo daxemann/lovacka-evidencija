@@ -79,8 +79,47 @@ if (je_post()) {
                 dnevnik('Dezinfekcija – pristup za inspekciju isključen');
             }
             spremi_postavku('Dez.Loviste', mb_substr(ul_str('loviste'), 0, 120) ?: null);
-            spremi_postavku('Dez.OdgovornaOsoba', mb_substr(ul_str('odgovorna'), 0, 120) ?: null);
+            $staraOsoba = (string) postavka('Dez.OdgovornaOsoba', '');
+            $novaOsoba = mb_substr(ul_str('odgovorna'), 0, 120);
+            spremi_postavku('Dez.OdgovornaOsoba', $novaOsoba ?: null);
+            if ($staraOsoba !== $novaOsoba && postavka('Dez.Potpis')) {
+                // potpis pripada osobi – kod promjene osobe se briše
+                obrisi_sliku(postavka('Dez.Potpis'));
+                spremi_postavku('Dez.Potpis', null);
+                dnevnik('Dezinfekcija – potpis obrisan (promijenjena odgovorna osoba)', null, null, $staraOsoba . ' → ' . $novaOsoba);
+                poruka('Odgovorna osoba je promijenjena – dosadašnji potpis je obrisan. Nova osoba neka se potpiše.', 'warning');
+            }
             poruka('Spremljeno.');
+            break;
+        case 'potpis':
+            if (!postavka('Dez.OdgovornaOsoba')) {
+                poruka('Najprije upišite i spremite odgovornu osobu.', 'warning');
+                break;
+            }
+            try {
+                $png = (string) ($_POST['potpis_crtez'] ?? '');
+                if (str_starts_with($png, 'data:image/png;base64,')) {
+                    $bin = base64_decode(substr($png, 22), true);
+                    $tmp = tempnam(sys_get_temp_dir(), 'pot');
+                    file_put_contents($tmp, (string) $bin);
+                    $ime = spremi_sliku(['tmp_name' => $tmp, 'error' => UPLOAD_ERR_OK, 'name' => 'potpis.png'], 'dezpotpis-', 900, true);
+                    @unlink($tmp);
+                } else {
+                    $ime = spremi_sliku($_FILES['potpis_slika'] ?? [], 'dezpotpis-', 900, true);
+                }
+                obrisi_sliku(postavka('Dez.Potpis'));
+                spremi_postavku('Dez.Potpis', $ime);
+                dnevnik('Dezinfekcija – spremljen potpis odgovorne osobe', null, null, (string) postavka('Dez.OdgovornaOsoba'));
+                poruka('Potpis je spremljen – od sada je na svakom PDF-u evidencije.');
+            } catch (Throwable $e) {
+                poruka('Potpis nije spremljen: ' . e($e->getMessage()), 'danger');
+            }
+            break;
+        case 'potpis-obrisi':
+            obrisi_sliku(postavka('Dez.Potpis'));
+            spremi_postavku('Dez.Potpis', null);
+            dnevnik('Dezinfekcija – obrisan potpis odgovorne osobe');
+            poruka('Potpis je obrisan.');
             break;
         case 'insp-novi-qr':
             dez_insp_token(true);
@@ -164,6 +203,30 @@ ob_start(); ?>
     </div>
 </form>
 <form method="post" action="<?= e(url('dezinfekcija/postavke')) ?>" id="inspnoviqr"><?= csrf() ?><input type="hidden" name="radnja" value="insp-novi-qr"></form>
+<h2 class="h5 mt-4">Potpis odgovorne osobe (na PDF-u)</h2>
+<div class="card card-body">
+<?php $potpis = dez_potpis_datauri(); if (!postavka('Dez.OdgovornaOsoba')): ?>
+    <p class="small text-muted mb-0">Najprije gore upišite <b>odgovornu osobu</b> i spremite. Bez potpisa PDF ima praznu crtu za potpis rukom.</p>
+<?php else: ?>
+    <p class="small text-muted"><b><?= e(postavka('Dez.OdgovornaOsoba')) ?></b> se potpiše jednom – potpis je zatim na svakom PDF-u evidencije (i onom koji preuzme inspekcija),
+        uz napomenu „elektronički generirano iz evidencije“. Skenirani potpis nije kvalificirani elektronički potpis.</p>
+    <?php if ($potpis): ?>
+        <div class="d-flex align-items-center gap-3 mb-3"><img src="<?= e($potpis) ?>" alt="potpis" class="dez-potpis-slika">
+            <form method="post" action="<?= e(url('dezinfekcija/postavke')) ?>"><?= csrf() ?><input type="hidden" name="radnja" value="potpis-obrisi">
+                <button class="btn btn-sm btn-outline-danger" data-potvrda="Obrisati potpis?">Obriši potpis</button></form></div>
+    <?php endif; ?>
+    <form method="post" action="<?= e(url('dezinfekcija/postavke')) ?>" enctype="multipart/form-data" id="potpis-obrazac"><?= csrf() ?><input type="hidden" name="radnja" value="potpis">
+        <input type="hidden" name="potpis_crtez" id="potpis-crtez">
+        <label class="form-label small"><?= $potpis ? 'Novi potpis' : 'Potpis' ?> – prstom ili mišem:</label>
+        <canvas id="potpis-platno" class="dez-potpis-platno" width="600" height="200"></canvas>
+        <div class="d-flex flex-wrap gap-2 mt-2">
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="potpis-ocisti">Očisti</button>
+            <button class="btn btn-sm btn-primary" id="potpis-spremi">Spremi potpis</button>
+        </div>
+        <div class="small text-muted mt-2">ili fotografija potpisa (na bijelom papiru): <input type="file" name="potpis_slika" accept="image/*" class="form-control form-control-sm mt-1" onchange="if(this.files.length)this.form.submit()"></div>
+    </form>
+<?php endif; ?>
+</div>
 <?php if ($pristupi): ?>
     <h3 class="h6 mt-3">Zadnji pristupi inspekcije</h3>
     <ul class="small list-unstyled text-muted"><?php foreach ($pristupi as $p): ?><li><?= e(datum_vrijeme($p['Vrijeme'])) ?> – <?= e($p['Radnja']) ?><?= $p['Detalji'] ? ' · ' . e($p['Detalji']) : '' ?></li><?php endforeach; ?></ul>
@@ -171,6 +234,24 @@ ob_start(); ?>
 </div>
 </div>
 <script>
+(function () {
+    var c = document.getElementById('potpis-platno'); if (!c) return;
+    var x = c.getContext('2d'), crta = false, ima = false;
+    x.lineWidth = 3.2; x.lineCap = 'round'; x.lineJoin = 'round'; x.strokeStyle = '#0b2a6b';
+    function tocka(e) { var r = c.getBoundingClientRect(), t = e.touches ? e.touches[0] : e; return [(t.clientX - r.left) * c.width / r.width, (t.clientY - r.top) * c.height / r.height]; }
+    function pocni(e) { e.preventDefault(); crta = true; var p = tocka(e); x.beginPath(); x.moveTo(p[0], p[1]); }
+    function crtaj(e) { if (!crta) return; e.preventDefault(); var p = tocka(e); x.lineTo(p[0], p[1]); x.stroke(); ima = true; }
+    function kraj() { crta = false; }
+    c.addEventListener('mousedown', pocni); c.addEventListener('mousemove', crtaj); window.addEventListener('mouseup', kraj);
+    c.addEventListener('touchstart', pocni, { passive: false }); c.addEventListener('touchmove', crtaj, { passive: false }); c.addEventListener('touchend', kraj);
+    document.getElementById('potpis-ocisti').onclick = function () { x.clearRect(0, 0, c.width, c.height); ima = false; };
+    document.getElementById('potpis-obrazac').addEventListener('submit', function (e) {
+        var f = this.querySelector('input[type=file]');
+        if (f && f.files.length) return;
+        if (!ima) { e.preventDefault(); alert('Najprije se potpišite u polju.'); return; }
+        document.getElementById('potpis-crtez').value = c.toDataURL('image/png');
+    });
+})();
 document.addEventListener('click', function (e) {
     var b = e.target.closest('[data-ovdje]'); if (!b) return;
     var i = b.getAttribute('data-ovdje'), info = document.getElementById('info' + i);

@@ -375,3 +375,5 @@ main {
 .dez-lista { width: 150px; }
 .dez-lista img { width: 150px; height: 200px; object-fit: cover; border-radius: 6px; border: 1px solid #dee2e6; background: #f4f6f2; display: block; margin-bottom: .25rem; }
 @media print { .dez-lista img { height: auto; max-height: none; width: 100%; } .dez-lista { width: 100%; page-break-inside: avoid; } }
+.dez-potpis-platno { width: 100%; max-width: 600px; aspect-ratio: 3 / 1; border: 1px dashed #9aa5a0; border-radius: 8px; background: #fff; touch-action: none; display: block; }
+.dez-potpis-slika { max-height: 70px; max-width: 260px; background: #fff; border: 1px solid #dee2e6; border-radius: 6px; padding: 4px; }
