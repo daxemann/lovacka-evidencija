@@ -146,6 +146,29 @@
         function razlogOpis() { var o = raz.options[raz.selectedIndex]; opis.hidden = !(o && o.getAttribute('data-slobodno') === '1'); }
         raz.addEventListener('change', razlogOpis); razlogOpis();
         document.querySelectorAll('input[name=vozilo]').forEach(function (r) { r.addEventListener('change', function () { document.getElementById('drugo-polje').hidden = !document.getElementById('vz-drugo').checked; }); });
+        // upis za drugog lovca: njegovo vozilo i prijedlog smjera
+        var za = document.getElementById('za-clana');
+        if (za) {
+            var moja = Array.prototype.slice.call(forma.querySelectorAll('input[name=vozilo][value^="v"]'));
+            var oz = forma.querySelector('input[name=oznaka]'), spr = document.getElementById('spremi-vz');
+            var drugoLbl = forma.querySelector('label[for=vz-drugo]'), drugoTxt = drugoLbl ? drugoLbl.textContent : '';
+            za.addEventListener('change', function () {
+                var o = za.options[za.selectedIndex], drugi = !!za.value;
+                document.getElementById('za-druge-info').hidden = !drugi;
+                moja.forEach(function (r) { r.closest('.form-check').hidden = drugi; });
+                if (drugi) {
+                    document.getElementById('vz-drugo').checked = true; document.getElementById('drugo-polje').hidden = false;
+                    oz.value = o.getAttribute('data-oznaka') || '';
+                    if (spr) { spr.checked = !o.getAttribute('data-oznaka'); spr.nextElementSibling.textContent = 'spremi u profil tog lovca'; }
+                    if (drugoLbl) drugoLbl.textContent = 'Reg. oznaka';
+                    var sm = o.getAttribute('data-smjer'); document.getElementById(sm === 'D' ? 'sm-o' : 'sm-d').checked = true;
+                } else {
+                    oz.value = ''; if (drugoLbl) drugoLbl.textContent = drugoTxt;
+                    if (moja.length) { moja[0].checked = true; document.getElementById('drugo-polje').hidden = true; }
+                    if (spr) spr.nextElementSibling.textContent = 'spremi u moj profil (sljedeći put je već upisano)';
+                }
+            });
+        }
         function dodaj(tpl, gdje, max) { var g = document.getElementById(gdje); if (g.children.length >= max) return;
             g.appendChild(document.getElementById(tpl).content.firstElementChild.cloneNode(true)); var p = g.lastElementChild.querySelector('select,input'); if (p) p.focus(); }
         document.getElementById('dodaj-suputnika').onclick = function () { dodaj('tpl-suputnik', 'suputnici', window.DEZ_MAX[0]); };
@@ -161,7 +184,9 @@
             return o;
         }
         function imena(p) {
-            var n = [ST.ja + (p.vozilo === 'bez' ? '' : ' · ' + oznaka(p))];
+            var za = document.getElementById('za-clana');
+            var glavni = za && za.value ? za.options[za.selectedIndex].text + ' (upisao: ' + ST.ja + ')' : ST.ja;
+            var n = [glavni + (p.vozilo === 'bez' ? '' : ' · ' + oznaka(p))];
             forma.querySelectorAll('select[name="suputnik[]"]').forEach(function (s) { if (s.value) n.push(s.options[s.selectedIndex].text); });
             (p.gost_ime || []).forEach(function (im, i) { if (im) n.push(im + ' ' + (p.gost_prezime[i] || '') + ' (gost)'); });
             return n;

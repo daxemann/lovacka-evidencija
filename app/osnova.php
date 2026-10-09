@@ -5,7 +5,7 @@
  */
 declare(strict_types=1);
 
-const VERZIJA = '1.4.1';
+const VERZIJA = '1.5.0';
 const KONTAKT_EMAIL = 'daxemann@googlemail.com';
 const PROJEKT_URL = 'https://github.com/daxemann/lovacka-evidencija';
 const KORIJEN = __DIR__ . '/..';
@@ -25,8 +25,9 @@ const P_DEZ_PREGLED = 1024;
 const P_DEZ_UREDI = 2048;
 const P_DEZ_POSTAVKE = 4096;
 const P_DEZ_MOBILNA = 8192;
+const P_DEZ_ZA_DRUGE = 16384;
 const P_OSNOVNA = 255; // prava iz .NET verzije
-const P_SVE = 16383;
+const P_SVE = 32767;
 
 const PRAVA_OPIS = [
     P_CLANOVI_CITAJ => ['Članovi – pregled', 'vidi popis članova i njihove podatke'],
@@ -42,6 +43,7 @@ const PRAVA_OPIS = [
     P_DEZ_PREGLED => ['Dezinfekcija – pregled', 'vidi knjigu dezinfekcije (dolasci i odlasci) za stanice svojih sekcija, ispis, PDF, slanje e-poštom'],
     P_DEZ_UREDI => ['Dezinfekcija – naknadni upis', 'naknadno upisuje i poništava upise (uvijek s razlogom, vidljivo u knjizi)'],
     P_DEZ_POSTAVKE => ['Dezinfekcija – postavke', 'stanice (koordinate, radijus, sredstvo), QR oznake, razlozi dolaska, lozinka za inspekciju'],
+    P_DEZ_ZA_DRUGE => ['Dezinfekcija – upis za druge na stanici', 'na samoj stanici (lokacija mobitela, trenutno vrijeme) upisuje lovca koji nema mobitel – izgleda kao upis na licu mjesta, s napomenom tko je upisao'],
     P_DEZ_MOBILNA => ['Dezinfekcija – mobilna stanica', 'aktivira mobilnu dezinfekcijsku stanicu na licu mjesta (npr. skupni lov) i prati tko je došao i otišao'],
 ];
 
@@ -116,7 +118,7 @@ function db(): PDO
  * Dodatne tablice PHP verzije (PRAGMA user_version). .NET verzija ih ne poznaje i zanemaruje,
  * pa baza i dalje radi u oba smjera.
  */
-const SHEMA_PHP = 4;
+const SHEMA_PHP = 5;
 function nadogradi_bazu(PDO $pdo): void
 {
     $v = (int) $pdo->query('PRAGMA user_version')->fetchColumn();
@@ -291,6 +293,9 @@ ALTER TABLE "DezUpisi" ADD COLUMN "Izvanmrezno" INTEGER NOT NULL DEFAULT 0;
 CREATE INDEX IF NOT EXISTS "IX_DezUpisi_AktivacijaId" ON "DezUpisi" ("AktivacijaId");
 UPDATE "Uloge" SET "Prava" = "Prava" | 8192 WHERE ("Prava" & 8191) = 8191 OR "Naziv" = 'Lovočuvar';
 SQL);
+    }
+    if ($v < 5) {
+        $pdo->exec("UPDATE \"Uloge\" SET \"Prava\" = \"Prava\" | 16384 WHERE (\"Prava\" & 16383) = 16383 OR \"Naziv\" = 'Lovočuvar'");
     }
     $pdo->exec('PRAGMA user_version = ' . SHEMA_PHP);
     $pdo->commit();

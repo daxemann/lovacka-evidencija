@@ -1,5 +1,9 @@
 # Promjene
 
+## 1.5.0 – 2026-10
+- Dezinfekcija: **upis za drugog lovca na stanici** (stariji lovci bez mobitela). Novo pravo „Dezinfekcija – upis za druge na stanici“ (uloga Lovočuvar, dodjeljivo u Uloge i prava).
+  Upis se radi na samoj stanici (lokacija mobitela, trenutno vrijeme) i u knjizi izgleda kao upis na licu mjesta, s napomenom tko je upisao. Reg. oznaka se može spremiti u profil tog lovca.
+
 ## 1.4.1 – 2026-10
 - Knjiga dezinfekcije: glavni admin može **trajno obrisati poništene upise** (npr. probne) – uz „prikaži poništene“, zapisuje se u dnevnik.
 

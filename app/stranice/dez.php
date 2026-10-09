@@ -40,6 +40,20 @@ foreach ($razlozi as $r) {
 }
 $clanovi = redovi('SELECT Id, Ime, Prezime FROM Clanovi WHERE Status=0 AND Id<>? ORDER BY Prezime, Ime', [$clan['Id'] ?? 0]);
 $imaKoord = $stP && $stP['Lat'] !== null && $stP['Lon'] !== null;
+// upis za drugog lovca (lovočuvar i ovlašteni): zadano vozilo i zadnji smjer svakog člana na ovoj stanici
+$zaDruge = ima(P_DEZ_ZA_DRUGE);
+$drugi = [];
+if ($zaDruge) {
+    $smjerovi = [];
+    foreach (redovi('SELECT ClanId, Smjer FROM DezUpisi WHERE StanicaId=? AND Ponisteno=0 AND ClanId IS NOT NULL AND Vrijeme>=? ORDER BY Vrijeme, Id',
+        [$st['Id'], date('Y-m-d H:i:s', time() - 86400)]) as $r) {
+        $smjerovi[(int) $r['ClanId']] = $r['Smjer'];
+    }
+    foreach (redovi('SELECT c.Id, c.Ime, c.Prezime, (SELECT Oznaka FROM ClanVozila v WHERE v.ClanId=c.Id ORDER BY Zadano DESC, Id LIMIT 1) AS Oznaka
+        FROM Clanovi c WHERE c.Status=0 AND c.Id<>? ORDER BY c.Prezime, c.Ime', [$clan['Id'] ?? 0]) as $r) {
+        $drugi[] = $r + ['Smjer' => $smjerovi[(int) $r['Id']] ?? null];
+    }
+}
 $js = [
     'token' => $st['Token'], 'lat' => $imaKoord ? (float) $stP['Lat'] : null, 'lon' => $imaKoord ? (float) $stP['Lon'] : null,
     'r' => max(10, (int) $st['Radijus']), 'mob' => $mob, 'aktivna' => (bool) $stP, 'naziv' => $st['Naziv'],
@@ -66,7 +80,17 @@ ob_start(); ?>
 <form method="post" action="<?= e(url('dez', ['s' => $st['Token']])) ?>" id="dez-obrazac" autocomplete="off"><?= csrf() ?>
     <input type="hidden" name="s" value="<?= e($st['Token']) ?>">
     <input type="hidden" name="lat" id="f-lat"><input type="hidden" name="lon" id="f-lon"><input type="hidden" name="acc" id="f-acc">
+    <?php if ($zaDruge): ?>
+    <div class="mb-3 dez-za-druge"><label class="form-label small mb-1" for="za-clana">Upisujem</label>
+        <select name="za_clana" id="za-clana" class="form-select">
+            <option value="">sebe – <?= e($ja) ?></option>
+            <?php foreach ($drugi as $d): ?><option value="<?= (int) $d['Id'] ?>" data-oznaka="<?= e($d['Oznaka']) ?>" data-smjer="<?= e($d['Smjer']) ?>"><?= e(prezime_ime($d)) ?></option><?php endforeach; ?>
+        </select>
+        <div class="form-text" id="za-druge-info" hidden>Lovac je ovdje s vama na stanici. Upis vrijedi s vašom lokacijom i trenutnim vremenom, u napomeni piše da ste ga upisali vi.</div>
+    </div>
+    <?php else: ?>
     <div class="mb-1 small text-muted"><?= e($ja) ?></div>
+    <?php endif; ?>
     <div class="dez-smjer mb-3">
         <input type="radio" class="btn-check" name="smjer" id="sm-d" value="D"<?= chk($predSmjer === 'D') ?>>
         <label class="btn btn-outline-success" for="sm-d">⬇ DOLAZAK</label>

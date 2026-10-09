@@ -233,6 +233,18 @@ function dez_spremi_upis(array $st, array $k, array $u, ?int $klijentVrijeme = n
     }
     $clan = $k['ClanId'] ? clan((int) $k['ClanId']) : null;
     $ja = $clan ? puno_ime($clan) : $k['Naziv'];
+    // upis za drugog lovca (bez mobitela) – samo s pravom, i dalje na samoj stanici
+    $zaDrugog = null;
+    if (!empty($u['za_clana']) && (int) $u['za_clana'] !== (int) ($clan['Id'] ?? 0)) {
+        if (!ima(P_DEZ_ZA_DRUGE)) {
+            return $greska('Nemate pravo upisivati druge lovce.');
+        }
+        $zaDrugog = red('SELECT * FROM Clanovi WHERE Id=? AND Status=0', [(int) $u['za_clana']]);
+        if (!$zaDrugog) {
+            return $greska('Lovac nije pronađen.');
+        }
+        $clan = $zaDrugog;
+    }
     // vozilo
     $v = (string) ($u['vozilo'] ?? '');
     $saVozilom = $v !== 'bez';
@@ -300,9 +312,9 @@ function dez_spremi_upis(array $st, array $k, array $u, ?int $klijentVrijeme = n
         'Udaljenost' => $udalj, 'Lokacija' => $lok, 'Naknadno' => 0, 'Grupa' => $grupa, 'Kreirano' => sada(),
         'AktivacijaId' => $stP['AktivacijaId'], 'Izvanmrezno' => $izvan ? 1 : 0,
     ];
-    transakcija(function () use ($zajedno, $clan, $k, $ja, $oznaka, $saVozilom, $suputnici, $gosti) {
+    transakcija(function () use ($zajedno, $clan, $k, $ja, $oznaka, $saVozilom, $suputnici, $gosti, $zaDrugog) {
         umetni('DezUpisi', $zajedno + ['ClanId' => $clan['Id'] ?? null, 'Ime' => $clan['Ime'] ?? $k['Naziv'], 'Prezime' => $clan['Prezime'] ?? '',
-            'Gost' => 0, 'Oznaka' => $oznaka, 'Vozilo' => $saVozilom ? 1 : 0, 'PozvaoIme' => null]);
+            'Gost' => 0, 'Oznaka' => $oznaka, 'Vozilo' => $saVozilom ? 1 : 0, 'PozvaoIme' => $zaDrugog ? $ja : null]);
         foreach ($suputnici as $c) {
             umetni('DezUpisi', $zajedno + ['ClanId' => (int) $c['Id'], 'Ime' => $c['Ime'], 'Prezime' => $c['Prezime'], 'Gost' => 0,
                 'Oznaka' => $oznaka, 'Vozilo' => $saVozilom ? 1 : 0, 'PozvaoIme' => $ja]);
@@ -313,7 +325,7 @@ function dez_spremi_upis(array $st, array $k, array $u, ?int $klijentVrijeme = n
         }
     });
     dnevnik('Dezinfekcija – ' . mb_strtolower(DEZ_SMJER[$smjer]) . ($izvan ? ' (izvanmrežno)' : ''), 'DezStanica', (int) $st['Id'],
-        $ja . ' + ' . count($suputnici) . ' suputnika, ' . count($gosti) . ' gostiju · ' . DEZ_LOKACIJA[$lok], $k);
+        ($zaDrugog ? puno_ime($zaDrugog) . ' (upisao ' . $ja . ')' : $ja) . ' + ' . count($suputnici) . ' suputnika, ' . count($gosti) . ' gostiju · ' . DEZ_LOKACIJA[$lok], $k);
     return ['ok' => true, 'grupa' => $grupa];
 }
 
