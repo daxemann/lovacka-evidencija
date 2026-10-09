@@ -372,3 +372,6 @@ main {
 .dez-obavijest { position: fixed; left: 1rem; right: 1rem; bottom: 1rem; z-index: 1085; background: #fff; border-left: 4px solid #2f5d23; border-radius: 8px; padding: .7rem 1rem; box-shadow: 0 .5rem 1.5rem rgba(0,0,0,.2); max-width: 420px; margin-left: auto; }
 .dez-obavijest.upoz { border-left-color: #f0ad4e; }
 .dez-obavijest[hidden] { display: none; }
+.dez-lista { width: 150px; }
+.dez-lista img { width: 150px; height: 200px; object-fit: cover; border-radius: 6px; border: 1px solid #dee2e6; background: #f4f6f2; display: block; margin-bottom: .25rem; }
+@media print { .dez-lista img { height: auto; max-height: none; width: 100%; } .dez-lista { width: 100%; page-break-inside: avoid; } }

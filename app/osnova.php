@@ -5,7 +5,7 @@
  */
 declare(strict_types=1);
 
-const VERZIJA = '1.5.0';
+const VERZIJA = '1.6.0';
 const KONTAKT_EMAIL = 'daxemann@googlemail.com';
 const PROJEKT_URL = 'https://github.com/daxemann/lovacka-evidencija';
 const KORIJEN = __DIR__ . '/..';
@@ -118,7 +118,7 @@ function db(): PDO
  * Dodatne tablice PHP verzije (PRAGMA user_version). .NET verzija ih ne poznaje i zanemaruje,
  * pa baza i dalje radi u oba smjera.
  */
-const SHEMA_PHP = 5;
+const SHEMA_PHP = 6;
 function nadogradi_bazu(PDO $pdo): void
 {
     $v = (int) $pdo->query('PRAGMA user_version')->fetchColumn();
@@ -296,6 +296,12 @@ SQL);
     }
     if ($v < 5) {
         $pdo->exec("UPDATE \"Uloge\" SET \"Prava\" = \"Prava\" | 16384 WHERE (\"Prava\" & 16383) = 16383 OR \"Naziv\" = 'Lovočuvar'");
+    }
+    if ($v < 6) {
+        $pdo->exec('CREATE TABLE IF NOT EXISTS "DezListe" ("Id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+            "StanicaId" INTEGER NOT NULL REFERENCES "DezStanice" ("Id") ON DELETE CASCADE, "Od" TEXT NOT NULL, "Do" TEXT NOT NULL,
+            "Datoteka" TEXT NOT NULL, "Napomena" TEXT NULL, "UcitaoIme" TEXT NULL, "Kreirano" TEXT NOT NULL);
+            CREATE INDEX IF NOT EXISTS "IX_DezListe_Od_Do" ON "DezListe" ("Od", "Do");');
     }
     $pdo->exec('PRAGMA user_version = ' . SHEMA_PHP);
     $pdo->commit();

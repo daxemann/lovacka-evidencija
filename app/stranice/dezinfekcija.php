@@ -46,7 +46,7 @@ if (je_post()) {
             $sekOpis = $f['SekcijaId'] ? 'sekcija ' . naziv_sekcije($f['SekcijaId']) : 'sve sekcije';
             try {
                 posalji_mail($prim, 'Evidencija dezinfekcije – ' . udruga_kratko(), dez_mail_html($upisi, opis_raspona($f), $sekOpis), true, null,
-                    ['dezinfekcija-' . date('Y-m-d') . '.pdf' => dez_pdf($upisi, $st, opis_raspona($f), $sekOpis)]);
+                    ['dezinfekcija-' . date('Y-m-d') . '.pdf' => dez_pdf($upisi, $st, opis_raspona($f), $sekOpis, $mob ? [] : dez_liste($f, $ids))]);
                 dnevnik('Dezinfekcija – knjiga poslana e-poštom', null, null, implode(', ', $prim));
                 poruka('Poslano.');
             } catch (Throwable $e) {
@@ -173,4 +173,6 @@ ob_start(); ?>
 <?php else: ?>
     <p class="text-muted">Nema upisa za odabrane uvjete.</p>
 <?php endif; ?>
+<?php if (!$mob) echo dez_liste_html(dez_liste($f, $ids)); ?>
+<?php if (!$mob && ima(P_DEZ_UREDI)): ?><p class="mt-2 no-print"><a class="small" href="<?= e(url('dezinfekcija/liste')) ?>">📷 Učitaj fotografiju papirnate liste</a></p><?php endif; ?>
 <?php stranica('Knjiga dezinfekcije', ob_get_clean());

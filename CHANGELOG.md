@@ -1,5 +1,8 @@
 # Promjene
 
+## 1.6.0 – 2026-10
+- Dezinfekcija: **papirnate liste** za lovce bez mobitela – fotografija liste (više stranica) po stanici i razdoblju, prilaže se knjizi, PDF-u (dodatne stranice), e-pošti i pregledu za inspekciju. Učitava lovočuvar (pravo „naknadni upis“).
+
 ## 1.5.0 – 2026-10
 - Dezinfekcija: **upis za drugog lovca na stanici** (stariji lovci bez mobitela). Novo pravo „Dezinfekcija – upis za druge na stanici“ (uloga Lovočuvar, dodjeljivo u Uloge i prava).
   Upis se radi na samoj stanici (lokacija mobitela, trenutno vrijeme) i u knjizi izgleda kao upis na licu mjesta, s napomenom tko je upisao. Reg. oznaka se može spremiti u profil tog lovca.

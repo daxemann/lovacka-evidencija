@@ -80,12 +80,13 @@ $upisi = dez_upisi($f, $ids);
 $stF = $f['SekcijaId'] ? array_values(array_filter($stanice, fn($s) => (int) $s['SekcijaId'] === $f['SekcijaId'])) : $stanice;
 $sekOpis = $f['SekcijaId'] ? 'sekcija ' . $sekcijeSt[$f['SekcijaId']] : 'sve sekcije';
 $opis = opis_raspona($f);
+$liste = $mob ? [] : dez_liste($f, $ids);
 
 if (($_GET['pdf'] ?? '') === '1') {
     dnevnik('Inspekcija – PDF', null, null, $opis . ', ' . $sekOpis . ' · IP ' . $ip, $tko);
     header('Content-Type: application/pdf');
     header('Content-Disposition: inline; filename="dezinfekcija-' . date('Y-m-d') . '.pdf"');
-    echo dez_pdf($upisi, $stF, $opis, $sekOpis);
+    echo dez_pdf($upisi, $stF, $opis, $sekOpis, $liste);
     exit;
 }
 if (je_post() && ($_POST['radnja'] ?? '') === 'posalji') {
@@ -98,7 +99,7 @@ if (je_post() && ($_POST['radnja'] ?? '') === 'posalji') {
     } else {
         try {
             posalji_mail($email, 'Evidencija dezinfekcije – ' . udruga_naziv(), dez_mail_html($upisi, $opis, $sekOpis), true, null,
-                ['dezinfekcija-' . date('Y-m-d') . '.pdf' => dez_pdf($upisi, $stF, $opis, $sekOpis)]);
+                ['dezinfekcija-' . date('Y-m-d') . '.pdf' => dez_pdf($upisi, $stF, $opis, $sekOpis, $liste)]);
             $_SESSION['insp_mail'] = $poslano + 1;
             dnevnik('Inspekcija – poslano e-poštom', null, null, $email . ' · ' . $opis . ', ' . $sekOpis . ' · IP ' . $ip, $tko);
             poruka('Evidencija (PDF) je poslana na ' . e($email) . '.');
@@ -166,6 +167,7 @@ ob_start(); ?>
 <?php else: ?>
     <p class="text-muted">Nema upisa za odabrano razdoblje.</p>
 <?php endif; ?>
+<?= dez_liste_html($liste, $tok) ?>
 <form method="post" action="<?= e(url('inspekcija', $ovdje)) ?>" class="mt-4 no-print"><?= csrf() ?><input type="hidden" name="radnja" value="odjava">
     <button class="btn btn-sm btn-link text-muted">Odjava</button></form>
 <?php stranica('Inspekcija – evidencija dezinfekcije', ob_get_clean(), 'javno');

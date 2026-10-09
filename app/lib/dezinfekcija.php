@@ -513,7 +513,7 @@ function dez_opis_stanica(array $stanice, array $upisi = []): string
     return implode("\n", $d);
 }
 
-function dez_pdf(array $upisi, array $stanice, string $razdoblje, string $sekcijaOpis): string
+function dez_pdf(array $upisi, array $stanice, string $razdoblje, string $sekcijaOpis, array $liste = []): string
 {
     $logo = '';
     if (ima_logo()) {
@@ -539,6 +539,7 @@ function dez_pdf(array $upisi, array $stanice, string $razdoblje, string $sekcij
         . e(($loviste ? 'Lovište: ' . $loviste . "\n" : '') . dez_opis_stanica($stanice, $upisi)) . '</div></div>'
         . dez_html($upisi, 'Evidencija dezinfekcije vozila, obuće i opreme (ASK)' . ($stanice && $stanice[0]['Vrsta'] === 'M' ? ' – mobilna stanica' : ''), 'Razdoblje: ' . $razdoblje . ' · ' . $sekcijaOpis . ' · upisa: ' . count($upisi), true, count($stanice) > 1 || ($stanice && $stanice[0]['Vrsta'] === 'M'))
         . '<div class="potpis">Odgovorna osoba: ' . ($odg !== '' ? e($odg) : '______________________') . ' &nbsp;&nbsp;&nbsp; Potpis: ______________________</div>'
+        . ($liste ? '<div class="pod" style="margin-top:6px">Prilog: ' . count($liste) . ' fotografija papirnatih lista (sljedeće stranice).</div>' . dez_liste_pdf_html($liste) : '')
         . '</body></html>';
     $opt = new Dompdf\Options();
     $opt->set('defaultFont', 'DejaVu Sans');
@@ -595,3 +596,68 @@ function karta_tocke_url(float $lat, float $lon): string
 {
     return 'https://www.openstreetmap.org/?mlat=' . $lat . '&mlon=' . $lon . '#map=17/' . $lat . '/' . $lon;
 }
+
+// ---------- Papirnate liste (fotografije) ----------
+/** Fotografirane papirnate liste za stanice $ids koje se preklapaju s razdobljem filtra (i sekcijom). */
+function dez_liste(array $f, array $ids): array
+{
+    if (!$ids) {
+        return [];
+    }
+    [$od, $do] = raspon($f);
+    $w = ['l.StanicaId IN (' . implode(',', array_map('intval', $ids)) . ')', 'l.Od<=?', 'l.Do>=?'];
+    $p = [$do, $od];
+    if ($f['SekcijaId'] !== null) {
+        $w[] = 'st.SekcijaId=?';
+        $p[] = $f['SekcijaId'];
+    }
+    return redovi('SELECT l.*, st.Naziv AS Stanica FROM DezListe l JOIN DezStanice st ON st.Id=l.StanicaId WHERE ' . implode(' AND ', $w) . ' ORDER BY l.Od, l.Id', $p);
+}
+function dez_lista_opis(array $l): string
+{
+    return $l['Od'] === $l['Do'] ? datum($l['Od']) : datum($l['Od']) . ' – ' . datum($l['Do']);
+}
+function dez_lista_url(array $l, ?string $inspToken = null): string
+{
+    return url('dez-slika', array_filter(['id' => $l['Id'], 'k' => $inspToken]));
+}
+/** HTML popis sličica (knjiga i inspekcija). */
+function dez_liste_html(array $liste, ?string $inspToken = null, bool $brisanje = false, array $povratak = []): string
+{
+    if (!$liste) {
+        return '';
+    }
+    $o = '<div class="card mt-4"><div class="card-header">📄 Papirnate liste (fotografije) <span class="badge bg-secondary">' . count($liste) . '</span>'
+        . '<span class="small text-muted ms-2">lovci bez mobitela – sastavni dio evidencije</span></div><div class="card-body d-flex flex-wrap gap-3">';
+    foreach ($liste as $l) {
+        $u = dez_lista_url($l, $inspToken);
+        $o .= '<div class="dez-lista"><a href="' . e($u) . '" target="_blank"><img src="' . e($u) . '" alt="" loading="lazy"></a>'
+            . '<div class="small fw-semibold">' . e(dez_lista_opis($l)) . '</div><div class="small text-muted">' . e($l['Stanica']) . '</div>'
+            . ($l['Napomena'] ? '<div class="small">' . e($l['Napomena']) . '</div>' : '')
+            . '<div class="small text-muted">učitao: ' . e($l['UcitaoIme']) . '</div>';
+        if ($brisanje) {
+            $o .= '<form method="post" action="' . e(url('dezinfekcija/liste', $povratak)) . '" class="d-inline">' . csrf()
+                . '<input type="hidden" name="radnja" value="obrisi"><input type="hidden" name="id" value="' . (int) $l['Id'] . '">'
+                . '<button class="btn btn-sm btn-link text-danger p-0" data-potvrda="Obrisati fotografiju liste?">Obriši</button></form>';
+        }
+        $o .= '</div>';
+    }
+    return $o . '</div></div>';
+}
+/** Stranice PDF-a s fotografijama papirnatih lista. */
+function dez_liste_pdf_html(array $liste): string
+{
+    $o = '';
+    foreach ($liste as $l) {
+        $put = podaci('foto/' . basename($l['Datoteka']));
+        if (!is_file($put)) {
+            continue;
+        }
+        $mime = str_ends_with($put, '.png') ? 'image/png' : 'image/jpeg';
+        $o .= '<div style="page-break-before: always"><h2>Papirnata lista – ' . e($l['Stanica']) . ', ' . e(dez_lista_opis($l)) . '</h2>'
+            . '<div class="pod">' . e(trim(($l['Napomena'] ?? '') . ' · učitao: ' . $l['UcitaoIme'] . ', ' . datum_vrijeme($l['Kreirano']), ' ·')) . '</div>'
+            . '<img src="data:' . $mime . ';base64,' . base64_encode((string) file_get_contents($put)) . '" style="max-width:100%; max-height:165mm"></div>';
+    }
+    return $o;
+}
+

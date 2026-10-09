@@ -69,6 +69,7 @@ $neprocitano = $k ? broj_neprocitanih((int) $k['Id']) : 0;
                         (ima(P_DEZ_PREGLED) ? $stavka('dezinfekcija', 'Knjiga dezinfekcije', 0, true) : '')
                         . (ima(P_DEZ_MOBILNA) ? $stavka('dezinfekcija/mobilna', 'Mobilna stanica', (int) vrijednost("SELECT COUNT(*) FROM DezAktivacije WHERE Zatvoreno IS NULL AND Od<=? AND Do>=?", [sada(), sada()])) : '')
                         . (ima(P_DEZ_UREDI) ? $stavka('dezinfekcija/naknadno', '+ Naknadni upis') : '')
+                        . (ima(P_DEZ_UREDI) ? $stavka('dezinfekcija/liste', 'Papirnate liste') : '')
                         . (ima(P_DEZ_POSTAVKE) ? $stavka('dezinfekcija/postavke', 'Stanice i QR') : '')); ?>
                     <?php if (ima(P_SUSTAV)) echo $grupa('sustav', 'Sustav',
                         $stavka('sustav/udruga', 'Podaci o udruzi')
