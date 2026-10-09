@@ -118,7 +118,7 @@
             }
             var d = udalj(ST.lat, ST.lon, c.latitude, c.longitude), a = Math.round(c.accuracy);
             if (d <= ST.r) { stanje('dez-gps-ok', '🟢 Na stanici ste', m(d) + ' od stanice · točnost ±' + a + ' m'); blokirano = false; omoguci(); }
-            else if (d - Math.min(a, 150) <= ST.r) { stanje('dez-gps-pola', '🟠 Lokacija nepouzdana', m(d) + ' od stanice, točnost ±' + a + ' m – upis je moguć, bit će označen. Na otvorenom je točnije.'); blokirano = false; omoguci(); }
+            else if (d - Math.min(a, 1000) <= ST.r) { stanje('dez-gps-pola', '🟠 Lokacija nepouzdana', m(d) + ' od stanice, točnost ±' + a + ' m – upis je moguć, bit će označen. Na otvorenom je točnije.'); blokirano = false; omoguci(); }
             else { stanje('dez-gps-ne', '🔴 Predaleko od stanice', m(d) + ' od stanice (±' + a + ' m). Upis je moguć samo na dezinfekcijskoj stanici.'); blokirano = true; btn.disabled = true; nap.textContent = 'Priđite stanici – lokacija se osvježava sama.'; }
         }
         function greskaLok(e) {

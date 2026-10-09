@@ -15,8 +15,8 @@ const DEZ_LOKACIJA = [
 ];
 const DEZ_MAX_SUPUTNIKA = 3;
 const DEZ_MAX_GOSTIJU = 6;
-/** Najveća dopuštena nepreciznost GPS-a (m) izvan radijusa – dalje od radijus + 150 m upis se odbija. */
-const DEZ_MAX_TOLERANCIJA = 150;
+/** Najveća dopuštena nepreciznost GPS-a (m) izvan radijusa – dalje od radijus + 1000 m upis se odbija. */
+const DEZ_MAX_TOLERANCIJA = 1000;
 
 // ---------- Stanice ----------
 function dez_stanica(int $id): ?array
