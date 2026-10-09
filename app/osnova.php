@@ -5,7 +5,7 @@
  */
 declare(strict_types=1);
 
-const VERZIJA = '1.2.3';
+const VERZIJA = '1.3.0';
 const KONTAKT_EMAIL = 'daxemann@googlemail.com';
 const PROJEKT_URL = 'https://github.com/daxemann/lovacka-evidencija';
 const KORIJEN = __DIR__ . '/..';
@@ -21,8 +21,11 @@ const P_IZVJESTAJI = 64;
 const P_SUSTAV = 128;
 const P_KALENDAR = 256;
 const P_IMENIK_SVI = 512;
+const P_DEZ_PREGLED = 1024;
+const P_DEZ_UREDI = 2048;
+const P_DEZ_POSTAVKE = 4096;
 const P_OSNOVNA = 255; // prava iz .NET verzije
-const P_SVE = 1023;
+const P_SVE = 8191;
 
 const PRAVA_OPIS = [
     P_CLANOVI_CITAJ => ['Članovi – pregled', 'vidi popis članova i njihove podatke'],
@@ -35,6 +38,9 @@ const PRAVA_OPIS = [
     P_SUSTAV => ['Sustav', 'pristup članova (pozivnice, odobrenje, uloge), sekcije, uloge, uvoz, duplikati, sigurnosne kopije, dnevnik'],
     P_KALENDAR => ['Kalendar – uređivanje', 'dodaje, mijenja i briše termine u kalendaru (za sekcije u svom opsegu)'],
     P_IMENIK_SVI => ['Imenik – vidi sve kontakte', 'u imeniku vidi telefon, e-mail i adresu svih članova, i kad ih član nije podijelio'],
+    P_DEZ_PREGLED => ['Dezinfekcija – pregled', 'vidi knjigu dezinfekcije (dolasci i odlasci) za stanice svojih sekcija, ispis, PDF, slanje e-poštom'],
+    P_DEZ_UREDI => ['Dezinfekcija – naknadni upis', 'naknadno upisuje i poništava upise (uvijek s razlogom, vidljivo u knjizi)'],
+    P_DEZ_POSTAVKE => ['Dezinfekcija – postavke', 'stanice (koordinate, radijus, sredstvo), QR oznake, razlozi dolaska, lozinka za inspekciju'],
 ];
 
 // Statusi (enum vrijednosti kao u .NET verziji)
@@ -108,7 +114,7 @@ function db(): PDO
  * Dodatne tablice PHP verzije (PRAGMA user_version). .NET verzija ih ne poznaje i zanemaruje,
  * pa baza i dalje radi u oba smjera.
  */
-const SHEMA_PHP = 2;
+const SHEMA_PHP = 3;
 function nadogradi_bazu(PDO $pdo): void
 {
     $v = (int) $pdo->query('PRAGMA user_version')->fetchColumn();
@@ -188,6 +194,77 @@ SQL);
     if ($v < 2) {
         $pdo->exec('CREATE TABLE IF NOT EXISTS "SkriveniRazgovori" ("Vrsta" TEXT NOT NULL, "RazgovorId" INTEGER NOT NULL, "KorisnikId" INTEGER NOT NULL,
             "DoPorukeId" INTEGER NOT NULL, PRIMARY KEY ("Vrsta", "RazgovorId", "KorisnikId"))');
+    }
+    if ($v < 3) {
+        $pdo->exec(<<<'SQL'
+CREATE TABLE IF NOT EXISTS "DezStanice" (
+    "Id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "Naziv" TEXT NOT NULL,
+    "SekcijaId" INTEGER NULL REFERENCES "Sekcije" ("Id") ON DELETE SET NULL,
+    "Vrsta" TEXT NOT NULL DEFAULT 'F',
+    "Lat" REAL NULL,
+    "Lon" REAL NULL,
+    "Radijus" INTEGER NOT NULL DEFAULT 100,
+    "Sredstvo" TEXT NULL,
+    "Aktivna" INTEGER NOT NULL DEFAULT 1,
+    "Token" TEXT NOT NULL,
+    "Kreirano" TEXT NOT NULL
+);
+CREATE UNIQUE INDEX IF NOT EXISTS "IX_DezStanice_Token" ON "DezStanice" ("Token");
+CREATE TABLE IF NOT EXISTS "DezRazlozi" (
+    "Id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "Naziv" TEXT NOT NULL,
+    "Aktivan" INTEGER NOT NULL DEFAULT 1,
+    "Redoslijed" INTEGER NOT NULL DEFAULT 0,
+    "Slobodno" INTEGER NOT NULL DEFAULT 0
+);
+INSERT INTO "DezRazlozi" ("Naziv", "Redoslijed", "Slobodno") VALUES ('Lov', 1, 0), ('Radna akcija', 2, 0), ('Obilazak / kontrola', 3, 0), ('Hranjenje', 4, 0), ('Ostalo', 9, 1);
+CREATE TABLE IF NOT EXISTS "DezUpisi" (
+    "Id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "StanicaId" INTEGER NOT NULL REFERENCES "DezStanice" ("Id"),
+    "SekcijaId" INTEGER NULL,
+    "Vrijeme" TEXT NOT NULL,
+    "Smjer" TEXT NOT NULL,
+    "ClanId" INTEGER NULL REFERENCES "Clanovi" ("Id") ON DELETE SET NULL,
+    "Ime" TEXT NOT NULL,
+    "Prezime" TEXT NOT NULL,
+    "Gost" INTEGER NOT NULL DEFAULT 0,
+    "Oznaka" TEXT NULL,
+    "Razlog" TEXT NULL,
+    "Vozilo" INTEGER NOT NULL DEFAULT 1,
+    "Obuca" INTEGER NOT NULL DEFAULT 1,
+    "Oprema" INTEGER NOT NULL DEFAULT 1,
+    "UpisaoKorisnikId" INTEGER NULL,
+    "UpisaoIme" TEXT NULL,
+    "PozvaoIme" TEXT NULL,
+    "Lat" REAL NULL,
+    "Lon" REAL NULL,
+    "Tocnost" REAL NULL,
+    "Udaljenost" REAL NULL,
+    "Lokacija" INTEGER NOT NULL DEFAULT 0,
+    "Naknadno" INTEGER NOT NULL DEFAULT 0,
+    "NaknadnoRazlog" TEXT NULL,
+    "Ponisteno" INTEGER NOT NULL DEFAULT 0,
+    "PonistenoRazlog" TEXT NULL,
+    "Grupa" TEXT NOT NULL,
+    "Kreirano" TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS "IX_DezUpisi_Vrijeme" ON "DezUpisi" ("Vrijeme");
+CREATE INDEX IF NOT EXISTS "IX_DezUpisi_StanicaId" ON "DezUpisi" ("StanicaId");
+CREATE INDEX IF NOT EXISTS "IX_DezUpisi_ClanId" ON "DezUpisi" ("ClanId");
+CREATE INDEX IF NOT EXISTS "IX_DezUpisi_Grupa" ON "DezUpisi" ("Grupa");
+CREATE TABLE IF NOT EXISTS "ClanVozila" (
+    "Id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "ClanId" INTEGER NOT NULL REFERENCES "Clanovi" ("Id") ON DELETE CASCADE,
+    "Oznaka" TEXT NOT NULL,
+    "Zadano" INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS "IX_ClanVozila_ClanId" ON "ClanVozila" ("ClanId");
+UPDATE "Uloge" SET "Prava" = "Prava" | 7168 WHERE ("Prava" & 1023) = 1023;
+INSERT INTO "Uloge" ("Naziv", "Opis", "Prava", "Sustavna", "SveSekcije")
+    SELECT 'Lovočuvar', 'Knjiga dezinfekcije: pregled, naknadni upis, stanice i QR oznake', 7168, 0, 0
+    WHERE NOT EXISTS (SELECT 1 FROM "Uloge" WHERE "Naziv" = 'Lovočuvar');
+SQL);
     }
     $pdo->exec('PRAGMA user_version = ' . SHEMA_PHP);
     $pdo->commit();

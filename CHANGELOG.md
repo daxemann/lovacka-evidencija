@@ -1,5 +1,18 @@
 # Promjene
 
+## 1.3.0 – 2026-10
+- Novo: **Knjiga dezinfekcije (ASK)** – dolasci i odlasci u lovište preko QR oznake na dezinfekcijskoj stanici.
+  - Svaka sekcija ima svoju stanicu (koordinate, radijus, sredstvo); koordinate ručno ili „📍 Ovdje sam“ na samoj stanici.
+  - Član skenira QR → provjera lokacije (GPS, radijus podesiv, zadano 100 m) → DOLAZAK / ODLAZAK, razlog, reg. oznaka iz profila,
+    do 3 lovca iz udruge i gosti u istom upisu. Vrijeme je uvijek vrijeme poslužitelja. Daleko od stanice upis nije moguć;
+    nepouzdana lokacija ili bez lokacije – upis ide, ali je označen.
+  - Pregled po sekcijama ili sve, razdoblja (dan, mjesec, godina, lovna godina, od–do), „trenutno u lovištu“, ispis, PDF (A4 položeno), e-pošta.
+  - Naknadni upis i poništavanje – uvijek s razlogom, vidljivo u knjizi.
+  - **Inspekcija**: vlastita QR oznaka + stalna lozinka (6–8 znakova, Dezinfekcija → Stanice i QR); pregled, ispis, PDF, slanje na svoj e-mail; svaki pristup u dnevniku.
+  - Nova prava „Dezinfekcija – pregled / naknadni upis / postavke“ i uloga „Lovočuvar“ (Uloge i prava).
+- Moj profil: **moja vozila** (reg. oznake).
+- Izbornik: skupine se mogu sklopiti, cijeli izbornik se na računalu može sakriti (☰).
+
 ## 1.2.3 – 2026-10
 - Novo: **Pomoć i kontakt** u izborniku – prijava greške, prijedlog ili pitanje autoru e-poštom (verzija programa se automatski dodaje), poveznice na GitHub.
 

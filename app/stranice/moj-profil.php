@@ -21,6 +21,21 @@ if (je_post()) {
         spremi_vidljivost((int) $c['Id'], array_map(fn($f) => isset($_POST['v'][$f]), array_combine(array_keys(POLJA_VIDLJIVOSTI), array_keys(POLJA_VIDLJIVOSTI))));
         dnevnik('Član promijenio dijeljenje kontakata', 'Clan', (int) $c['Id'], puno_ime($c));
         poruka('Spremljeno – imenik prikazuje samo ono što ste označili.');
+    } elseif ($radnja === 'vozilo-dodaj') {
+        $oz = normaliziraj_oznaku(ul_str('oznaka'));
+        if ($oz !== '') {
+            dodaj_vozilo((int) $c['Id'], $oz, isset($_POST['zadano']));
+            poruka('Vozilo je spremljeno.');
+        }
+    } elseif ($radnja === 'vozilo-obrisi') {
+        q('DELETE FROM ClanVozila WHERE Id=? AND ClanId=?', [(int) ($_POST['id'] ?? 0), $c['Id']]);
+        if (!vrijednost('SELECT 1 FROM ClanVozila WHERE ClanId=? AND Zadano=1', [$c['Id']])) {
+            q('UPDATE ClanVozila SET Zadano=1 WHERE Id=(SELECT MIN(Id) FROM ClanVozila WHERE ClanId=?)', [$c['Id']]);
+        }
+    } elseif ($radnja === 'vozilo-zadano') {
+        if (vrijednost('SELECT 1 FROM ClanVozila WHERE Id=? AND ClanId=?', [(int) ($_POST['id'] ?? 0), $c['Id']])) {
+            q('UPDATE ClanVozila SET Zadano=(Id=?) WHERE ClanId=?', [(int) $_POST['id'], $c['Id']]);
+        }
     } elseif ($radnja === 'obrisi-foto') {
         obrisi_sliku($c['FotoDatoteka']);
         azuriraj('Clanovi', (int) $c['Id'], ['FotoDatoteka' => null, 'Azurirano' => sada()]);
@@ -47,6 +62,7 @@ $bodovi = (float) vrijednost('SELECT COALESCE(SUM(CAST(Bodovi AS REAL)),0) FROM 
 $ceka = (int) vrijednost('SELECT COUNT(*) FROM RadneAkcije WHERE ClanId=? AND Status=0', [$c['Id']]);
 $pv = fn($f) => e($c[$f] ?? '');
 $vid = vidljivost_clana((int) $c['Id']);
+$vozila = vozila_clana((int) $c['Id']);
 ob_start(); ?>
 <div class="d-flex align-items-center gap-3 mb-3">
     <div class="text-center">
@@ -101,6 +117,22 @@ ob_start(); ?>
             <button class="btn btn-outline-primary btn-sm mt-2">Spremi</button>
             <a class="btn btn-link btn-sm mt-2" href="<?= e(url('imenik')) ?>">Otvori imenik</a>
         </form>
+    </div></div></div>
+    <div class="col-lg-6" id="vozila"><div class="card"><div class="card-header">Moja vozila (reg. oznake)</div><div class="card-body">
+        <p class="small text-muted">Za knjigu dezinfekcije – pri upisu na stanici oznaka je već odabrana. Prvo vozilo je zadano.</p>
+        <?php if ($vozila): ?><ul class="list-group mb-3">
+            <?php foreach ($vozila as $vz): ?><li class="list-group-item d-flex align-items-center gap-2">
+                <b class="me-auto"><?= e($vz['Oznaka']) ?></b>
+                <?php if ($vz['Zadano']): ?><span class="badge bg-success">zadano</span><?php else: ?>
+                    <form method="post" action="<?= e(url('moj-profil')) ?>"><?= csrf() ?><input type="hidden" name="radnja" value="vozilo-zadano"><input type="hidden" name="id" value="<?= (int) $vz['Id'] ?>"><button class="btn btn-sm btn-link p-0">zadano</button></form>
+                <?php endif; ?>
+                <form method="post" action="<?= e(url('moj-profil')) ?>"><?= csrf() ?><input type="hidden" name="radnja" value="vozilo-obrisi"><input type="hidden" name="id" value="<?= (int) $vz['Id'] ?>"><button class="btn btn-sm btn-link text-danger p-0" data-potvrda="Ukloniti vozilo?">✕</button></form>
+            </li><?php endforeach; ?></ul><?php endif; ?>
+        <?php if (count($vozila) < 5): ?>
+        <form method="post" action="<?= e(url('moj-profil')) ?>" class="d-flex gap-2"><?= csrf() ?><input type="hidden" name="radnja" value="vozilo-dodaj">
+            <input name="oznaka" class="form-control text-uppercase" maxlength="20" placeholder="npr. VT 123-AB" required>
+            <button class="btn btn-outline-primary text-nowrap">Dodaj</button></form>
+        <?php endif; ?>
     </div></div></div>
     <div class="col-lg-6"><div class="card"><div class="card-header">Moji podaci (mijenja ih udruga)</div>
         <ul class="list-group list-group-flush small">

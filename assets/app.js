@@ -80,6 +80,18 @@ window.viberPoruka = function (broj) {
         document.querySelectorAll('.chat-red.aktivna').forEach(function (x) { if (x !== r) x.classList.remove('aktivna'); });
         if (r) r.classList.toggle('aktivna');
     });
+    // ---------- Izbornik: sakrij / prikaži (računalo) i sklopive skupine ----------
+    var mem = { get: function (k) { try { return localStorage.getItem(k); } catch (x) { return null; } }, set: function (k, v) { try { localStorage.setItem(k, v); } catch (x) { /* privatni način */ } } };
+    document.addEventListener('click', function (e) {
+        if (!e.target.closest('[data-izbornik]')) return;
+        var skriven = document.documentElement.classList.toggle('izbornik-skriven');
+        mem.set('ev-izbornik', skriven ? '0' : '1');
+    });
+    document.querySelectorAll('details.nav-grupa').forEach(function (d) {
+        var id = 'ev-grupa-' + d.getAttribute('data-grupa');
+        if (!d.hasAttribute('data-aktivna') && mem.get(id) === '0') d.open = false;
+        d.addEventListener('toggle', function () { mem.set(id, d.open ? '1' : '0'); });
+    });
     // ---------- "Dodaj na početni zaslon" (PWA) ----------
     var ls = { get: function (k) { try { return localStorage.getItem(k); } catch (x) { return null; } }, set: function (k, v) { try { localStorage.setItem(k, v); } catch (x) { /* privatni način */ } } };
     if ('serviceWorker' in navigator && window.EV && EV.sw && window.isSecureContext) { navigator.serviceWorker.register(EV.sw).catch(function () {}); }

@@ -336,3 +336,35 @@ main {
 .chat-brisi { position: absolute; top: -.35rem; right: -.35rem; display: none; }
 .chat-brisi button { background: #fff; border-radius: 50%; width: 1.4rem; height: 1.4rem; line-height: 1; color: #c62828; box-shadow: 0 1px 3px rgba(0,0,0,.25); text-decoration: none; }
 .chat-red.moja:hover .chat-brisi, .chat-red.moja:focus-within .chat-brisi, .chat-red.moja.aktivna .chat-brisi { display: block; }
+
+/* ---------- Izbornik: sakrivanje i skupine ---------- */
+.izbornik-gumb { border: 0; background: none; font-size: 1.35rem; line-height: 1; padding: .25rem .5rem; color: #2f5d23; border-radius: 6px; }
+.izbornik-gumb:hover { background: rgba(0,0,0,.06); }
+@media (max-width: 640.98px) { .izbornik-gumb { display: none; } }
+@media (min-width: 641px) { html.izbornik-skriven .sidebar { display: none; } }
+.nav-grupa > summary { list-style: none; cursor: pointer; display: flex; align-items: center; user-select: none; padding-bottom: .35rem; }
+.nav-grupa > summary::-webkit-details-marker { display: none; }
+.nav-grupa > summary::after { content: '▾'; margin-left: auto; font-size: .9rem; transition: transform .15s; }
+.nav-grupa:not([open]) > summary::after { transform: rotate(-90deg); }
+.nav-grupa > summary:hover { color: #fff !important; }
+.sidebar .nav-grupa .nav-item:first-of-type { padding-top: 0; }
+.sidebar .nav-grupa .nav-item:last-of-type { padding-bottom: .5rem; }
+
+/* ---------- Dezinfekcija ---------- */
+.dez-gps { border-radius: 10px; padding: .6rem .8rem; border: 1px solid; }
+.dez-gps-ceka { background: #f4f6f2; border-color: #dfe5da; }
+.dez-gps-ok { background: #e6f4e1; border-color: #9fd18e; }
+.dez-gps-pola { background: #fff6e0; border-color: #f0c96a; }
+.dez-gps-ne { background: #fde8e8; border-color: #ef9a9a; }
+.dez-smjer { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
+.dez-smjer .btn { padding: .9rem .25rem; font-weight: 700; font-size: 1.05rem; }
+.dez-smjer .btn-check:checked + .btn-outline-warning { color: #3b2a00; }
+.dez-potvrda { background: #f4f6f2; border-radius: 8px; padding: .6rem .6rem .6rem 2.1rem; }
+.dez-potvrda .form-check-input { width: 1.3em; height: 1.3em; margin-top: .1em; }
+.dez-kvacica { width: 96px; height: 96px; border-radius: 50%; margin: 0 auto; display: flex; align-items: center; justify-content: center; font-size: 3.4rem; color: #fff; font-weight: 700; }
+.dez-dolazak { background: #2e7d32; } .dez-odlazak { background: #ef8f00; }
+.dez-ponisteno td { color: #9aa0a6; text-decoration: line-through; }
+.dez-ponisteno td:nth-last-child(-n+3) { text-decoration: none; }
+.dez-ponisti summary { cursor: pointer; list-style: none; }
+.dez-ponisti summary::-webkit-details-marker { display: none; }
+.text-uppercase::placeholder { text-transform: none; }
