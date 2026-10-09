@@ -1,5 +1,8 @@
 # Promjene
 
+## 1.7.2 – 2026-10
+- Dezinfekcija: nepreciznost GPS-a uzima se u obzir najviše 150 m izvan radijusa (prije do 2 km) – dalje od toga upis se odbija.
+
 ## 1.7.1 – 2026-10
 - Dezinfekcija: **odgovorna osoba i potpis po sekciji**. PDF jedne sekcije nosi potpis te sekcije, PDF svih sekcija potpise svih.
 
