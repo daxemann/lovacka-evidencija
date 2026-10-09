@@ -1,5 +1,8 @@
 # Promjene
 
+## 1.4.1 – 2026-10
+- Knjiga dezinfekcije: glavni admin može **trajno obrisati poništene upise** (npr. probne) – uz „prikaži poništene“, zapisuje se u dnevnik.
+
 ## 1.4.0 – 2026-10
 - **Mobilna dezinfekcijska stanica** (skupni lov): svaka sekcija ima jednu QR oznaku mobilne stanice koja se koristi za svaki lov.
   Ovlaštena osoba (novo pravo „Dezinfekcija – mobilna stanica“, uloga Lovočuvar) na licu mjesta dodirne „📍 Aktiviraj ovdje“ –

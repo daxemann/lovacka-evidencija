@@ -23,6 +23,18 @@ if (je_post()) {
             dnevnik('Dezinfekcija – poništen upis', 'DezUpis', (int) $u['Id'], dez_ime($u) . ' ' . datum_vrijeme($u['Vrijeme']) . ': ' . $razlog);
             poruka('Upis je poništen (ostaje vidljiv uz „prikaži poništene“).');
         }
+    } elseif ($radnja === 'obrisi-ponistene' && ima(P_SUSTAV) && ima(P_DEZ_UREDI)) {
+        // trajno brisanje samo već poništenih upisa (npr. probni upisi) – u odabranom prikazu, zapisano u dnevnik
+        $fp = $f;
+        $fp['Ponisteni'] = true;
+        $za = array_values(array_filter(dez_upisi($fp, $ids), fn($u) => (int) $u['Ponisteno'] === 1));
+        if ($za) {
+            q('DELETE FROM DezUpisi WHERE Ponisteno=1 AND Id IN (' . implode(',', array_map(fn($u) => (int) $u['Id'], $za)) . ')');
+            dnevnik('Dezinfekcija – trajno obrisani poništeni upisi', null, null, count($za) . ': ' . implode('; ', array_map(fn($u) => dez_ime($u) . ' ' . datum_vrijeme($u['Vrijeme']) . ' (' . $u['PonistenoRazlog'] . ')', $za)));
+            poruka('Trajno obrisano ' . count($za) . ' poništenih upisa.');
+        } else {
+            poruka('Nema poništenih upisa u ovom prikazu.', 'warning');
+        }
     } elseif ($radnja === 'posalji') {
         $prim = array_values(array_filter(array_map('trim', preg_split('/[,;\s]+/', (string) ($_POST['primatelji'] ?? '')))));
         $prim = array_filter($prim, fn($a) => filter_var($a, FILTER_VALIDATE_EMAIL));
@@ -118,6 +130,11 @@ ob_start(); ?>
             <label class="form-check-label" for="pon">prikaži poništene</label></div><?php endif; ?>
     </div>
 </form>
+<?php $brPon = $f['Ponisteni'] ? count(array_filter($upisi, fn($u) => (int) $u['Ponisteno'] === 1)) : 0; if ($brPon && ima(P_SUSTAV) && ima(P_DEZ_UREDI)): ?>
+<form method="post" action="<?= e(url('dezinfekcija', $upit)) ?>" class="mb-3 no-print"><?= csrf() ?><input type="hidden" name="radnja" value="obrisi-ponistene">
+    <button class="btn btn-sm btn-outline-danger" data-potvrda="Trajno obrisati <?= $brPon ?> poništenih upisa iz ovog prikaza? Ovo se ne može vratiti.">🗑 Trajno obriši poništene (<?= $brPon ?>)</button>
+    <span class="small text-muted ms-2">npr. probni upisi – samo glavni admin, zapisuje se u dnevnik</span></form>
+<?php endif; ?>
 <?php if (posta_dostupna()): ?>
 <form method="post" action="<?= e(url('dezinfekcija', $upit)) ?>" class="d-flex flex-wrap gap-2 mb-3 no-print"><?= csrf() ?>
     <input name="primatelji" type="text" inputmode="email" class="form-control form-control-sm" style="max-width:340px" placeholder="e-mail (PDF u privitku)">
