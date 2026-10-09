@@ -1,5 +1,8 @@
 # Promjene
 
+## 1.7.1 – 2026-10
+- Dezinfekcija: **odgovorna osoba i potpis po sekciji**. PDF jedne sekcije nosi potpis te sekcije, PDF svih sekcija potpise svih.
+
 ## 1.7.0 – 2026-10
 - Dezinfekcija: **potpis odgovorne osobe** – jednom prstom/mišem ili fotografija potpisa (Stanice i QR); automatski na svakom PDF-u evidencije uz napomenu „elektronički generirano“. Kod promjene odgovorne osobe potpis se briše.
 

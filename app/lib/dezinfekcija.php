@@ -522,7 +522,6 @@ function dez_pdf(array $upisi, array $stanice, string $razdoblje, string $sekcij
         $logo = '<img src="data:' . $mime . ';base64,' . base64_encode((string) file_get_contents($l)) . '" style="height:46px;float:left;margin-right:10px">';
     }
     $loviste = postavka('Dez.Loviste', '');
-    $odg = postavka('Dez.OdgovornaOsoba', '');
     $html = '<html><head><meta charset="utf-8"><style>
         @page { margin: 14mm 10mm 16mm 10mm; }
         body { font-family: DejaVu Sans, sans-serif; font-size: 8pt; color: #222; }
@@ -538,7 +537,7 @@ function dez_pdf(array $upisi, array $stanice, string $razdoblje, string $sekcij
     <div class="zag">' . $logo . '<div class="n">' . e(udruga_naziv()) . '</div><div class="p">'
         . e(($loviste ? 'Lovište: ' . $loviste . "\n" : '') . dez_opis_stanica($stanice, $upisi)) . '</div></div>'
         . dez_html($upisi, 'Evidencija dezinfekcije vozila, obuće i opreme (ASK)' . ($stanice && $stanice[0]['Vrsta'] === 'M' ? ' – mobilna stanica' : ''), 'Razdoblje: ' . $razdoblje . ' · ' . $sekcijaOpis . ' · upisa: ' . count($upisi), true, count($stanice) > 1 || ($stanice && $stanice[0]['Vrsta'] === 'M'))
-        . dez_potpis_pdf_html($odg)
+        . dez_potpis_pdf_html($stanice)
         . ($liste ? '<div class="pod" style="margin-top:6px">Prilog: ' . count($liste) . ' fotografija papirnatih lista (sljedeće stranice).</div>' . dez_liste_pdf_html($liste) : '')
         . '</body></html>';
     $opt = new Dompdf\Options();
@@ -661,22 +660,45 @@ function dez_liste_pdf_html(array $liste): string
     return $o;
 }
 
-// ---------- Potpis odgovorne osobe ----------
-function dez_potpis_datauri(): ?string
+// ---------- Odgovorna osoba i potpis (po sekciji) ----------
+function dez_kljuc_sekcije(?int $sid): string
 {
-    $p = postavka('Dez.Potpis');
-    if (!$p || !postavka('Dez.OdgovornaOsoba')) {
+    return $sid === null ? '0' : (string) $sid;
+}
+function dez_odgovorna(?int $sid): ?string
+{
+    return postavka('Dez.Odgovorna.' . dez_kljuc_sekcije($sid));
+}
+function dez_potpis_datauri(?int $sid): ?string
+{
+    $p = postavka('Dez.Potpis.' . dez_kljuc_sekcije($sid));
+    if (!$p || !dez_odgovorna($sid)) {
         return null;
     }
     $put = podaci('foto/' . basename($p));
     return is_file($put) ? 'data:image/png;base64,' . base64_encode((string) file_get_contents($put)) : null;
 }
-function dez_potpis_pdf_html(string $odg): string
+/** Blok potpisa za PDF: jedan po sekciji stanica u ispisu. */
+function dez_potpis_pdf_html(array $stanice): string
 {
-    $slika = dez_potpis_datauri();
-    if ($slika) {
-        return '<table style="margin-top:14px; border-collapse:collapse"><tr><td style="vertical-align:bottom; padding-right:14px">Odgovorna osoba: <b>' . e($odg) . '</b></td>'
-            . '<td style="text-align:center"><img src="' . $slika . '" style="height:16mm"><div style="border-top:0.5pt solid #555; font-size:7pt; color:#666; padding-top:1px">potpis · elektronički generirano iz evidencije ' . date('d.m.Y. H:i') . '</div></td></tr></table>';
+    $sek = [];
+    foreach ($stanice as $st) {
+        $sid = $st['SekcijaId'] !== null ? (int) $st['SekcijaId'] : null;
+        $sek[dez_kljuc_sekcije($sid)] = [$sid, $st['SekcijaNaziv'] ?? null];
     }
-    return '<div class="potpis">Odgovorna osoba: ' . ($odg !== '' ? e($odg) : '______________________') . ' &nbsp;&nbsp;&nbsp; Potpis: ______________________</div>';
+    if (!$sek) {
+        $sek['0'] = [null, null];
+    }
+    $vise = count($sek) > 1;
+    $o = '<table style="margin-top:14px; border-collapse:collapse; page-break-inside:avoid"><tr>';
+    foreach ($sek as [$sid, $naziv]) {
+        $odg = (string) dez_odgovorna($sid);
+        $slika = dez_potpis_datauri($sid);
+        $o .= '<td style="vertical-align:top; padding-right:28px">' . ($vise && $naziv ? 'Sekcija ' . e($naziv) . '<br>' : '')
+            . 'Odgovorna osoba: ' . ($odg !== '' ? '<b>' . e($odg) . '</b>' : '______________________')
+            . '<div style="height:17mm; margin-top:2px">' . ($slika ? '<img src="' . $slika . '" style="height:16mm">' : '') . '</div>'
+            . '<div style="border-top:0.5pt solid #555; width:62mm; font-size:7pt; color:#666; padding-top:1px">potpis'
+            . ($slika ? ' · elektronički generirano iz evidencije ' . date('d.m.Y. H:i') : '') . '</div></td>';
+    }
+    return $o . '</tr></table>';
 }
