@@ -1,5 +1,14 @@
 # Promjene
 
+## 1.4.0 – 2026-10
+- **Mobilna dezinfekcijska stanica** (skupni lov): svaka sekcija ima jednu QR oznaku mobilne stanice koja se koristi za svaki lov.
+  Ovlaštena osoba (novo pravo „Dezinfekcija – mobilna stanica“, uloga Lovočuvar) na licu mjesta dodirne „📍 Aktiviraj ovdje“ –
+  položaj mobitela postaje središte stanice, vrijedi do zadanog vremena ili zatvaranja. Prikaz uživo: tko je na lovu, tko je otišao.
+  Premještanje, produženje, zatvaranje. Mobilne stanice imaju zasebnu knjigu (kartica „Mobilne stanice“), PDF i pregled za inspekciju.
+- **Rad bez signala**: stranice stanica se spremaju na mobitel. Bez interneta se upis sprema na mobitelu (vrijeme mobitela + lokacija)
+  i šalje automatski čim ima signala; u knjizi je označen „offline“ s vremenom primitka. Odbijeni upisi (predaleko, stanica nije bila aktivna) prikazuju se članu.
+- Naknadni upis i za akcije mobilne stanice.
+
 ## 1.3.0 – 2026-10
 - Novo: **Knjiga dezinfekcije (ASK)** – dolasci i odlasci u lovište preko QR oznake na dezinfekcijskoj stanici.
   - Svaka sekcija ima svoju stanicu (koordinate, radijus, sredstvo); koordinate ručno ili „📍 Ovdje sam“ na samoj stanici.

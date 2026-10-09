@@ -5,11 +5,22 @@ dez_osiguraj_stanice();
 $k = korisnik();
 $stanice = array_values(array_filter(dez_stanice(), fn($s) => $s['Aktivna']));
 $razlozi = dez_razlozi();
+$mobIds = array_map(fn($s) => (int) $s['Id'], dez_stanice(true, 'M'));
+$akcije = $mobIds ? redovi('SELECT a.*, st.SekcijaId, st.Naziv AS Stanica FROM DezAktivacije a JOIN DezStanice st ON st.Id=a.StanicaId
+    WHERE a.StanicaId IN (' . implode(',', $mobIds) . ') ORDER BY a.Od DESC LIMIT 15') : [];
 if (je_post()) {
     $st = null;
+    $akc = null;
+    $izbor = (string) ($_POST['stanica'] ?? '');
     foreach ($stanice as $s) {
-        if ((int) $s['Id'] === (int) ($_POST['stanica'] ?? 0)) {
+        if ('s' . $s['Id'] === $izbor || (string) $s['Id'] === $izbor) {
             $st = $s;
+        }
+    }
+    foreach ($akcije as $a) {
+        if ('a' . $a['Id'] === $izbor) {
+            $akc = $a;
+            $st = ['Id' => $a['StanicaId'], 'SekcijaId' => $a['SekcijaId']];
         }
     }
     $d = u_datum(ul_str('datum'));
@@ -40,7 +51,7 @@ if (je_post()) {
     $razlog = $raz['Naziv'] . ($raz['Slobodno'] && ul_str('razlog_opis') !== '' ? ': ' . mb_substr(ul_str('razlog_opis'), 0, 80) : '');
     $oznaka = normaliziraj_oznaku(ul_str('oznaka')) ?: null;
     $id = umetni('DezUpisi', [
-        'StanicaId' => (int) $st['Id'], 'SekcijaId' => $st['SekcijaId'], 'Vrijeme' => date('Y-m-d H:i:s', $t), 'Smjer' => $smjer,
+        'StanicaId' => (int) $st['Id'], 'SekcijaId' => $st['SekcijaId'], 'AktivacijaId' => $akc ? (int) $akc['Id'] : null, 'Vrijeme' => date('Y-m-d H:i:s', $t), 'Smjer' => $smjer,
         'ClanId' => $c ? (int) $c['Id'] : null, 'Ime' => $ime, 'Prezime' => $prez, 'Gost' => $c ? 0 : 1, 'Oznaka' => $oznaka, 'Razlog' => $razlog,
         'Vozilo' => isset($_POST['d_vozilo']) ? 1 : 0, 'Obuca' => isset($_POST['d_obuca']) ? 1 : 0, 'Oprema' => isset($_POST['d_oprema']) ? 1 : 0,
         'UpisaoKorisnikId' => $k['Id'], 'UpisaoIme' => $k['Naziv'], 'PozvaoIme' => $c ? null : $k['Naziv'],
@@ -60,7 +71,9 @@ ob_start(); ?>
 <form method="post" action="<?= e(url('dezinfekcija/naknadno')) ?>" class="card card-body" style="max-width:720px"><?= csrf() ?>
     <div class="row g-3">
         <div class="col-md-6"><label class="form-label">Stanica</label>
-            <select name="stanica" class="form-select" required><?php foreach ($stanice as $s): ?><option value="<?= (int) $s['Id'] ?>"<?= sel($s['Id'], $o['stanica'] ?? '') ?>><?= e($s['Naziv']) ?></option><?php endforeach; ?></select></div>
+            <select name="stanica" class="form-select" required><optgroup label="Stalne stanice"><?php foreach ($stanice as $s): ?><option value="s<?= (int) $s['Id'] ?>"<?= sel('s' . $s['Id'], $o['stanica'] ?? '') ?>><?= e($s['Naziv']) ?></option><?php endforeach; ?></optgroup>
+                <?php if ($akcije): ?><optgroup label="Mobilne stanice (akcije)"><?php foreach ($akcije as $a): ?><option value="a<?= (int) $a['Id'] ?>"<?= sel('a' . $a['Id'], $o['stanica'] ?? '') ?>><?= e($a['Naziv'] . ' · ' . datum($a['Od'])) ?></option><?php endforeach; ?></optgroup><?php endif; ?>
+            </select></div>
         <div class="col-6 col-md-3"><label class="form-label">Datum</label><input type="date" name="datum" class="form-control" required max="<?= danas() ?>" value="<?= e($o['datum'] ?? danas()) ?>"></div>
         <div class="col-6 col-md-3"><label class="form-label">Vrijeme</label><input type="time" name="vrijeme" class="form-control" required value="<?= e($o['vrijeme'] ?? '') ?>"></div>
         <div class="col-12"><div class="btn-group" role="group">

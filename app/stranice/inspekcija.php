@@ -59,9 +59,11 @@ if (!dez_insp_prijavljen()) {
 }
 
 // ---------- prijavljen ----------
-$stanice = dez_stanice(false);
-$ids = array_map(fn($s) => (int) $s['Id'], $stanice);
 $f = dez_filtar($_GET);
+$f['AktivacijaId'] = null;
+$mob = $f['Vrsta'] === 'M';
+$stanice = dez_stanice(false, $f['Vrsta']);
+$ids = array_map(fn($s) => (int) $s['Id'], $stanice);
 $f['Ponisteni'] = false;
 $f['Trazi'] = '';
 $upit = dez_filtar_upit($f);
@@ -107,8 +109,12 @@ if (je_post() && ($_POST['radnja'] ?? '') === 'posalji') {
     preusmjeri('inspekcija', $ovdje + $upit);
 }
 ob_start(); ?>
+<ul class="nav nav-tabs mb-3 no-print">
+    <li class="nav-item"><a class="nav-link<?= $mob ? '' : ' active' ?>" href="<?= e(url('inspekcija', $ovdje + array_diff_key($upit, ['Vrsta' => 1]))) ?>">Stalne stanice</a></li>
+    <li class="nav-item"><a class="nav-link<?= $mob ? ' active' : '' ?>" href="<?= e(url('inspekcija', $ovdje + ['Vrsta' => 'M'] + $upit)) ?>">Mobilne stanice (skupni lov)</a></li>
+</ul>
 <form method="get" action="<?= e(url()) ?>" class="card card-body mb-3 no-print">
-    <input type="hidden" name="p" value="inspekcija"><input type="hidden" name="k" value="<?= e($tok) ?>">
+    <input type="hidden" name="p" value="inspekcija"><input type="hidden" name="k" value="<?= e($tok) ?>"><?php if ($mob): ?><input type="hidden" name="Vrsta" value="M"><?php endif; ?>
     <div class="row g-2 align-items-end">
         <div class="col-6 col-md-3"><label class="form-label small">Razdoblje</label>
             <select name="Razdoblje" class="form-select form-select-sm" data-auto>
@@ -141,19 +147,19 @@ ob_start(); ?>
 </form>
 <?php endif; ?>
 <div class="mb-2">
-    <div class="h5 mb-0">Evidencija dezinfekcije vozila, obuće i opreme</div>
+    <div class="h5 mb-0">Evidencija dezinfekcije vozila, obuće i opreme<?= $mob ? ' – mobilne stanice' : '' ?></div>
     <div class="text-muted small"><?= e(udruga_naziv()) ?><?= postavka('Dez.Loviste') ? ' · ' . e(postavka('Dez.Loviste')) : '' ?> · <?= e($opis) ?> · <?= e($sekOpis) ?> · <?= count($upisi) ?> upisa</div>
-    <div class="text-muted small"><?php foreach ($stF as $s): ?><div><?= e($s['Naziv']) ?><?= $s['Sredstvo'] ? ' · sredstvo: ' . e($s['Sredstvo']) : '' ?></div><?php endforeach; ?></div>
+    <div class="text-muted small" style="white-space:pre-line"><?= e(dez_opis_stanica($stF, $upisi)) ?></div>
 </div>
 <?php if ($upisi): ?>
 <div class="table-responsive bg-white"><table class="table table-sm align-middle mb-0">
     <thead><tr><th>Datum</th><th>Vrijeme</th><th>Ime i prezime</th><th>Član/gost</th><th>Reg. oznaka</th><th>Razlog</th><th>Smjer</th><th>Dezinficirano</th>
-        <?= count($stF) > 1 ? '<th>Stanica</th>' : '' ?><th>Napomena</th><th>Lokacija</th></tr></thead>
+        <?= count($stF) > 1 || $mob ? '<th>' . ($mob ? 'Akcija' : 'Stanica') . '</th>' : '' ?><th>Napomena</th><th>Lokacija</th></tr></thead>
     <tbody>
     <?php foreach ($upisi as $u): $t = strtotime($u['Vrijeme']); ?>
         <tr><td class="text-nowrap"><?= date('d.m.Y.', $t) ?></td><td><?= date('H:i', $t) ?></td><td><?= e(dez_ime($u)) ?></td><td><?= $u['Gost'] ? 'gost' : 'član' ?></td>
             <td class="text-nowrap"><?= e($u['Oznaka'] ?? '—') ?></td><td class="small"><?= e($u['Razlog']) ?></td><td><?= DEZ_SMJER[$u['Smjer']] ?></td><td class="small"><?= e(dez_dezinficirano($u)) ?></td>
-            <?= count($stF) > 1 ? '<td class="small">' . e($u['Stanica']) . '</td>' : '' ?><td class="small text-muted"><?= e(dez_upisao($u)) ?></td><td class="small"><?= e(dez_oznaka_lokacije($u, true)) ?></td></tr>
+            <?= count($stF) > 1 || $mob ? '<td class="small">' . e($mob ? ($u['Akcija'] ?? $u['Stanica']) : $u['Stanica']) . '</td>' : '' ?><td class="small text-muted"><?= e(dez_upisao($u)) ?></td><td class="small"><?= e(dez_oznaka_lokacije($u, true)) ?></td></tr>
     <?php endforeach; ?>
     </tbody>
 </table></div>

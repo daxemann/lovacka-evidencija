@@ -2,7 +2,7 @@
 /** Dezinfekcija – stanice (po sekciji), razlozi dolaska, pristup za inspekciju. */
 trazi(P_DEZ_POSTAVKE);
 dez_osiguraj_stanice();
-$stanice = dez_stanice();
+$stanice = array_merge(dez_stanice(), dez_stanice(true, 'M'));
 $ids = array_map(fn($s) => (int) $s['Id'], $stanice);
 
 /** "45.81234" ili "45,81234" → float; "45.8, 17.4" u jednom polju → [lat, lon]. */
@@ -26,7 +26,8 @@ if (je_post()) {
                 if (!in_array((int) $id, $ids, true)) {
                     continue;
                 }
-                [$lat, $lon] = $koord((string) ($s['Lat'] ?? ''), (string) ($s['Lon'] ?? ''));
+                $jeMob = vrijednost('SELECT Vrsta FROM DezStanice WHERE Id=?', [(int) $id]) === 'M';
+                [$lat, $lon] = $jeMob ? [null, null] : $koord((string) ($s['Lat'] ?? ''), (string) ($s['Lon'] ?? ''));
                 if (trim((string) ($s['Lat'] ?? '')) !== '' && $lat === null) {
                     poruka('Koordinate nisu ispravne (npr. 45.81234 i 17.45678) – ' . e((string) ($s['Naziv'] ?? '')), 'warning');
                     continue;
@@ -99,17 +100,20 @@ ob_start(); ?>
 <div class="row g-3">
 <?php foreach ($stanice as $s): $i = (int) $s['Id']; ?>
     <div class="col-lg-6"><div class="card h-100 <?= $s['Aktivna'] ? '' : 'opacity-75' ?>">
-        <div class="card-header d-flex align-items-center gap-2"><b><?= e($s['SekcijaNaziv'] ?? 'Bez sekcije') ?></b>
-            <?= $s['Lat'] === null ? '<span class="badge bg-warning text-dark">nema koordinata</span>' : '<span class="badge bg-success">koordinate ✓</span>' ?>
+        <div class="card-header d-flex align-items-center gap-2"><b><?= $s['Vrsta'] === 'M' ? 'Mobilna · ' : '' ?><?= e($s['SekcijaNaziv'] ?? 'Bez sekcije') ?></b>
+            <?php if ($s['Vrsta'] === 'M'): ?><span class="badge bg-info text-dark">položaj pri aktivaciji</span>
+            <?php else: ?><?= $s['Lat'] === null ? '<span class="badge bg-warning text-dark">nema koordinata</span>' : '<span class="badge bg-success">koordinate ✓</span>' ?><?php endif; ?>
             <a class="ms-auto btn btn-sm btn-outline-secondary" href="<?= e(url('dezinfekcija/qr', ['id' => $i])) ?>" target="_blank">QR za ispis</a></div>
         <div class="card-body"><div class="row g-2">
             <div class="col-12"><label class="form-label small">Naziv</label><input name="st[<?= $i ?>][Naziv]" class="form-control form-control-sm" maxlength="80" value="<?= e($s['Naziv']) ?>"></div>
+<?php if ($s['Vrsta'] !== 'M'): ?>
             <div class="col-6"><label class="form-label small">Geogr. širina (lat)</label><input name="st[<?= $i ?>][Lat]" id="lat<?= $i ?>" class="form-control form-control-sm" inputmode="decimal" placeholder="45.81234" value="<?= $s['Lat'] !== null ? e(rtrim(rtrim(sprintf('%.7F', $s['Lat']), '0'), '.')) : '' ?>"></div>
             <div class="col-6"><label class="form-label small">Geogr. dužina (lon)</label><input name="st[<?= $i ?>][Lon]" id="lon<?= $i ?>" class="form-control form-control-sm" inputmode="decimal" placeholder="17.45678" value="<?= $s['Lon'] !== null ? e(rtrim(rtrim(sprintf('%.7F', $s['Lon']), '0'), '.')) : '' ?>"></div>
             <div class="col-12 d-flex flex-wrap gap-2 align-items-center">
                 <button type="button" class="btn btn-sm btn-outline-primary" data-ovdje="<?= $i ?>">📍 Ovdje sam – uzmi lokaciju</button>
                 <?php if ($s['Lat'] !== null): ?><a class="btn btn-sm btn-link" target="_blank" rel="noopener" href="<?= e(karta_tocke_url((float) $s['Lat'], (float) $s['Lon'])) ?>">Prikaži na karti</a><?php endif; ?>
                 <span class="small text-muted" id="info<?= $i ?>"></span></div>
+<?php else: ?><div class="col-12 small text-muted">Položaj se zadaje pri aktivaciji (Dezinfekcija → Mobilna stanica). Preporučeni krug 150 m.</div><?php endif; ?>
             <div class="col-5"><label class="form-label small">Radijus (m)</label><input type="number" min="20" max="1000" step="10" name="st[<?= $i ?>][Radijus]" class="form-control form-control-sm" value="<?= (int) $s['Radijus'] ?>"></div>
             <div class="col-7"><label class="form-label small">Sredstvo za dezinfekciju</label><input name="st[<?= $i ?>][Sredstvo]" class="form-control form-control-sm" maxlength="120" placeholder="npr. Virkon S 1 %" value="<?= e($s['Sredstvo']) ?>"></div>
             <div class="col-12"><div class="form-check"><input class="form-check-input" type="checkbox" name="st[<?= $i ?>][Aktivna]" id="akt<?= $i ?>" value="1"<?= chk($s['Aktivna']) ?>><label class="form-check-label small" for="akt<?= $i ?>">Aktivna (QR oznaka radi)</label></div></div>

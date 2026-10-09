@@ -5,7 +5,7 @@
  */
 declare(strict_types=1);
 
-const VERZIJA = '1.3.0';
+const VERZIJA = '1.4.0';
 const KONTAKT_EMAIL = 'daxemann@googlemail.com';
 const PROJEKT_URL = 'https://github.com/daxemann/lovacka-evidencija';
 const KORIJEN = __DIR__ . '/..';
@@ -24,8 +24,9 @@ const P_IMENIK_SVI = 512;
 const P_DEZ_PREGLED = 1024;
 const P_DEZ_UREDI = 2048;
 const P_DEZ_POSTAVKE = 4096;
+const P_DEZ_MOBILNA = 8192;
 const P_OSNOVNA = 255; // prava iz .NET verzije
-const P_SVE = 8191;
+const P_SVE = 16383;
 
 const PRAVA_OPIS = [
     P_CLANOVI_CITAJ => ['Članovi – pregled', 'vidi popis članova i njihove podatke'],
@@ -41,6 +42,7 @@ const PRAVA_OPIS = [
     P_DEZ_PREGLED => ['Dezinfekcija – pregled', 'vidi knjigu dezinfekcije (dolasci i odlasci) za stanice svojih sekcija, ispis, PDF, slanje e-poštom'],
     P_DEZ_UREDI => ['Dezinfekcija – naknadni upis', 'naknadno upisuje i poništava upise (uvijek s razlogom, vidljivo u knjizi)'],
     P_DEZ_POSTAVKE => ['Dezinfekcija – postavke', 'stanice (koordinate, radijus, sredstvo), QR oznake, razlozi dolaska, lozinka za inspekciju'],
+    P_DEZ_MOBILNA => ['Dezinfekcija – mobilna stanica', 'aktivira mobilnu dezinfekcijsku stanicu na licu mjesta (npr. skupni lov) i prati tko je došao i otišao'],
 ];
 
 // Statusi (enum vrijednosti kao u .NET verziji)
@@ -114,7 +116,7 @@ function db(): PDO
  * Dodatne tablice PHP verzije (PRAGMA user_version). .NET verzija ih ne poznaje i zanemaruje,
  * pa baza i dalje radi u oba smjera.
  */
-const SHEMA_PHP = 3;
+const SHEMA_PHP = 4;
 function nadogradi_bazu(PDO $pdo): void
 {
     $v = (int) $pdo->query('PRAGMA user_version')->fetchColumn();
@@ -264,6 +266,30 @@ UPDATE "Uloge" SET "Prava" = "Prava" | 7168 WHERE ("Prava" & 1023) = 1023;
 INSERT INTO "Uloge" ("Naziv", "Opis", "Prava", "Sustavna", "SveSekcije")
     SELECT 'Lovočuvar', 'Knjiga dezinfekcije: pregled, naknadni upis, stanice i QR oznake', 7168, 0, 0
     WHERE NOT EXISTS (SELECT 1 FROM "Uloge" WHERE "Naziv" = 'Lovočuvar');
+SQL);
+    }
+    if ($v < 4) {
+        $pdo->exec(<<<'SQL'
+CREATE TABLE IF NOT EXISTS "DezAktivacije" (
+    "Id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "StanicaId" INTEGER NOT NULL REFERENCES "DezStanice" ("Id") ON DELETE CASCADE,
+    "Naziv" TEXT NOT NULL,
+    "Razlog" TEXT NULL,
+    "Lat" REAL NOT NULL,
+    "Lon" REAL NOT NULL,
+    "Tocnost" REAL NULL,
+    "Od" TEXT NOT NULL,
+    "Do" TEXT NOT NULL,
+    "AktiviraoId" INTEGER NULL,
+    "AktiviraoIme" TEXT NULL,
+    "Zatvoreno" TEXT NULL,
+    "ZatvorioIme" TEXT NULL
+);
+CREATE INDEX IF NOT EXISTS "IX_DezAktivacije_StanicaId_Od" ON "DezAktivacije" ("StanicaId", "Od");
+ALTER TABLE "DezUpisi" ADD COLUMN "AktivacijaId" INTEGER NULL;
+ALTER TABLE "DezUpisi" ADD COLUMN "Izvanmrezno" INTEGER NOT NULL DEFAULT 0;
+CREATE INDEX IF NOT EXISTS "IX_DezUpisi_AktivacijaId" ON "DezUpisi" ("AktivacijaId");
+UPDATE "Uloge" SET "Prava" = "Prava" | 8192 WHERE ("Prava" & 8191) = 8191 OR "Naziv" = 'Lovočuvar';
 SQL);
     }
     $pdo->exec('PRAGMA user_version = ' . SHEMA_PHP);

@@ -1,8 +1,8 @@
 <?php
 // PDF knjige dezinfekcije (pravo pregleda; opseg sekcija korisnika).
 trazi(P_DEZ_PREGLED);
-$stanice = dez_stanice();
 $f = dez_filtar($_GET);
+$stanice = dez_stanice(true, $f['Vrsta']);
 $upisi = dez_upisi($f, array_map(fn($s) => (int) $s['Id'], $stanice));
 if ($f['SekcijaId']) {
     $stanice = array_values(array_filter($stanice, fn($s) => (int) $s['SekcijaId'] === $f['SekcijaId']));

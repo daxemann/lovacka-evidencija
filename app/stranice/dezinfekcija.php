@@ -2,10 +2,11 @@
 /** Knjiga dezinfekcije: pregled po sekcijama, ispis, PDF, e-pošta, poništavanje. */
 trazi(P_DEZ_PREGLED);
 dez_osiguraj_stanice();
-$stanice = dez_stanice();
-$ids = array_map(fn($s) => (int) $s['Id'], $stanice);
 $f = dez_filtar($_GET);
 $upit = dez_filtar_upit($f);
+$mob = $f['Vrsta'] === 'M';
+$stanice = dez_stanice(true, $f['Vrsta']);
+$ids = array_map(fn($s) => (int) $s['Id'], $stanice);
 
 if (je_post()) {
     $radnja = (string) ($_POST['radnja'] ?? '');
@@ -45,14 +46,15 @@ if (je_post()) {
 }
 
 $upisi = dez_upisi($f, $ids);
-$unutra = dez_trenutno_unutra($ids);
+$unutra = $mob ? [] : dez_trenutno_unutra($ids);
+$akcija = $f['AktivacijaId'] ? dez_aktivacija_po_id($f['AktivacijaId']) : null;
 $sekcijeSt = [];
 foreach ($stanice as $s) {
     if ($s['SekcijaId'] !== null) {
         $sekcijeSt[(int) $s['SekcijaId']] = $s['SekcijaNaziv'];
     }
 }
-$bezKoord = array_filter($stanice, fn($s) => $s['Lat'] === null && $s['Aktivna']);
+$bezKoord = $mob ? [] : array_filter($stanice, fn($s) => $s['Lat'] === null && $s['Aktivna']);
 $upozorenja = count(array_filter($upisi, fn($u) => in_array((int) $u['Lokacija'], [DEZ_LOK_NEPOUZDANO, DEZ_LOK_BEZ], true) && !$u['Ponisteno']));
 ob_start(); ?>
 <div class="d-flex flex-wrap align-items-center gap-2 mb-3 no-print">
@@ -60,6 +62,12 @@ ob_start(); ?>
     <?php if (ima(P_DEZ_UREDI)): ?><a class="btn btn-sm btn-outline-primary" href="<?= e(url('dezinfekcija/naknadno')) ?>">+ Naknadni upis</a><?php endif; ?>
     <?php if (ima(P_DEZ_POSTAVKE)): ?><a class="btn btn-sm btn-outline-secondary" href="<?= e(url('dezinfekcija/postavke')) ?>">Stanice i QR</a><?php endif; ?>
 </div>
+<ul class="nav nav-tabs mb-3 no-print">
+    <li class="nav-item"><a class="nav-link<?= $mob ? '' : ' active' ?>" href="<?= e(url('dezinfekcija', array_diff_key($upit, ['Vrsta' => 1, 'AktivacijaId' => 1]))) ?>">Stalne stanice</a></li>
+    <li class="nav-item"><a class="nav-link<?= $mob ? ' active' : '' ?>" href="<?= e(url('dezinfekcija', ['Vrsta' => 'M'] + array_diff_key($upit, ['AktivacijaId' => 1]))) ?>">Mobilne stanice (skupni lov)</a></li>
+</ul>
+<?php if ($akcija): ?><div class="alert alert-light border no-print">Akcija: <b><?= e($akcija['Naziv']) ?></b> · <?= e(datum_vrijeme($akcija['Od'])) ?> · <?= e($akcija['Stanica']) ?>
+    <a class="ms-2" href="<?= e(url('dezinfekcija', array_diff_key($upit, ['AktivacijaId' => 1]))) ?>">prikaži sve akcije</a></div><?php endif; ?>
 <?php if ($bezKoord && ima(P_DEZ_POSTAVKE)): ?>
     <div class="alert alert-warning no-print">Bez koordinata: <?= e(implode(', ', array_map(fn($s) => $s['Naziv'], $bezKoord))) ?>.
         Upisi se bilježe bez provjere lokacije. <a href="<?= e(url('dezinfekcija/postavke')) ?>">Upisati koordinate →</a></div>
@@ -76,6 +84,7 @@ ob_start(); ?>
 <?php endif; ?>
 <form method="get" action="<?= e(url()) ?>" class="card card-body mb-3 no-print">
     <input type="hidden" name="p" value="dezinfekcija">
+    <?php if ($mob): ?><input type="hidden" name="Vrsta" value="M"><?php endif; ?><?php if ($f['AktivacijaId']): ?><input type="hidden" name="AktivacijaId" value="<?= (int) $f['AktivacijaId'] ?>"><?php endif; ?>
     <div class="row g-2">
         <div class="col-6 col-md-3"><label class="form-label small">Razdoblje</label>
             <select name="Razdoblje" class="form-select form-select-sm" data-auto>
@@ -116,13 +125,13 @@ ob_start(); ?>
 </form>
 <?php endif; ?>
 <div class="mb-2">
-    <div class="h5 mb-0"><?= e(udruga_naziv()) ?> – evidencija dezinfekcije</div>
+    <div class="h5 mb-0"><?= e(udruga_naziv()) ?> – evidencija dezinfekcije<?= $mob ? ' (mobilne stanice)' : '' ?></div>
     <div class="text-muted small"><?= e(opis_raspona($f)) ?> · <?= e($f['SekcijaId'] ? 'sekcija ' . naziv_sekcije($f['SekcijaId']) : 'sve sekcije') ?> · <?= count($upisi) ?> upisa
         <?= $upozorenja ? ' · <span class="text-warning-emphasis">⚠ ' . $upozorenja . ' s nepouzdanom ili bez lokacije</span>' : '' ?></div>
 </div>
 <?php if ($upisi): ?>
 <div class="table-responsive"><table class="table table-sm align-middle dez-tablica">
-    <thead><tr><th>Datum</th><th>Vrijeme</th><th>Ime i prezime</th><th>Reg. oznaka</th><th>Razlog</th><th>Smjer</th><th><?= count($sekcijeSt) > 1 ? 'Sekcija' : 'Stanica' ?></th><th>Napomena</th><th>Lokacija</th>
+    <thead><tr><th>Datum</th><th>Vrijeme</th><th>Ime i prezime</th><th>Reg. oznaka</th><th>Razlog</th><th>Smjer</th><th><?= $mob ? 'Akcija' : (count($sekcijeSt) > 1 ? 'Sekcija' : 'Stanica') ?></th><th>Napomena</th><th>Lokacija</th>
         <?php if (ima(P_DEZ_UREDI)): ?><th class="no-print"></th><?php endif; ?></tr></thead>
     <tbody>
     <?php foreach ($upisi as $u): $t = strtotime($u['Vrijeme']); ?>
@@ -131,7 +140,7 @@ ob_start(); ?>
             <td><?= e(dez_ime($u)) ?><?= $u['Gost'] ? ' <span class="badge bg-secondary">gost</span>' : '' ?></td>
             <td class="text-nowrap"><?= e($u['Oznaka'] ?? '—') ?></td><td class="small"><?= e($u['Razlog']) ?></td>
             <td><span class="badge <?= $u['Smjer'] === 'D' ? 'bg-success' : 'bg-warning text-dark' ?>"><?= DEZ_SMJER[$u['Smjer']] ?></span></td>
-            <td class="small"><?= e(count($sekcijeSt) > 1 ? ($u['SekcijaNaziv'] ?? $u['Stanica']) : $u['Stanica']) ?></td>
+            <td class="small"><?= e($mob ? ($u['Akcija'] ?? $u['Stanica']) : (count($sekcijeSt) > 1 ? ($u['SekcijaNaziv'] ?? $u['Stanica']) : $u['Stanica'])) ?></td>
             <td class="small text-muted"><?= e(dez_upisao($u)) ?><?= $u['Naknadno'] && $u['NaknadnoRazlog'] ? ' · ' . e($u['NaknadnoRazlog']) : '' ?>
                 <?= $u['Ponisteno'] ? '<div class="text-danger">poništeno: ' . e($u['PonistenoRazlog']) . '</div>' : '' ?></td>
             <td class="small text-nowrap"><?= dez_oznaka_lokacije($u) ?></td>

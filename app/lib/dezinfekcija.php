@@ -33,27 +33,59 @@ function dez_novi_token(): string
     return substr(bin2hex(random_bytes(8)), 0, 12);
 }
 
-/** Svaka aktivna sekcija dobiva svoju fiksnu stanicu (bez koordinata dok se ne upišu). */
+/**
+ * Svaka aktivna sekcija dobiva svoju fiksnu stanicu (F, bez koordinata dok se ne upišu)
+ * i jednu mobilnu stanicu (M, QR se koristi za svaki skupni lov, položaj se zadaje pri aktivaciji).
+ */
 function dez_osiguraj_stanice(): void
 {
-    foreach (sekcije(true) as $s) {
-        if (!vrijednost("SELECT 1 FROM DezStanice WHERE Vrsta='F' AND SekcijaId=?", [$s['Id']])) {
-            umetni('DezStanice', ['Naziv' => 'Dezinfekcija ' . $s['Naziv'], 'SekcijaId' => (int) $s['Id'], 'Vrsta' => 'F', 'Radijus' => 100,
-                'Aktivna' => 1, 'Token' => dez_novi_token(), 'Kreirano' => sada()]);
+    $naziv = ['F' => 'Dezinfekcija ', 'M' => 'Mobilna stanica '];
+    foreach (['F', 'M'] as $v) {
+        foreach (sekcije(true) as $s) {
+            if (!vrijednost('SELECT 1 FROM DezStanice WHERE Vrsta=? AND SekcijaId=?', [$v, $s['Id']])) {
+                umetni('DezStanice', ['Naziv' => $naziv[$v] . $s['Naziv'], 'SekcijaId' => (int) $s['Id'], 'Vrsta' => $v, 'Radijus' => $v === 'M' ? 150 : 100,
+                    'Aktivna' => 1, 'Token' => dez_novi_token(), 'Kreirano' => sada()]);
+            }
         }
-    }
-    if (!sekcije(true) && !vrijednost("SELECT 1 FROM DezStanice WHERE Vrsta='F'")) {
-        umetni('DezStanice', ['Naziv' => 'Dezinfekcijska stanica', 'SekcijaId' => null, 'Vrsta' => 'F', 'Radijus' => 100,
-            'Aktivna' => 1, 'Token' => dez_novi_token(), 'Kreirano' => sada()]);
+        if (!sekcije(true) && !vrijednost('SELECT 1 FROM DezStanice WHERE Vrsta=?', [$v])) {
+            umetni('DezStanice', ['Naziv' => $v === 'M' ? 'Mobilna stanica' : 'Dezinfekcijska stanica', 'SekcijaId' => null, 'Vrsta' => $v,
+                'Radijus' => $v === 'M' ? 150 : 100, 'Aktivna' => 1, 'Token' => dez_novi_token(), 'Kreirano' => sada()]);
+        }
     }
 }
 
-/** Fiksne stanice (mobilne stanice dolaze kasnije, zasebno). $samoOpseg: samo sekcije trenutnog korisnika. */
-function dez_stanice(bool $samoOpseg = true): array
+/** Stanice vrste F (stalne) ili M (mobilne). $samoOpseg: samo sekcije trenutnog korisnika. */
+function dez_stanice(bool $samoOpseg = true, string $vrsta = 'F'): array
 {
     $r = redovi("SELECT st.*, s.Naziv AS SekcijaNaziv FROM DezStanice st LEFT JOIN Sekcije s ON s.Id=st.SekcijaId
-        WHERE st.Vrsta='F' ORDER BY COALESCE(s.Redoslijed, 9999), s.Naziv, st.Naziv");
+        WHERE st.Vrsta=? ORDER BY COALESCE(s.Redoslijed, 9999), s.Naziv, st.Naziv", [$vrsta === 'M' ? 'M' : 'F']);
     return $samoOpseg ? array_values(array_filter($r, fn($st) => moze_sekciju($st['SekcijaId'] !== null ? (int) $st['SekcijaId'] : null))) : $r;
+}
+
+// ---------- Mobilna stanica: aktivacije ----------
+/** Aktivacija mobilne stanice koja vrijedi u zadanom trenutku (zadano: sada). */
+function dez_aktivacija(int $stanicaId, ?string $vrijeme = null): ?array
+{
+    $v = $vrijeme ?? sada();
+    return red('SELECT * FROM DezAktivacije WHERE StanicaId=? AND Od<=? AND Do>=? AND (Zatvoreno IS NULL OR Zatvoreno>=?) ORDER BY Od DESC, Id DESC LIMIT 1',
+        [$stanicaId, $v, $v, $v]);
+}
+function dez_aktivacija_po_id(int $id): ?array
+{
+    return red('SELECT a.*, st.Naziv AS Stanica, st.SekcijaId, st.Radijus, st.Token FROM DezAktivacije a JOIN DezStanice st ON st.Id=a.StanicaId WHERE a.Id=?', [$id]);
+}
+/** Stanica s položajem: za mobilnu stanicu koordinate aktivacije (ili null ako nije aktivna). */
+function dez_stanica_s_polozajem(array $st, ?string $vrijeme = null): ?array
+{
+    if ($st['Vrsta'] !== 'M') {
+        return $st + ['AktivacijaId' => null, 'AktivacijaNaziv' => null, 'AktivacijaRazlog' => null];
+    }
+    $a = dez_aktivacija((int) $st['Id'], $vrijeme);
+    if (!$a) {
+        return null;
+    }
+    return array_merge($st, ['Lat' => (float) $a['Lat'], 'Lon' => (float) $a['Lon'], 'AktivacijaId' => (int) $a['Id'],
+        'AktivacijaNaziv' => $a['Naziv'], 'AktivacijaRazlog' => $a['Razlog'], 'AktivnaDo' => $a['Zatvoreno'] ?? $a['Do']]);
 }
 
 function dez_razlozi(bool $samoAktivni = true): array
@@ -97,6 +129,15 @@ function dez_procijeni_lokaciju(array $st, ?float $lat, ?float $lon, ?float $toc
 }
 
 function dez_oznaka_lokacije(array $u, bool $tekst = false): string
+{
+    $off = '';
+    if (!empty($u['Izvanmrezno'])) {
+        $prim = 'izvanmrežno, primljeno ' . date('d.m. H:i', strtotime($u['Kreirano']));
+        $off = $tekst ? ' (' . $prim . ')' : ' <span class="badge bg-info text-dark" title="' . e($prim) . '">offline</span>';
+    }
+    return dez_oznaka_lokacije_osnovno($u, $tekst) . $off;
+}
+function dez_oznaka_lokacije_osnovno(array $u, bool $tekst): string
 {
     $s = (int) $u['Lokacija'];
     $opis = DEZ_LOKACIJA[$s] ?? '';
@@ -144,6 +185,138 @@ function dodaj_vozilo(int $clanId, string $oznaka, bool $zadano = false): void
     umetni('ClanVozila', ['ClanId' => $clanId, 'Oznaka' => $oznaka, 'Zadano' => ($zadano || $prvo) ? 1 : 0]);
 }
 
+// ---------- Spremanje upisa (online i izvanmrežno) ----------
+/**
+ * Sprema upis s QR stanice. $u = podaci obrasca (smjer, razlog, razlog_opis, vozilo, oznaka, spremi_vozilo, lat, lon, acc,
+ * suputnik[], gost_ime[], gost_prezime[], gost_oznaka[], potvrda).
+ * $klijentVrijeme: vrijeme s mobitela (unix) za izvanmrežni upis; null = vrijeme poslužitelja.
+ * $grupa: oznaka upisa (izvanmrežni upis je šalje sam – ponovno slanje se ne upisuje dvaput).
+ * @return array{ok:bool, poruka?:string, grupa?:string, ponovljeno?:bool}
+ */
+function dez_spremi_upis(array $st, array $k, array $u, ?int $klijentVrijeme = null, ?string $grupa = null): array
+{
+    $greska = fn(string $p) => ['ok' => false, 'poruka' => $p];
+    if (!$st['Aktivna']) {
+        return $greska('Stanica nije aktivna.');
+    }
+    if ($grupa !== null && ($g = vrijednost('SELECT Grupa FROM DezUpisi WHERE Grupa=? LIMIT 1', [$grupa]))) {
+        return ['ok' => true, 'grupa' => $g, 'ponovljeno' => true];
+    }
+    $izvan = $klijentVrijeme !== null;
+    $t = time();
+    if ($izvan) {
+        $t = min($klijentVrijeme, time());
+        if ($t < time() - 14 * 86400) {
+            return $greska('Upis je stariji od 14 dana – upišite ga naknadno preko lovočuvara.');
+        }
+    }
+    $vrijeme = date('Y-m-d H:i:s', $t);
+    $stP = dez_stanica_s_polozajem($st, $vrijeme);
+    if (!$stP) {
+        return $greska('Mobilna stanica ' . ($izvan ? 'u to vrijeme' : 'trenutno') . ' nije aktivna. Javite se voditelju lova / lovočuvaru.');
+    }
+    $smjer = (string) ($u['smjer'] ?? '');
+    if (!isset(DEZ_SMJER[$smjer])) {
+        return $greska('Odaberite DOLAZAK ili ODLAZAK.');
+    }
+    if (empty($u['potvrda'])) {
+        return $greska('Potvrdite da je dezinfekcija provedena.');
+    }
+    $raz = red('SELECT * FROM DezRazlozi WHERE Id=?', [(int) ($u['razlog'] ?? 0)]);
+    if (!$raz) {
+        return $greska('Odaberite razlog.');
+    }
+    $razlog = $raz['Naziv'];
+    $opis = mb_substr(trim((string) ($u['razlog_opis'] ?? '')), 0, 80);
+    if ($raz['Slobodno'] && $opis !== '') {
+        $razlog .= ': ' . $opis;
+    }
+    $clan = $k['ClanId'] ? clan((int) $k['ClanId']) : null;
+    $ja = $clan ? puno_ime($clan) : $k['Naziv'];
+    // vozilo
+    $v = (string) ($u['vozilo'] ?? '');
+    $saVozilom = $v !== 'bez';
+    $oznaka = null;
+    if (str_starts_with($v, 'v') && $clan) {
+        $oznaka = (string) vrijednost('SELECT Oznaka FROM ClanVozila WHERE Id=? AND ClanId=?', [(int) substr($v, 1), $clan['Id']]) ?: null;
+    } elseif ($saVozilom) {
+        $oznaka = normaliziraj_oznaku((string) ($u['oznaka'] ?? '')) ?: null;
+    }
+    if ($saVozilom && $oznaka === null) {
+        return $greska('Upišite registarsku oznaku vozila (ili odaberite „bez vozila“).');
+    }
+    if ($saVozilom && $oznaka !== null && $clan && !empty($u['spremi_vozilo']) && !str_starts_with($v, 'v')) {
+        dodaj_vozilo((int) $clan['Id'], $oznaka);
+    }
+    // položaj
+    $f = fn($n) => isset($u[$n]) && is_numeric($u[$n]) ? (float) $u[$n] : null;
+    $lat = $f('lat');
+    $lon = $f('lon');
+    $toc = $f('acc');
+    if ($lat === null || $lon === null || abs($lat) > 90 || abs($lon) > 180) {
+        $lat = $lon = null;
+    }
+    [$lok, $udalj] = dez_procijeni_lokaciju($stP, $lat, $lon, $toc);
+    if ($lok === null) {
+        dnevnik('Dezinfekcija – odbijen upis (predaleko)' . ($izvan ? ', izvanmrežno' : ''), 'DezStanica', (int) $st['Id'],
+            $ja . ': ' . round((float) $udalj) . ' m, ±' . round((float) $toc) . ' m', $k);
+        return $greska('Predaleko od dezinfekcijske stanice (' . number_format((float) $udalj / 1000, 1, ',', '.') . ' km). Upis je moguć samo na samoj stanici.');
+    }
+    // dvostruki dodir: isti smjer u 2 minute
+    if ($clan && !$izvan) {
+        $isti = vrijednost('SELECT Grupa FROM DezUpisi WHERE ClanId=? AND StanicaId=? AND Smjer=? AND Ponisteno=0 AND Vrijeme>=? ORDER BY Id DESC LIMIT 1',
+            [$clan['Id'], $st['Id'], $smjer, date('Y-m-d H:i:s', time() - 120)]);
+        if ($isti) {
+            return ['ok' => true, 'grupa' => $isti, 'ponovljeno' => true];
+        }
+    }
+    $suputnici = [];
+    foreach (array_slice(array_unique(array_map('intval', (array) ($u['suputnik'] ?? []))), 0, DEZ_MAX_SUPUTNIKA) as $sid) {
+        if ($sid && $sid !== (int) ($clan['Id'] ?? 0) && ($c = red('SELECT * FROM Clanovi WHERE Id=? AND Status=0', [$sid]))) {
+            $suputnici[] = $c;
+        }
+    }
+    $gosti = [];
+    $gp = (array) ($u['gost_prezime'] ?? []);
+    $go = (array) ($u['gost_oznaka'] ?? []);
+    foreach ((array) ($u['gost_ime'] ?? []) as $i => $ime) {
+        $ime = mb_substr(trim((string) $ime), 0, 60);
+        $prez = mb_substr(trim((string) ($gp[$i] ?? '')), 0, 60);
+        if ($ime === '' && $prez === '') {
+            continue;
+        }
+        if ($ime === '' || $prez === '') {
+            return $greska('Za gosta upišite ime i prezime.');
+        }
+        $gosti[] = [$ime, $prez, normaliziraj_oznaku((string) ($go[$i] ?? '')) ?: null];
+        if (count($gosti) >= DEZ_MAX_GOSTIJU) {
+            break;
+        }
+    }
+    $grupa ??= bin2hex(random_bytes(8));
+    $zajedno = [
+        'StanicaId' => (int) $st['Id'], 'SekcijaId' => $st['SekcijaId'], 'Vrijeme' => $vrijeme, 'Smjer' => $smjer, 'Razlog' => $razlog,
+        'Obuca' => 1, 'Oprema' => 1, 'UpisaoKorisnikId' => $k['Id'], 'UpisaoIme' => $ja, 'Lat' => $lat, 'Lon' => $lon, 'Tocnost' => $toc,
+        'Udaljenost' => $udalj, 'Lokacija' => $lok, 'Naknadno' => 0, 'Grupa' => $grupa, 'Kreirano' => sada(),
+        'AktivacijaId' => $stP['AktivacijaId'], 'Izvanmrezno' => $izvan ? 1 : 0,
+    ];
+    transakcija(function () use ($zajedno, $clan, $k, $ja, $oznaka, $saVozilom, $suputnici, $gosti) {
+        umetni('DezUpisi', $zajedno + ['ClanId' => $clan['Id'] ?? null, 'Ime' => $clan['Ime'] ?? $k['Naziv'], 'Prezime' => $clan['Prezime'] ?? '',
+            'Gost' => 0, 'Oznaka' => $oznaka, 'Vozilo' => $saVozilom ? 1 : 0, 'PozvaoIme' => null]);
+        foreach ($suputnici as $c) {
+            umetni('DezUpisi', $zajedno + ['ClanId' => (int) $c['Id'], 'Ime' => $c['Ime'], 'Prezime' => $c['Prezime'], 'Gost' => 0,
+                'Oznaka' => $oznaka, 'Vozilo' => $saVozilom ? 1 : 0, 'PozvaoIme' => $ja]);
+        }
+        foreach ($gosti as [$ime, $prez, $oz]) {
+            umetni('DezUpisi', $zajedno + ['ClanId' => null, 'Ime' => $ime, 'Prezime' => $prez, 'Gost' => 1,
+                'Oznaka' => $oz ?? $oznaka, 'Vozilo' => ($oz !== null || $saVozilom) ? 1 : 0, 'PozvaoIme' => $ja]);
+        }
+    });
+    dnevnik('Dezinfekcija – ' . mb_strtolower(DEZ_SMJER[$smjer]) . ($izvan ? ' (izvanmrežno)' : ''), 'DezStanica', (int) $st['Id'],
+        $ja . ' + ' . count($suputnici) . ' suputnika, ' . count($gosti) . ' gostiju · ' . DEZ_LOKACIJA[$lok], $k);
+    return ['ok' => true, 'grupa' => $grupa];
+}
+
 // ---------- Upisi ----------
 /** Zadnji upis člana na stanici u zadnjih 24 sata (za prijedlog dolazak/odlazak). */
 function dez_zadnji_upis_clana(int $clanId, int $stanicaId): ?array
@@ -168,6 +341,8 @@ function dez_filtar(array $q): array
         'Smjer' => in_array($q['Smjer'] ?? '', ['D', 'O'], true) ? $q['Smjer'] : null,
         'Trazi' => mb_substr(trim((string) ($q['Trazi'] ?? '')), 0, 60),
         'Ponisteni' => !empty($q['Ponisteni']),
+        'Vrsta' => ($q['Vrsta'] ?? '') === 'M' ? 'M' : 'F',
+        'AktivacijaId' => $int('AktivacijaId'),
     ];
 }
 function dez_filtar_upit(array $f): array
@@ -175,6 +350,7 @@ function dez_filtar_upit(array $f): array
     return array_filter([
         'Razdoblje' => $f['Razdoblje'], 'Od' => $f['Od'], 'Do' => $f['Do'], 'SekcijaId' => $f['SekcijaId'], 'StanicaId' => $f['StanicaId'],
         'Smjer' => $f['Smjer'], 'Trazi' => $f['Trazi'], 'Ponisteni' => $f['Ponisteni'] ? 1 : null,
+        'Vrsta' => $f['Vrsta'] === 'M' ? 'M' : null, 'AktivacijaId' => $f['AktivacijaId'],
     ], fn($v) => $v !== null && $v !== '');
 }
 function dez_opis_razdoblja(array $f): string
@@ -201,6 +377,10 @@ function dez_upisi(array $f, array $staniceIds, int $limit = 5000): array
         $w[] = 'u.StanicaId=?';
         $p[] = $f['StanicaId'];
     }
+    if (($f['AktivacijaId'] ?? null) !== null) {
+        $w[] = 'u.AktivacijaId=?';
+        $p[] = $f['AktivacijaId'];
+    }
     if ($f['Smjer'] !== null) {
         $w[] = 'u.Smjer=?';
         $p[] = $f['Smjer'];
@@ -213,8 +393,8 @@ function dez_upisi(array $f, array $staniceIds, int $limit = 5000): array
         $t = '%' . kljuc($f['Trazi']) . '%';
         array_push($p, $t, $t, '%' . str_replace(' ', '', mb_strtoupper($f['Trazi'])) . '%');
     }
-    return redovi('SELECT u.*, st.Naziv AS Stanica, st.SekcijaId AS StSekcijaId, s.Naziv AS SekcijaNaziv FROM DezUpisi u JOIN DezStanice st ON st.Id=u.StanicaId
-        LEFT JOIN Sekcije s ON s.Id=st.SekcijaId WHERE ' . implode(' AND ', $w) . ' ORDER BY u.Vrijeme, u.Id LIMIT ' . $limit, $p);
+    return redovi('SELECT u.*, st.Naziv AS Stanica, st.SekcijaId AS StSekcijaId, s.Naziv AS SekcijaNaziv, a.Naziv AS Akcija FROM DezUpisi u JOIN DezStanice st ON st.Id=u.StanicaId
+        LEFT JOIN Sekcije s ON s.Id=st.SekcijaId LEFT JOIN DezAktivacije a ON a.Id=u.AktivacijaId WHERE ' . implode(' AND ', $w) . ' ORDER BY u.Vrijeme, u.Id LIMIT ' . $limit, $p);
 }
 
 /**
@@ -275,15 +455,16 @@ function dez_dezinficirano(array $u): string
 // ---------- Ispis / PDF ----------
 function dez_html(array $upisi, string $naslov, string $podnaslov, bool $zaPdf = false, bool $stanicaStupac = true): string
 {
+    $mob = $upisi && !empty($upisi[0]['AktivacijaId']);
     $o = '<h2>' . e($naslov) . '</h2><div class="pod">' . e($podnaslov) . '</div>';
     $o .= "<table class='t'><thead><tr><th>Datum</th><th>Vrijeme</th><th>Ime i prezime</th><th>Član / gost</th><th>Reg. oznaka</th><th>Razlog</th><th>Smjer</th>"
-        . "<th>Dezinficirano</th>" . ($stanicaStupac ? '<th>Stanica</th>' : '') . "<th>Napomena</th><th>Lokacija</th></tr></thead><tbody>";
+        . "<th>Dezinficirano</th>" . ($stanicaStupac ? '<th>' . ($mob ? 'Akcija' : 'Stanica') . '</th>' : '') . "<th>Napomena</th><th>Lokacija</th></tr></thead><tbody>";
     foreach ($upisi as $u) {
         $t = strtotime($u['Vrijeme']);
         $pon = $u['Ponisteno'] ? " class='pon'" : '';
         $o .= "<tr$pon><td>" . date('d.m.Y.', $t) . '</td><td>' . date('H:i', $t) . '</td><td>' . e(dez_ime($u)) . '</td><td>' . ($u['Gost'] ? 'gost' : 'član') . '</td><td>'
             . e($u['Oznaka'] ?? '') . '</td><td>' . e($u['Razlog'] ?? '') . '</td><td>' . DEZ_SMJER[$u['Smjer']] . '</td><td>' . e(dez_dezinficirano($u)) . '</td>'
-            . ($stanicaStupac ? '<td>' . e($u['Stanica']) . '</td>' : '') . '<td>' . e(dez_upisao($u)) . ($u['Ponisteno'] ? ' · PONIŠTENO: ' . e($u['PonistenoRazlog'] ?? '') : '')
+            . ($stanicaStupac ? '<td>' . e($u['Akcija'] ?? $u['Stanica']) . '</td>' : '') . '<td>' . e(dez_upisao($u)) . ($u['Ponisteno'] ? ' · PONIŠTENO: ' . e($u['PonistenoRazlog'] ?? '') : '')
             . ($u['Naknadno'] && $u['NaknadnoRazlog'] ? ' · ' . e($u['NaknadnoRazlog']) : '') . '</td><td>' . e(dez_oznaka_lokacije($u, true)) . '</td></tr>';
     }
     if (!$upisi) {
@@ -293,10 +474,25 @@ function dez_html(array $upisi, string $naslov, string $podnaslov, bool $zaPdf =
     return $o;
 }
 
-/** Zaglavlje protokola: stanice s koordinatama i sredstvom. */
-function dez_opis_stanica(array $stanice): string
+/** Zaglavlje protokola: stanice s koordinatama i sredstvom; za mobilne stanice popis akcija (aktivacija) iz upisa. */
+function dez_opis_stanica(array $stanice, array $upisi = []): string
 {
     $d = [];
+    if ($stanice && $stanice[0]['Vrsta'] === 'M') {
+        $ids = array_unique(array_filter(array_map(fn($u) => (int) $u['AktivacijaId'], $upisi)));
+        foreach ($ids as $aid) {
+            $a = dez_aktivacija_po_id($aid);
+            if ($a) {
+                $d[] = $a['Naziv'] . ' · ' . $a['Stanica'] . ' · ' . number_format((float) $a['Lat'], 5, '.', '') . ', ' . number_format((float) $a['Lon'], 5, '.', '')
+                    . ' · ' . date('d.m.Y. H:i', strtotime($a['Od'])) . ' – ' . date('H:i', strtotime($a['Zatvoreno'] ?? $a['Do'])) . ' · aktivirao: ' . $a['AktiviraoIme'];
+            }
+        }
+        $sred = array_unique(array_filter(array_map(fn($s) => $s['Sredstvo'], $stanice)));
+        if ($sred) {
+            $d[] = 'Sredstvo: ' . implode(', ', $sred);
+        }
+        return implode("\n", $d ?: ['Mobilne stanice']);
+    }
     foreach ($stanice as $st) {
         $d[] = $st['Naziv'] . ($st['SekcijaNaziv'] ? ' (' . $st['SekcijaNaziv'] . ')' : '')
             . ($st['Lat'] !== null ? ' · ' . number_format((float) $st['Lat'], 5, '.', '') . ', ' . number_format((float) $st['Lon'], 5, '.', '') : '')
@@ -328,8 +524,8 @@ function dez_pdf(array $upisi, array $stanice, string $razdoblje, string $sekcij
     </style></head><body>
     <div class="podnozje">' . e(udruga_naziv()) . ' · knjiga dezinfekcije · ispisano ' . date('d.m.Y. H:i') . '</div>
     <div class="zag">' . $logo . '<div class="n">' . e(udruga_naziv()) . '</div><div class="p">'
-        . e(($loviste ? 'Lovište: ' . $loviste . "\n" : '') . dez_opis_stanica($stanice)) . '</div></div>'
-        . dez_html($upisi, 'Evidencija dezinfekcije vozila, obuće i opreme (ASK)', 'Razdoblje: ' . $razdoblje . ' · ' . $sekcijaOpis . ' · upisa: ' . count($upisi), true, count($stanice) > 1)
+        . e(($loviste ? 'Lovište: ' . $loviste . "\n" : '') . dez_opis_stanica($stanice, $upisi)) . '</div></div>'
+        . dez_html($upisi, 'Evidencija dezinfekcije vozila, obuće i opreme (ASK)' . ($stanice && $stanice[0]['Vrsta'] === 'M' ? ' – mobilna stanica' : ''), 'Razdoblje: ' . $razdoblje . ' · ' . $sekcijaOpis . ' · upisa: ' . count($upisi), true, count($stanice) > 1 || ($stanice && $stanice[0]['Vrsta'] === 'M'))
         . '<div class="potpis">Odgovorna osoba: ' . ($odg !== '' ? e($odg) : '______________________') . ' &nbsp;&nbsp;&nbsp; Potpis: ______________________</div>'
         . '</body></html>';
     $opt = new Dompdf\Options();

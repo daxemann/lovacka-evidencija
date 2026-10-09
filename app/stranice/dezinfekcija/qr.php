@@ -1,14 +1,17 @@
 <?php
 /** QR oznaka za ispis (A4): stanica ili pristup za inspekciju. */
-trazi(P_DEZ_POSTAVKE);
+if (!ima(P_DEZ_POSTAVKE) && !ima(P_DEZ_MOBILNA)) {
+    zabranjeno();
+}
 if (!empty($_GET['inspekcija'])) {
+    trazi(P_DEZ_POSTAVKE);
     $adresa = dez_insp_url();
     $naslov = 'INSPEKCIJA';
     $podnaslov = 'Evidencija dezinfekcije vozila, obuće i opreme';
     $upute = ['Skenirajte QR kod kamerom mobitela.', 'Upišite lozinku koju daje lovočuvar.', 'Pregled, ispis ili slanje evidencije na vašu e-mail adresu.'];
 } else {
     $st = dez_stanica((int) ($_GET['id'] ?? 0));
-    if (!$st || !moze_sekciju($st['SekcijaId'] !== null ? (int) $st['SekcijaId'] : null)) {
+    if (!$st || !moze_sekciju($st['SekcijaId'] !== null ? (int) $st['SekcijaId'] : null) || ($st['Vrsta'] !== 'M' && !ima(P_DEZ_POSTAVKE))) {
         nije_pronadjeno('Stanica');
     }
     $adresa = dez_qr_url($st);
@@ -16,6 +19,11 @@ if (!empty($_GET['inspekcija'])) {
     $podnaslov = $st['Naziv'] . ($st['SekcijaNaziv'] && !str_contains($st['Naziv'], $st['SekcijaNaziv']) ? ' · ' . $st['SekcijaNaziv'] : '');
     $upute = ['Dezinficirajte vozilo, obuću i opremu.', 'Skenirajte QR kod kamerom mobitela (prvi put se prijavite).', 'Odaberite DOLAZAK ili ODLAZAK i dodirnite POTVRDI.',
         'Gosti i suputnici se upisuju zajedno s vama.'];
+    if ($st['Vrsta'] === 'M') {
+        $naslov = 'DEZINFEKCIJA';
+        $podnaslov = 'Mobilna stanica' . ($st['SekcijaNaziv'] ? ' · ' . $st['SekcijaNaziv'] : '');
+        $upute[] = 'Radi samo dok je stanica aktivirana (skupni lov).';
+    }
 }
 ?><!doctype html>
 <html lang="hr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">

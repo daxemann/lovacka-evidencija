@@ -65,8 +65,9 @@ $neprocitano = $k ? broj_neprocitanih((int) $k['Id']) : 0;
                         . (ima(P_AKCIJE_ODOBRI) ? $stavka('akcije/nova', '+ Nova radna akcija', 0, true) : '')
                         . (ima(P_AKCIJE_CITAJ) ? $stavka('akcije', 'Radne akcije', broj_akcija_na_cekanju(), true) : '')
                         . (ima(P_IZVJESTAJI) ? $stavka('izvjestaji/akcije', 'Izvještaj radnih akcija') : '')); ?>
-                    <?php if (ima(P_DEZ_PREGLED) || ima(P_DEZ_UREDI) || ima(P_DEZ_POSTAVKE)) echo $grupa('dezinfekcija', 'Dezinfekcija',
+                    <?php if (ima(P_DEZ_PREGLED) || ima(P_DEZ_UREDI) || ima(P_DEZ_POSTAVKE) || ima(P_DEZ_MOBILNA)) echo $grupa('dezinfekcija', 'Dezinfekcija',
                         (ima(P_DEZ_PREGLED) ? $stavka('dezinfekcija', 'Knjiga dezinfekcije', 0, true) : '')
+                        . (ima(P_DEZ_MOBILNA) ? $stavka('dezinfekcija/mobilna', 'Mobilna stanica', (int) vrijednost("SELECT COUNT(*) FROM DezAktivacije WHERE Zatvoreno IS NULL AND Od<=? AND Do>=?", [sada(), sada()])) : '')
                         . (ima(P_DEZ_UREDI) ? $stavka('dezinfekcija/naknadno', '+ Naknadni upis') : '')
                         . (ima(P_DEZ_POSTAVKE) ? $stavka('dezinfekcija/postavke', 'Stanice i QR') : '')); ?>
                     <?php if (ima(P_SUSTAV)) echo $grupa('sustav', 'Sustav',
@@ -136,5 +137,6 @@ $neprocitano = $k ? broj_neprocitanih((int) $k['Id']) : 0;
 </div></div>
 <script>window.EV = { api: <?= json_encode(url('api/obavijesti')) ?>, poruke: <?= json_encode(url('poruke')) ?>, n: <?= (int) $neprocitano ?>, sw: <?= json_encode(bazni_put() . 'sw.js') ?> };</script>
 <script src="<?= e(asset('assets/app.js')) ?>"></script>
+<script src="<?= e(asset('assets/dez.js')) ?>" data-api="<?= e(url('api/dez-sync')) ?>" data-sw="<?= e(bazni_put() . 'sw.js') ?>"></script>
 </body>
 </html>
