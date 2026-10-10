@@ -1,5 +1,9 @@
 # Promjene
 
+## 1.9.3 – 2026-10
+- Ispravak: gumb **„Trenutna adresa“** (Sustav → Postavke → Javna adresa) upisuje adresu kojom je aplikacija stvarno otvorena, a ne staru spremljenu.
+- Pozivnica i samoprijava: upozorenje ako poveznica vodi na privatnu adresu (lokalna mreža, Tailscale `*.ts.net`) ili na drugu adresu od one kojom je aplikacija otvorena – s poveznicom na postavku.
+
 ## 1.9.2 – 2026-10
 - Izjava za inspekciju: pravni temelj za **elektronički oblik** evidencije – čl. 46. Uredbe (EU) br. 910/2014 (eIDAS); Naredba ne propisuje oblik evidencije.
 

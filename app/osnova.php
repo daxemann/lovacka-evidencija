@@ -5,7 +5,7 @@
  */
 declare(strict_types=1);
 
-const VERZIJA = '1.9.2';
+const VERZIJA = '1.9.3';
 const KONTAKT_EMAIL = 'daxemann@googlemail.com';
 const PROJEKT_URL = 'https://github.com/daxemann/lovacka-evidencija';
 const KORIJEN = __DIR__ . '/..';
@@ -652,9 +652,36 @@ function javna_adresa(): string
     if ($a) {
         return rtrim((string) $a, '/') . '/';
     }
+    return trenutna_adresa();
+}
+/** Adresa kojom je aplikacija upravo otvorena (bez obzira na postavku). */
+function trenutna_adresa(): string
+{
     $https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https');
     $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
     return ($https ? 'https' : 'http') . '://' . $host . bazni_put();
+}
+/** Je li adresa dostupna samo lokalno / u privatnoj mreži (LAN, Tailscale …)? */
+function adresa_privatna(string $adr): bool
+{
+    $h = strtolower((string) parse_url($adr, PHP_URL_HOST));
+    return $h === '' || $h === 'localhost' || str_ends_with($h, '.local') || str_ends_with($h, '.ts.net')
+        || preg_match('#^(127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\.)#', $h) === 1;
+}
+/** Upozorenje ispod poveznice (pozivnica, samoprijava) ako ona neće raditi članovima ili vodi na drugu adresu. */
+function napomena_javne_adrese(): string
+{
+    $j = javna_adresa();
+    $t = trenutna_adresa();
+    $put = '<a href="' . e(url('sustav/postavke')) . '">Sustav → Postavke → Javna adresa</a>';
+    if (adresa_privatna($j)) {
+        $tekst = 'Poveznica vodi na <b>' . e($j) . '</b> – ta adresa radi samo na ovom računalu / u privatnoj mreži, članovima neće raditi. Promijenite u ' . $put . '.';
+    } elseif (parse_url($j, PHP_URL_HOST) !== parse_url($t, PHP_URL_HOST) && !adresa_privatna($t)) {
+        $tekst = 'Poveznica vodi na <b>' . e($j) . '</b>, a aplikaciju ste otvorili preko <b>' . e($t) . '</b>. Ako to nije ispravno, promijenite u ' . $put . '.';
+    } else {
+        return '';
+    }
+    return '<p class="small text-warning-emphasis mt-2 mb-0">⚠ ' . $tekst . '</p>';
 }
 function apsolutni_url(string $str, array $par = []): string
 {

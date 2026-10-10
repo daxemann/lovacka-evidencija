@@ -83,9 +83,7 @@ ob_start(); ?>
             <form method="post" class="d-inline"><?= csrf() ?><button name="radnja" value="ukljuci" class="btn btn-outline-primary btn-sm" data-potvrda="Napraviti novu poveznicu? Stara odmah prestaje vrijediti.">Nova poveznica</button></form>
             <form method="post" class="d-inline"><?= csrf() ?><button name="radnja" value="iskljuci" class="btn btn-outline-danger btn-sm" data-potvrda="Isključiti samoprijavu? Poveznica prestaje vrijediti.">Isključi</button></form>
         </div>
-        <?php if (preg_match('#//(localhost|127\.|192\.168\.|10\.)#', javna_adresa())): ?>
-            <p class="small text-warning-emphasis mt-2 mb-0">Aplikacija trenutno radi samo lokalno – poveznica će raditi kad aplikacija bude na internetu (Sustav → E-pošta i adresa → Javna adresa).</p>
-        <?php endif; ?>
+        <?= napomena_javne_adrese() ?>
     <?php else: ?>
         <p class="mb-2">Samoprijava je <b>isključena</b>.</p>
         <form method="post"><?= csrf() ?><button name="radnja" value="ukljuci" class="btn btn-primary">Uključi i napravi poveznicu</button></form>

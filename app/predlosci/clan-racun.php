@@ -84,9 +84,7 @@ if ($arhiviran): ?>
                 <?= $gumb('pozivnica', $vazeca ? 'Nova pozivnica (stara prestaje vrijediti)' : 'Kreiraj pozivnicu', 'btn-primary') ?>
             <?php else: ?>
                 <?= kanali_slanja($clan, 'Pozivnica – ' . udruga_kratko(), $pozTekst, ['clanovi/uredi', ['id' => $id, 'kartica' => 'racun']]) ?>
-                <?php if (preg_match('#//(localhost|127\.|192\.168\.|10\.)#', javna_adresa())): ?>
-                    <p class="small text-warning-emphasis mt-2 mb-0">Napomena: aplikacija trenutno radi samo na ovom računalu / lokalnoj mreži – poveznica će raditi za članove kad aplikacija bude na internetu (Sustav → E-pošta i adresa → Javna adresa).</p>
-                <?php endif; ?>
+                <?= napomena_javne_adrese() ?>
             <?php endif; ?>
         </div>
     </div>

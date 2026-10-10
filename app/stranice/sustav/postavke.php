@@ -72,7 +72,7 @@ ob_start(); ?>
     <div class="card mb-3"><div class="card-header">1. Javna adresa aplikacije</div><div class="card-body">
         <label class="form-label">Internetska adresa</label>
         <div class="input-group"><input name="javna" class="form-control" placeholder="https://evidencija.moja-udruga.hr" value="<?= e(postavka('Server.JavnaAdresa', '')) ?>">
-            <button type="button" class="btn btn-outline-secondary" onclick="this.previousElementSibling.value=<?= e(json_encode(javna_adresa())) ?>">Trenutna adresa</button></div>
+            <button type="button" class="btn btn-outline-secondary" onclick="this.previousElementSibling.value=<?= e(json_encode(trenutna_adresa())) ?>">Trenutna adresa</button></div>
         <div class="form-text">Koristi se u pozivnicama, poveznicama za novu lozinku i u e-pošti. Ako je prazno, uzima se adresa kojom je aplikacija upravo otvorena.</div>
     </div></div>
     <div class="card mb-3"><div class="card-header">2. Slanje e-pošte (SMTP)</div><div class="card-body">
