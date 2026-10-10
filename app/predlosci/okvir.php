@@ -21,6 +21,7 @@ $grupa = function (string $id, string $naslov, string $stavke): string {
         . e($naslov) . '</summary>' . $stavke . '</details>';
 };
 $neprocitano = $k ? broj_neprocitanih((int) $k['Id']) : 0;
+$revirObav = $k ? revir_broj_obavijesti() : 0;
 [$uloga, $boja] = oznaka_uloge();
 ?><!doctype html>
 <html lang="hr">
@@ -58,6 +59,9 @@ $neprocitano = $k ? broj_neprocitanih((int) $k['Id']) : 0;
                     <?= $stavka('pocetna', 'Početna', 0, true) ?>
                     <?= $stavka('kalendar', 'Kalendar') ?>
                     <?php if ($k['ClanId']) echo $grupa('moje', 'Moje', $stavka('moje-akcije', 'Moje radne akcije') . $stavka('moj-profil', 'Moj profil') . $stavka('moja-prava', 'Moja prava')); ?>
+                    <?php $revirSek = revir_sekcije(); if ($revirSek || ima(P_SUSTAV)) echo $grupa('loviste', 'Lovište',
+                        ($revirSek ? $stavka('revir', 'Karta lovišta', 0, true) . $stavka('revir/danas', 'Danas u lovištu', $revirObav) . $stavka('revir/dnevnik', 'Lovački dnevnik') : '')
+                        . (ima(P_SUSTAV) || ima(P_REVIR_UREDI) ? $stavka('revir/postavke', 'Postavke lovišta') : '')); ?>
                     <?= $grupa('clanovi', 'Članovi', $stavka('imenik', 'Imenik') . $stavka('poruke', 'Poruke', $neprocitano) . $stavka('oglasnik', 'Oglasnik')) ?>
                     <?php if ($k['Prava']) echo $grupa('udruga', 'Udruga',
                         (ima(P_CLANOVI_CITAJ) ? $stavka('clanovi', 'Članovi') : '')
@@ -94,6 +98,7 @@ $neprocitano = $k ? broj_neprocitanih((int) $k['Id']) : 0;
         <div class="top-row px-4">
             <button type="button" class="izbornik-gumb no-print me-auto" data-izbornik title="Sakrij / prikaži izbornik" aria-label="Sakrij / prikaži izbornik">☰</button>
             <?php if ($k): ?>
+                <?php if (ima(P_REVIR_NADZOR)): ?><a href="<?= e(url('revir/danas')) ?>" class="revir-zvono me-3" title="Obavijesti – lovište" aria-label="Obavijesti – lovište">🔔<?php if ($revirObav): ?><span class="badge rounded-pill bg-danger"><?= $revirObav ?></span><?php endif; ?></a><?php endif; ?>
                 <a href="<?= e(url('moja-prava')) ?>" class="text-decoration-none d-flex align-items-center gap-1 me-3" title="Moja prava">
                     <span class="small text-body d-none d-sm-inline"><?= e($k['Naziv']) ?></span>
                     <span class="badge <?= e($boja) ?>"><?= e($uloga) ?></span>

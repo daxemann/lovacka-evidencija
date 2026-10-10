@@ -377,3 +377,37 @@ main {
 @media print { .dez-lista img { height: auto; max-height: none; width: 100%; } .dez-lista { width: 100%; page-break-inside: avoid; } }
 .dez-potpis-platno { width: 100%; max-width: 600px; aspect-ratio: 3 / 1; border: 1px dashed #9aa5a0; border-radius: 8px; background: #fff; touch-action: none; display: block; }
 .dez-potpis-slika { max-height: 70px; max-width: 260px; background: #fff; border: 1px solid #dee2e6; border-radius: 6px; padding: 4px; }
+
+/* ---------- Lovište: karta ---------- */
+.revir-okvir { position: relative; }
+.revir-karta { height: calc(100vh - 13rem); height: calc(100dvh - 13rem); min-height: 360px; border-radius: .5rem; background: #2b2b2b; z-index: 0; }
+.revir-karta.uredjivanje { outline: 3px dashed #f0ad4e; outline-offset: -3px; cursor: crosshair; }
+.revir-pin-omot { background: none; border: 0; }
+.revir-pin { position: relative; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font: 700 .85rem/1 system-ui, sans-serif;
+    color: #fff; border: 3px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,.6); background: #2e7d32; }
+.revir-pin.zauzeto { background: #d32f2f; }
+.revir-pin.moje { background: #d32f2f; border-color: #ffd400; box-shadow: 0 0 0 3px #d32f2f, 0 1px 6px rgba(0,0,0,.7); }
+.revir-pin.gost::after { content: 'G'; position: absolute; top: -8px; right: -9px; background: #ffd400; color: #000; border-radius: 50%; width: 16px; height: 16px; font-size: .65rem; display: flex; align-items: center; justify-content: center; }
+.revir-pin.odabran { transform: scale(1.2); }
+.revir-pin.novi { background: #f0ad4e; color: #000; font-size: 1.2rem; }
+.revir-pin-ime { position: absolute; top: 34px; left: 50%; transform: translateX(-50%); white-space: nowrap; font: 600 .7rem/1.2 system-ui, sans-serif;
+    color: #fff; text-shadow: 0 0 3px #000, 0 0 3px #000; pointer-events: none; }
+.revir-karta.daleko .revir-pin { transform: scale(.65); }
+.revir-karta.daleko .revir-pin-ime { display: none; }
+.revir-legenda { position: absolute; left: .5rem; bottom: 1.6rem; z-index: 500; background: rgba(255,255,255,.9); border-radius: .4rem; padding: .2rem .5rem; display: flex; gap: .6rem; }
+.revir-tocka { display: inline-block; width: .8rem; height: .8rem; border-radius: 50%; vertical-align: -1px; background: #2e7d32; border: 2px solid #fff; box-shadow: 0 0 0 1px #999; }
+.revir-tocka.zauzeto { background: #d32f2f; }
+.revir-tocka.moje { background: #d32f2f; border-color: #ffd400; }
+.revir-lociraj { position: absolute; right: .6rem; top: 3.8rem; z-index: 500; width: 2.6rem; height: 2.6rem; border-radius: .4rem; border: 2px solid rgba(0,0,0,.2);
+    background: #fff; font-size: 1.4rem; line-height: 1; }
+.revir-lociraj.aktivan { color: #1a73e8; }
+.revir-panel { position: absolute; left: .5rem; right: .5rem; bottom: .5rem; z-index: 600; max-height: 75%; overflow: auto; background: var(--bs-body-bg, #fff);
+    border-radius: .75rem; padding: .9rem 1rem; box-shadow: 0 4px 18px rgba(0,0,0,.45); }
+@media (min-width: 768px) { .revir-panel { left: auto; width: 380px; top: .5rem; bottom: auto; max-height: calc(100% - 1rem); } }
+.revir-foto { width: 100%; max-height: 180px; object-fit: cover; border-radius: .5rem; margin-bottom: .5rem; }
+.revir-status { padding: .4rem .6rem; border-radius: .4rem; }
+.revir-status.slobodno { background: #e8f5e9; color: #1b5e20; }
+.revir-status.zauzeto { background: #ffebee; color: #b71c1c; }
+.revir-zvono { position: relative; text-decoration: none; font-size: 1.15rem; }
+.revir-zvono .badge { position: absolute; top: -.35rem; right: -.6rem; font-size: .65rem; }
+.revir-moje[hidden], #revir-uredi-traka[hidden] { display: none !important; }

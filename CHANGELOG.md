@@ -1,5 +1,18 @@
 # Promjene
 
+## 1.8.0 – 2026-10
+- Novo: **Lovište** – karta lovišta s lovnim napravama, zauzimanje čeka i lovački dnevnik.
+  - **Granice lovišta** iz KML/KMZ datoteke (Google My Maps, Google Earth) – Lovište → Postavke lovišta. Ostaju samo na vašem poslužitelju.
+  - **Lovne naprave** (broj, naziv, vrsta, sekcija, fotografija, napomena): dodirom na kartu, „📍 Nova na mojoj poziciji“ na licu mjesta ili
+    **uvozom više fotografija odjednom** – položaj se čita iz fotografije (GPS u EXIF-u). Pin se može povući; naprave bez položaja postavljaju se kasnije.
+  - **Zauzimanje**: dodir na napravu → „Zauzmi – sjedim ovdje“; ostalima je crvena. Vrijedi do „Odlazim“, najkasnije do 03:00 sljedećeg jutra (podesivo).
+    Za gosta se zauzima druga naprava („Zauzmi za gosta“) – gost sjedi sam, odgovoran je član. Prelaskom na drugu napravu stara se oslobađa.
+  - **Sekcije su strogo odvojene**: član vidi i zauzima samo naprave svoje sekcije; uloge sa „svim sekcijama“ vide sve.
+  - **Obavijesti** lovočuvarima sekcije (🔔 u zaglavlju) pri zauzimanju, oslobađanju i brisanju; „Danas u lovištu“ – tko sjedi gdje.
+  - **Lovački dnevnik** – automatski: tko, kada, gdje (gosti se ne upisuju); razdoblja, ispis, CSV.
+  - Nova prava „Lovište – lovne naprave“ i „Lovište – nadzor“ (brisanje zauzeća, dnevnik sekcije); uloga Lovočuvar ih dobiva automatski.
+  - Satelitska, obična i topografska karta (Leaflet, uključen u program).
+
 ## 1.7.3 – 2026-10
 - Dezinfekcija: nepreciznost GPS-a uzima se u obzir najviše 1000 m izvan radijusa (prije do 2 km) – dalje od toga upis se odbija.
 

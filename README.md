@@ -26,6 +26,7 @@ Radi na običnom PHP webhostingu (bez baze podataka na poslužitelju, bez naredb
 - **Provjera duplikata** i spajanje dvaju zapisa iste osobe
 - **Uloge i prava** – Glavni admin, Predsjednik/Tajnik, Blagajnik, Domar, Admin sekcije… i vlastite uloge
 - **Knjiga dezinfekcije (ASK)** – QR oznaka na dezinfekcijskoj stanici svake sekcije, provjera lokacije (GPS), dolazak/odlazak, razlog, reg. oznaka, suputnici i gosti; pregled, PDF i e-pošta; pristup za inspekciju uz QR i lozinku; **mobilna stanica** za skupni lov (aktivacija na licu mjesta); radi i **bez signala** (upis se šalje kad ima interneta)
+- **Lovište** – karta lovišta (granice iz KML-a), lovne naprave s fotografijom (i uvoz iz fotografija s GPS-om), zauzimanje čeke („sjedim ovdje“, gost na drugoj čeki), automatsko oslobađanje u 03:00, obavijesti lovočuvarima sekcije, **lovački dnevnik**; sekcije strogo odvojene
 - **Sigurnosne kopije** – dnevna automatska kopija, kompletna kopija (ZIP) za preseljenje
 - **Dnevnik promjena** – tko je što promijenio
 
