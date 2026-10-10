@@ -51,8 +51,8 @@ function izjava_html(array $stanice): string
 
     $o .= '<h2>1. Zašto vodimo ovu evidenciju</h2>'
         . '<p>' . nl2br(e(izjava_pravni_temelj())) . '</p>'
-        . '<p>Udruga ovu evidenciju vodi <b>elektronički, umjesto papirnate bilježnice</b>. Sadržaj je isti: tko je bio u lovištu, kada je došao i otišao, '
-        . 'kojim vozilom i što je dezinficirano.</p>';
+        . '<p>Udruga ovu evidenciju vodi <b>elektronički, umjesto papirnate bilježnice</b>' . (postavka('Dez.PocetakRada') ? ' od <b>' . e(datum(postavka('Dez.PocetakRada'))) . '</b>' : '')
+        . '. Sadržaj je isti: tko je bio u lovištu, kada je došao i otišao, kojim vozilom i što je dezinficirano.</p>';
 
     $o .= '<h2>2. Kako lovci upisuju</h2><ul>'
         . '<li>Na svakoj dezinfekcijskoj stanici nalazi se <b>QR oznaka</b>.</li>'

@@ -154,6 +154,39 @@ if (je_post()) {
             dnevnik('Dezinfekcija – obrisan potpis', null, null, $nazivKl($kl));
             poruka('Potpis je obrisan.');
             break;
+        case 'pocetak-rada':
+            $kk = korisnik();
+            if (!(($kk['Prava'] & P_OSNOVNA) === P_OSNOVNA && $kk['SveSekcije'])) {
+                zabranjeno();
+            }
+            if (mb_strtoupper(trim((string) ($_POST['potvrda'] ?? ''))) !== 'OBRIŠI') {
+                poruka('Za potvrdu upišite OBRIŠI.', 'warning');
+                break;
+            }
+            $kopija = napravi_kopiju('prije-pocetka-rada');
+            $n = (int) vrijednost('SELECT COUNT(*) FROM DezUpisi');
+            transakcija(function () {
+                foreach (redovi('SELECT Datoteka FROM DezListe') as $l) {
+                    obrisi_sliku($l['Datoteka']);
+                }
+                q('DELETE FROM DezListe');
+                q('DELETE FROM DezUpisi');
+                q('DELETE FROM DezAktivacije');
+            });
+            $rev = 0;
+            if (!empty($_POST['i_loviste'])) {
+                $rev = (int) vrijednost('SELECT COUNT(*) FROM RevirZauzeca');
+                q('DELETE FROM LovackiDnevnik');
+                q('DELETE FROM RevirZauzeca');
+                q('DELETE FROM RevirObavijesti');
+                q('DELETE FROM RevirProcitano');
+            }
+            spremi_postavku('Dez.InspNeuspjesi', null);
+            spremi_postavku('Dez.PocetakRada', danas());
+            dnevnik('Dezinfekcija – početak rada: obrisani svi probni upisi', null, null,
+                $n . ' upisa dezinfekcije' . (!empty($_POST['i_loviste']) ? ', ' . $rev . ' zauzeća i lovački dnevnik' : '') . ' · kopija prije brisanja: ' . basename($kopija));
+            poruka("Obrisano $n probnih upisa. Evidencija je prazna i počinje danas. Sigurnosna kopija prije brisanja: " . e(basename($kopija)) . '.');
+            break;
         case 'insp-novi-qr':
             dez_insp_token(true);
             dnevnik('Dezinfekcija – nova QR oznaka za inspekciju');
@@ -265,6 +298,20 @@ ob_start(); ?>
     <?php endif; ?>
 </div>
 <?php endforeach; ?>
+<?php $kk = korisnik(); if (($kk['Prava'] & P_OSNOVNA) === P_OSNOVNA && $kk['SveSekcije']): ?>
+<div class="card card-body border-danger mb-3">
+    <div class="fw-semibold text-danger">Početak rada – brisanje probnih upisa</div>
+    <p class="small mb-2">Prije stvarnog korištenja: briše <b>sve</b> upise dezinfekcije (i poništene), mobilne akcije i fotografije papirnatih lista – da inspekcija vidi samo stvarne upise.
+        Stanice, QR oznake, odgovorne osobe, potpisi i postavke ostaju. Prije brisanja automatski se radi sigurnosna kopija baze.
+        <?= postavka('Dez.PocetakRada') ? '<br>Zadnji početak rada: <b>' . e(datum(postavka('Dez.PocetakRada'))) . '</b>.' : '' ?></p>
+    <form method="post" action="<?= e(url('dezinfekcija/postavke')) ?>" class="row g-2 align-items-center"><?= csrf() ?><input type="hidden" name="radnja" value="pocetak-rada">
+        <div class="col-12"><label class="form-check small"><input type="checkbox" class="form-check-input" name="i_loviste" value="1" checked>
+            <span class="form-check-label">obriši i probna zauzeća čeka i lovački dnevnik (lovne naprave na karti ostaju)</span></label></div>
+        <div class="col-6"><input name="potvrda" class="form-control form-control-sm" placeholder="upišite OBRIŠI" autocomplete="off" required></div>
+        <div class="col-6"><button class="btn btn-sm btn-danger w-100" data-potvrda="Sigurno obrisati SVE upise dezinfekcije? To se ne može poništiti (osim iz sigurnosne kopije).">Obriši sve probne upise</button></div>
+    </form>
+</div>
+<?php endif; ?>
 <?php if ($pristupi): ?>
     <h3 class="h6 mt-3">Zadnji pristupi inspekcije</h3>
     <ul class="small list-unstyled text-muted"><?php foreach ($pristupi as $p): ?><li><?= e(datum_vrijeme($p['Vrijeme'])) ?> – <?= e($p['Radnja']) ?><?= $p['Detalji'] ? ' · ' . e($p['Detalji']) : '' ?></li><?php endforeach; ?></ul>

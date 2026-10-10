@@ -1,5 +1,10 @@
 # Promjene
 
+## 1.8.8 – 2026-10
+- Dezinfekcija → Stanice i QR: **Početak rada – brisanje probnih upisa** (samo glavni admin, potvrda „OBRIŠI“): briše sve upise dezinfekcije (i poništene), mobilne akcije
+  i fotografije papirnatih lista, po želji i probna zauzeća čeka i lovački dnevnik. Stanice, QR, potpisi i postavke ostaju; prije brisanja automatska sigurnosna kopija.
+  Izjava za inspekciju navodi datum od kojeg se evidencija vodi elektronički.
+
 ## 1.8.7 – 2026-10
 - Izjava za inspekciju: bez broja verzije programa (kopija programa = verzija koju udruga koristi); **potpisi automatski** – odgovorne osobe svih sekcija i **predsjednik udruge**
   (ime iz funkcija člana ili ručno, potpis u Dezinfekcija → Stanice i QR). Gumb „Izjava za inspekciju“ u knjizi dezinfekcije.
