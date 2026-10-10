@@ -84,8 +84,14 @@ function napravi_kompletnu_kopiju(): string
         $z->addFile($f, 'kljucevi/' . basename($f));
     }
     $z->addFromString('kljucevi/php-kljuc.txt', base64_encode(tajni_kljuc()));
+    // gotovi PDF-ovi za inspekciju – za slučaj da program ne radi (otvoriti iz ZIP-a i pokazati / ispisati)
+    foreach (kopija_pdf_inspekcija() as $ime => $sadrzaj) {
+        $z->addFromString('PDF-za-inspekciju/' . $ime, $sadrzaj);
+    }
     $z->addFromString('PROCITAJ.txt', "Kompletna kopija – Lovačka evidencija\n" . udruga_naziv() . "\nNapravljeno: " . date('d.m.Y. H:i') . "\n\n"
-        . "POVJERLJIVO: sadrži osobne podatke članova.\nVraćanje: prvo pokretanje → „Vrati iz kompletne kopije“ ili Sustav → Sigurnosne kopije.\n");
+        . "POVJERLJIVO: sadrži osobne podatke članova.\nVraćanje: prvo pokretanje → „Vrati iz kompletne kopije“ ili Sustav → Sigurnosne kopije.\n\n"
+        . "Mapa PDF-za-inspekciju: cijela knjiga dezinfekcije po mjesecima (stalne i mobilne stanice) i izjava udruge kao gotovi PDF-ovi\n"
+        . "na dan izrade kopije – ako program ne radi, otvorite ih i pokažite ili ispišite za inspekciju.\n");
     $z->close();
     @unlink($tmpDb);
     return $zipPut;
@@ -165,4 +171,51 @@ function vrati_kompletnu_kopiju(string $zipPut): void
         @unlink($tmp);
     }
     @unlink(podaci('kopije/.zadnja'));
+}
+
+/** Knjiga dezinfekcije (sve od početka) i izjava kao PDF – za kompletnu kopiju. Greška ne smije spriječiti kopiju. */
+function kopija_pdf_inspekcija(): array
+{
+    $out = [];
+    $dan = date('Y-m-d');
+    @ini_set('memory_limit', '512M');
+    @set_time_limit(600);
+    try {
+        foreach (['F' => 'stalne-stanice', 'M' => 'mobilne-stanice'] as $vrsta => $naziv) {
+            $stanice = dez_stanice(false, $vrsta);
+            if (!$stanice) {
+                continue;
+            }
+            $f = dez_filtar(['Razdoblje' => 'Sve', 'Vrsta' => $vrsta]);
+            $ids = array_map(fn($st) => (int) $st['Id'], $stanice);
+            $upisi = dez_upisi($f, $ids, 100000);
+            if (!$upisi && $vrsta === 'M') {
+                continue;
+            }
+            // po mjesecu – PDF velike knjige (tisuće redaka) troši previše memorije, mjesečni su mali i brzi
+            $poMjesecu = [];
+            foreach ($upisi as $u) {
+                $poMjesecu[substr($u['Vrijeme'], 0, 7)][] = $u;
+            }
+            if (!$poMjesecu) {
+                $poMjesecu[date('Y-m')] = [];
+            }
+            ksort($poMjesecu);
+            foreach ($poMjesecu as $mj => $redovi) {
+                $fm = dez_filtar(['Razdoblje' => 'Slobodno', 'Od' => "$mj-01", 'Do' => date('Y-m-t', strtotime("$mj-01")), 'Vrsta' => $vrsta]);
+                $liste = $vrsta === 'M' ? [] : dez_liste($fm, $ids);
+                $dijelovi = array_chunk($redovi, 800) ?: [[]]; // jako puni mjeseci (skupni lovovi) u više dijelova – memorija
+                foreach ($dijelovi as $i => $dio) {
+                    $dod = count($dijelovi) > 1 ? '-dio' . ($i + 1) : '';
+                    $out["$mj-dezinfekcija-$naziv$dod.pdf"] = dez_pdf($dio, $stanice, mjesec_godina("$mj-01") . ($dod ? ' – ' . ($i + 1) . '. dio' : '') . ' (stanje ' . date('d.m.Y.') . ')',
+                        'sve sekcije', $i === count($dijelovi) - 1 ? $liste : []);
+                    gc_collect_cycles();
+                }
+            }
+        }
+        $out["izjava-evidencija-dezinfekcije-$dan.pdf"] = izjava_pdf(dez_stanice(false, 'F'));
+    } catch (Throwable $e) {
+        $out['GRESKA-PDF.txt'] = 'PDF-ovi nisu napravljeni: ' . $e->getMessage();
+    }
+    return $out;
 }

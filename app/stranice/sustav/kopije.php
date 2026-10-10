@@ -43,6 +43,7 @@ ob_start(); ?>
 <div class="d-flex flex-wrap gap-2 mb-2">
     <form method="post" action="<?= e(url('sustav/kopije')) ?>"><?= csrf() ?><input type="hidden" name="radnja" value="kopija"><button class="btn btn-primary">Napravi kopiju sada</button></form>
     <a class="btn btn-outline-primary" href="<?= e(url('sustav/kompletna-kopija')) ?>" download>Preuzmi kompletnu kopiju (ZIP)</a>
+    <div class="form-text">Sadrži i mapu <b>PDF-za-inspekciju</b>: knjiga dezinfekcije po mjesecima i izjava udruge kao gotovi PDF-ovi – ako program ne radi, otvorite ih iz ZIP-a. Izrada može potrajati do minute.</div>
 </div>
 <p class="small text-muted" style="max-width:700px">Kompletna kopija sadrži bazu, sve fotografije i ključeve (npr. šifriranu lozinku e-pošte). Služi za preseljenje na drugi poslužitelj (i između PHP, Windows i Home Assistant verzije): tamo se kod prvog pokretanja odabere „Vrati iz kompletne kopije“. Čuvajte je kao povjerljivu – sadrži osobne podatke članova.</p>
 <div class="card border-danger mb-4" style="max-width:700px">

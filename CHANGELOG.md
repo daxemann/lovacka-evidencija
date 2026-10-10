@@ -1,5 +1,9 @@
 # Promjene
 
+## 1.9.0 – 2026-10
+- Kompletna kopija (ZIP) sadrži i mapu **PDF-za-inspekciju**: cijela knjiga dezinfekcije (stalne i mobilne stanice) po mjesecima s papirnatim listama i potpisima,
+  te izjava udruge – gotovi PDF-ovi za slučaj da program ne radi. Vrlo puni mjeseci dijele se u više PDF-ova.
+
 ## 1.8.9 – 2026-10
 - Granice lovišta (KML) spremaju se u bazu – sada su u svakoj sigurnosnoj kopiji (dnevnoj i kompletnoj) i vraćaju se na novom poslužitelju. Postojeće granice prebacuju se automatski.
 
