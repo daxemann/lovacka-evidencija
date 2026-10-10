@@ -1,5 +1,8 @@
 # Promjene
 
+## 1.9.5 – 2026-10
+- Ispravak upozorenja iz 1.9.3: adrese `*.ts.net` (Tailscale Funnel) su javne i više se ne označavaju kao privatne; upozorenje ostaje za LAN / Tailscale IP i kad poveznica vodi na drugu adresu od otvorene.
+
 ## 1.9.4 – 2026-10
 - **Lovački dnevnik samo uz pravo**: novo pravo „Lovište – lovački dnevnik“ (Sustav → Uloge i prava). Bez njega dnevnik se ne prikazuje ni u izborniku ni na karti lovišta,
   a stranica je zabranjena. Opseg: uloga „sve sekcije“ vidi sve, ostali svoje sekcije. Pri nadogradnji pravo automatski dobivaju uloge sa svim pravima i uloge s „Lovište – nadzor“.

@@ -5,7 +5,7 @@
  */
 declare(strict_types=1);
 
-const VERZIJA = '1.9.4';
+const VERZIJA = '1.9.5';
 const KONTAKT_EMAIL = 'daxemann@googlemail.com';
 const PROJEKT_URL = 'https://github.com/daxemann/lovacka-evidencija';
 const KORIJEN = __DIR__ . '/..';
@@ -667,11 +667,11 @@ function trenutna_adresa(): string
     $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
     return ($https ? 'https' : 'http') . '://' . $host . bazni_put();
 }
-/** Je li adresa dostupna samo lokalno / u privatnoj mreži (LAN, Tailscale …)? */
+/** Je li adresa dostupna samo lokalno / u privatnoj mreži (LAN, Tailscale IP 100.64–127.x)? *.ts.net s Funnelom je javna. */
 function adresa_privatna(string $adr): bool
 {
     $h = strtolower((string) parse_url($adr, PHP_URL_HOST));
-    return $h === '' || $h === 'localhost' || str_ends_with($h, '.local') || str_ends_with($h, '.ts.net')
+    return $h === '' || $h === 'localhost' || str_ends_with($h, '.local')
         || preg_match('#^(127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\.)#', $h) === 1;
 }
 /** Upozorenje ispod poveznice (pozivnica, samoprijava) ako ona neće raditi članovima ili vodi na drugu adresu. */
