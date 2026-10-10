@@ -76,7 +76,7 @@ $kratko = [P_CLANOVI_CITAJ => 'Članovi<br>pregled', P_CLANOVI_UREDI => 'Članov
     P_AKCIJE_CITAJ => 'Akcije<br>pregled', P_AKCIJE_ODOBRI => 'Akcije<br>unos/odobr.', P_IZVJESTAJI => 'Izvještaji<br>poruke', P_SUSTAV => 'Sustav',
     P_KALENDAR => 'Kalendar<br>uređ.', P_IMENIK_SVI => 'Imenik<br>svi kontakti',
     P_DEZ_PREGLED => 'Dezinf.<br>pregled', P_DEZ_UREDI => 'Dezinf.<br>naknadno', P_DEZ_POSTAVKE => 'Dezinf.<br>stanice/QR', P_DEZ_MOBILNA => 'Dezinf.<br>mobilna', P_DEZ_ZA_DRUGE => 'Dezinf.<br>upis za druge',
-    P_REVIR_UREDI => 'Lovište<br>naprave', P_REVIR_NADZOR => 'Lovište<br>nadzor'];
+    P_REVIR_UREDI => 'Lovište<br>naprave', P_REVIR_NADZOR => 'Lovište<br>nadzor', P_REVIR_DNEVNIK => 'Lovački<br>dnevnik'];
 ob_start(); ?>
 <h1 class="h3 mb-1">Uloge i prava</h1>
 <p class="text-muted">Uloge se dodjeljuju na kartici člana (Članovi → član → Pristup i uloge). Sekcije su odvojene: uloga vrijedi samo za odabranu sekciju, osim ako je označeno „Smije sve sekcije“ (npr. Glavni admin, Blagajnik). Ne zaboravite „Spremi“ nakon promjene. Obični član bez uloge vidi samo svoje podatke.</p>

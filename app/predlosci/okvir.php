@@ -60,7 +60,7 @@ $revirObav = $k ? revir_broj_obavijesti() : 0;
                     <?= $stavka('kalendar', 'Kalendar') ?>
                     <?php if ($k['ClanId']) echo $grupa('moje', 'Moje', $stavka('moje-akcije', 'Moje radne akcije') . $stavka('moj-profil', 'Moj profil') . $stavka('moja-prava', 'Moja prava')); ?>
                     <?php $revirSek = revir_sekcije(); if ($revirSek || ima(P_SUSTAV)) echo $grupa('loviste', 'Lovište',
-                        ($revirSek ? $stavka('revir', 'Karta lovišta', 0, true) . $stavka('revir/danas', 'Danas u lovištu', $revirObav) . $stavka('revir/dnevnik', 'Lovački dnevnik') : '')
+                        ($revirSek ? $stavka('revir', 'Karta lovišta', 0, true) . $stavka('revir/danas', 'Danas u lovištu', $revirObav) . (ima(P_REVIR_DNEVNIK) ? $stavka('revir/dnevnik', 'Lovački dnevnik') : '') : '')
                         . (ima(P_SUSTAV) || ima(P_REVIR_UREDI) ? $stavka('revir/postavke', 'Postavke lovišta') : '')); ?>
                     <?= $grupa('clanovi', 'Članovi', $stavka('imenik', 'Imenik') . $stavka('poruke', 'Poruke', $neprocitano) . $stavka('oglasnik', 'Oglasnik')) ?>
                     <?php if ($k['Prava']) echo $grupa('udruga', 'Udruga',

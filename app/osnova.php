@@ -5,7 +5,7 @@
  */
 declare(strict_types=1);
 
-const VERZIJA = '1.9.3';
+const VERZIJA = '1.9.4';
 const KONTAKT_EMAIL = 'daxemann@googlemail.com';
 const PROJEKT_URL = 'https://github.com/daxemann/lovacka-evidencija';
 const KORIJEN = __DIR__ . '/..';
@@ -28,8 +28,9 @@ const P_DEZ_MOBILNA = 8192;
 const P_DEZ_ZA_DRUGE = 16384;
 const P_REVIR_UREDI = 32768;
 const P_REVIR_NADZOR = 65536;
+const P_REVIR_DNEVNIK = 131072;
 const P_OSNOVNA = 255; // prava iz .NET verzije
-const P_SVE = 131071;
+const P_SVE = 262143;
 
 const PRAVA_OPIS = [
     P_CLANOVI_CITAJ => ['Članovi – pregled', 'vidi popis članova i njihove podatke'],
@@ -48,7 +49,8 @@ const PRAVA_OPIS = [
     P_DEZ_ZA_DRUGE => ['Dezinfekcija – upis za druge na stanici', 'na samoj stanici (lokacija mobitela, trenutno vrijeme) upisuje lovca koji nema mobitel – izgleda kao upis na licu mjesta, s napomenom tko je upisao'],
     P_DEZ_MOBILNA => ['Dezinfekcija – mobilna stanica', 'aktivira mobilnu dezinfekcijsku stanicu na licu mjesta (npr. skupni lov) i prati tko je došao i otišao'],
     P_REVIR_UREDI => ['Lovište – lovne naprave', 'dodaje, premješta i uređuje lovne naprave (čeke) na karti lovišta za sekcije u svom opsegu'],
-    P_REVIR_NADZOR => ['Lovište – nadzor', 'prima obavijesti o zauzimanju lovnih naprava u svojim sekcijama, vidi lovački dnevnik sekcije i smije obrisati zauzeće'],
+    P_REVIR_NADZOR => ['Lovište – nadzor', 'prima obavijesti o zauzimanju lovnih naprava u svojim sekcijama i smije obrisati zauzeće'],
+    P_REVIR_DNEVNIK => ['Lovište – lovački dnevnik', 'vidi lovački dnevnik (tko, kada, gdje) za sekcije u svom opsegu, ispis i PDF; bez ovog prava dnevnik se ne prikazuje'],
 ];
 
 // Statusi (enum vrijednosti kao u .NET verziji)
@@ -122,7 +124,7 @@ function db(): PDO
  * Dodatne tablice PHP verzije (PRAGMA user_version). .NET verzija ih ne poznaje i zanemaruje,
  * pa baza i dalje radi u oba smjera.
  */
-const SHEMA_PHP = 9;
+const SHEMA_PHP = 10;
 function nadogradi_bazu(PDO $pdo): void
 {
     $v = (int) $pdo->query('PRAGMA user_version')->fetchColumn();
@@ -389,6 +391,10 @@ SQL);
     if ($v < 9) {
         $pdo->exec('ALTER TABLE "DezUpisi" ADD COLUMN "Organizirano" INTEGER NOT NULL DEFAULT 0;
             ALTER TABLE "DezUpisi" ADD COLUMN "OrganiziranoProveli" TEXT NULL;');
+    }
+    if ($v < 10) {
+        // novo pravo „Lovački dnevnik“: dobivaju ga uloge sa svim pravima i dosadašnji nadzor lovišta
+        $pdo->exec('UPDATE "Uloge" SET "Prava" = "Prava" | 131072 WHERE ("Prava" & 131071) = 131071 OR ("Prava" & 65536) = 65536;');
     }
     $pdo->exec('PRAGMA user_version = ' . SHEMA_PHP);
     $pdo->commit();

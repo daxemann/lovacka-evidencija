@@ -1,5 +1,9 @@
 # Promjene
 
+## 1.9.4 – 2026-10
+- **Lovački dnevnik samo uz pravo**: novo pravo „Lovište – lovački dnevnik“ (Sustav → Uloge i prava). Bez njega dnevnik se ne prikazuje ni u izborniku ni na karti lovišta,
+  a stranica je zabranjena. Opseg: uloga „sve sekcije“ vidi sve, ostali svoje sekcije. Pri nadogradnji pravo automatski dobivaju uloge sa svim pravima i uloge s „Lovište – nadzor“.
+
 ## 1.9.3 – 2026-10
 - Ispravak: gumb **„Trenutna adresa“** (Sustav → Postavke → Javna adresa) upisuje adresu kojom je aplikacija stvarno otvorena, a ne staru spremljenu.
 - Pozivnica i samoprijava: upozorenje ako poveznica vodi na privatnu adresu (lokalna mreža, Tailscale `*.ts.net`) ili na drugu adresu od one kojom je aplikacija otvorena – s poveznicom na postavku.

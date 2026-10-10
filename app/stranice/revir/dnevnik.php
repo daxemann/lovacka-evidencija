@@ -1,5 +1,6 @@
 <?php
 /** Lovački dnevnik: automatski upisi (tko, kada, gdje). Gosti se ne upisuju. */
+trazi(P_REVIR_DNEVNIK);
 $k = korisnik();
 revir_zatvori_istekle();
 $f = dez_filtar($_GET) + ['ClanId' => null];
@@ -8,15 +9,15 @@ if (!isset($_GET['Razdoblje'])) {
 }
 [$od, $do] = raspon($f);
 
-// Opseg: uloge za sve sekcije vide sve; nadzor vidi svoje sekcije; ostali samo svoje upise.
+// Opseg (samo uz pravo „Lovački dnevnik“): uloga za sve sekcije vidi sve; ostali svoje sekcije (+ svoje upise).
 $sekcijeOpseg = [];
 if ($k['SveSekcije']) {
     $uvjet = '1=1';
     foreach (redovi('SELECT Id, Naziv FROM Sekcije WHERE Aktivna=1 ORDER BY Redoslijed, Naziv') as $s) {
         $sekcijeOpseg[(int) $s['Id']] = $s['Naziv'];
     }
-} elseif (ima(P_REVIR_NADZOR) && $k['Sekcije']) {
-    $uvjet = '(' . revir_nadzor_sql('d.SekcijaId') . ($k['ClanId'] ? ' OR d.ClanId=' . (int) $k['ClanId'] : '') . ')';
+} elseif ($k['Sekcije']) {
+    $uvjet = '(d.SekcijaId IN (' . implode(',', array_map('intval', $k['Sekcije'])) . ')' . ($k['ClanId'] ? ' OR d.ClanId=' . (int) $k['ClanId'] : '') . ')';
     foreach ($k['Sekcije'] as $sid) {
         $sekcijeOpseg[$sid] = naziv_sekcije($sid);
     }
