@@ -1,8 +1,11 @@
 # Promjene
 
+## 1.8.2 – 2026-10
+- Lovački dnevnik: izvoz u **PDF** umjesto Excela (CSV).
+
 ## 1.8.1 – 2026-10
 - Lovački dnevnik: uz lov (zauzeće naprava) automatski i **ostali dolasci u lovište iz knjige dezinfekcije** (radna akcija, hranjenje, obilazak…) – od dolaska do odlaska.
-  Dezinfekcija s razlogom „Lov“ se ne upisuje dvaput. Novi izbornik **Aktivnost** (Lov, Radna akcija, Hranjenje…), brojač po aktivnosti, CSV sa stupcima Aktivnost i Mjesto.
+  Dezinfekcija s razlogom „Lov“ se ne upisuje dvaput. Novi izbornik **Aktivnost** (Lov, Radna akcija, Hranjenje…), brojač po aktivnosti.
 
 ## 1.8.0 – 2026-10
 - Novo: **Lovište** – karta lovišta s lovnim napravama, zauzimanje čeka i lovački dnevnik.

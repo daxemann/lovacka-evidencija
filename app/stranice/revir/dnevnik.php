@@ -69,18 +69,54 @@ $trajanje = function (int|float $min): string {
 };
 $upit = dez_filtar_upit($f) + ($aktivnost !== '' ? ['Aktivnost' => $aktivnost] : []);
 
-if (($_GET['izvoz'] ?? '') === 'csv') {
-    header('Content-Type: text/csv; charset=utf-8');
-    header('Content-Disposition: attachment; filename="lovacki-dnevnik-' . $od . '-' . $do . '.csv"');
-    $o = fopen('php://output', 'w');
-    fwrite($o, "\xEF\xBB\xBF");
-    fputcsv($o, ['Datum', 'Od', 'Do', 'Trajanje (min)', 'Lovac', 'Aktivnost', 'Mjesto', 'Sekcija', 'Napomena'], ';');
+if (($_GET['izvoz'] ?? '') === 'pdf') {
+    $sekOpis = $sekcijaF !== null ? 'sekcija ' . naziv_sekcije($sekcijaF) : ($samoJa ? $k['Naziv'] : (count($sekcijeOpseg) > 1 ? 'sve sekcije' : implode(', ', $sekcijeOpseg)));
+    $logo = '';
+    if (ima_logo()) {
+        $l = podaci('foto/' . basename((string) postavka('Udruga.Logo')));
+        $logo = '<img src="data:' . (str_ends_with($l, '.png') ? 'image/png' : 'image/jpeg') . ';base64,' . base64_encode((string) file_get_contents($l)) . '" style="height:42px;float:left;margin-right:10px">';
+    }
+    $redak = '';
     foreach ($upisi as $u) {
         $m = $minuta($u);
-        fputcsv($o, [datum($u['Od']), date('H:i', strtotime($u['Od'])), $u['Do'] ? datum_vrijeme($u['Do']) : '', $m !== null ? (int) round($m) : '',
-            $u['Ime'], $u['Aktivnost'], $u['Mjesto'], naziv_sekcije($u['SekcijaId'] !== null ? (int) $u['SekcijaId'] : null),
-            trim(($u['Automatski'] ? 'automatski oslobođeno' : '') . ' ' . ($u['Do'] ? '' : 'bez odlaska') . ' ' . $u['Napomena'])], ';');
+        $redak .= '<tr><td>' . e(datum($u['Od'])) . '</td><td>' . e(date('H:i', strtotime($u['Od']))) . ' – '
+            . ($u['Do'] ? e(substr($u['Do'], 0, 10) !== substr($u['Od'], 0, 10) ? date('d.m. H:i', strtotime($u['Do'])) : date('H:i', strtotime($u['Do']))) : '?')
+            . '</td><td>' . ($m !== null ? e($trajanje($m)) : '') . '</td>' . ($samoJa ? '' : '<td>' . e($u['Ime']) . '</td>')
+            . '<td>' . e($u['Aktivnost']) . '</td><td>' . e($u['Mjesto']) . '</td>'
+            . (count($sekcijeOpseg) > 1 ? '<td>' . e(naziv_sekcije($u['SekcijaId'] !== null ? (int) $u['SekcijaId'] : null)) . '</td>' : '')
+            . '<td>' . e(trim(($u['Automatski'] ? 'automatski oslobođeno' : '') . ($u['Do'] ? '' : 'bez odlaska') . ' ' . $u['Napomena'])) . '</td></tr>';
     }
+    $html = '<html><head><meta charset="utf-8"><style>
+        @page { margin: 14mm 10mm 16mm 10mm; }
+        body { font-family: DejaVu Sans, sans-serif; font-size: 8pt; color: #222; }
+        .zag { border-bottom: 2px solid #3d6b2f; padding-bottom: 6px; margin-bottom: 8px; overflow: hidden; }
+        .zag .n { font-size: 13pt; font-weight: bold; color: #2f5d23; } .zag .p { color: #555; }
+        h2 { font-size: 12pt; margin: 2px 0; } .pod { color: #555; margin-bottom: 6px; }
+        table { width: 100%; border-collapse: collapse; } th { background: #e9efe5; text-align: left; }
+        th, td { border: 0.5pt solid #bbb; padding: 2px 3px; vertical-align: top; }
+        .podnozje { position: fixed; bottom: -9mm; left: 0; right: 0; font-size: 7pt; color: #888; }
+    </style></head><body>
+    <div class="podnozje">' . e(udruga_naziv()) . ' · lovački dnevnik · ispisano ' . date('d.m.Y. H:i') . '</div>
+    <div class="zag">' . $logo . '<div class="n">' . e(udruga_naziv()) . '</div></div>
+    <h2>Lovački dnevnik' . ($aktivnost !== '' ? ' – ' . e($aktivnost) : '') . '</h2>
+    <div class="pod">Razdoblje: ' . e(opis_raspona($f)) . ' · ' . e($sekOpis) . ' · upisa: ' . count($upisi) . ' · ukupno ' . e($trajanje($ukupnoMin))
+        . (count($poAktivnosti) > 1 ? ' · ' . e(implode(', ', array_map(fn($a, $n) => "$a $n", array_keys($poAktivnosti), $poAktivnosti))) : '') . '</div>
+    <table><thead><tr><th>Datum</th><th>Od – do</th><th>Trajanje</th>' . ($samoJa ? '' : '<th>Lovac</th>') . '<th>Aktivnost</th><th>Mjesto</th>'
+        . (count($sekcijeOpseg) > 1 ? '<th>Sekcija</th>' : '') . '<th>Napomena</th></tr></thead><tbody>'
+        . ($redak ?: '<tr><td colspan="8">Nema upisa za odabrano razdoblje.</td></tr>') . '</tbody></table></body></html>';
+    $opt = new Dompdf\Options();
+    $opt->set('defaultFont', 'DejaVu Sans');
+    $opt->set('isRemoteEnabled', false);
+    $opt->set('tempDir', sys_get_temp_dir());
+    $opt->set('fontCache', podaci());
+    $pdf = new Dompdf\Dompdf($opt);
+    $pdf->loadHtml($html, 'UTF-8');
+    $pdf->setPaper('A4', 'portrait');
+    $pdf->render();
+    $pdf->getCanvas()->page_text(530, 815, 'str. {PAGE_NUM}/{PAGE_COUNT}', null, 7, [0.5, 0.5, 0.5]);
+    header('Content-Type: application/pdf');
+    header('Content-Disposition: ' . (($_GET['prikaz'] ?? '') === '1' ? 'inline' : 'attachment') . '; filename="lovacki-dnevnik-' . $od . '-' . $do . '.pdf"');
+    echo $pdf->output();
     exit;
 }
 ob_start(); ?>
@@ -120,7 +156,7 @@ ob_start(); ?>
     </div>
     <div class="d-flex flex-wrap gap-2 mt-3">
         <button type="button" class="btn btn-sm btn-outline-secondary" onclick="window.print()">Ispis</button>
-        <a class="btn btn-sm btn-outline-secondary" href="<?= e(url('revir/dnevnik', $upit + ['izvoz' => 'csv'])) ?>">Excel (CSV)</a>
+        <a class="btn btn-sm btn-outline-secondary" target="_blank" href="<?= e(url('revir/dnevnik', $upit + ['izvoz' => 'pdf', 'prikaz' => 1])) ?>">PDF</a>
     </div>
 </form>
 <div class="d-flex gap-4 mb-2">
