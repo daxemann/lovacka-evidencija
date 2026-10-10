@@ -1,8 +1,14 @@
 name: Release
 
+# Automatski GitHub Release kad se u app/osnova.php promijeni VERZIJA
+# (ili ručno: Actions → Release → Run workflow).
 on:
   push:
-    tags: ['v*']
+    branches: [main]
+    paths:
+      - app/osnova.php
+      - .github/workflows/release.yml
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -15,23 +21,38 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Bilješke iz CHANGELOG.md
+      - name: Verzija
+        id: v
         run: |
-          VER="${GITHUB_REF_NAME#v}"
-          PREV=$(git tag -l 'v*' --sort=-v:refname | grep -vx "$GITHUB_REF_NAME" | head -1)
+          VER=$(sed -n "s/^const VERZIJA = '\(.*\)';/\1/p" app/osnova.php)
+          [ -n "$VER" ] || { echo "VERZIJA nije pronađena"; exit 1; }
+          echo "ver=$VER" >> "$GITHUB_OUTPUT"
+          if git rev-parse -q --verify "refs/tags/v$VER" >/dev/null; then
+            echo "v$VER već postoji – preskačem."
+            echo "skip=1" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Bilješke iz CHANGELOG.md
+        if: steps.v.outputs.skip != '1'
+        run: |
+          VER="${{ steps.v.outputs.ver }}"
+          PREV=$(git tag -l 'v*' --sort=-v:refname | head -1)
           PREV="${PREV#v}"
           {
             if [ -n "$PREV" ]; then echo "Promjene od $PREV do $VER."; echo; fi
             echo '**Nadogradnja:** prepisati programske datoteke (`podaci/` i `config.php` ostaju); baza se sama proširuje.'
             echo; echo '---'; echo
             awk -v v="$VER" -v p="$PREV" '
-              /^## / { split($2, a, " "); cur=a[1]; if (cur==p) exit; if (cur==v) on=1 }
+              /^## / { cur=$2; if (cur==p) exit; if (cur==v) on=1 }
               on { sub(/^## /, "### "); print }
             ' CHANGELOG.md
           } > notes.md
           cat notes.md
 
       - name: GitHub Release
+        if: steps.v.outputs.skip != '1'
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes-file notes.md --latest
+        run: |
+          VER="${{ steps.v.outputs.ver }}"
+          gh release create "v$VER" --target "$GITHUB_SHA" --title "v$VER" --notes-file notes.md --latest
