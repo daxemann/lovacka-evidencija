@@ -51,8 +51,11 @@ function izjava_html(array $stanice): string
 
     $o .= '<h2>1. Zašto vodimo ovu evidenciju</h2>'
         . '<p>' . nl2br(e(izjava_pravni_temelj())) . '</p>'
-        . '<p>Udruga ovu evidenciju vodi <b>elektronički, umjesto papirnate bilježnice</b>' . (postavka('Dez.PocetakRada') ? ' od <b>' . e(datum(postavka('Dez.PocetakRada'))) . '</b>' : '')
-        . '. Sadržaj je isti: tko je bio u lovištu, kada je došao i otišao, kojim vozilom i što je dezinficirano.</p>';
+        . '<p>Udruga ovu evidenciju vodi <b>elektronički, umjesto papirnate bilježnice</b>' . (postavka('Dez.PocetakRada') ? ' od <b>' . e(datum(postavka('Dez.PocetakRada'))) . '</b>' : '.')
+        . ' Sadržaj je isti: tko je bio u lovištu, kada je došao i otišao, kojim vozilom i što je dezinficirano.</p>'
+        . '<p><b>Elektronički oblik je dopušten:</b> Naredba propisuje obvezu vođenja evidencije, ali ne propisuje njezin oblik (papir ili elektronički). '
+        . 'Prema članku 46. Uredbe (EU) br. 910/2014 (eIDAS), koja se u Republici Hrvatskoj primjenjuje izravno, elektroničkom dokumentu ne smije se uskratiti '
+        . 'pravni učinak ni dopuštenost kao dokaza samo zato što je u elektroničkom obliku.</p>';
 
     $o .= '<h2>2. Kako lovci upisuju</h2><ul>'
         . '<li>Na svakoj dezinfekcijskoj stanici nalazi se <b>QR oznaka</b>.</li>'
@@ -96,8 +99,8 @@ function izjava_pdf(array $stanice): string
         $logo = '<img src="data:' . (str_ends_with($l, '.png') ? 'image/png' : 'image/jpeg') . ';base64,' . base64_encode((string) file_get_contents($l)) . '" style="height:46px;float:left;margin-right:10px">';
     }
     $html = '<html><head><meta charset="utf-8"><style>
-        @page { margin: 10mm 13mm 13mm 13mm; }
-        body { font-family: DejaVu Sans, sans-serif; font-size: 8.4pt; color: #222; line-height: 1.22; }
+        @page { margin: 9mm 12mm 12mm 12mm; }
+        body { font-family: DejaVu Sans, sans-serif; font-size: 8.1pt; color: #222; line-height: 1.2; }
         .zag { border-bottom: 2px solid #3d6b2f; padding-bottom: 6px; margin-bottom: 10px; overflow: hidden; }
         .zag .n { font-size: 13pt; font-weight: bold; color: #2f5d23; }
         h1 { font-size: 13pt; margin: 2px 0 1px; } .pod { color: #555; margin-bottom: 8px; }

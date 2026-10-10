@@ -1,5 +1,8 @@
 # Promjene
 
+## 1.9.2 – 2026-10
+- Izjava za inspekciju: pravni temelj za **elektronički oblik** evidencije – čl. 46. Uredbe (EU) br. 910/2014 (eIDAS); Naredba ne propisuje oblik evidencije.
+
 ## 1.9.1 – 2026-10
 - Knjiga dezinfekcije – PDF i za vrlo velika razdoblja (npr. cijela lovna godina s tisućama upisa): do 1200 upisa jedan PDF, inače automatski
   **ZIP s PDF-om po mjesecima** (puni mjeseci u dijelovima). Vrijedi za upravu, inspekciju i slanje e-poštom. Manja potrošnja memorije pri izradi PDF-a.
