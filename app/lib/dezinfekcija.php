@@ -676,12 +676,38 @@ function dez_kljuc_sekcije(?int $sid): string
 }
 function dez_odgovorna(?int $sid): ?string
 {
-    return postavka('Dez.Odgovorna.' . dez_kljuc_sekcije($sid));
+    return dez_odgovorna_kl(dez_kljuc_sekcije($sid));
+}
+/** Trenutni predsjednik udruge iz funkcija članova (ili null). */
+function dez_predsjednik_iz_funkcija(): ?string
+{
+    $r = red("SELECT c.Ime, c.Prezime FROM ClanFunkcije cf JOIN Funkcije f ON f.Id=cf.FunkcijaId JOIN Clanovi c ON c.Id=cf.ClanId
+        WHERE kljuc(f.Naziv) LIKE 'predsjednik%' AND kljuc(f.Naziv) NOT LIKE '%sekcij%' AND (cf.Do IS NULL OR cf.Do >= ?) AND (cf.Od IS NULL OR cf.Od <= ?)
+        ORDER BY cf.Od DESC LIMIT 1", [danas(), danas()]);
+    return $r ? puno_ime($r) : null;
+}
+/** Odgovorna osoba po ključu: id sekcije, '0' (bez sekcije) ili 'P' (predsjednik udruge – zadano iz funkcija). */
+function dez_odgovorna_kl(string $kl): ?string
+{
+    $v = postavka('Dez.Odgovorna.' . $kl);
+    if ($kl === 'P' && !$v) {
+        $v = dez_predsjednik_iz_funkcija();
+    }
+    return $v;
 }
 function dez_potpis_datauri(?int $sid): ?string
 {
-    $p = postavka('Dez.Potpis.' . dez_kljuc_sekcije($sid));
-    if (!$p || !dez_odgovorna($sid)) {
+    return dez_potpis_datauri_kl(dez_kljuc_sekcije($sid));
+}
+function dez_potpis_datauri_kl(string $kl): ?string
+{
+    $p = postavka('Dez.Potpis.' . $kl);
+    $ime = dez_odgovorna_kl($kl);
+    if (!$p || !$ime) {
+        return null;
+    }
+    // potpis predsjednika vrijedi samo za osobu koja se potpisala (predsjednik se može promijeniti u funkcijama)
+    if ($kl === 'P' && postavka('Dez.PotpisIme.P') !== $ime) {
         return null;
     }
     $put = podaci('foto/' . basename($p));

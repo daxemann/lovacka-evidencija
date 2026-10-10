@@ -16,6 +16,32 @@ function izjava_pravni_temelj(): string
     return postavka('Dez.PravniTemelj', IZJAVA_PRAVNI_TEMELJ);
 }
 
+/** Potpisi: odgovorne osobe sekcija i predsjednik udruge – automatski (spremljeni potpisi), inače crta za potpis rukom. */
+function izjava_potpisi(array $stanice): string
+{
+    $kljucevi = [];
+    foreach ($stanice as $st) {
+        $sid = $st['SekcijaId'] !== null ? (int) $st['SekcijaId'] : null;
+        $kljucevi[dez_kljuc_sekcije($sid)] = 'Odgovorna osoba' . (count($stanice) > 1 && $st['SekcijaNaziv'] ? '<br>sekcija ' . $st['SekcijaNaziv'] : '');
+    }
+    $kljucevi['P'] = 'Predsjednik udruge';
+    $o = '<table style="margin-top:12px; border-collapse:collapse; page-break-inside:avoid; width:100%"><tr>';
+    $i = 0;
+    foreach ($kljucevi as $kl => $uloga) {
+        if ($i > 0 && $i % 3 === 0) {
+            $o .= '</tr><tr>';
+        }
+        $ime = (string) dez_odgovorna_kl((string) $kl);
+        $slika = dez_potpis_datauri_kl((string) $kl);
+        $o .= '<td style="vertical-align:top; padding:0 14px 8px 0; width:33%"><div style="height:20pt; line-height:9pt; font-size:7.5pt; color:#555">' . str_replace('&lt;br&gt;', '<br>', e($uloga)) . '</div>'
+            . ($ime !== '' ? '<b>' . e($ime) . '</b>' : '______________________')
+            . '<div style="height:15mm; margin-top:2px">' . ($slika ? '<img src="' . $slika . '" style="height:14mm">' : '') . '</div>'
+            . '<div style="border-top:0.5pt solid #555; width:55mm; font-size:7pt; color:#666; padding-top:1px">potpis' . ($slika ? ' · elektronički generirano' : '') . '</div></td>';
+        $i++;
+    }
+    return $o . '</tr></table>';
+}
+
 /** Sadržaj izjave kao HTML (isti tekst za stranicu i PDF). */
 function izjava_html(array $stanice): string
 {
@@ -54,11 +80,11 @@ function izjava_html(array $stanice): string
 
     $o .= '<h2>4. Provjera programa</h2>'
         . '<p>Program „Lovačka evidencija“ je <b>otvorenog koda</b>: cijeli program je javno objavljen na adresi <b>' . e(PROJEKT_URL) . '</b> '
-        . 'i svatko ga može pregledati. Udruga koristi verziju <b>' . e(VERZIJA) . '</b>.</p>'
-        . '<p>Na zahtjev inspekcije udruga daje <b>kopiju programa točno ove verzije</b> (bez osobnih podataka članova) kako bi je mogla provjeriti stručna osoba. '
+        . 'i svatko ga može pregledati.</p>'
+        . '<p>Na zahtjev inspekcije udruga daje <b>kopiju programa koji udruga koristi</b> (bez osobnih podataka članova) kako bi je mogla provjeriti stručna osoba. '
         . 'Kopija se može preuzeti i izravno na stranici za inspekciju („Kopija programa“).</p>';
 
-    $o .= dez_potpis_pdf_html($stanice);
+    $o .= izjava_potpisi($stanice);
     return $o;
 }
 
@@ -70,17 +96,17 @@ function izjava_pdf(array $stanice): string
         $logo = '<img src="data:' . (str_ends_with($l, '.png') ? 'image/png' : 'image/jpeg') . ';base64,' . base64_encode((string) file_get_contents($l)) . '" style="height:46px;float:left;margin-right:10px">';
     }
     $html = '<html><head><meta charset="utf-8"><style>
-        @page { margin: 12mm 14mm 15mm 14mm; }
-        body { font-family: DejaVu Sans, sans-serif; font-size: 8.8pt; color: #222; line-height: 1.28; }
+        @page { margin: 10mm 13mm 13mm 13mm; }
+        body { font-family: DejaVu Sans, sans-serif; font-size: 8.4pt; color: #222; line-height: 1.22; }
         .zag { border-bottom: 2px solid #3d6b2f; padding-bottom: 6px; margin-bottom: 10px; overflow: hidden; }
         .zag .n { font-size: 13pt; font-weight: bold; color: #2f5d23; }
-        h1 { font-size: 14pt; margin: 4px 0 2px; } .pod { color: #555; margin-bottom: 8px; }
-        h2 { font-size: 10.5pt; margin: 8px 0 3px; color: #2f5d23; }
+        h1 { font-size: 13pt; margin: 2px 0 1px; } .pod { color: #555; margin-bottom: 8px; }
+        h2 { font-size: 10pt; margin: 6px 0 2px; color: #2f5d23; }
         ul { margin: 0 0 0 0; padding-left: 16px; } li { margin-bottom: 2px; } p { margin: 0 0 4px; }
         .mala { font-size: 7.5pt; color: #777; margin-top: 10px; }
-        .podnozje { position: fixed; bottom: -9mm; left: 0; right: 0; font-size: 7pt; color: #888; }
+        .podnozje { position: fixed; bottom: -8mm; left: 0; right: 0; font-size: 7pt; color: #888; }
     </style></head><body>
-    <div class="podnozje">' . e(udruga_naziv()) . ' · izjava o vođenju evidencije dezinfekcije · izdano ' . date('d.m.Y.') . ' iz programa „Lovačka evidencija“ ' . e(VERZIJA) . '</div>
+    <div class="podnozje">' . e(udruga_naziv()) . ' · izjava o vođenju evidencije dezinfekcije · izdano ' . date('d.m.Y.') . '</div>
     <div class="zag">' . $logo . '<div class="n">' . e(udruga_naziv()) . '</div></div>' . izjava_html($stanice) . '</body></html>';
     $opt = new Dompdf\Options();
     $opt->set('defaultFont', 'DejaVu Sans');

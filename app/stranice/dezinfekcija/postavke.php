@@ -31,13 +31,15 @@ foreach ($stanice as $s0) {
         $sekcijeOdg[dez_kljuc_sekcije($s0['SekcijaId'] !== null ? (int) $s0['SekcijaId'] : null)] = [$s0['SekcijaId'] !== null ? (int) $s0['SekcijaId'] : null, $s0['SekcijaNaziv'] ?? 'Bez sekcije'];
     }
 }
-$sekcijaIzPosta = function () use ($sekcijeOdg): ?int {
+$sekcijeOdg['P'] = [null, 'Predsjednik udruge'];
+$sekcijaIzPosta = function () use ($sekcijeOdg): string {
     $kl = (string) ($_POST['sekcija'] ?? '');
     if (!isset($sekcijeOdg[$kl])) {
         zabranjeno();
     }
-    return $sekcijeOdg[$kl][0];
+    return $kl;
 };
+$nazivKl = fn(string $kl): string => $kl === 'P' ? 'predsjednik' : (string) $sekcijeOdg[$kl][1];
 if (je_post()) {
     $radnja = (string) ($_POST['radnja'] ?? '');
     switch ($radnja) {
@@ -104,27 +106,25 @@ if (je_post()) {
             poruka('Spremljeno.');
             break;
         case 'odgovorna':
-            $sid = $sekcijaIzPosta();
-            $kl = dez_kljuc_sekcije($sid);
-            $stara = (string) dez_odgovorna($sid);
+            $kl = $sekcijaIzPosta();
+            $stara = (string) postavka('Dez.Odgovorna.' . $kl);
             $nova = mb_substr(ul_str('odgovorna'), 0, 120);
             spremi_postavku('Dez.Odgovorna.' . $kl, $nova ?: null);
-            if ($stara !== $nova && postavka('Dez.Potpis.' . $kl)) {
+            if ($kl !== 'P' && $stara !== $nova && postavka('Dez.Potpis.' . $kl)) {
                 // potpis pripada osobi – kod promjene osobe se briše
                 obrisi_sliku(postavka('Dez.Potpis.' . $kl));
                 spremi_postavku('Dez.Potpis.' . $kl, null);
                 poruka('Odgovorna osoba je promijenjena – dosadašnji potpis je obrisan. Nova osoba neka se potpiše.', 'warning');
             }
             if ($stara !== $nova) {
-                dnevnik('Dezinfekcija – odgovorna osoba', null, null, naziv_sekcije($sid) . ': ' . ($stara ?: '—') . ' → ' . ($nova ?: '—'));
+                dnevnik('Dezinfekcija – odgovorna osoba', null, null, $nazivKl($kl) . ': ' . ($stara ?: '—') . ' → ' . ($nova ?: '—'));
             }
             poruka('Spremljeno.');
             break;
         case 'potpis':
-            $sid = $sekcijaIzPosta();
-            $kl = dez_kljuc_sekcije($sid);
-            if (!dez_odgovorna($sid)) {
-                poruka('Najprije upišite i spremite odgovornu osobu.', 'warning');
+            $kl = $sekcijaIzPosta();
+            if (!dez_odgovorna_kl($kl)) {
+                poruka($kl === 'P' ? 'Upišite predsjednika (ili ga označite u funkcijama člana).' : 'Najprije upišite i spremite odgovornu osobu.', 'warning');
                 break;
             }
             try {
@@ -139,17 +139,19 @@ if (je_post()) {
                 }
                 obrisi_sliku(postavka('Dez.Potpis.' . $kl));
                 spremi_postavku('Dez.Potpis.' . $kl, $ime);
-                dnevnik('Dezinfekcija – spremljen potpis odgovorne osobe', null, null, naziv_sekcije($sid) . ': ' . dez_odgovorna($sid));
-                poruka('Potpis je spremljen – od sada je na PDF-u evidencije ove sekcije.');
+                spremi_postavku('Dez.PotpisIme.' . $kl, dez_odgovorna_kl($kl));
+                dnevnik('Dezinfekcija – spremljen potpis', null, null, $nazivKl($kl) . ': ' . dez_odgovorna_kl($kl));
+                poruka('Potpis je spremljen – od sada je automatski na PDF-ovima.');
             } catch (Throwable $e) {
                 poruka('Potpis nije spremljen: ' . e($e->getMessage()), 'danger');
             }
             break;
         case 'potpis-obrisi':
-            $sid = $sekcijaIzPosta();
-            obrisi_sliku(postavka('Dez.Potpis.' . dez_kljuc_sekcije($sid)));
-            spremi_postavku('Dez.Potpis.' . dez_kljuc_sekcije($sid), null);
-            dnevnik('Dezinfekcija – obrisan potpis odgovorne osobe', null, null, naziv_sekcije($sid));
+            $kl = $sekcijaIzPosta();
+            obrisi_sliku(postavka('Dez.Potpis.' . $kl));
+            spremi_postavku('Dez.Potpis.' . $kl, null);
+            spremi_postavku('Dez.PotpisIme.' . $kl, null);
+            dnevnik('Dezinfekcija – obrisan potpis', null, null, $nazivKl($kl));
             poruka('Potpis je obrisan.');
             break;
         case 'insp-novi-qr':
@@ -236,14 +238,15 @@ ob_start(); ?>
     </div>
 </form>
 <form method="post" action="<?= e(url('dezinfekcija/postavke')) ?>" id="inspnoviqr"><?= csrf() ?><input type="hidden" name="radnja" value="insp-novi-qr"></form>
-<h2 class="h5 mt-4">Odgovorna osoba i potpis (po sekciji)</h2>
+<h2 class="h5 mt-4">Odgovorna osoba i potpis (po sekciji) i predsjednik</h2>
 <p class="small text-muted">Svaka sekcija ima svoju odgovornu osobu. Potpiše se jednom – potpis je zatim na svakom PDF-u evidencije te sekcije (i onom koji preuzme inspekcija),
     uz napomenu „elektronički generirano iz evidencije“. Skenirani potpis nije kvalificirani elektronički potpis. Bez potpisa PDF ima crtu za potpis rukom.</p>
-<?php foreach ($sekcijeOdg as $kl => [$sid, $sNaziv]): $odg = dez_odgovorna($sid); $potpis = dez_potpis_datauri($sid); ?>
+<?php foreach ($sekcijeOdg as $kl => [$sid, $sNaziv]): $kl = (string) $kl; $odg = dez_odgovorna_kl($kl); $potpis = dez_potpis_datauri_kl($kl); $pred = $kl === 'P'; ?>
 <div class="card card-body mb-3">
-    <div class="fw-semibold mb-2">Sekcija <?= e($sNaziv) ?></div>
+    <div class="fw-semibold mb-2"><?= $pred ? 'Predsjednik udruge <span class="small text-muted fw-normal">(na izjavi za inspekciju)</span>' : 'Sekcija ' . e($sNaziv) ?></div>
     <form method="post" action="<?= e(url('dezinfekcija/postavke')) ?>" class="d-flex gap-2 mb-2"><?= csrf() ?><input type="hidden" name="radnja" value="odgovorna"><input type="hidden" name="sekcija" value="<?= e($kl) ?>">
-        <input name="odgovorna" class="form-control" maxlength="120" value="<?= e($odg) ?>" placeholder="odgovorna osoba – ime i prezime">
+        <input name="odgovorna" class="form-control" maxlength="120" value="<?= e($pred ? (string) postavka('Dez.Odgovorna.P') : $odg) ?>"
+            placeholder="<?= $pred ? e(dez_predsjednik_iz_funkcija() ? 'iz funkcija: ' . dez_predsjednik_iz_funkcija() : 'ime i prezime predsjednika') : 'odgovorna osoba – ime i prezime' ?>">
         <button class="btn btn-outline-primary">Spremi</button></form>
     <?php if ($odg): ?>
         <?php if ($potpis): ?>

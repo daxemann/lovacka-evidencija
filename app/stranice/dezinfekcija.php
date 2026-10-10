@@ -126,6 +126,7 @@ ob_start(); ?>
         <button type="button" class="btn btn-sm btn-outline-secondary" onclick="window.print()">Ispis</button>
         <a class="btn btn-sm btn-outline-secondary" target="_blank" href="<?= e(url('izvoz/dez-pdf', $upit + ['prikaz' => 1])) ?>">Pogledaj PDF</a>
         <a class="btn btn-sm btn-outline-secondary" href="<?= e(url('izvoz/dez-pdf', $upit)) ?>" download>Preuzmi PDF</a>
+        <a class="btn btn-sm btn-outline-secondary" target="_blank" href="<?= e(url('dezinfekcija/izjava')) ?>" title="Izjava udruge za inspekciju: pravni temelj, način vođenja, zaštita od naknadnih promjena">📄 Izjava za inspekciju</a>
         <?php if (ima(P_DEZ_UREDI)): ?><div class="form-check form-check-inline ms-2 small"><input class="form-check-input" type="checkbox" name="Ponisteni" value="1" id="pon"<?= chk($f['Ponisteni']) ?> data-auto>
             <label class="form-check-label" for="pon">prikaži poništene</label></div><?php endif; ?>
     </div>

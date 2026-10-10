@@ -1,5 +1,9 @@
 # Promjene
 
+## 1.8.7 – 2026-10
+- Izjava za inspekciju: bez broja verzije programa (kopija programa = verzija koju udruga koristi); **potpisi automatski** – odgovorne osobe svih sekcija i **predsjednik udruge**
+  (ime iz funkcija člana ili ručno, potpis u Dezinfekcija → Stanice i QR). Gumb „Izjava za inspekciju“ u knjizi dezinfekcije.
+
 ## 1.8.6 – 2026-10
 - Mobilna stanica (skupni lov): pri zatvaranju odgovorna osoba potvrđuje da su svi bez upisanog odlaska prošli **organiziranu dezinfekciju pri odlasku**
   (vozila redom na izlazu) i upisuje tko je dezinfekciju provodio. Za svakoga se upisuje ODLAZAK s tom oznakom – vidljivo u knjizi, PDF-u i za inspekciju; zapisuje se u dnevnik.
