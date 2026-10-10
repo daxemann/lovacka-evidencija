@@ -109,10 +109,7 @@ if (($_GET['program'] ?? '') === 'zip') {
 
 if (($_GET['pdf'] ?? '') === '1') {
     dnevnik('Inspekcija – PDF', null, null, $opis . ', ' . $sekOpis . ' · IP ' . $ip, $tko);
-    header('Content-Type: application/pdf');
-    header('Content-Disposition: inline; filename="dezinfekcija-' . date('Y-m-d') . '.pdf"');
-    echo dez_pdf($upisi, $stF, $opis, $sekOpis, $liste);
-    exit;
+    dez_posalji_pdf(dez_pdf_datoteke($upisi, $stF, $mob ? [] : array_map(fn($s) => (int) $s['Id'], $stF), $f, $opis, $sekOpis));
 }
 if (je_post() && ($_POST['radnja'] ?? '') === 'posalji') {
     $email = trim((string) ($_POST['email'] ?? ''));
@@ -124,7 +121,7 @@ if (je_post() && ($_POST['radnja'] ?? '') === 'posalji') {
     } else {
         try {
             posalji_mail($email, 'Evidencija dezinfekcije – ' . udruga_naziv(), dez_mail_html($upisi, $opis, $sekOpis), true, null,
-                ['dezinfekcija-' . date('Y-m-d') . '.pdf' => dez_pdf($upisi, $stF, $opis, $sekOpis, $liste)]);
+                dez_pdf_datoteke($upisi, $stF, $mob ? [] : array_map(fn($s) => (int) $s['Id'], $stF), $f, $opis, $sekOpis));
             $_SESSION['insp_mail'] = $poslano + 1;
             dnevnik('Inspekcija – poslano e-poštom', null, null, $email . ' · ' . $opis . ', ' . $sekOpis . ' · IP ' . $ip, $tko);
             poruka('Evidencija (PDF) je poslana na ' . e($email) . '.');

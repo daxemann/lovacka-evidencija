@@ -379,7 +379,7 @@ function dez_opis_razdoblja(array $f): string
 /**
  * Upisi prema filtru. $stanice = dopuštene stanice (Id-ovi) – opseg korisnika ili inspekcije.
  */
-function dez_upisi(array $f, array $staniceIds, int $limit = 5000): array
+function dez_upisi(array $f, array $staniceIds, int $limit = 500000): array
 {
     if (!$staniceIds) {
         return [];
@@ -478,9 +478,17 @@ function dez_html(array $upisi, string $naslov, string $podnaslov, bool $zaPdf =
 {
     $mob = $upisi && !empty($upisi[0]['AktivacijaId']);
     $o = '<h2>' . e($naslov) . '</h2><div class="pod">' . e($podnaslov) . '</div>';
-    $o .= "<table class='t'><thead><tr><th>Datum</th><th>Vrijeme</th><th>Ime i prezime</th><th>Član / gost</th><th>Reg. oznaka</th><th>Razlog</th><th>Smjer</th>"
+    $zag = "<table class='t'><thead><tr><th>Datum</th><th>Vrijeme</th><th>Ime i prezime</th><th>Član / gost</th><th>Reg. oznaka</th><th>Razlog</th><th>Smjer</th>"
         . "<th>Dezinficirano</th>" . ($stanicaStupac ? '<th>' . ($mob ? 'Akcija' : 'Stanica') . '</th>' : '') . "<th>Napomena</th><th>Lokacija</th></tr></thead><tbody>";
+    // za PDF: više manjih tablica umjesto jedne goleme – generator PDF-a inače troši previše memorije kod tisuća redaka
+    $blok = $zaPdf ? 60 : PHP_INT_MAX;
+    $o .= $zag;
+    $i = 0;
     foreach ($upisi as $u) {
+        if ($i > 0 && $i % $blok === 0) {
+            $o .= '</tbody></table>' . $zag;
+        }
+        $i++;
         $t = strtotime($u['Vrijeme']);
         $pon = $u['Ponisteno'] ? " class='pon'" : '';
         $o .= "<tr$pon><td>" . date('d.m.Y.', $t) . '</td><td>' . date('H:i', $t) . '</td><td>' . e(dez_ime($u)) . '</td><td>' . ($u['Gost'] ? 'gost' : 'član') . '</td><td>'
@@ -524,6 +532,7 @@ function dez_opis_stanica(array $stanice, array $upisi = []): string
 
 function dez_pdf(array $upisi, array $stanice, string $razdoblje, string $sekcijaOpis, array $liste = []): string
 {
+    dez_pdf_memorija();
     $logo = '';
     if (ima_logo()) {
         $l = podaci('foto/' . basename((string) postavka('Udruga.Logo')));
@@ -774,4 +783,72 @@ function dez_organizirani_odlazak(array $a, string $proveli, array $k): int
     dnevnik('Dezinfekcija – organizirana dezinfekcija pri odlasku', 'DezAktivacija', (int) $a['Id'],
         count($unutra) . ' osoba · proveli: ' . $proveli . ' · potvrdio: ' . $k['Naziv']);
     return count($unutra);
+}
+
+// ---------- PDF velikih razdoblja: podjela po mjesecima ----------
+/** Najviše redaka u jednom PDF-u (generator PDF-a troši ~0,2 MB po retku). */
+const DEZ_PDF_MAX = 1200;
+
+function dez_pdf_memorija(): void
+{
+    $m = (string) ini_get('memory_limit');
+    $b = $m === '-1' ? PHP_INT_MAX : (int) $m * (['g' => 1073741824, 'm' => 1048576, 'k' => 1024][strtolower(substr($m, -1))] ?? 1);
+    if ($b < 536870912) {
+        @ini_set('memory_limit', '512M');
+    }
+    @set_time_limit(600);
+}
+
+/**
+ * PDF(ovi) knjige za razdoblje: do DEZ_PDF_MAX upisa jedan PDF, inače po jedan PDF za svaki mjesec (puni mjeseci u dijelovima).
+ * Vraća [ime datoteke => sadržaj PDF-a]. $ids = stanice za papirnate liste (prazno = bez lista).
+ */
+function dez_pdf_datoteke(array $upisi, array $stanice, array $ids, array $f, string $opis, string $sekOpis, string $prefiks = 'dezinfekcija'): array
+{
+    $dan = date('Y-m-d');
+    if (count($upisi) <= DEZ_PDF_MAX) {
+        return ["$prefiks-$dan.pdf" => dez_pdf($upisi, $stanice, $opis, $sekOpis, $ids ? dez_liste($f, $ids) : [])];
+    }
+    $poMjesecu = [];
+    foreach ($upisi as $u) {
+        $poMjesecu[substr($u['Vrijeme'], 0, 7)][] = $u;
+    }
+    ksort($poMjesecu);
+    $out = [];
+    foreach ($poMjesecu as $mj => $redovi) {
+        $fm = ['Razdoblje' => 'Slobodno', 'Od' => "$mj-01", 'Do' => date('Y-m-t', strtotime("$mj-01"))] + $f;
+        $dijelovi = array_chunk($redovi, DEZ_PDF_MAX);
+        foreach ($dijelovi as $i => $dio) {
+            $dod = count($dijelovi) > 1 ? '-dio' . ($i + 1) : '';
+            $out["$prefiks-$mj$dod.pdf"] = dez_pdf($dio, $stanice, mjesec_godina("$mj-01") . ($dod ? ' – ' . ($i + 1) . '. dio' : '') . " (iz razdoblja $opis)", $sekOpis,
+                $ids && $i === count($dijelovi) - 1 ? dez_liste($fm, $ids) : []);
+            gc_collect_cycles();
+        }
+    }
+    return $out;
+}
+
+/** Šalje PDF (jedan) ili ZIP s više PDF-ova. */
+function dez_posalji_pdf(array $datoteke, bool $prikaz = true): never
+{
+    if (count($datoteke) === 1) {
+        header('Content-Type: application/pdf');
+        header('Content-Disposition: ' . ($prikaz ? 'inline' : 'attachment') . '; filename="' . array_key_first($datoteke) . '"');
+        echo reset($datoteke);
+        exit;
+    }
+    $tmp = tempnam(sys_get_temp_dir(), 'dezzip');
+    $z = new ZipArchive();
+    $z->open($tmp, ZipArchive::OVERWRITE);
+    foreach ($datoteke as $ime => $sadrzaj) {
+        $z->addFromString($ime, $sadrzaj);
+    }
+    $z->addFromString('PROCITAJ.txt', "Odabrano razdoblje ima previše upisa za jedan PDF, pa je knjiga dezinfekcije podijeljena po mjesecima.\n" . udruga_naziv() . ' · ' . date('d.m.Y. H:i') . "\n");
+    $z->close();
+    header('Content-Type: application/zip');
+    header('Content-Disposition: attachment; filename="dezinfekcija-' . date('Y-m-d') . '.zip"');
+    header('Content-Length: ' . filesize($tmp));
+    readfile($tmp);
+    @unlink($tmp);
+    exit;
 }

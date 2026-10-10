@@ -204,7 +204,7 @@ function kopija_pdf_inspekcija(): array
             foreach ($poMjesecu as $mj => $redovi) {
                 $fm = dez_filtar(['Razdoblje' => 'Slobodno', 'Od' => "$mj-01", 'Do' => date('Y-m-t', strtotime("$mj-01")), 'Vrsta' => $vrsta]);
                 $liste = $vrsta === 'M' ? [] : dez_liste($fm, $ids);
-                $dijelovi = array_chunk($redovi, 800) ?: [[]]; // jako puni mjeseci (skupni lovovi) u više dijelova – memorija
+                $dijelovi = array_chunk($redovi, DEZ_PDF_MAX) ?: [[]]; // jako puni mjeseci (skupni lovovi) u više dijelova – memorija
                 foreach ($dijelovi as $i => $dio) {
                     $dod = count($dijelovi) > 1 ? '-dio' . ($i + 1) : '';
                     $out["$mj-dezinfekcija-$naziv$dod.pdf"] = dez_pdf($dio, $stanice, mjesec_godina("$mj-01") . ($dod ? ' – ' . ($i + 1) . '. dio' : '') . ' (stanje ' . date('d.m.Y.') . ')',

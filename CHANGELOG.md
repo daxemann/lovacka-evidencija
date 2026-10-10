@@ -1,5 +1,10 @@
 # Promjene
 
+## 1.9.1 – 2026-10
+- Knjiga dezinfekcije – PDF i za vrlo velika razdoblja (npr. cijela lovna godina s tisućama upisa): do 1200 upisa jedan PDF, inače automatski
+  **ZIP s PDF-om po mjesecima** (puni mjeseci u dijelovima). Vrijedi za upravu, inspekciju i slanje e-poštom. Manja potrošnja memorije pri izradi PDF-a.
+- Ispravak: pregled i PDF više nisu ograničeni na 5000 upisa.
+
 ## 1.9.0 – 2026-10
 - Kompletna kopija (ZIP) sadrži i mapu **PDF-za-inspekciju**: cijela knjiga dezinfekcije (stalne i mobilne stanice) po mjesecima s papirnatim listama i potpisima,
   te izjava udruge – gotovi PDF-ovi za slučaj da program ne radi. Vrlo puni mjeseci dijele se u više PDF-ova.

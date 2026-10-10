@@ -46,7 +46,7 @@ if (je_post()) {
             $sekOpis = $f['SekcijaId'] ? 'sekcija ' . naziv_sekcije($f['SekcijaId']) : 'sve sekcije';
             try {
                 posalji_mail($prim, 'Evidencija dezinfekcije – ' . udruga_kratko(), dez_mail_html($upisi, opis_raspona($f), $sekOpis), true, null,
-                    ['dezinfekcija-' . date('Y-m-d') . '.pdf' => dez_pdf($upisi, $st, opis_raspona($f), $sekOpis, $mob ? [] : dez_liste($f, $ids))]);
+                    dez_pdf_datoteke($upisi, $st, $mob ? [] : $ids, $f, opis_raspona($f), $sekOpis));
                 dnevnik('Dezinfekcija – knjiga poslana e-poštom', null, null, implode(', ', $prim));
                 poruka('Poslano.');
             } catch (Throwable $e) {
