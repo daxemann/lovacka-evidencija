@@ -99,6 +99,8 @@ if (je_post()) {
                 dnevnik('Dezinfekcija – pristup za inspekciju isključen');
             }
             spremi_postavku('Dez.Loviste', mb_substr(ul_str('loviste'), 0, 120) ?: null);
+            $pt = trim((string) ($_POST['pravni_temelj'] ?? ''));
+            spremi_postavku('Dez.PravniTemelj', $pt !== '' && $pt !== IZJAVA_PRAVNI_TEMELJ ? mb_substr($pt, 0, 1500) : null);
             poruka('Spremljeno.');
             break;
         case 'odgovorna':
@@ -223,6 +225,10 @@ ob_start(); ?>
     <div class="form-text mb-2"><?= $inspLoz ? 'Lovočuvar je daje inspektoru na licu mjesta. Promjena odmah vrijedi – stara lozinka više ne radi.' : '<b>Pristup je isključen</b> dok ne upišete lozinku.' ?></div>
     <label class="form-label">Lovište (za zaglavlje PDF-a)</label>
     <input name="loviste" class="form-control mb-3" maxlength="120" value="<?= e(postavka('Dez.Loviste', '')) ?>" placeholder="npr. Zajedničko lovište br. X/Y „Naziv“">
+    <label class="form-label">Pravni temelj (za izjavu inspekciji)</label>
+    <textarea name="pravni_temelj" class="form-control mb-1" rows="5" maxlength="1500"><?= e(izjava_pravni_temelj()) ?></textarea>
+    <div class="form-text mb-3">Prvi odlomak izjave „Kako se vodi ova evidencija“ koju inspektor vidi uz evidenciju. Kad izađe nova Naredba, ovdje promijenite broj Narodnih novina i članke.
+        Prazno = zadani tekst. <a target="_blank" href="<?= e(url('dezinfekcija/izjava')) ?>">Pogledaj izjavu (PDF)</a></div>
     <div class="d-flex flex-wrap gap-2">
         <button class="btn btn-primary">Spremi</button>
         <?php if ($inspLoz): ?><a class="btn btn-outline-secondary" target="_blank" href="<?= e(url('dezinfekcija/qr', ['inspekcija' => 1])) ?>">QR za inspekciju (ispis)</a><?php endif; ?>

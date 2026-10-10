@@ -1,5 +1,10 @@
 # Promjene
 
+## 1.8.5 – 2026-10
+- Inspekcija: **izjava udruge o vođenju evidencije dezinfekcije** (pravni temelj – Naredba NN 107/2026, način upisa, zaštita od naknadnih promjena, provjera programa) jednostavnim jezikom – pregled, ispis i PDF s potpisom odgovorne osobe.
+  Pravni temelj se mijenja u Dezinfekcija → Stanice i QR kad izađe nova Naredba.
+- Inspekcija: **kopija programa (ZIP)** točno instalirane verzije, bez podataka udruge – za provjeru. Svako preuzimanje zapisuje se u dnevnik.
+
 ## 1.8.4 – 2026-10
 - Lovački dnevnik: dolazak bez upisanog odlaska prikazuje se samo s vremenom dolaska (bez „?“ i „bez odlaska“).
 

@@ -82,6 +82,31 @@ $sekOpis = $f['SekcijaId'] ? 'sekcija ' . $sekcijeSt[$f['SekcijaId']] : 'sve sek
 $opis = opis_raspona($f);
 $liste = $mob ? [] : dez_liste($f, $ids);
 
+// izjava udruge i kopija programa
+if (isset($_GET['izjava'])) {
+    if ($_GET['izjava'] === 'pdf') {
+        dnevnik('Inspekcija – izjava (PDF)', null, null, 'IP ' . $ip, $tko);
+        header('Content-Type: application/pdf');
+        header('Content-Disposition: inline; filename="izjava-evidencija-dezinfekcije.pdf"');
+        echo izjava_pdf(dez_stanice(false, 'F'));
+        exit;
+    }
+    dnevnik('Inspekcija – izjava (pregled)', null, null, 'IP ' . $ip, $tko);
+    stranica('Izjava o vođenju evidencije', '<div class="no-print mb-3 d-flex flex-wrap gap-2"><a class="btn btn-sm btn-outline-secondary" href="' . e(url('inspekcija', $ovdje)) . '">← Evidencija</a>'
+        . '<a class="btn btn-sm btn-outline-secondary" target="_blank" href="' . e(url('inspekcija', $ovdje + ['izjava' => 'pdf'])) . '">PDF</a>'
+        . '<button type="button" class="btn btn-sm btn-outline-secondary" onclick="window.print()">🖨 Ispis</button></div>'
+        . '<div class="card"><div class="card-body izjava" style="max-width:820px">' . izjava_html(dez_stanice(false, 'F')) . '</div></div>', 'javno');
+}
+if (($_GET['program'] ?? '') === 'zip') {
+    $zip = program_zip();
+    if (!$zip) {
+        poruka('Kopiju programa trenutno nije moguće napraviti na ovom poslužitelju. Program je javno dostupan na ' . e(PROJEKT_URL) . '.', 'warning');
+        preusmjeri('inspekcija', $ovdje);
+    }
+    dnevnik('Inspekcija – preuzeta kopija programa', null, null, 'verzija ' . VERZIJA . ' · IP ' . $ip, $tko);
+    posalji_datoteku($zip, 0, 'lovacka-evidencija-' . VERZIJA . '.zip', 'application/zip');
+}
+
 if (($_GET['pdf'] ?? '') === '1') {
     dnevnik('Inspekcija – PDF', null, null, $opis . ', ' . $sekOpis . ' · IP ' . $ip, $tko);
     header('Content-Type: application/pdf');
@@ -110,6 +135,12 @@ if (je_post() && ($_POST['radnja'] ?? '') === 'posalji') {
     preusmjeri('inspekcija', $ovdje + $upit);
 }
 ob_start(); ?>
+<div class="alert alert-light border d-flex flex-wrap align-items-center gap-2 no-print">
+    <div class="flex-grow-1"><b>Kako se vodi ova evidencija</b> – pravni temelj, način upisa i zaštita od naknadnih promjena (izjava udruge).</div>
+    <a class="btn btn-sm btn-outline-primary" href="<?= e(url('inspekcija', $ovdje + ['izjava' => 1])) ?>">Pročitaj</a>
+    <a class="btn btn-sm btn-outline-primary" target="_blank" href="<?= e(url('inspekcija', $ovdje + ['izjava' => 'pdf'])) ?>">PDF</a>
+    <a class="btn btn-sm btn-outline-secondary" href="<?= e(url('inspekcija', $ovdje + ['program' => 'zip'])) ?>" title="Program točno ove verzije, bez podataka članova – za provjeru">Kopija programa (ZIP)</a>
+</div>
 <ul class="nav nav-tabs mb-3 no-print">
     <li class="nav-item"><a class="nav-link<?= $mob ? '' : ' active' ?>" href="<?= e(url('inspekcija', $ovdje + array_diff_key($upit, ['Vrsta' => 1]))) ?>">Stalne stanice</a></li>
     <li class="nav-item"><a class="nav-link<?= $mob ? ' active' : '' ?>" href="<?= e(url('inspekcija', $ovdje + ['Vrsta' => 'M'] + $upit)) ?>">Mobilne stanice (skupni lov)</a></li>
