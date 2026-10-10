@@ -1,5 +1,10 @@
 # Promjene
 
+## 1.8.6 – 2026-10
+- Mobilna stanica (skupni lov): pri zatvaranju odgovorna osoba potvrđuje da su svi bez upisanog odlaska prošli **organiziranu dezinfekciju pri odlasku**
+  (vozila redom na izlazu) i upisuje tko je dezinfekciju provodio. Za svakoga se upisuje ODLAZAK s tom oznakom – vidljivo u knjizi, PDF-u i za inspekciju; zapisuje se u dnevnik.
+  Dolazak i dalje upisuje svatko sam. Izjava za inspekciju to opisuje.
+
 ## 1.8.5 – 2026-10
 - Inspekcija: **izjava udruge o vođenju evidencije dezinfekcije** (pravni temelj – Naredba NN 107/2026, način upisa, zaštita od naknadnih promjena, provjera programa) jednostavnim jezikom – pregled, ispis i PDF s potpisom odgovorne osobe.
   Pravni temelj se mijenja u Dezinfekcija → Stanice i QR kad izađe nova Naredba.

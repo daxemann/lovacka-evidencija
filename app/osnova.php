@@ -5,7 +5,7 @@
  */
 declare(strict_types=1);
 
-const VERZIJA = '1.8.5';
+const VERZIJA = '1.8.6';
 const KONTAKT_EMAIL = 'daxemann@googlemail.com';
 const PROJEKT_URL = 'https://github.com/daxemann/lovacka-evidencija';
 const KORIJEN = __DIR__ . '/..';
@@ -122,7 +122,7 @@ function db(): PDO
  * Dodatne tablice PHP verzije (PRAGMA user_version). .NET verzija ih ne poznaje i zanemaruje,
  * pa baza i dalje radi u oba smjera.
  */
-const SHEMA_PHP = 8;
+const SHEMA_PHP = 9;
 function nadogradi_bazu(PDO $pdo): void
 {
     $v = (int) $pdo->query('PRAGMA user_version')->fetchColumn();
@@ -385,6 +385,10 @@ INSERT INTO "RevirVrste" ("Naziv", "Zauzimanje", "Redoslijed") VALUES
 ALTER TABLE "RevirNaprave" ADD COLUMN "VrstaId" INTEGER NULL REFERENCES "RevirVrste" ("Id") ON DELETE SET NULL;
 UPDATE "RevirNaprave" SET "VrstaId" = (SELECT v."Id" FROM "RevirVrste" v WHERE v."Naziv" = "RevirNaprave"."Vrsta");
 SQL);
+    }
+    if ($v < 9) {
+        $pdo->exec('ALTER TABLE "DezUpisi" ADD COLUMN "Organizirano" INTEGER NOT NULL DEFAULT 0;
+            ALTER TABLE "DezUpisi" ADD COLUMN "OrganiziranoProveli" TEXT NULL;');
     }
     $pdo->exec('PRAGMA user_version = ' . SHEMA_PHP);
     $pdo->commit();

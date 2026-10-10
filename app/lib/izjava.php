@@ -34,7 +34,10 @@ function izjava_html(array $stanice): string
         . 'razlog dolaska i što je dezinficirano (vozilo, obuća, oprema). Gosti i suputnici upisuju se zajedno s lovcem.</li>'
         . '<li>Lovci bez mobitela upisuju se na <b>papirnatu listu</b> na stanici. Lista se fotografira i prilaže evidenciji. '
         . 'Lovočuvar može takvog lovca upisati i mobitelom na samoj stanici – kod upisa piše tko ga je upisao.</li>'
-        . '<li>Ako lovac pri odlasku ne upiše odlazak, odlaska u evidenciji nema. <b>Program ništa ne dopisuje sam.</b></li>'
+        . '<li><b>Skupni lov (mobilna stanica):</b> pri dolasku svaki lovac upisuje se sam. Pri odlasku dežurna ekipa na izlazu redom dezinficira sva vozila (kao kontrolna točka), '
+        . 'jer bi inače svi čekali satima. Pri zatvaranju stanice odgovorna osoba to potvrđuje, a za svakoga tko nije sam upisao odlazak upisuje se odlazak s oznakom '
+        . '<b>„organizirana dezinfekcija pri odlasku“</b> i imenima osoba koje su dezinfekciju provele.</li>'
+        . '<li>Ako lovac pri odlasku ne upiše odlazak, odlaska u evidenciji nema. <b>Program ništa ne dopisuje sam</b> (osim potvrđene organizirane dezinfekcije na mobilnoj stanici).</li>'
         . '</ul>';
 
     $o .= '<h2>3. Kako je evidencija zaštićena od naknadnih promjena</h2><ul>'

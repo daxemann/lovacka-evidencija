@@ -69,9 +69,14 @@ if (je_post()) {
             }
             break;
         case 'zavrsi':
+            $org = 0;
+            if (!empty($_POST['organizirano'])) {
+                $proveli = mb_substr(ul_str('proveli'), 0, 200) ?: $k['Naziv'];
+                $org = dez_organizirani_odlazak($a, $proveli, $k);
+            }
             azuriraj('DezAktivacije', (int) $a['Id'], ['Zatvoreno' => sada(), 'ZatvorioIme' => $k['Naziv']]);
             dnevnik('Dezinfekcija – mobilna stanica zatvorena', 'DezAktivacija', (int) $a['Id'], $a['Naziv']);
-            poruka('Mobilna stanica je zatvorena.');
+            poruka('Mobilna stanica je zatvorena.' . ($org ? ' Upisan odlazak za ' . $org . ' osoba (organizirana dezinfekcija pri odlasku).' : ''));
             break;
     }
     preusmjeri('dezinfekcija/mobilna');
@@ -133,10 +138,16 @@ ob_start(); ?>
                     <button type="button" class="btn btn-sm btn-outline-primary" data-gps-posalji>📍 Premjesti ovdje</button></form>
                 <form method="post" action="<?= e(url('dezinfekcija/mobilna')) ?>" class="d-flex gap-1"><?= csrf() ?><input type="hidden" name="radnja" value="produzi"><input type="hidden" name="id" value="<?= (int) $a['Id'] ?>">
                     <input type="datetime-local" name="do" class="form-control form-control-sm" value="<?= e(str_replace(' ', 'T', substr($a['Do'], 0, 16))) ?>"><button class="btn btn-sm btn-outline-secondary text-nowrap">Produži</button></form>
-                <form method="post" action="<?= e(url('dezinfekcija/mobilna')) ?>"><?= csrf() ?><input type="hidden" name="radnja" value="zavrsi"><input type="hidden" name="id" value="<?= (int) $a['Id'] ?>">
-                    <button class="btn btn-sm btn-outline-danger" data-potvrda="Zatvoriti mobilnu stanicu? Nakon toga skeniranje više ne radi.">Zatvori stanicu</button></form>
             </div>
-            <?php if ($unutra): ?><div class="small text-warning-emphasis mt-2">Prije zatvaranja: <?= count($unutra) ?> lovaca još nema upisan odlazak.</div><?php endif; ?>
+            <form method="post" action="<?= e(url('dezinfekcija/mobilna')) ?>" class="border rounded p-2 mt-2"><?= csrf() ?><input type="hidden" name="radnja" value="zavrsi"><input type="hidden" name="id" value="<?= (int) $a['Id'] ?>">
+                <?php if ($unutra): ?>
+                    <div class="small mb-1"><b><?= count($unutra) ?></b> osoba još nema upisan odlazak.</div>
+                    <label class="form-check small mb-1"><input type="checkbox" class="form-check-input" name="organizirano" value="1" checked>
+                        <span class="form-check-label">Svi koji nisu upisali odlazak prošli su <b>organiziranu dezinfekciju pri odlasku</b> (vozila dezinficirana redom na izlazu) – upiši im odlazak.</span></label>
+                    <input name="proveli" class="form-control form-control-sm mb-2" maxlength="200" value="<?= e($k['Naziv']) ?>" placeholder="dezinfekciju provode (imena)" aria-label="Dezinfekciju provode">
+                <?php endif; ?>
+                <button class="btn btn-sm btn-outline-danger" data-potvrda="Zatvoriti mobilnu stanicu? Nakon toga skeniranje više ne radi.">Zatvori stanicu</button>
+            </form>
         <?php else: ?>
             <form method="post" action="<?= e(url('dezinfekcija/mobilna')) ?>" class="dez-gps-obrazac"><?= csrf() ?><input type="hidden" name="radnja" value="aktiviraj"><input type="hidden" name="stanica" value="<?= $sid ?>">
                 <input type="hidden" name="lat"><input type="hidden" name="lon"><input type="hidden" name="acc">

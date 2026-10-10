@@ -6,12 +6,13 @@
 declare(strict_types=1);
 
 const DEZ_SMJER = ['D' => 'Dolazak', 'O' => 'Odlazak'];
-const DEZ_LOK_NAKNADNO = 0, DEZ_LOK_OK = 1, DEZ_LOK_NEPOUZDANO = 2, DEZ_LOK_BEZ = 3;
+const DEZ_LOK_NAKNADNO = 0, DEZ_LOK_OK = 1, DEZ_LOK_NEPOUZDANO = 2, DEZ_LOK_BEZ = 3, DEZ_LOK_ORGANIZIRANO = 4;
 const DEZ_LOKACIJA = [
     DEZ_LOK_NAKNADNO => 'naknadni upis',
     DEZ_LOK_OK => 'u krugu stanice',
     DEZ_LOK_NEPOUZDANO => 'lokacija nepouzdana',
     DEZ_LOK_BEZ => 'bez lokacije',
+    DEZ_LOK_ORGANIZIRANO => 'na stanici (organizirano)',
 ];
 const DEZ_MAX_SUPUTNIKA = 3;
 const DEZ_MAX_GOSTIJU = 6;
@@ -145,6 +146,9 @@ function dez_oznaka_lokacije_osnovno(array $u, bool $tekst): string
     $opis = DEZ_LOKACIJA[$s] ?? '';
     if ($s === DEZ_LOK_OK) {
         return $tekst ? '✓' : '<span class="text-success" title="' . e($opis . ($u['Udaljenost'] !== null ? ' (' . round((float) $u['Udaljenost']) . ' m)' : '')) . '">✓</span>';
+    }
+    if ($s === DEZ_LOK_ORGANIZIRANO) {
+        return $tekst ? 'na stanici' : '<span class="text-success" title="Organizirana dezinfekcija pri odlasku – na mobilnoj stanici">✓ org.</span>';
     }
     if ($s === DEZ_LOK_NAKNADNO) {
         return $tekst ? 'naknadno' : '<span class="badge bg-secondary" title="' . e((string) $u['NaknadnoRazlog']) . '">naknadno</span>';
@@ -439,6 +443,9 @@ function dez_ime(array $u): string
 /** Tko je upisao / pozvao gosta – stupac u knjizi. */
 function dez_upisao(array $u): string
 {
+    if (!empty($u['Organizirano'])) {
+        return 'organizirana dezinfekcija pri odlasku – proveli: ' . ($u['OrganiziranoProveli'] ?? $u['UpisaoIme'] ?? '');
+    }
     if ($u['Naknadno']) {
         return 'naknadno: ' . ($u['UpisaoIme'] ?? '');
     }
@@ -703,4 +710,42 @@ function dez_potpis_pdf_html(array $stanice): string
             . ($slika ? ' · elektronički generirano iz evidencije ' . date('d.m.Y. H:i') : '') . '</div></td>';
     }
     return $o . '</tr></table>';
+}
+
+// ---------- Mobilna stanica: organizirana dezinfekcija pri odlasku ----------
+/**
+ * Pri zatvaranju mobilne stanice: svi koji imaju dolazak, a nisu upisali odlazak, prošli su organiziranu dezinfekciju na izlazu
+ * (dežurna ekipa dezinficira vozila redom). Za svakog se upisuje ODLAZAK označen kao „organizirana dezinfekcija pri odlasku“.
+ * Vraća broj upisanih.
+ */
+function dez_organizirani_odlazak(array $a, string $proveli, array $k): int
+{
+    $zadnji = [];
+    foreach (redovi('SELECT * FROM DezUpisi WHERE AktivacijaId=? AND Ponisteno=0 ORDER BY Vrijeme, Id', [(int) $a['Id']]) as $u) {
+        $kl = $u['ClanId'] ? 'c' . $u['ClanId'] : 'g' . kljuc($u['Ime'] . ' ' . $u['Prezime']);
+        $zadnji[$kl] = $u;
+    }
+    $unutra = array_filter($zadnji, fn($u) => $u['Smjer'] === 'D');
+    if (!$unutra) {
+        return 0;
+    }
+    $sada = sada();
+    $grupe = [];
+    transakcija(function () use ($unutra, $a, $proveli, $k, $sada, &$grupe) {
+        foreach ($unutra as $u) {
+            $grupe[$u['Grupa']] ??= bin2hex(random_bytes(8));
+            umetni('DezUpisi', [
+                'StanicaId' => (int) $u['StanicaId'], 'SekcijaId' => $u['SekcijaId'], 'Vrijeme' => $sada, 'Smjer' => 'O',
+                'ClanId' => $u['ClanId'], 'Ime' => $u['Ime'], 'Prezime' => $u['Prezime'], 'Gost' => $u['Gost'], 'Oznaka' => $u['Oznaka'],
+                'Razlog' => $u['Razlog'], 'Vozilo' => $u['Vozilo'], 'Obuca' => 1, 'Oprema' => 1,
+                'UpisaoKorisnikId' => $k['Id'], 'UpisaoIme' => $k['Naziv'], 'PozvaoIme' => $u['PozvaoIme'],
+                'Lat' => $a['Lat'], 'Lon' => $a['Lon'], 'Tocnost' => $a['Tocnost'], 'Udaljenost' => null, 'Lokacija' => DEZ_LOK_ORGANIZIRANO,
+                'Naknadno' => 0, 'Grupa' => $grupe[$u['Grupa']], 'Kreirano' => $sada, 'AktivacijaId' => (int) $a['Id'], 'Izvanmrezno' => 0,
+                'Organizirano' => 1, 'OrganiziranoProveli' => $proveli,
+            ]);
+        }
+    });
+    dnevnik('Dezinfekcija – organizirana dezinfekcija pri odlasku', 'DezAktivacija', (int) $a['Id'],
+        count($unutra) . ' osoba · proveli: ' . $proveli . ' · potvrdio: ' . $k['Naziv']);
+    return count($unutra);
 }
