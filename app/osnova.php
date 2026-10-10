@@ -5,7 +5,7 @@
  */
 declare(strict_types=1);
 
-const VERZIJA = '1.7.3';
+const VERZIJA = '1.8.0';
 const KONTAKT_EMAIL = 'daxemann@googlemail.com';
 const PROJEKT_URL = 'https://github.com/daxemann/lovacka-evidencija';
 const KORIJEN = __DIR__ . '/..';
@@ -26,8 +26,10 @@ const P_DEZ_UREDI = 2048;
 const P_DEZ_POSTAVKE = 4096;
 const P_DEZ_MOBILNA = 8192;
 const P_DEZ_ZA_DRUGE = 16384;
+const P_REVIR_UREDI = 32768;
+const P_REVIR_NADZOR = 65536;
 const P_OSNOVNA = 255; // prava iz .NET verzije
-const P_SVE = 32767;
+const P_SVE = 131071;
 
 const PRAVA_OPIS = [
     P_CLANOVI_CITAJ => ['Članovi – pregled', 'vidi popis članova i njihove podatke'],
@@ -45,6 +47,8 @@ const PRAVA_OPIS = [
     P_DEZ_POSTAVKE => ['Dezinfekcija – postavke', 'stanice (koordinate, radijus, sredstvo), QR oznake, razlozi dolaska, lozinka za inspekciju'],
     P_DEZ_ZA_DRUGE => ['Dezinfekcija – upis za druge na stanici', 'na samoj stanici (lokacija mobitela, trenutno vrijeme) upisuje lovca koji nema mobitel – izgleda kao upis na licu mjesta, s napomenom tko je upisao'],
     P_DEZ_MOBILNA => ['Dezinfekcija – mobilna stanica', 'aktivira mobilnu dezinfekcijsku stanicu na licu mjesta (npr. skupni lov) i prati tko je došao i otišao'],
+    P_REVIR_UREDI => ['Lovište – lovne naprave', 'dodaje, premješta i uređuje lovne naprave (čeke) na karti lovišta za sekcije u svom opsegu'],
+    P_REVIR_NADZOR => ['Lovište – nadzor', 'prima obavijesti o zauzimanju lovnih naprava u svojim sekcijama, vidi lovački dnevnik sekcije i smije obrisati zauzeće'],
 ];
 
 // Statusi (enum vrijednosti kao u .NET verziji)
@@ -118,7 +122,7 @@ function db(): PDO
  * Dodatne tablice PHP verzije (PRAGMA user_version). .NET verzija ih ne poznaje i zanemaruje,
  * pa baza i dalje radi u oba smjera.
  */
-const SHEMA_PHP = 6;
+const SHEMA_PHP = 7;
 function nadogradi_bazu(PDO $pdo): void
 {
     $v = (int) $pdo->query('PRAGMA user_version')->fetchColumn();
@@ -302,6 +306,70 @@ SQL);
             "StanicaId" INTEGER NOT NULL REFERENCES "DezStanice" ("Id") ON DELETE CASCADE, "Od" TEXT NOT NULL, "Do" TEXT NOT NULL,
             "Datoteka" TEXT NOT NULL, "Napomena" TEXT NULL, "UcitaoIme" TEXT NULL, "Kreirano" TEXT NOT NULL);
             CREATE INDEX IF NOT EXISTS "IX_DezListe_Od_Do" ON "DezListe" ("Od", "Do");');
+    }
+    if ($v < 7) {
+        $pdo->exec(<<<'SQL'
+CREATE TABLE IF NOT EXISTS "RevirNaprave" (
+    "Id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "Broj" TEXT NULL,
+    "Naziv" TEXT NOT NULL,
+    "Vrsta" TEXT NULL,
+    "SekcijaId" INTEGER NULL REFERENCES "Sekcije" ("Id") ON DELETE SET NULL,
+    "Lat" REAL NULL,
+    "Lon" REAL NULL,
+    "Foto" TEXT NULL,
+    "Napomena" TEXT NULL,
+    "Aktivna" INTEGER NOT NULL DEFAULT 1,
+    "KreiraoIme" TEXT NULL,
+    "Kreirano" TEXT NOT NULL,
+    "Azurirano" TEXT NULL
+);
+CREATE INDEX IF NOT EXISTS "IX_RevirNaprave_SekcijaId" ON "RevirNaprave" ("SekcijaId");
+CREATE TABLE IF NOT EXISTS "RevirZauzeca" (
+    "Id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "NapravaId" INTEGER NOT NULL REFERENCES "RevirNaprave" ("Id") ON DELETE CASCADE,
+    "SekcijaId" INTEGER NULL,
+    "ClanId" INTEGER NULL REFERENCES "Clanovi" ("Id") ON DELETE SET NULL,
+    "KorisnikId" INTEGER NULL,
+    "Ime" TEXT NOT NULL,
+    "Gost" TEXT NULL,
+    "Od" TEXT NOT NULL,
+    "VrijediDo" TEXT NOT NULL,
+    "Kraj" TEXT NULL,
+    "KrajNacin" TEXT NULL,
+    "ObrisaoIme" TEXT NULL
+);
+CREATE UNIQUE INDEX IF NOT EXISTS "IX_RevirZauzeca_Aktivno" ON "RevirZauzeca" ("NapravaId") WHERE "Kraj" IS NULL;
+CREATE INDEX IF NOT EXISTS "IX_RevirZauzeca_ClanId" ON "RevirZauzeca" ("ClanId");
+CREATE TABLE IF NOT EXISTS "LovackiDnevnik" (
+    "Id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "ZauzeceId" INTEGER NULL,
+    "ClanId" INTEGER NULL REFERENCES "Clanovi" ("Id") ON DELETE SET NULL,
+    "Ime" TEXT NOT NULL,
+    "SekcijaId" INTEGER NULL,
+    "NapravaId" INTEGER NULL,
+    "Naprava" TEXT NOT NULL,
+    "Od" TEXT NOT NULL,
+    "Do" TEXT NOT NULL,
+    "Automatski" INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS "IX_LovackiDnevnik_Od" ON "LovackiDnevnik" ("Od");
+CREATE INDEX IF NOT EXISTS "IX_LovackiDnevnik_ClanId" ON "LovackiDnevnik" ("ClanId");
+CREATE TABLE IF NOT EXISTS "RevirObavijesti" (
+    "Id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "SekcijaId" INTEGER NULL,
+    "Vrijeme" TEXT NOT NULL,
+    "Vrsta" TEXT NOT NULL,
+    "Tekst" TEXT NOT NULL,
+    "KorisnikId" INTEGER NULL
+);
+CREATE INDEX IF NOT EXISTS "IX_RevirObavijesti_SekcijaId" ON "RevirObavijesti" ("SekcijaId", "Id");
+CREATE TABLE IF NOT EXISTS "RevirProcitano" (
+    "KorisnikId" INTEGER NOT NULL PRIMARY KEY,
+    "DoId" INTEGER NOT NULL DEFAULT 0
+);
+UPDATE "Uloge" SET "Prava" = "Prava" | 98304 WHERE ("Prava" & 32767) = 32767 OR "Naziv" = 'Lovočuvar';
+SQL);
     }
     $pdo->exec('PRAGMA user_version = ' . SHEMA_PHP);
     $pdo->commit();
