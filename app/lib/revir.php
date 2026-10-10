@@ -439,3 +439,67 @@ function revir_koord(mixed $lat, mixed $lon): ?array
     }
     return [round($lat, 7), round($lon, 7)];
 }
+
+// ---------- Lovački dnevnik: posjeti iz knjige dezinfekcije (rad, hranjenje… – ne lov) ----------
+/** Naziv aktivnosti iz razloga dezinfekcije („Ostalo: popravak“ → „Ostalo“). */
+function revir_aktivnost(?string $razlog): string
+{
+    $r = trim((string) $razlog);
+    if ($r === '') {
+        return 'Ostalo';
+    }
+    foreach (dez_razlozi(false) as $dr) {
+        if (kljuc($r) === kljuc($dr['Naziv']) || str_starts_with(kljuc($r), kljuc($dr['Naziv']) . ':')) {
+            return $dr['Naziv'];
+        }
+    }
+    return $r;
+}
+function revir_je_lov(string $aktivnost): bool
+{
+    return kljuc($aktivnost) === 'lov';
+}
+
+/**
+ * Dolazak → odlazak člana iz knjige dezinfekcije kao upisi dnevnika. Razlog „Lov“ se preskače (lov dolazi iz zauzeća naprava).
+ * $uvjet je SQL uvjet nad aliasom d (ClanId, SekcijaId).
+ */
+function revir_dnevnik_dez(string $uvjet, string $od, string $do, ?int $sekcija): array
+{
+    $w = [$uvjet, 'd.Ponisteno=0', 'd.Gost=0', 'd.ClanId IS NOT NULL', 'substr(d.Vrijeme,1,10) BETWEEN ? AND ?'];
+    $p = [$od, date('Y-m-d', strtotime($do . ' +1 day'))];
+    if ($sekcija !== null) {
+        $w[] = 'd.SekcijaId=?';
+        $p[] = $sekcija;
+    }
+    $redovi = redovi('SELECT d.ClanId, d.Ime, d.Prezime, d.SekcijaId, d.Vrijeme, d.Smjer, d.Razlog, d.Naknadno, s.Naziv AS Stanica, a.Naziv AS Akcija
+        FROM DezUpisi d JOIN DezStanice s ON s.Id=d.StanicaId LEFT JOIN DezAktivacije a ON a.Id=d.AktivacijaId
+        WHERE ' . implode(' AND ', $w) . ' ORDER BY d.ClanId, d.Vrijeme, d.Id', $p);
+    $out = [];
+    $otvoren = [];
+    $dodaj = function (array $d, ?string $kraj) use (&$out, $od, $do) {
+        $akt = revir_aktivnost($d['Razlog']);
+        if (revir_je_lov($akt) || substr($d['Vrijeme'], 0, 10) < $od || substr($d['Vrijeme'], 0, 10) > $do) {
+            return;
+        }
+        $out[] = ['Od' => $d['Vrijeme'], 'Do' => $kraj, 'Ime' => trim($d['Ime'] . ' ' . $d['Prezime']), 'ClanId' => (int) $d['ClanId'],
+            'SekcijaId' => $d['SekcijaId'], 'Aktivnost' => $akt, 'Mjesto' => $d['Akcija'] ?: $d['Stanica'], 'NapravaId' => null,
+            'Automatski' => 0, 'Izvor' => 'dez', 'Napomena' => $akt !== trim((string) $d['Razlog']) ? trim((string) preg_replace('/^' . preg_quote($akt, '/') . '\s*:\s*/iu', '', trim((string) $d['Razlog']))) : ''];
+    };
+    foreach ($redovi as $r) {
+        $c = (int) $r['ClanId'];
+        if ($r['Smjer'] === 'D') {
+            if (isset($otvoren[$c])) {
+                $dodaj($otvoren[$c], null); // dolazak bez odlaska
+            }
+            $otvoren[$c] = $r;
+        } elseif (isset($otvoren[$c])) {
+            $dodaj($otvoren[$c], $r['Vrijeme']);
+            unset($otvoren[$c]);
+        }
+    }
+    foreach ($otvoren as $r) {
+        $dodaj($r, null);
+    }
+    return $out;
+}
