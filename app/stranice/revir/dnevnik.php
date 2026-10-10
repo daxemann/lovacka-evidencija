@@ -80,11 +80,11 @@ if (($_GET['izvoz'] ?? '') === 'pdf') {
     foreach ($upisi as $u) {
         $m = $minuta($u);
         $redak .= '<tr><td>' . e(datum($u['Od'])) . '</td><td>' . e(date('H:i', strtotime($u['Od']))) . ' – '
-            . ($u['Do'] ? e(substr($u['Do'], 0, 10) !== substr($u['Od'], 0, 10) ? date('d.m. H:i', strtotime($u['Do'])) : date('H:i', strtotime($u['Do']))) : '?')
+            . ($u['Do'] ? e(substr($u['Do'], 0, 10) !== substr($u['Od'], 0, 10) ? date('d.m. H:i', strtotime($u['Do'])) : date('H:i', strtotime($u['Do']))) : '')
             . '</td><td>' . ($m !== null ? e($trajanje($m)) : '') . '</td>' . ($samoJa ? '' : '<td>' . e($u['Ime']) . '</td>')
             . '<td>' . e($u['Aktivnost']) . '</td><td>' . e($u['Mjesto']) . '</td>'
             . (count($sekcijeOpseg) > 1 ? '<td>' . e(naziv_sekcije($u['SekcijaId'] !== null ? (int) $u['SekcijaId'] : null)) . '</td>' : '')
-            . '<td>' . e(trim(($u['Automatski'] ? 'automatski oslobođeno' : '') . ($u['Do'] ? '' : 'bez odlaska') . ' ' . $u['Napomena'])) . '</td></tr>';
+            . '<td>' . e(trim(($u['Automatski'] ? 'automatski oslobođeno' : '') . $u['Napomena'])) . '</td></tr>';
     }
     $html = '<html><head><meta charset="utf-8"><style>
         @page { margin: 14mm 10mm 16mm 10mm; }
@@ -171,7 +171,7 @@ ob_start(); ?>
     <tbody><?php foreach ($upisi as $u): $min = $minuta($u); ?>
         <tr><td class="text-nowrap"><?= e(datum($u['Od'])) ?></td>
             <td class="text-nowrap"><?= e(date('H:i', strtotime($u['Od']))) ?> –
-                <?php if ($u['Do']): ?><?= e(substr($u['Do'], 0, 10) !== substr($u['Od'], 0, 10) ? date('d.m. H:i', strtotime($u['Do'])) : date('H:i', strtotime($u['Do']))) ?><?php else: ?><span class="text-muted" title="U knjizi dezinfekcije nema odlaska">?</span><?php endif; ?>
+                <?php if ($u['Do']): ?><?= e(substr($u['Do'], 0, 10) !== substr($u['Od'], 0, 10) ? date('d.m. H:i', strtotime($u['Do'])) : date('H:i', strtotime($u['Do']))) ?><?php endif; ?>
                 <?= $u['Automatski'] ? '<span class="badge bg-secondary-subtle text-secondary-emphasis" title="Nije dodirnuo „Odlazim“ – automatski oslobođeno">auto</span>' : '' ?></td>
             <td class="text-nowrap small"><?= $min !== null ? e($trajanje($min)) : '' ?></td>
             <?php if (!$samoJa): ?><td><?= e($u['Ime']) ?></td><?php endif; ?>

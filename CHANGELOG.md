@@ -1,5 +1,8 @@
 # Promjene
 
+## 1.8.4 – 2026-10
+- Lovački dnevnik: dolazak bez upisanog odlaska prikazuje se samo s vremenom dolaska (bez „?“ i „bez odlaska“).
+
 ## 1.8.3 – 2026-10
 - Lovački dnevnik: dezinfekcija s razlogom „Lov“ bez zauzete čeke upisuje se kao **Lov – pirš / obilazak (bez čeke)**. Ako se vremenski preklapa sa zauzećem čeke istog lovca, upisuje se samo čeka (ništa dvaput).
 
