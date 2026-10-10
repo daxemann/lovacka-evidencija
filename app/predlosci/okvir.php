@@ -22,6 +22,7 @@ $grupa = function (string $id, string $naslov, string $stavke): string {
 };
 $neprocitano = $k ? broj_neprocitanih((int) $k['Id']) : 0;
 $revirObav = $k ? revir_broj_obavijesti() : 0;
+$novaVerzija = $k ? azuriranje_dostupno() : null;
 [$uloga, $boja] = oznaka_uloge();
 ?><!doctype html>
 <html lang="hr">
@@ -88,6 +89,7 @@ $revirObav = $k ? revir_broj_obavijesti() : 0;
                         . $stavka('sustav/uvoz', 'Uvoz (Google kontakti)')
                         . $stavka('sustav/duplikati', 'Provjera duplikata')
                         . $stavka('sustav/kopije', 'Sigurnosne kopije')
+                        . (smije_azurirati() ? $stavka('sustav/azuriranje', 'Ažuriranje programa', $novaVerzija ? 1 : 0) : '')
                         . $stavka('sustav/dnevnik', 'Dnevnik promjena')); ?>
                     <?= $grupa('program', 'Program', $stavka('pomoc', 'Pomoć i kontakt')) ?>
                 <?php endif; ?>
@@ -117,6 +119,12 @@ $revirObav = $k ? revir_broj_obavijesti() : 0;
                 <button type="button" class="btn btn-sm btn-success" data-instaliraj>📲 Dodaj</button>
                 <button type="button" class="btn-close ms-1" aria-label="Zatvori" data-instal-zatvori></button>
             </div>
+            <?php endif; ?>
+            <?php if ($novaVerzija && $trenutna !== 'sustav/azuriranje'): ?>
+                <div class="alert alert-info d-flex flex-wrap align-items-center gap-2 py-2 no-print">
+                    <span class="flex-grow-1">⬆ Dostupna je nova verzija programa <b><?= e($novaVerzija['verzija']) ?></b> (instalirana <?= e(VERZIJA) ?>).</span>
+                    <a class="btn btn-sm btn-primary" href="<?= e(url('sustav/azuriranje')) ?>">Pogledaj i ažuriraj</a>
+                </div>
             <?php endif; ?>
             <?php foreach (poruke() as [$vrsta, $tekst]): ?>
                 <div class="alert alert-<?= e($vrsta) ?> alert-dismissible fade show no-print" role="alert">

@@ -39,6 +39,10 @@ Na mobitelu: u pregledniku *Dodaj na početni zaslon* – izgleda kao aplikacija
 - **redovito** (npr. jednom mjesečno) *Sustav → Sigurnosne kopije → Preuzmi kompletnu kopiju (ZIP)* i spremite na sigurno mjesto – ZIP sadrži osobne podatke, čuvajte ga povjerljivo
 
 ## 7. Nadogradnja na novu verziju
+**Najlakše:** kad izađe nova verzija, glavni admin vidi traku „Dostupna je nova verzija“ → *Sustav → Ažuriranje programa* → **Ažuriraj**.
+Program sam radi kopiju baze i programa, preuzima izdanje s GitHuba i zamjenjuje datoteke (web poslužitelj mora smjeti pisati u mapu programa; potrebno PHP proširenje zip).
+
+Ručno:
 1. Napravite kompletnu kopiju (ZIP).
 2. Učitajte nove datoteke preko starih – **osim mape `podaci`** (i vlastitog `config.php`).
 3. Gotovo – podaci ostaju.

@@ -1,5 +1,11 @@
 # Promjene
 
+## 1.10.0 – 2026-10
+- **Ažuriranje programa iz aplikacije** (Sustav → Ažuriranje programa, samo glavni admin): program sam provjerava GitHub (najviše svakih 6 sati) i glavnom adminu pokazuje traku „Dostupna je nova verzija“.
+  Jedan klik: **sigurnosna kopija baze** + kopija trenutnog programa → preuzimanje izdanja s GitHuba → zamjena programskih datoteka. `podaci/` i `config.php` se ne diraju, baza se sama proširuje.
+  Ako zamjena ne uspije, stari program se automatski vraća. U Home Assistant add-onu ažuriranje ide preko Supervisora (cijeli add-on).
+  Isključivanje: `'azuriranje' => false` u `config.php`; drugi izvor: `'azuriranje_repo' => 'korisnik/repo'`.
+
 ## 1.9.5 – 2026-10
 - Ispravak upozorenja iz 1.9.3: adrese `*.ts.net` (Tailscale Funnel) su javne i više se ne označavaju kao privatne; upozorenje ostaje za LAN / Tailscale IP i kad poveznica vodi na drugu adresu od otvorene.
 

@@ -16,6 +16,11 @@ return [
 
     'vremenska_zona' => 'Europe/Zagreb',
 
+    // Ažuriranje iz aplikacije (Sustav → Ažuriranje programa). false = isključeno.
+    'azuriranje' => true,
+    // GitHub repozitorij s izdanjima (Releases).
+    'azuriranje_repo' => 'daxemann/lovacka-evidencija',
+
     // Samo za traženje grešaka – na stvarnom poslužitelju ostavite false.
     'prikazi_greske' => false,
 ];
