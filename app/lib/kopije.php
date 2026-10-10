@@ -7,6 +7,7 @@ const BROJ_DNEVNIH_KOPIJA = 30;
 /** Kopija baze u podaci/kopije (VACUUM INTO). Vraća ime datoteke. */
 function napravi_kopiju(string $oznaka = 'rucno'): string
 {
+    revir_granice_podaci(); // stara datoteka granica → baza, da bude u kopiji
     $ime = 'evidencija-' . date('Y-m-d_His') . '-' . preg_replace('/[^a-z0-9\-]/', '', $oznaka) . '.db';
     $put = podaci('kopije/' . $ime);
     try {
@@ -60,6 +61,7 @@ function napravi_kompletnu_kopiju(): string
     if (!class_exists('ZipArchive')) {
         throw new RuntimeException('Na poslužitelju nedostaje PHP proširenje „zip“.');
     }
+    revir_granice_podaci(); // stara datoteka granica → baza, da bude u kopiji
     $tmpDb = tempnam(sys_get_temp_dir(), 'evdb');
     @unlink($tmpDb);
     try {

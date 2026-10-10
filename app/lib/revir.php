@@ -406,14 +406,31 @@ function revir_citaj_kml(string $sadrzaj): array
     return ['oblici' => $oblici, 'tocaka' => $tocaka];
 }
 
+/**
+ * Granice lovišta (podaci uvoza). Spremaju se u bazu (Postavke „Revir.Granice“) da budu u svakoj sigurnosnoj kopiji;
+ * stara datoteka revir-granice.json (1.8.0–1.8.8) se pri prvom čitanju prebacuje u bazu.
+ */
+function revir_granice_podaci(): ?array
+{
+    $v = postavka('Revir.Granice');
+    if ($v === null && is_file(revir_granice_datoteka())) {
+        $v = (string) file_get_contents(revir_granice_datoteka());
+        if (is_array(json_decode($v, true))) {
+            spremi_postavku('Revir.Granice', $v);
+            @unlink(revir_granice_datoteka());
+        }
+    }
+    $j = $v !== null ? json_decode($v, true) : null;
+    return is_array($j) ? $j : null;
+}
+function revir_spremi_granice(?array $podaci): void
+{
+    spremi_postavku('Revir.Granice', $podaci ? json_encode($podaci, JSON_UNESCAPED_UNICODE) : null);
+    @unlink(revir_granice_datoteka());
+}
 function revir_granice(): array
 {
-    $d = revir_granice_datoteka();
-    if (!is_file($d)) {
-        return [];
-    }
-    $j = json_decode((string) file_get_contents($d), true);
-    return is_array($j) ? ($j['oblici'] ?? []) : [];
+    return revir_granice_podaci()['oblici'] ?? [];
 }
 
 /** Početni prikaz karte: ručno zadan [lat, lon, zoom] ili null. */

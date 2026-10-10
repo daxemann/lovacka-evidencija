@@ -35,7 +35,7 @@ if (je_post()) {
                 poruka('U datoteci nema granica (poligona ili linija).' . ($r['tocaka'] ? ' Ima ' . $r['tocaka'] . ' točaka – one se ne uvoze.' : ''), 'warning');
                 break;
             }
-            file_put_contents(revir_granice_datoteka(), json_encode(['oblici' => $r['oblici'], 'datoteka' => basename((string) $f['name']), 'uvezeno' => sada(), 'uvezao' => $k['Naziv']], JSON_UNESCAPED_UNICODE));
+            revir_spremi_granice(['oblici' => $r['oblici'], 'datoteka' => basename((string) $f['name']), 'uvezeno' => sada(), 'uvezao' => $k['Naziv']]);
             dnevnik('Lovište – uvezene granice', null, null, basename((string) $f['name']) . ' · ' . count($r['oblici']) . ' oblika');
             poruka('Granice su uvezene: ' . count($r['oblici']) . ' oblika.' . ($r['tocaka'] ? ' (' . $r['tocaka'] . ' točaka je preskočeno.)' : ''));
             break;
@@ -111,7 +111,7 @@ if (je_post()) {
             }
             break;
         case 'kml-obrisi':
-            @unlink(revir_granice_datoteka());
+            revir_spremi_granice(null);
             dnevnik('Lovište – obrisane granice');
             poruka('Granice su obrisane.');
             break;
@@ -129,7 +129,7 @@ if (je_post()) {
     }
     preusmjeri('revir/postavke');
 }
-$gr = is_file(revir_granice_datoteka()) ? json_decode((string) file_get_contents(revir_granice_datoteka()), true) : null;
+$gr = revir_granice_podaci();
 $centar = revir_centar();
 $uredive = [];
 foreach (revir_sekcije() as $id => $naziv) {
@@ -191,7 +191,7 @@ ob_start(); ?>
 <div class="card mb-4"><div class="card-body">
     <h2 class="h5">Granice lovišta (KML)</h2>
     <p class="small text-muted">Iz Google My Maps: ⋮ → „Izvezi u KML/KMZ“ (označite „Izvezi u .KML“). Iz Google Eartha: desni klik na mapu → „Spremi mjesto kao…“ → KML.
-        Uvoze se poligoni i linije; točke se preskaču. Granice ostaju samo na ovom poslužitelju.</p>
+        Uvoze se poligoni i linije; točke se preskaču. Granice ostaju samo na ovom poslužitelju (i u sigurnosnim kopijama).</p>
     <?php if ($gr): ?>
         <div class="alert alert-success py-2 small">Uvezeno: <b><?= e($gr['datoteka'] ?? '') ?></b> · <?= count($gr['oblici'] ?? []) ?> oblika · <?= e(datum_vrijeme($gr['uvezeno'] ?? '')) ?> · <?= e($gr['uvezao'] ?? '') ?></div>
     <?php endif; ?>

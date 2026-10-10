@@ -1,5 +1,8 @@
 # Promjene
 
+## 1.8.9 – 2026-10
+- Granice lovišta (KML) spremaju se u bazu – sada su u svakoj sigurnosnoj kopiji (dnevnoj i kompletnoj) i vraćaju se na novom poslužitelju. Postojeće granice prebacuju se automatski.
+
 ## 1.8.8 – 2026-10
 - Dezinfekcija → Stanice i QR: **Početak rada – brisanje probnih upisa** (samo glavni admin, potvrda „OBRIŠI“): briše sve upise dezinfekcije (i poništene), mobilne akcije
   i fotografije papirnatih lista, po želji i probna zauzeća čeka i lovački dnevnik. Stanice, QR, potpisi i postavke ostaju; prije brisanja automatska sigurnosna kopija.
