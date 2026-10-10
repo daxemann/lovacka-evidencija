@@ -14,6 +14,7 @@
   - **Vrste naprava sa sličicama** (Postavke lovišta): svaka udruga uređuje svoje vrste i učitava vlastite sličice (više odjednom, naziv = ime datoteke).
     Kod nove naprave vrsta se bira dodirom na sličicu; na karti je sličica u krugu čija boja pokazuje stanje. Vrste koje se ne zauzimaju (kamera, hranilište…) su sive, samo za informaciju.
   - Satelitska, obična i topografska karta (Leaflet, uključen u program).
+- Dezinfekcija: QR oznaka za ispis više nema web adresu na dnu (ni u zaglavlju/podnožju preglednika).
 
 ## 1.7.3 – 2026-10
 - Dezinfekcija: nepreciznost GPS-a uzima se u obzir najviše 1000 m izvan radijusa (prije do 2 km) – dalje od toga upis se odbija.

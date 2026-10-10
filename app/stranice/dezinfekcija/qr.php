@@ -29,15 +29,16 @@ if (!empty($_GET['inspekcija'])) {
 <html lang="hr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title><?= e($naslov) ?> – QR</title>
 <style>
-    @page { size: A4 portrait; margin: 12mm; }
+    /* rub 0: preglednik tada ne ispisuje zaglavlje/podnožje (adresa, datum, naslov) */
+    @page { size: A4 portrait; margin: 0; }
     body { font-family: system-ui, Arial, sans-serif; color: #1c2b16; margin: 0; }
+    @media print { body { padding: 12mm; } }
     .list { max-width: 180mm; margin: 0 auto; text-align: center; padding: 6mm 0; }
     .udruga { font-size: 15pt; font-weight: 600; } .logo { max-height: 26mm; max-width: 60mm; }
     h1 { font-size: 46pt; letter-spacing: .04em; margin: 4mm 0 0; color: #2f5d23; }
     .pod { font-size: 17pt; margin-bottom: 6mm; }
     #qr svg { width: 120mm; height: 120mm; }
     ol { text-align: left; font-size: 15pt; line-height: 1.5; max-width: 150mm; margin: 6mm auto; }
-    .adr { font-size: 8pt; color: #666; word-break: break-all; }
     .alati { text-align: center; padding: 1rem; } @media print { .alati { display: none; } }
     button { font-size: 1rem; padding: .5rem 1.2rem; }
 </style></head>
@@ -51,7 +52,6 @@ if (!empty($_GET['inspekcija'])) {
     <div class="pod"><?= e($podnaslov) ?></div>
     <div id="qr"></div>
     <ol><?php foreach ($upute as $u): ?><li><?= e($u) ?></li><?php endforeach; ?></ol>
-    <div class="adr"><?= e($adresa) ?></div>
 </div>
 <script src="<?= e(asset('assets/qrcode.js')) ?>"></script>
 <script>
