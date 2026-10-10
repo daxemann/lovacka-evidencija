@@ -122,7 +122,7 @@ function db(): PDO
  * Dodatne tablice PHP verzije (PRAGMA user_version). .NET verzija ih ne poznaje i zanemaruje,
  * pa baza i dalje radi u oba smjera.
  */
-const SHEMA_PHP = 7;
+const SHEMA_PHP = 8;
 function nadogradi_bazu(PDO $pdo): void
 {
     $v = (int) $pdo->query('PRAGMA user_version')->fetchColumn();
@@ -369,6 +369,21 @@ CREATE TABLE IF NOT EXISTS "RevirProcitano" (
     "DoId" INTEGER NOT NULL DEFAULT 0
 );
 UPDATE "Uloge" SET "Prava" = "Prava" | 98304 WHERE ("Prava" & 32767) = 32767 OR "Naziv" = 'Lovočuvar';
+SQL);
+    }
+    if ($v < 8) {
+        $pdo->exec(<<<'SQL'
+CREATE TABLE IF NOT EXISTS "RevirVrste" (
+    "Id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "Naziv" TEXT NOT NULL,
+    "Ikona" TEXT NULL,
+    "Zauzimanje" INTEGER NOT NULL DEFAULT 1,
+    "Redoslijed" INTEGER NOT NULL DEFAULT 0
+);
+INSERT INTO "RevirVrste" ("Naziv", "Zauzimanje", "Redoslijed") VALUES
+    ('Čeka', 1, 1), ('Visoka čeka', 1, 2), ('Zatvorena čeka', 1, 3), ('Zaklon', 1, 4), ('Hranilište', 0, 5), ('Solište', 0, 6), ('Ostalo', 0, 9);
+ALTER TABLE "RevirNaprave" ADD COLUMN "VrstaId" INTEGER NULL REFERENCES "RevirVrste" ("Id") ON DELETE SET NULL;
+UPDATE "RevirNaprave" SET "VrstaId" = (SELECT v."Id" FROM "RevirVrste" v WHERE v."Naziv" = "RevirNaprave"."Vrsta");
 SQL);
     }
     $pdo->exec('PRAGMA user_version = ' . SHEMA_PHP);

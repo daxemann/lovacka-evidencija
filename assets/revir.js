@@ -53,12 +53,20 @@
     else karta.setView([45.1, 16.4], 7);
 
     function ikona(n) {
-        var z = n.zauzeto, kl = !z ? 'slobodno' : (z.moje ? 'moje' : 'zauzeto');
-        var tekst = n.broj ? esc(n.broj) : '•';
+        var z = n.zauzeto, kl = !z ? (n.zauzimanje ? 'slobodno' : 'info') : (z.moje ? 'moje' : 'zauzeto');
+        var odabran = st.odabrana === n.id ? ' odabran' : '';
+        var ime = (st.uredi || z) ? '<div class="revir-pin-ime">' + esc(z ? (z.gost ? 'gost' : z.ime.split(' ')[0]) : n.naziv) + '</div>' : '';
+        if (n.ikona) {
+            return L.divIcon({
+                className: 'revir-pin-omot',
+                html: '<div class="revir-pin slika ' + kl + (z && z.gost ? ' gost' : '') + odabran + '"><img src="' + esc(n.ikona) + '" alt=""></div>' +
+                    (n.broj ? '<span class="revir-pin-broj">' + esc(n.broj) + '</span>' : '') + ime,
+                iconSize: [44, 44], iconAnchor: [22, 22]
+            });
+        }
         return L.divIcon({
             className: 'revir-pin-omot',
-            html: '<div class="revir-pin ' + kl + (z && z.gost ? ' gost' : '') + (st.odabrana === n.id ? ' odabran' : '') + '">' + tekst + '</div>' +
-                (st.uredi || z ? '<div class="revir-pin-ime">' + esc(z ? (z.gost ? 'gost' : z.ime.split(' ')[0]) : n.naziv) + '</div>' : ''),
+            html: '<div class="revir-pin ' + kl + (z && z.gost ? ' gost' : '') + odabran + '">' + (n.broj ? esc(n.broj) : '•') + '</div>' + ime,
             iconSize: [34, 34], iconAnchor: [17, 17]
         });
     }
@@ -153,7 +161,8 @@
         var z = n.zauzeto, h = '';
         h += '<button type="button" class="btn-close float-end" data-zatvori aria-label="Zatvori"></button>';
         if (n.foto) h += '<a href="' + esc(n.foto) + '" target="_blank" rel="noopener"><img src="' + esc(n.foto) + '" class="revir-foto" alt=""></a>';
-        h += '<div class="h5 mb-0">' + esc(oznaka(n)) + '</div>';
+        h += '<div class="d-flex align-items-center gap-2">' + (n.ikona ? '<img src="' + esc(n.ikona) + '" alt="" class="revir-panel-ikona">' : '') +
+            '<div class="h5 mb-0">' + esc(oznaka(n)) + '</div></div>';
         h += '<div class="small text-muted mb-2">' + esc([n.vrsta, cfg.sekcije.length > 1 ? nazivSekcije(n.sekcija) : ''].filter(Boolean).join(' · ')) + '</div>';
         if (n.napomena) h += '<div class="small mb-2">' + esc(n.napomena) + '</div>';
         if (z) {
@@ -162,13 +171,13 @@
             if (z.moje) h += '<button type="button" class="btn btn-success w-100 mb-2" data-oslobodi="' + z.id + '">🟢 Oslobodi' + (z.gost ? ' (gost otišao)' : ' – odlazim') + '</button>';
             else if (n.mozeObrisati) h += '<button type="button" class="btn btn-outline-danger btn-sm w-100 mb-2" data-obrisi="' + z.id + '">Obriši zauzeće</button>';
         } else {
-            h += '<div class="revir-status slobodno mb-2">🟢 Slobodno</div>';
+            if (n.zauzimanje) h += '<div class="revir-status slobodno mb-2">🟢 Slobodno</div>';
             if (n.mozeZauzeti) {
                 h += '<button type="button" class="btn btn-danger btn-lg w-100 mb-2" data-zauzmi="' + n.id + '">Zauzmi – sjedim ovdje</button>';
                 h += '<details class="mb-2"><summary class="small">Zauzmi za gosta…</summary><div class="input-group input-group-sm mt-2">' +
                     '<input type="text" class="form-control" maxlength="60" placeholder="ime gosta (neobavezno)" data-gost-ime>' +
                     '<button type="button" class="btn btn-outline-danger" data-zauzmi-gost="' + n.id + '">Zauzmi za gosta</button></div></details>';
-            } else if (cfg.clan) h += '<div class="small text-muted mb-2">Druga sekcija – samo pregled.</div>';
+            } else if (cfg.clan && n.zauzimanje) h += '<div class="small text-muted mb-2">Druga sekcija – samo pregled.</div>';
         }
         var nav = n.lat !== null ? '<a class="btn btn-sm btn-outline-secondary" target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&destination=' + n.lat + ',' + n.lon + '">🧭 Navigacija</a>' : '';
         var ur = n.mozeUrediti && st.uredi ? '<button type="button" class="btn btn-sm btn-outline-secondary" data-uredi-napravu="' + n.id + '">✏️ Uredi</button>' : '';
@@ -180,9 +189,12 @@
     function obrazac(n, lat, lon) {
         st.obrazac = true;
         var novi = !n;
-        n = n || { id: 0, broj: '', naziv: '', vrsta: cfg.vrste[0], sekcija: st.sek !== '' ? +st.sek : (cfg.uredive[0] ? cfg.uredive[0].id : 0), napomena: '', foto: null, lat: lat, lon: lon };
+        n = n || { id: 0, broj: '', naziv: '', vrstaId: cfg.vrste[0] ? cfg.vrste[0].id : null, sekcija: st.sek !== '' ? +st.sek : (cfg.uredive[0] ? cfg.uredive[0].id : 0), napomena: '', foto: null, lat: lat, lon: lon };
         var sek = cfg.uredive.map(function (s) { return '<option value="' + s.id + '"' + (s.id === n.sekcija ? ' selected' : '') + '>' + esc(s.naziv) + '</option>'; }).join('');
-        var vr = cfg.vrste.map(function (v) { return '<option' + (v === n.vrsta ? ' selected' : '') + '>' + esc(v) + '</option>'; }).join('');
+        var vr = cfg.vrste.map(function (v) {
+            return '<label class="revir-vrsta" title="' + esc(v.naziv) + '"><input type="radio" name="vrsta" value="' + v.id + '"' + (v.id === n.vrstaId ? ' checked' : '') + '>' +
+                '<span>' + (v.ikona ? '<img src="' + esc(v.ikona) + '" alt="">' : '<b>' + esc(v.naziv.charAt(0)) + '</b>') + '<small>' + esc(v.naziv) + '</small></span></label>';
+        }).join('');
         var h = '<button type="button" class="btn-close float-end" data-zatvori aria-label="Zatvori"></button>' +
             '<div class="h6">' + (novi ? 'Nova lovna naprava' : 'Uredi: ' + esc(oznaka(n))) + '</div>' +
             '<form data-obrazac class="row g-2">' +
@@ -190,8 +202,8 @@
             (lat !== undefined && lat !== null ? '<input type="hidden" name="lat" value="' + lat + '"><input type="hidden" name="lon" value="' + lon + '">' : '') +
             '<div class="col-4"><label class="form-label small mb-0">Broj</label><input name="broj" class="form-control form-control-sm" maxlength="12" value="' + esc(n.broj) + '" inputmode="numeric"></div>' +
             '<div class="col-8"><label class="form-label small mb-0">Naziv *</label><input name="naziv" class="form-control form-control-sm" maxlength="80" required value="' + esc(n.naziv) + '"></div>' +
-            '<div class="col-6"><label class="form-label small mb-0">Vrsta</label><select name="vrsta" class="form-select form-select-sm">' + vr + '</select></div>' +
-            '<div class="col-6"><label class="form-label small mb-0">Sekcija</label><select name="sekcija" class="form-select form-select-sm">' + sek + '</select></div>' +
+            '<div class="col-12"><label class="form-label small mb-0">Vrsta – dodirnite sličicu</label><div class="revir-vrste">' + vr + '</div></div>' +
+            '<div class="col-12"><label class="form-label small mb-0">Sekcija</label><select name="sekcija" class="form-select form-select-sm">' + sek + '</select></div>' +
             '<div class="col-12"><label class="form-label small mb-0">Napomena</label><input name="napomena" class="form-control form-control-sm" maxlength="500" value="' + esc(n.napomena) + '"></div>' +
             '<div class="col-12"><label class="form-label small mb-0">Fotografija</label><input type="file" name="foto" accept="image/*" class="form-control form-control-sm">' +
             (n.foto ? '<label class="small mt-1"><input type="checkbox" name="obrisiFoto" value="1"> obriši postojeću</label>' : '') + '</div>' +

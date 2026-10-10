@@ -11,6 +11,8 @@
   - **Obavijesti** lovočuvarima sekcije (🔔 u zaglavlju) pri zauzimanju, oslobađanju i brisanju; „Danas u lovištu“ – tko sjedi gdje.
   - **Lovački dnevnik** – automatski: tko, kada, gdje (gosti se ne upisuju); razdoblja, ispis, CSV.
   - Nova prava „Lovište – lovne naprave“ i „Lovište – nadzor“ (brisanje zauzeća, dnevnik sekcije); uloga Lovočuvar ih dobiva automatski.
+  - **Vrste naprava sa sličicama** (Postavke lovišta): svaka udruga uređuje svoje vrste i učitava vlastite sličice (više odjednom, naziv = ime datoteke).
+    Kod nove naprave vrsta se bira dodirom na sličicu; na karti je sličica u krugu čija boja pokazuje stanje. Vrste koje se ne zauzimaju (kamera, hranilište…) su sive, samo za informaciju.
   - Satelitska, obična i topografska karta (Leaflet, uključen u program).
 
 ## 1.7.3 – 2026-10

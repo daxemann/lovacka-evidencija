@@ -22,7 +22,7 @@ $cfg = [
     'uredive' => array_map(fn($id, $n) => ['id' => $id, 'naziv' => $n], array_keys($uredive), $uredive),
     'granice' => revir_granice(),
     'centar' => revir_centar(),
-    'vrste' => REVIR_VRSTE,
+    'vrste' => revir_vrste_js(),
     'clan' => $k['ClanId'] !== null,
     'istek' => sprintf('%02d:00', revir_sat_isteka()),
     'dnevnik' => url('revir/dnevnik'),
@@ -56,6 +56,7 @@ ob_start(); ?>
         <span><i class="revir-tocka slobodno"></i> slobodno</span>
         <span><i class="revir-tocka zauzeto"></i> zauzeto</span>
         <span><i class="revir-tocka moje"></i> moje</span>
+        <span><i class="revir-tocka info"></i> info</span>
     </div>
     <button type="button" class="revir-lociraj" id="revir-lociraj" title="Gdje sam?" aria-label="Gdje sam?">◎</button>
     <div id="revir-panel" class="revir-panel" hidden></div>

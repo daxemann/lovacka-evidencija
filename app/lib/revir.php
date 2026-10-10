@@ -5,7 +5,6 @@
  */
 declare(strict_types=1);
 
-const REVIR_VRSTE = ['Čeka', 'Visoka čeka', 'Zatvorena čeka', 'Zaklon', 'Hranilište', 'Solište', 'Ostalo'];
 const REVIR_MIN_DNEVNIK = 5; // kraće zauzeće (minute) ne ide u dnevnik – npr. greškom dodirnuto
 
 function revir_granice_datoteka(): string
@@ -111,6 +110,31 @@ function revir_nadzor_sql(string $stupac = 'SekcijaId'): string
     return $k['Sekcije'] ? $stupac . ' IN (' . implode(',', array_map('intval', $k['Sekcije'])) . ')' : '1=0';
 }
 
+// ---------- Vrste naprava (svaka udruga uređuje svoje, s vlastitom ikonom) ----------
+/** [id => ['Id','Naziv','Ikona','Zauzimanje','Redoslijed']] */
+function revir_vrste(bool $osvjezi = false): array
+{
+    static $v = null;
+    if ($v === null || $osvjezi) {
+        $v = [];
+        foreach (redovi('SELECT * FROM RevirVrste ORDER BY Redoslijed, Naziv') as $r) {
+            $v[(int) $r['Id']] = $r;
+        }
+    }
+    return $v;
+}
+function revir_vrste_js(): array
+{
+    return array_values(array_map(fn($r) => ['id' => (int) $r['Id'], 'naziv' => $r['Naziv'], 'ikona' => $r['Ikona'] ? foto_url($r['Ikona']) : null,
+        'zauzimanje' => (bool) $r['Zauzimanje']], revir_vrste()));
+}
+/** Smije li se naprava ove vrste zauzeti (čeka da, kamera / hranilište ne). */
+function revir_zauzima_se(array $n): bool
+{
+    $v = $n['VrstaId'] !== null ? (revir_vrste()[(int) $n['VrstaId']] ?? null) : null;
+    return $v === null || (bool) $v['Zauzimanje'];
+}
+
 // ---------- Naprave ----------
 function revir_oznaka(array $n): string
 {
@@ -190,6 +214,9 @@ function revir_zauzmi(int $napravaId, ?string $gost): ?string
     $sid = $n['SekcijaId'] !== null ? (int) $n['SekcijaId'] : null;
     if (!revir_moze_zauzeti($sid)) {
         return 'Zauzeti možete samo lovne naprave svoje sekcije.';
+    }
+    if (!revir_zauzima_se($n)) {
+        return 'Ova vrsta naprave se ne zauzima.';
     }
     $gost = $gost !== null ? mb_substr(trim($gost), 0, 60) : null;
     $clan = red('SELECT Id, Ime, Prezime FROM Clanovi WHERE Id=?', [$k['ClanId']]);
@@ -280,15 +307,17 @@ function revir_stanje(array $sekcije): array
     foreach ($naprave as $n) {
         $sid = $n['SekcijaId'] !== null ? (int) $n['SekcijaId'] : null;
         $z = $zauz[(int) $n['Id']] ?? null;
+        $v = $n['VrstaId'] !== null ? (revir_vrste()[(int) $n['VrstaId']] ?? null) : null;
         $out[] = [
-            'id' => (int) $n['Id'], 'broj' => (string) $n['Broj'], 'naziv' => $n['Naziv'], 'vrsta' => (string) $n['Vrsta'],
+            'id' => (int) $n['Id'], 'broj' => (string) $n['Broj'], 'naziv' => $n['Naziv'], 'vrsta' => $v['Naziv'] ?? (string) $n['Vrsta'],
+            'vrstaId' => $v ? (int) $v['Id'] : null, 'ikona' => $v && $v['Ikona'] ? foto_url($v['Ikona']) : null, 'zauzimanje' => revir_zauzima_se($n),
             'sekcija' => revir_sid($sid), 'lat' => $n['Lat'] !== null ? (float) $n['Lat'] : null, 'lon' => $n['Lon'] !== null ? (float) $n['Lon'] : null,
             'foto' => $n['Foto'] ? foto_url($n['Foto']) : null, 'napomena' => (string) $n['Napomena'],
             'zauzeto' => $z ? [
                 'id' => (int) $z['Id'], 'ime' => $z['Ime'], 'gost' => $z['Gost'], 'od' => date('H:i', strtotime($z['Od'])),
                 'odDatum' => datum($z['Od']), 'moje' => $k['ClanId'] !== null && (int) $z['ClanId'] === (int) $k['ClanId'],
             ] : null,
-            'mozeZauzeti' => revir_moze_zauzeti($sid), 'mozeObrisati' => revir_moze_nadzor($sid), 'mozeUrediti' => revir_moze_urediti($sid),
+            'mozeZauzeti' => revir_moze_zauzeti($sid) && revir_zauzima_se($n), 'mozeObrisati' => revir_moze_nadzor($sid), 'mozeUrediti' => revir_moze_urediti($sid),
         ];
     }
     return $out;

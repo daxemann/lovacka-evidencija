@@ -57,7 +57,8 @@ switch ($radnja) {
         $koord = revir_koord($_POST['lat'] ?? null, $_POST['lon'] ?? null);
         $polja = [
             'Broj' => mb_substr(ul_str('broj'), 0, 12) ?: null, 'Naziv' => $naziv,
-            'Vrsta' => in_array(ul_str('vrsta'), REVIR_VRSTE, true) ? ul_str('vrsta') : null,
+            'VrstaId' => isset(revir_vrste()[(int) ul('vrsta', 0)]) ? (int) ul('vrsta', 0) : null,
+            'Vrsta' => revir_vrste()[(int) ul('vrsta', 0)]['Naziv'] ?? null,
             'SekcijaId' => $sid, 'Napomena' => mb_substr(ul_str('napomena'), 0, 500) ?: null,
             'Lat' => $koord[0] ?? null, 'Lon' => $koord[1] ?? null, 'Azurirano' => sada(),
         ];
