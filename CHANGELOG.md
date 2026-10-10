@@ -1,5 +1,8 @@
 # Promjene
 
+## 1.8.3 – 2026-10
+- Lovački dnevnik: dezinfekcija s razlogom „Lov“ bez zauzete čeke upisuje se kao **Lov – pirš / obilazak (bez čeke)**. Ako se vremenski preklapa sa zauzećem čeke istog lovca, upisuje se samo čeka (ništa dvaput).
+
 ## 1.8.2 – 2026-10
 - Lovački dnevnik: izvoz u **PDF** umjesto Excela (CSV).
 

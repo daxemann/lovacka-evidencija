@@ -461,7 +461,7 @@ function revir_je_lov(string $aktivnost): bool
 }
 
 /**
- * Dolazak → odlazak člana iz knjige dezinfekcije kao upisi dnevnika. Razlog „Lov“ se preskače (lov dolazi iz zauzeća naprava).
+ * Dolazak → odlazak člana iz knjige dezinfekcije kao upisi dnevnika. Razlog „Lov“ samo ako se vremenski ne preklapa sa zauzećem čeke (onda je pirš / obilazak).
  * $uvjet je SQL uvjet nad aliasom d (ClanId, SekcijaId).
  */
 function revir_dnevnik_dez(string $uvjet, string $od, string $do, ?int $sekcija): array
@@ -479,11 +479,22 @@ function revir_dnevnik_dez(string $uvjet, string $od, string $do, ?int $sekcija)
     $otvoren = [];
     $dodaj = function (array $d, ?string $kraj) use (&$out, $od, $do) {
         $akt = revir_aktivnost($d['Razlog']);
-        if (revir_je_lov($akt) || substr($d['Vrijeme'], 0, 10) < $od || substr($d['Vrijeme'], 0, 10) > $do) {
+        if (substr($d['Vrijeme'], 0, 10) < $od || substr($d['Vrijeme'], 0, 10) > $do) {
             return;
         }
+        $mjesto = $d['Akcija'] ?: $d['Stanica'];
+        if (revir_je_lov($akt)) {
+            // lov: ako je u tom vremenu zauzeo čeku, upis već dolazi iz zauzeća – inače je pirš / obilazak (bez čeke)
+            $kraj2 = $kraj ?? date('Y-m-d H:i:s', strtotime($d['Vrijeme'] . ' +18 hours'));
+            if (vrijednost("SELECT 1 FROM RevirZauzeca WHERE ClanId=? AND Gost IS NULL AND COALESCE(KrajNacin,'')<>'obrisano'
+                    AND Od<? AND COALESCE(Kraj, VrijediDo)>? LIMIT 1", [(int) $d['ClanId'], $kraj2, $d['Vrijeme']])) {
+                return;
+            }
+            $akt = 'Lov';
+            $mjesto = 'pirš / obilazak (bez čeke) · ' . $mjesto;
+        }
         $out[] = ['Od' => $d['Vrijeme'], 'Do' => $kraj, 'Ime' => trim($d['Ime'] . ' ' . $d['Prezime']), 'ClanId' => (int) $d['ClanId'],
-            'SekcijaId' => $d['SekcijaId'], 'Aktivnost' => $akt, 'Mjesto' => $d['Akcija'] ?: $d['Stanica'], 'NapravaId' => null,
+            'SekcijaId' => $d['SekcijaId'], 'Aktivnost' => $akt, 'Mjesto' => $mjesto, 'NapravaId' => null,
             'Automatski' => 0, 'Izvor' => 'dez', 'Napomena' => $akt !== trim((string) $d['Razlog']) ? trim((string) preg_replace('/^' . preg_quote($akt, '/') . '\s*:\s*/iu', '', trim((string) $d['Razlog']))) : ''];
     };
     foreach ($redovi as $r) {

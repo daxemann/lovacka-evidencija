@@ -125,7 +125,7 @@ ob_start(); ?>
     <a class="btn btn-sm btn-outline-secondary no-print" href="<?= e(url('revir')) ?>">Karta lovišta</a>
 </div>
 <p class="text-muted small">Upisuje se automatski: <b>lov</b> kad oslobodite lovnu napravu (ili u <?= sprintf('%02d:00', revir_sat_isteka()) ?> ujutro),
-    <b>ostalo</b> (radna akcija, hranjenje…) iz knjige dezinfekcije – dolazak do odlaska. Gosti se ne upisuju.
+    <b>ostalo</b> (radna akcija, hranjenje…) i lov bez čeke (pirš / obilazak) iz knjige dezinfekcije – dolazak do odlaska. Gosti se ne upisuju.
     <?= $samoJa ? 'Vidite samo svoje upise.' : '' ?></p>
 <form method="get" action="<?= e(url()) ?>" class="card card-body mb-3 no-print">
     <input type="hidden" name="p" value="revir/dnevnik">
