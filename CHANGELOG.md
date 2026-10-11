@@ -1,5 +1,11 @@
 # Promjene
 
+## 1.11.1 – 2026-10
+- **Izvještaj radnih akcija → Pošalji e-poštom**: umjesto ručnog upisa adrese **odabir primatelja s popisa** (adresa iz podataka člana).
+  Član uvijek dobiva **samo svoje** radne akcije i bodove za odabrano razdoblje – bez obzira na to što je na zaslonu.
+  Cijeli izvještaj može se poslati samo upravi: korisniku koji ima pravo „Izvještaji i poruke“ i vidi sve sekcije iz izvještaja (provjerava i poslužitelj).
+  Prije slanja potvrda s imenom primatelja i sadržajem; slanje se bilježi u dnevnik promjena.
+
 ## 1.11.0 – 2026-10
 - **Rad bez signala – nova stranica „📷 Skeniraj QR stanice“** (izbornik, i ispod upisa na stanici). Bez interneta se aplikacija otvara upravo na njoj (umjesto „Nema interneta“):
   skener QR oznake **unutar aplikacije** (kamera), upisi koji čekaju slanje s gumbom „Pošalji sada“ i popis stanica spremljenih na mobitelu.

@@ -10,23 +10,88 @@ $clanovi = redovi('SELECT c.Id, c.Ime, c.Prezime FROM Clanovi c WHERE ' . opseg_
 $vrste = redovi('SELECT * FROM VrsteAkcija ORDER BY Naziv');
 $upit = filtar_upit($f);
 
+/*
+ * Primatelji e-pošte – samo iz baze, bez ručnog upisa adrese (zaštita od slanja tuđih podataka na krivu adresu):
+ *  - član: dobiva SAMO svoje radne akcije i bodove (za razdoblje iz filtra), bez obzira na to što je na zaslonu,
+ *  - uprava: cijeli izvještaj samo korisnik koji i sam ima pravo na izvještaje i vidi sve sekcije iz izvještaja.
+ */
+$clanIds = [];
+foreach ($grupe as $g) {
+    foreach ($g['retci'] as $r) {
+        $clanIds[(int) $r['ClanId']] = true;
+    }
+}
+$sekcijeIzvj = [];
+if ($clanIds) {
+    foreach (redovi('SELECT DISTINCT SekcijaId FROM Clanovi WHERE Id IN (' . implode(',', array_keys($clanIds)) . ')') as $r) {
+        $sekcijeIzvj[] = $r['SekcijaId'] === null ? null : (int) $r['SekcijaId'];
+    }
+}
+$uprava = [];
+foreach (redovi("SELECT k.Id, k.ClanId, c.Ime, c.Prezime, c.Email, ku.SekcijaId, u.Prava FROM Korisnici k JOIN Clanovi c ON c.Id=k.ClanId
+    JOIN KorisnikUloge ku ON ku.KorisnikId=k.Id JOIN Uloge u ON u.Id=ku.UlogaId
+    WHERE k.Aktivan=1 AND k.Odobren=1 AND TRIM(COALESCE(c.Email,''))<>''") as $r) {
+    $x = &$uprava[(int) $r['Id']];
+    $x ??= ['Id' => (int) $r['Id'], 'Ime' => $r['Ime'], 'Prezime' => $r['Prezime'], 'Email' => trim((string) $r['Email']), 'Prava' => 0, 'Sve' => false, 'Sek' => []];
+    $x['Prava'] |= (int) $r['Prava'];
+    if ($r['SekcijaId'] === null) {
+        $x['Sve'] = true;
+    } else {
+        $x['Sek'][] = (int) $r['SekcijaId'];
+    }
+    unset($x);
+}
+$uprava = array_values(array_filter($uprava, function ($u) use ($sekcijeIzvj) {
+    if (($u['Prava'] & P_IZVJESTAJI) !== P_IZVJESTAJI) {
+        return false;
+    }
+    if ($u['Sve']) {
+        return true;
+    }
+    foreach ($sekcijeIzvj as $s) {
+        if ($s === null || !in_array($s, $u['Sek'], true)) {
+            return false;
+        }
+    }
+    return true;
+}));
+usort($uprava, fn($a, $b) => strcoll($a['Prezime'] . ' ' . $a['Ime'], $b['Prezime'] . ' ' . $b['Ime']));
+$saMailom = redovi("SELECT c.Id, c.Ime, c.Prezime, c.Email FROM Clanovi c WHERE " . opseg_sql('c') . " AND TRIM(COALESCE(c.Email,''))<>'' ORDER BY c.Prezime, c.Ime");
+
 if (je_post()) {
     $radnja = (string) ($_POST['radnja'] ?? '');
     if ($radnja === 'posalji') {
-        $prim = array_filter(array_map('trim', preg_split('/[,;\s]+/', (string) ($_POST['primatelji'] ?? ''))));
-        if (!$prim) {
-            poruka('Unesite e-mail primatelja.', 'warning');
-        } else {
-            try {
-                posalji_mail($prim, 'Radne akcije – ' . udruga_kratko(), izvjestaj_html($grupe, 'Radne akcije: ' . $opis, false, $f['ClanId'] === null), true, null, [
+        $prim = (string) ($_POST['primatelj'] ?? '');
+        try {
+            if (preg_match('/^c:(\d+)$/', $prim, $m)) {
+                // član → samo njegovi podaci
+                $c = clan((int) $m[1]);
+                if (!$c || !u_opsegu($c) || !trim((string) $c['Email'])) {
+                    throw new RuntimeException('Član nije pronađen ili nema e-mail adresu.');
+                }
+                [$nasl, $tekst, $gr] = poruka_bodovi($c, $f);
+                posalji_mail(trim($c['Email']), $nasl, tekst_u_html($tekst), true, null, [
+                    'radne-akcije-' . bez_dijakritika($c['Prezime']) . '.pdf' => izvjestaj_pdf($gr, 'Radne akcije – ' . puno_ime($c), $opis),
+                ]);
+                dnevnik('Izvadak radnih akcija poslan članu', 'Clan', (int) $c['Id'], puno_ime($c) . ' · ' . $opis);
+                poruka('Poslano: ' . e(puno_ime($c)) . ' – samo svoje radne akcije (' . e($opis) . ').');
+            } elseif (preg_match('/^u:(\d+)$/', $prim, $m)) {
+                // uprava → cijeli izvještaj, samo ako primatelj smije vidjeti sve podatke iz izvještaja
+                $u = array_values(array_filter($uprava, fn($x) => $x['Id'] === (int) $m[1]))[0] ?? null;
+                if (!$u) {
+                    throw new RuntimeException('Primatelj nema pravo na cijeli izvještaj (pravo „Izvještaji“ i sve sekcije iz izvještaja).');
+                }
+                posalji_mail($u['Email'], 'Radne akcije – ' . udruga_kratko(), izvjestaj_html($grupe, 'Radne akcije: ' . $opis, false, $f['ClanId'] === null), true, null, [
                     'radne-akcije-' . date('Y-m-d') . '.pdf' => izvjestaj_pdf($grupe, 'Radne akcije', $opis, $f['ClanId'] === null),
                     'radne-akcije-' . date('Y-m-d') . '.csv' => izvjestaj_csv($grupe),
                 ]);
-                dnevnik('Izvještaj poslan e-poštom', null, null, implode(', ', $prim));
-                poruka('Izvještaj je poslan.');
-            } catch (Throwable $e) {
-                poruka('Slanje nije uspjelo: ' . e($e->getMessage()), 'danger');
+                dnevnik('Izvještaj radnih akcija poslan e-poštom', null, null, trim($u['Ime'] . ' ' . $u['Prezime']) . ' · ' . $opis);
+                poruka('Cijeli izvještaj poslan: ' . e(trim($u['Ime'] . ' ' . $u['Prezime'])) . '.');
+            } else {
+                poruka('Odaberite primatelja.', 'warning');
             }
+        } catch (Throwable $e) {
+            poruka('Slanje nije uspjelo: ' . e($e->getMessage()), 'danger');
         }
     } elseif ($radnja === 'izvadci') {
         @set_time_limit(300);
@@ -118,10 +183,32 @@ ob_start(); ?>
 </form>
 <?php if (posta_dostupna()): ?>
 <form method="post" action="<?= e(url('izvjestaji/akcije', $upit)) ?>" class="d-flex flex-wrap gap-2 mb-3 no-print"><?= csrf() ?>
-    <input name="primatelji" class="form-control form-control-sm" style="max-width:360px" placeholder="e-mail primatelja (više odvojiti zarezom)">
-    <button class="btn btn-sm btn-outline-primary" name="radnja" value="posalji">Pošalji e-poštom</button>
+    <select name="primatelj" id="primatelj" class="form-select form-select-sm" style="max-width:420px">
+        <option value="">— primatelj e-pošte —</option>
+        <?php if ($uprava): ?><optgroup label="Uprava – cijeli izvještaj (kao na zaslonu)">
+            <?php foreach ($uprava as $u): ?><option value="u:<?= (int) $u['Id'] ?>" data-opis="cijeli izvještaj (<?= (int) $ukupnoAkcija ?> akcija, svi članovi iz izvještaja)" data-ime="<?= e(prezime_ime($u)) ?>"><?= e(prezime_ime($u)) ?> · <?= e($u['Email']) ?></option><?php endforeach; ?>
+        </optgroup><?php endif; ?>
+        <optgroup label="Član – samo svoje radne akcije i bodovi">
+            <?php foreach ($saMailom as $c): ?><option value="c:<?= (int) $c['Id'] ?>" data-opis="samo svoje radne akcije i bodovi" data-ime="<?= e(prezime_ime($c)) ?>"<?= sel($c['Id'], $f['ClanId']) ?>><?= e(prezime_ime($c)) ?> · <?= e($c['Email']) ?></option><?php endforeach; ?>
+        </optgroup>
+    </select>
+    <button class="btn btn-sm btn-outline-primary" name="radnja" value="posalji" id="posalji-mail" data-potvrda="Odaberite primatelja.">Pošalji e-poštom</button>
     <button class="btn btn-sm btn-outline-success" name="radnja" value="izvadci" data-potvrda="Poslati svakom članu iz izvještaja njegov izvadak e-poštom?">Svakom članu njegov izvadak</button>
 </form>
+<div class="small text-muted mb-3 no-print" id="primatelj-opis">Adresa se uzima iz podataka člana. Član uvijek dobiva <b>samo svoje</b> radne akcije i bodove za odabrano razdoblje; cijeli izvještaj samo uprava s pravom na izvještaje.</div>
+<script>(function () {
+    var s = document.getElementById('primatelj'), b = document.getElementById('posalji-mail'), o = document.getElementById('primatelj-opis');
+    var opis = <?= json_encode($opis, JSON_UNESCAPED_UNICODE) ?>;
+    function osvjezi() {
+        var x = s.options[s.selectedIndex];
+        if (!s.value) { b.setAttribute('data-potvrda', 'Odaberite primatelja.'); b.disabled = true; return; }
+        b.disabled = false;
+        b.setAttribute('data-potvrda', 'Poslati e-poštom: ' + x.getAttribute('data-ime') + '\n\nSadržaj: ' + x.getAttribute('data-opis') + '\nRazdoblje: ' + opis + '\n\nPoslati?');
+        o.innerHTML = 'Primatelj <b></b> dobiva: <b></b> · ' + opis.replace(/[<&]/g, '');
+        o.querySelectorAll('b')[0].textContent = x.getAttribute('data-ime'); o.querySelectorAll('b')[1].textContent = x.getAttribute('data-opis');
+    }
+    s.addEventListener('change', osvjezi); osvjezi();
+})();</script>
 <?php else: ?>
     <p class="small text-muted no-print">Slanje e-poštom: podesiti u Sustav → E-pošta i adresa.</p>
 <?php endif; ?>
