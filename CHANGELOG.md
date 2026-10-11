@@ -1,5 +1,11 @@
 # Promjene
 
+## 1.14.0 – 2026-10
+- **Članovi → kartica „Lovački psi“**: jedan ili više pasa po članu – ime, pasmina, spol, datum rođenja, broj čipa/rodovnika, napomena i **ispiti** (naziv, datum, ocjena/nagrada).
+  **Godišnji bodovi za psa**: 1. siječnja program za svakog aktivnog psa sam upisuje radnu akciju „Lovački pas“ **na čekanju** – odobrava se kao i ostale radne akcije
+  (standardni bodovi u Sustav → Vrste radnih akcija). Za psa dodanog tijekom godine gumb „Upiši bodove za ovu godinu“. Član svoje pse vidi u „Moj profil“.
+- **Članovi → Podaci: vozila (registarske oznake)** za knjigu dezinfekcije – pregled, dodavanje, brisanje i zadano vozilo i za članove koji to ne rade sami (pravo „Članovi – uređivanje“ ili „Dezinfekcija – upis“).
+
 ## 1.13.0 – 2026-10
 - **Uplatnice HUB-3A s 2D kodom za članarinu** – za svaku otvorenu ratu (ili jednokratno plaćanje) prema planu plaćanja. Platitelj (ime i adresa člana) popunjava se sam, iznos je preostali iznos rate.
   - **Sustav → Uplatnica (IBAN)**: primatelj plaćanja (IBAN s provjerom, naziv, adresa), model, poziv na broj i opis (predlošci `{GODINA}`, `{CLAN}`, `{OIB}`, `{RATA}`, `{RATA_OPIS}`), pregled primjera.

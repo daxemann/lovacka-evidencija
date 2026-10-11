@@ -134,6 +134,13 @@ ob_start(); ?>
             <button class="btn btn-outline-primary text-nowrap">Dodaj</button></form>
         <?php endif; ?>
     </div></div></div>
+    <?php $psi = psi_clana((int) $c['Id']); if ($psi): ?>
+    <div class="col-lg-6"><div class="card"><div class="card-header">Moji lovački psi <span class="small text-muted">(upisuje udruga)</span></div>
+        <ul class="list-group list-group-flush small">
+        <?php foreach ($psi as $p): ?><li class="list-group-item"><b>🐕 <?= e($p['Ime']) ?></b> <span class="text-muted"><?= e($p['Pasmina'] ?? '') ?></span><?= $p['Aktivan'] ? '' : ' <span class="badge bg-secondary">neaktivan</span>' ?>
+            <?php foreach ($p['Ispiti'] as $is): ?><div class="text-muted">· <?= e($is['Naziv']) ?><?= $is['Datum'] ? ', ' . e(datum($is['Datum'])) : '' ?><?= $is['Ocjena'] ? ' – ' . e($is['Ocjena']) : '' ?></div><?php endforeach; ?></li><?php endforeach; ?>
+        </ul></div></div>
+    <?php endif; ?>
     <div class="col-lg-6"><div class="card"><div class="card-header">Moji podaci (mijenja ih udruga)</div>
         <ul class="list-group list-group-flush small">
             <li class="list-group-item d-flex"><span class="text-muted">Datum rođenja</span><span class="ms-auto"><?= e(datum($c['DatumRodjenja'])) ?></span></li>

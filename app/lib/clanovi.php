@@ -293,6 +293,7 @@ function spoji_clanove(int $zadrzatiId, int $ukloniId, array $odDrugog): string
             }
         }
         q('DELETE FROM PlaniraneUloge WHERE ClanId=?', [$uid]);
+        q('UPDATE LovniPsi SET ClanId=? WHERE ClanId=?', [$zid, $uid]);
         q('DELETE FROM Pozivnice WHERE ClanId=?', [$uid]);
         // računi
         $rz = red('SELECT * FROM Korisnici WHERE ClanId=?', [$zid]);

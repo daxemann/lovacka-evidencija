@@ -8,7 +8,7 @@ $clan = $id ? clan_ili_kraj($id) : null;
 if (!$id && !$uredi) {
     zabranjeno();
 }
-$kartice = ['podaci' => 'Podaci', 'funkcije' => 'Funkcije'];
+$kartice = ['podaci' => 'Podaci', 'funkcije' => 'Funkcije', 'psi' => 'Lovački psi'];
 if (ima(P_CLANARINA_CITAJ)) {
     $kartice['clanarina'] = 'Članarina';
 }
@@ -251,6 +251,69 @@ if (je_post()) {
                 poruka($radnja === 'odbij' ? 'Registracija je odbijena, račun obrisan.' : 'Račun je obrisan. Podaci člana su sačuvani.');
             }
             $natrag('racun');
+        case 'pas-spremi':
+            $treba(P_CLANOVI_UREDI);
+            $pid = (int) ($_POST['pid'] ?? 0);
+            $pod = ['Ime' => mb_substr(ul_str('Ime'), 0, 60), 'Pasmina' => mb_substr(ul_str('Pasmina'), 0, 80) ?: null,
+                'Spol' => in_array(ul_str('Spol'), ['pas', 'kuja'], true) ? ul_str('Spol') : null, 'DatumRodjenja' => u_datum(ul_str('DatumRodjenja')),
+                'Cip' => mb_substr(ul_str('Cip'), 0, 40) ?: null, 'Napomena' => mb_substr(ul_str('Napomena'), 0, 200) ?: null, 'Bodovanje' => isset($_POST['Bodovanje']) ? 1 : 0];
+            if ($pod['Ime'] !== '') {
+                if ($pid && vrijednost('SELECT 1 FROM LovniPsi WHERE Id=? AND ClanId=?', [$pid, $id])) {
+                    azuriraj('LovniPsi', $pid, $pod + ['Aktivan' => isset($_POST['Aktivan']) ? 1 : 0]);
+                    dnevnik('Lovački pas uređen', 'Clan', $id, puno_ime($clan) . ': ' . $pod['Ime']);
+                } elseif (!$pid) {
+                    umetni('LovniPsi', $pod + ['ClanId' => $id, 'Aktivan' => 1, 'Kreirano' => sada()]);
+                    dnevnik('Lovački pas dodan', 'Clan', $id, puno_ime($clan) . ': ' . $pod['Ime']);
+                    poruka('Pas je dodan.');
+                }
+            }
+            $natrag('psi');
+        case 'pas-obrisi':
+            $treba(P_CLANOVI_UREDI);
+            q('DELETE FROM LovniPsi WHERE Id=? AND ClanId=?', [(int) ($_POST['pid'] ?? 0), $id]);
+            dnevnik('Lovački pas obrisan', 'Clan', $id, puno_ime($clan));
+            $natrag('psi');
+        case 'pas-ispit':
+            $treba(P_CLANOVI_UREDI);
+            $pid = (int) ($_POST['pid'] ?? 0);
+            if (ul_str('Naziv') !== '' && vrijednost('SELECT 1 FROM LovniPsi WHERE Id=? AND ClanId=?', [$pid, $id])) {
+                umetni('PsiIspiti', ['PasId' => $pid, 'Naziv' => mb_substr(ul_str('Naziv'), 0, 100), 'Datum' => u_datum(ul_str('Datum')), 'Ocjena' => mb_substr(ul_str('Ocjena'), 0, 40) ?: null]);
+                dnevnik('Ispit lovačkog psa', 'Clan', $id, puno_ime($clan) . ': ' . ul_str('Naziv'));
+            }
+            $natrag('psi');
+        case 'pas-ispit-obrisi':
+            $treba(P_CLANOVI_UREDI);
+            q('DELETE FROM PsiIspiti WHERE Id=? AND PasId IN (SELECT Id FROM LovniPsi WHERE ClanId=?)', [(int) ($_POST['iid'] ?? 0), $id]);
+            $natrag('psi');
+        case 'pas-bodovi':
+            $treba(P_CLANOVI_UREDI);
+            $treba(P_AKCIJE_ODOBRI);
+            $n = upisi_bodove_psa((int) date('Y'), $id, $k);
+            dnevnik('Bodovi za lovačke pse upisani ručno', 'Clan', $id, puno_ime($clan) . ': ' . $n);
+            poruka($n ? "Upisano: $n × radna akcija „Lovački pas“ – čekaju odobrenje (Radne akcije)." : 'Nema novih upisa.');
+            $natrag('psi');
+        case 'vozilo-dodaj':
+        case 'vozilo-obrisi':
+        case 'vozilo-zadano':
+            if (!(ima(P_CLANOVI_UREDI) || ima(P_DEZ_UREDI))) {
+                zabranjeno();
+            }
+            if ($radnja === 'vozilo-dodaj') {
+                $oz = normaliziraj_oznaku(ul_str('oznaka'));
+                if ($oz !== '' && count(vozila_clana($id)) < 5) {
+                    dodaj_vozilo($id, $oz, isset($_POST['zadano']));
+                    dnevnik('Vozilo člana dodano', 'Clan', $id, puno_ime($clan) . ': ' . $oz);
+                }
+            } elseif ($radnja === 'vozilo-obrisi') {
+                q('DELETE FROM ClanVozila WHERE Id=? AND ClanId=?', [(int) ($_POST['vid'] ?? 0), $id]);
+                if (!vrijednost('SELECT 1 FROM ClanVozila WHERE ClanId=? AND Zadano=1', [$id])) {
+                    q('UPDATE ClanVozila SET Zadano=1 WHERE Id=(SELECT MIN(Id) FROM ClanVozila WHERE ClanId=?)', [$id]);
+                }
+                dnevnik('Vozilo člana uklonjeno', 'Clan', $id, puno_ime($clan));
+            } elseif (vrijednost('SELECT 1 FROM ClanVozila WHERE Id=? AND ClanId=?', [(int) ($_POST['vid'] ?? 0), $id])) {
+                q('UPDATE ClanVozila SET Zadano=(Id=?) WHERE ClanId=?', [(int) $_POST['vid'], $id]);
+            }
+            $natrag('podaci');
         case 'ponisti-2fa':
             $treba(P_SUSTAV);
             $racun = racun_clana($id);
@@ -417,6 +480,25 @@ ob_start(); ?>
 </div>
 </fieldset>
 </form>
+<?php if ($id && !$arhiviran && (ima(P_CLANOVI_UREDI) || ima(P_DEZ_UREDI))): $vozila = vozila_clana($id); $vurl = e(url('clanovi/uredi', ['id' => $id])); ?>
+    <div class="card mt-3" id="vozila" style="max-width:640px"><div class="card-header">Vozila – registarske oznake <span class="small text-muted">(knjiga dezinfekcije)</span></div><div class="card-body">
+        <?php if ($vozila): ?><ul class="list-group mb-2">
+            <?php foreach ($vozila as $vz): ?><li class="list-group-item d-flex align-items-center gap-2">
+                <b class="me-auto"><?= e($vz['Oznaka']) ?></b>
+                <?php if ($vz['Zadano']): ?><span class="badge bg-success">zadano</span><?php else: ?>
+                    <form method="post" action="<?= $vurl ?>"><?= csrf() ?><input type="hidden" name="radnja" value="vozilo-zadano"><input type="hidden" name="vid" value="<?= (int) $vz['Id'] ?>"><button class="btn btn-sm btn-link p-0">zadano</button></form>
+                <?php endif; ?>
+                <form method="post" action="<?= $vurl ?>"><?= csrf() ?><input type="hidden" name="radnja" value="vozilo-obrisi"><input type="hidden" name="vid" value="<?= (int) $vz['Id'] ?>"><button class="btn btn-sm btn-link text-danger p-0" data-potvrda="Ukloniti vozilo?">✕</button></form>
+            </li><?php endforeach; ?></ul>
+        <?php else: ?><p class="small text-muted mb-2">Još nema upisanih vozila.</p><?php endif; ?>
+        <?php if (count($vozila) < 5): ?>
+        <form method="post" action="<?= $vurl ?>" class="d-flex gap-2"><?= csrf() ?><input type="hidden" name="radnja" value="vozilo-dodaj">
+            <input name="oznaka" class="form-control text-uppercase" maxlength="20" placeholder="npr. VT 123-AB" required>
+            <button class="btn btn-outline-primary text-nowrap">Dodaj</button></form>
+        <?php endif; ?>
+        <div class="form-text">Član ih može i sam upisati (Moj profil). Pri upisu na stanici dezinfekcije zadano vozilo je već odabrano.</div>
+    </div></div>
+<?php endif; ?>
 <?php if ($id && $uredi): ?>
     <form method="post" id="obrazacFoto" enctype="multipart/form-data" action="<?= e(url('clanovi/uredi', ['id' => $id])) ?>"><?= csrf() ?><input type="hidden" name="radnja" value="foto"></form>
     <form method="post" id="obrazacFotoBrisi" action="<?= e(url('clanovi/uredi', ['id' => $id])) ?>"><?= csrf() ?><input type="hidden" name="radnja" value="obrisi-foto"></form>
@@ -448,7 +530,9 @@ ob_start(); ?>
     </div></div>
 <?php endif; ?>
 
-<?php elseif ($kartica === 'funkcije'):
+<?php elseif ($kartica === 'psi'):
+    require __DIR__ . '/../../predlosci/clan-psi.php';
+elseif ($kartica === 'funkcije'):
     require __DIR__ . '/../../predlosci/clan-funkcije.php';
 elseif ($kartica === 'clanarina'):
     require __DIR__ . '/../../predlosci/clan-clanarina.php';

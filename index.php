@@ -73,6 +73,7 @@ if (!in_array($p, $javne, true)) {
         preusmjeri('dvofaktorska');
     }
     dnevna_kopija();
+    psi_godisnji_bodovi();
 }
 
 if (je_demo()) {

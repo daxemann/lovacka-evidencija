@@ -5,7 +5,7 @@
  */
 declare(strict_types=1);
 
-const VERZIJA = '1.13.0';
+const VERZIJA = '1.14.0';
 const KONTAKT_EMAIL = 'daxemann@googlemail.com';
 const PROJEKT_URL = 'https://github.com/daxemann/lovacka-evidencija';
 const KORIJEN = __DIR__ . '/..';
@@ -133,7 +133,7 @@ function db(bool $novo = false): PDO
  * Dodatne tablice PHP verzije (PRAGMA user_version). .NET verzija ih ne poznaje i zanemaruje,
  * pa baza i dalje radi u oba smjera.
  */
-const SHEMA_PHP = 11;
+const SHEMA_PHP = 12;
 function nadogradi_bazu(PDO $pdo): void
 {
     $v = (int) $pdo->query('PRAGMA user_version')->fetchColumn();
@@ -410,6 +410,38 @@ SQL);
         $pdo->exec('ALTER TABLE "Korisnici" ADD COLUMN "TotpTajna" TEXT NULL;
             ALTER TABLE "Korisnici" ADD COLUMN "TotpRezervni" TEXT NULL;
             ALTER TABLE "Korisnici" ADD COLUMN "TotpZadnji" INTEGER NOT NULL DEFAULT 0;');
+    }
+    if ($v < 12) {
+        // lovački psi članova; godišnji bodovi za psa (1.1.) kao radna akcija na čekanju
+        $pdo->exec(<<<'SQL'
+CREATE TABLE IF NOT EXISTS "LovniPsi" (
+    "Id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "ClanId" INTEGER NOT NULL REFERENCES "Clanovi" ("Id") ON DELETE CASCADE,
+    "Ime" TEXT NOT NULL,
+    "Pasmina" TEXT NULL,
+    "Spol" TEXT NULL,
+    "DatumRodjenja" TEXT NULL,
+    "Cip" TEXT NULL,
+    "Napomena" TEXT NULL,
+    "Aktivan" INTEGER NOT NULL DEFAULT 1,
+    "Bodovanje" INTEGER NOT NULL DEFAULT 1,
+    "Kreirano" TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS "IX_LovniPsi_ClanId" ON "LovniPsi" ("ClanId");
+CREATE TABLE IF NOT EXISTS "PsiIspiti" (
+    "Id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "PasId" INTEGER NOT NULL REFERENCES "LovniPsi" ("Id") ON DELETE CASCADE,
+    "Naziv" TEXT NOT NULL,
+    "Datum" TEXT NULL,
+    "Ocjena" TEXT NULL
+);
+CREATE TABLE IF NOT EXISTS "PsiBodovi" (
+    "PasId" INTEGER NOT NULL REFERENCES "LovniPsi" ("Id") ON DELETE CASCADE,
+    "Godina" INTEGER NOT NULL,
+    "AkcijaId" INTEGER NULL,
+    PRIMARY KEY ("PasId", "Godina")
+);
+SQL);
     }
     $pdo->exec('PRAGMA user_version = ' . SHEMA_PHP);
     $pdo->commit();
