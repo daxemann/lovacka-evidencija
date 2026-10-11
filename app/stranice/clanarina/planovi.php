@@ -92,7 +92,7 @@ ob_start(); ?>
 <div class="card mb-3"><div class="card-body row g-2 align-items-end">
     <div class="col-sm-4"><label class="form-label small">Podsjetnik članu nakon (dana od dospijeća)</label>
         <input name="odgoda" type="number" min="0" max="90" class="form-control" value="<?= (int) postavka('Clanarina.Odgoda', '7') ?>"></div>
-    <div class="col-sm-8 small text-muted">Član tada na svojoj početnoj stranici vidi diskretan podsjetnik (samo on). Bankovni podaci se ne prikazuju.</div>
+    <div class="col-sm-8 small text-muted">Član tada na svojoj početnoj stranici vidi diskretan podsjetnik (samo on). Podaci za uplatnicu (IBAN udruge): <a href="<?= e(url('sustav/uplatnica')) ?>">Sustav → Uplatnica</a>.</div>
 </div></div>
 <button class="btn btn-primary">Spremi planove</button>
 </form>

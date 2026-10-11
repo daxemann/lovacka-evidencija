@@ -45,7 +45,7 @@ if ($p === '' || !preg_match('#^[a-z0-9\-]+(/[a-z0-9\-]+)*$#', $p)) {
     $p = 'pocetna';
 }
 
-$javne = ['demo-vlasnik', 'prijava', 'odjava', 'postavljanje', 'pozivnica', 'samoprijava', 'kalendar-pretplata', 'ikona', 'zaboravljena-lozinka', 'nova-lozinka', 'logo', 'vrati', 'manifest', 'inspekcija', 'dez-slika', 'skeniraj'];
+$javne = ['demo-vlasnik', 'prijava', 'odjava', 'postavljanje', 'pozivnica', 'samoprijava', 'kalendar-pretplata', 'ikona', 'zaboravljena-lozinka', 'nova-lozinka', 'logo', 'vrati', 'manifest', 'inspekcija', 'dez-slika', 'skeniraj', 'prijava-kod'];
 $nemaKorisnika = !vrijednost('SELECT 1 FROM Korisnici LIMIT 1');
 if ($nemaKorisnika && !in_array($p, ['postavljanje', 'vrati', 'logo', 'manifest', 'ikona'], true)) {
     preusmjeri('postavljanje');
@@ -63,6 +63,14 @@ if (!in_array($p, $javne, true)) {
     }
     if ($k['MoraPromijenitiLozinku'] && !in_array($p, ['promjena-lozinke', 'odjava'], true)) {
         preusmjeri('promjena-lozinke');
+    }
+    // administratori moraju imati dvofaktorsku prijavu (Google Authenticator)
+    if (!$k['Ima2fa'] && ($k['Prava'] & P_SUSTAV) === P_SUSTAV && dvofaktor_ukljucen() && !in_array($p, ['dvofaktorska', 'odjava', 'promjena-lozinke', 'logo', 'ikona', 'manifest'], true)) {
+        if (str_starts_with($p, 'api/')) {
+            http_response_code(403);
+            json(['greska' => '2fa']);
+        }
+        preusmjeri('dvofaktorska');
     }
     dnevna_kopija();
 }

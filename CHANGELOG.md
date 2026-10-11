@@ -1,5 +1,15 @@
 # Promjene
 
+## 1.13.0 – 2026-10
+- **Uplatnice HUB-3A s 2D kodom za članarinu** – za svaku otvorenu ratu (ili jednokratno plaćanje) prema planu plaćanja. Platitelj (ime i adresa člana) popunjava se sam, iznos je preostali iznos rate.
+  - **Sustav → Uplatnica (IBAN)**: primatelj plaćanja (IBAN s provjerom, naziv, adresa), model, poziv na broj i opis (predlošci `{GODINA}`, `{CLAN}`, `{OIB}`, `{RATA}`, `{RATA_OPIS}`), pregled primjera.
+  - **Član vidi samo svoju uplatnicu**: gumb „🧾 Moja uplatnica“ na početnoj (i u izborniku Moje). Veliki 2D kod za skeniranje u mobilnom bankarstvu ili pokazivanje na šalteru, gumb za ispis (PDF). Može se isključiti.
+  - **Članarina → odabir članova** (pojedinačno, više ili „označi sve“): **Pošalji odabranima** – s e-mailom dobivaju PDF u privitku, ostalima jednim klikom WhatsApp / Viber / SMS s poveznicom; **Ispis odabranih (PDF)** – 3 uplatnice po A4 s linijom za rezanje.
+  - Na kartici člana: „🧾 Uplatnica“ i „✉ Pošalji“.
+- **Dvofaktorska prijava (Google Authenticator)** – obavezna za administratore (pravo „Sustav“), ostali članovi se i dalje prijavljuju samo lozinkom.
+  Postavljanje skeniranjem QR koda, 8 rezervnih kodova za slučaj bez mobitela; drugi administrator može poništiti 2FA (kartica člana → Pristup i uloge).
+  Isključivanje u nuždi: `'dvofaktorska' => false` u `config.php`.
+
 ## 1.12.3 – 2026-10
 - Ispravak: upozorenje „baza je javno dostupna“ više se ne pojavljuje lažno na hostinzima sa zaštitnom stranicom (npr. InfinityFree) – provjerava se stvarni sadržaj baze.
 

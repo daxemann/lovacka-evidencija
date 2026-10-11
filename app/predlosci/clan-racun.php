@@ -108,7 +108,9 @@ if ($arhiviran): ?>
         <dt class="col-sm-4">Korisničko ime</dt><dd class="col-sm-8"><?= e($racun['KorisnickoIme']) ?></dd>
         <dt class="col-sm-4">Status</dt>
         <dd class="col-sm-8"><?= $racun['Aktivan'] ? '<span class="badge bg-success">Aktivan</span>' : '<span class="badge bg-secondary">Zaključan</span>' ?>
-            <?php if ($racun['MoraPromijenitiLozinku']): ?><span class="badge bg-warning text-dark ms-1">Mora promijeniti lozinku</span><?php endif; ?></dd>
+            <?php if ($racun['MoraPromijenitiLozinku']): ?><span class="badge bg-warning text-dark ms-1">Mora promijeniti lozinku</span><?php endif; ?>
+            <?php if (!empty($racun['TotpTajna'])): ?><span class="badge bg-info text-dark ms-1" title="Prijava s Google Authenticatorom">🔐 2FA</span>
+            <?php elseif (treba_2fa((int) $racun['Id'])): ?><span class="badge text-bg-light border ms-1">2FA još nije postavljena</span><?php endif; ?></dd>
         <?php if ($racun['OdobrenDatum']): ?><dt class="col-sm-4">Odobreno</dt><dd class="col-sm-8"><?= e(datum($racun['OdobrenDatum'])) ?> (<?= e($racun['OdobrioIme']) ?>)</dd><?php endif; ?>
         <dt class="col-sm-4">Zadnja prijava</dt><dd class="col-sm-8"><?= $racun['ZadnjaPrijava'] ? e(datum_vrijeme($racun['ZadnjaPrijava'])) : 'nikad' ?></dd>
     </dl>
@@ -116,6 +118,7 @@ if ($arhiviran): ?>
         <?= $gumb('nova-pocetna', 'Nova početna lozinka', 'btn-sm btn-outline-primary', [], 'Postaviti novu početnu lozinku? Dosadašnja prestaje vrijediti.') ?>
         <?php if (posta_dostupna() && $clan['Email']) echo $gumb('poveznica-lozinka', 'Poveznica za lozinku e-poštom', 'btn-sm btn-outline-primary'); ?>
         <?php if ($racun['Id'] != $k['Id']): ?>
+            <?php if (!empty($racun['TotpTajna'])) echo $gumb('ponisti-2fa', 'Poništi 2FA (izgubljen mobitel)', 'btn-sm btn-outline-secondary', [], 'Poništiti dvofaktorsku prijavu? Član će je morati ponovno postaviti.'); ?>
             <?= $gumb('aktivnost', $racun['Aktivan'] ? 'Zaključaj' : 'Otključaj', 'btn-sm btn-outline-' . ($racun['Aktivan'] ? 'warning' : 'success')) ?>
             <?= $gumb('obrisi-racun', 'Obriši račun', 'btn-sm btn-outline-danger', [], 'Obrisati račun? Podaci člana ostaju.') ?>
         <?php endif; ?>

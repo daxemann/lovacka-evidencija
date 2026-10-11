@@ -37,6 +37,29 @@ if (je_post() && $moze) {
             dnevnik('Plan plaćanja za postojeća zaduženja', null, null, "$godina: " . count($bez) . ' × ' . opis_plana($plan));
             poruka(count($bez) . ' zaduženja dobilo je plan „' . e($plan['naziv']) . '“.');
         }
+    } elseif (($_POST['radnja'] ?? '') === 'uplatnice-posalji') {
+        $ids = array_values(array_filter(array_map('intval', (array) ($_POST['clanovi'] ?? []))));
+        $clanovi = $ids ? redovi("SELECT c.* FROM Clanovi c WHERE $op AND c.Id IN (" . implode(',', $ids) . ')') : [];
+        $rez = ['godina' => $godina, 'mail' => [], 'rucno' => [], 'greske' => []];
+        foreach ($clanovi as $c) {
+            $id = (int) $c['Id'];
+            if (!uplatnice_clana($id, $godina)) {
+                continue;
+            }
+            if (trim((string) $c['Email']) !== '' && posta_dostupna()) {
+                try {
+                    posalji_uplatnice_mailom($id, $godina);
+                    $rez['mail'][] = $id;
+                    continue;
+                } catch (Throwable $e) {
+                    $rez['greske'][$id] = $e->getMessage();
+                }
+            }
+            $rez['rucno'][] = $id;
+        }
+        dnevnik('Uplatnice poslane', null, null, "$godina: e-poštom " . count($rez['mail']) . ', ručno ' . count($rez['rucno']));
+        $_SESSION['uplatnice_poslano'] = $rez;
+        preusmjeri('clanarina/poslano', ['godina' => $godina]);
     } elseif (isset($_POST['placeno'])) {
         $cl = red("SELECT x.*, c.Ime, c.Prezime FROM Clanarine x JOIN Clanovi c ON c.Id=x.ClanId WHERE x.Id=? AND $op", [(int) $_POST['placeno']]);
         if ($cl) {
@@ -76,6 +99,8 @@ $god = array_unique(array_merge([(int) date('Y') + 1, (int) date('Y')], $god));
 rsort($god);
 $zadnjiIznos = vrijednost('SELECT Iznos FROM Clanarine WHERE Godina<=? GROUP BY Godina, Iznos ORDER BY Godina DESC, COUNT(*) DESC LIMIT 1', [$godina]);
 $placaju = array_filter($retci, fn($r) => $r['placa']);
+$upl = uplatnica_spremna();
+$otvoreni = count(array_filter($placaju, fn($r) => $r['cl']['Preostalo'] > 0.004));
 ob_start(); ?>
 <form method="get" action="<?= e(url()) ?>" class="d-flex flex-wrap align-items-center gap-2 mb-3">
     <input type="hidden" name="p" value="clanarina">
@@ -122,12 +147,23 @@ if ($bezRata && ($planoviGod = planovi_clanarine($godina))): ?>
     <span>Uplaćeno: <b><?= novac(array_sum(array_map(fn($r) => $r['cl']['Uplaceno'], $placaju))) ?> €</b></span>
     <span>Preostalo: <b class="text-danger"><?= novac(array_sum(array_map(fn($r) => max(0, $r['cl']['Preostalo']), $placaju))) ?> €</b></span>
 </div>
-<form method="post" action="<?= e(url('clanarina', ['godina' => $godina, 'filter' => $filter])) ?>"><?= csrf() ?>
+<form method="post" id="popisClanarine" action="<?= e(url('clanarina', ['godina' => $godina, 'filter' => $filter])) ?>"><?= csrf() ?>
+<?php if ($upl && $otvoreni): ?>
+<div class="card mb-2 no-print uplatnice-traka"><div class="card-body py-2 d-flex flex-wrap align-items-center gap-2">
+    <span class="fw-semibold me-1">🧾 Uplatnice</span>
+    <div class="form-check mb-0"><input class="form-check-input" type="checkbox" id="oznaciSve"><label class="form-check-label small" for="oznaciSve">označi sve s otvorenim iznosom (<?= $otvoreni ?>)</label></div>
+    <span class="small text-muted">odabrano: <b id="brojOdabranih">0</b></span>
+    <span class="ms-auto"></span>
+    <?php if ($moze): ?><button class="btn btn-sm btn-primary" name="radnja" value="uplatnice-posalji" data-treba-odabir data-potvrda="Poslati uplatnice odabranim članovima? Članovi s e-mailom dobivaju PDF e-poštom, za ostale slijedi WhatsApp/Viber/SMS.">Pošalji odabranima</button><?php endif; ?>
+    <button class="btn btn-sm btn-outline-primary" formaction="<?= e(url('izvoz/uplatnica', ['godina' => $godina])) ?>" formtarget="_blank" data-treba-odabir>Ispis odabranih (PDF)</button>
+</div></div>
+<?php endif; ?>
 <div class="table-responsive"><table class="table table-sm align-middle">
-    <thead><tr><th>Član</th><th>Sekcija</th><th class="text-end">Iznos</th><th class="text-end">Uplaćeno</th><th>Zadnja uplata</th><th>Status</th><th class="no-print"></th></tr></thead>
+    <thead><tr><?= $upl && $otvoreni ? '<th class="no-print" style="width:1.5rem"></th>' : '' ?><th>Član</th><th>Sekcija</th><th class="text-end">Iznos</th><th class="text-end">Uplaćeno</th><th>Zadnja uplata</th><th>Status</th><th class="no-print"></th></tr></thead>
     <tbody>
     <?php foreach ($retci as $r): $c = $r['c']; $cl = $r['cl']; ?>
         <tr>
+            <?php if ($upl && $otvoreni): ?><td class="no-print"><?php if ($r['placa'] && $cl['Preostalo'] > 0.004): ?><input class="form-check-input odabir" type="checkbox" name="clanovi[]" value="<?= (int) $c['Id'] ?>" aria-label="Odaberi"><?php endif; ?></td><?php endif; ?>
             <td><a href="<?= e(url('clanovi/uredi', ['id' => $c['Id'], 'kartica' => 'clanarina'])) ?>"><?= e(prezime_ime($c)) ?></a></td>
             <td><?= e($c['Sekcija'] ?? '—') ?></td>
             <td class="text-end"><?= $cl ? novac($cl['Iznos']) : '' ?></td>
@@ -143,13 +179,25 @@ if ($bezRata && ($planoviGod = planovi_clanarine($godina))): ?>
             <td class="no-print text-end text-nowrap">
                 <?php if ($r['placa'] && $cl['Preostalo'] > 0.004): ?>
                     <a class="btn btn-sm btn-outline-secondary me-1" href="<?= e(url('clanovi/uredi', ['id' => $c['Id'], 'posalji' => $r['dosp'] ? 'rata' : 'clanarina', 'godina' => $godina])) ?>"><?= $r['dosp'] ? 'Podsjetnik' : 'Info članu' ?></a>
+                    <?php if ($upl): ?><a class="btn btn-sm btn-outline-primary me-1" title="Uplatnica (2D kod / ispis)" href="<?= e(url('uplatnica', ['clan' => $c['Id'], 'godina' => $godina])) ?>">🧾</a><?php endif; ?>
                     <?php if ($moze): ?><button class="btn btn-sm btn-outline-success" name="placeno" value="<?= (int) $cl['Id'] ?>">Plaćeno danas (<?= novac($cl['Preostalo']) ?>)</button><?php endif; ?>
                 <?php endif; ?>
             </td>
         </tr>
     <?php endforeach; ?>
-    <?php if (!$retci): ?><tr><td colspan="7" class="text-muted text-center py-4">Nema zapisa.</td></tr><?php endif; ?>
+    <?php if (!$retci): ?><tr><td colspan="8" class="text-muted text-center py-4">Nema zapisa.</td></tr><?php endif; ?>
     </tbody>
 </table></div>
 </form>
+<script>
+(function () {
+    var f = document.getElementById('popisClanarine'), sve = document.getElementById('oznaciSve');
+    if (!f || !sve) return;
+    function broj() { var n = f.querySelectorAll('.odabir:checked').length; document.getElementById('brojOdabranih').textContent = n;
+        f.querySelectorAll('[data-treba-odabir]').forEach(function (b) { b.disabled = n === 0; }); }
+    sve.addEventListener('change', function () { f.querySelectorAll('.odabir').forEach(function (c) { c.checked = sve.checked; }); broj(); });
+    f.addEventListener('change', function (e) { if (e.target.classList.contains('odabir')) broj(); });
+    broj();
+})();
+</script>
 <?php stranica('Članarina', ob_get_clean());

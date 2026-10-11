@@ -251,6 +251,15 @@ if (je_post()) {
                 poruka($radnja === 'odbij' ? 'Registracija je odbijena, račun obrisan.' : 'Račun je obrisan. Podaci člana su sačuvani.');
             }
             $natrag('racun');
+        case 'ponisti-2fa':
+            $treba(P_SUSTAV);
+            $racun = racun_clana($id);
+            if ($racun && (int) $racun['Id'] !== (int) $k['Id']) {
+                azuriraj('Korisnici', (int) $racun['Id'], ['TotpTajna' => null, 'TotpRezervni' => null, 'TotpZadnji' => 0, 'SigurnosniZig' => novi_zig()]);
+                dnevnik('Poništena dvofaktorska prijava', 'Clan', $id, puno_ime($clan));
+                poruka('Dvofaktorska prijava je poništena. Član je odjavljen; pri sljedećoj prijavi ponovno je postavlja (ako je administrator).');
+            }
+            $natrag('racun');
         case 'nova-pocetna':
             $treba(P_SUSTAV);
             $racun = racun_clana($id);

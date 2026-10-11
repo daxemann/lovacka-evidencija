@@ -166,6 +166,7 @@ function korisnik(bool $osvjezi = false): ?array
         'Sekcije' => array_keys($sek),
         'Uloge' => $nazivi,
         'MoraPromijenitiLozinku' => (bool) $r['MoraPromijenitiLozinku'],
+        'Ima2fa' => !empty($r['TotpTajna']),
     ];
     return $k;
 }

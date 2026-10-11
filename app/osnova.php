@@ -5,7 +5,7 @@
  */
 declare(strict_types=1);
 
-const VERZIJA = '1.12.3';
+const VERZIJA = '1.13.0';
 const KONTAKT_EMAIL = 'daxemann@googlemail.com';
 const PROJEKT_URL = 'https://github.com/daxemann/lovacka-evidencija';
 const KORIJEN = __DIR__ . '/..';
@@ -133,7 +133,7 @@ function db(bool $novo = false): PDO
  * Dodatne tablice PHP verzije (PRAGMA user_version). .NET verzija ih ne poznaje i zanemaruje,
  * pa baza i dalje radi u oba smjera.
  */
-const SHEMA_PHP = 10;
+const SHEMA_PHP = 11;
 function nadogradi_bazu(PDO $pdo): void
 {
     $v = (int) $pdo->query('PRAGMA user_version')->fetchColumn();
@@ -404,6 +404,12 @@ SQL);
     if ($v < 10) {
         // novo pravo „Lovački dnevnik“: dobivaju ga uloge sa svim pravima i dosadašnji nadzor lovišta
         $pdo->exec('UPDATE "Uloge" SET "Prava" = "Prava" | 131072 WHERE ("Prava" & 131071) = 131071 OR ("Prava" & 65536) = 65536;');
+    }
+    if ($v < 11) {
+        // dvofaktorska prijava (TOTP, npr. Google Authenticator)
+        $pdo->exec('ALTER TABLE "Korisnici" ADD COLUMN "TotpTajna" TEXT NULL;
+            ALTER TABLE "Korisnici" ADD COLUMN "TotpRezervni" TEXT NULL;
+            ALTER TABLE "Korisnici" ADD COLUMN "TotpZadnji" INTEGER NOT NULL DEFAULT 0;');
     }
     $pdo->exec('PRAGMA user_version = ' . SHEMA_PHP);
     $pdo->commit();

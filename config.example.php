@@ -21,6 +21,10 @@ return [
     // GitHub repozitorij s izdanjima (Releases).
     'azuriranje_repo' => 'daxemann/lovacka-evidencija',
 
+    // Dvofaktorska prijava (Google Authenticator) – obavezna za administratore.
+    // false = isključeno (samo u nuždi, npr. izgubljen mobitel bez rezervnih kodova).
+    'dvofaktorska' => true,
+
     // Samo za traženje grešaka – na stvarnom poslužitelju ostavite false.
     'prikazi_greske' => false,
 ];

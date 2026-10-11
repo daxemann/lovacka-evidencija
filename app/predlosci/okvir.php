@@ -60,7 +60,7 @@ $novaVerzija = $k ? azuriranje_dostupno() : null;
                     <?= $stavka('pocetna', 'Početna', 0, true) ?>
                     <?= $stavka('skeniraj', '📷 Skeniraj QR stanice', 0, true) ?>
                     <?= $stavka('kalendar', 'Kalendar') ?>
-                    <?php if ($k['ClanId']) echo $grupa('moje', 'Moje', $stavka('moje-akcije', 'Moje radne akcije') . $stavka('moj-profil', 'Moj profil') . $stavka('moja-prava', 'Moja prava')); ?>
+                    <?php if ($k['ClanId']) echo $grupa('moje', 'Moje', $stavka('moje-akcije', 'Moje radne akcije') . (uplatnica_za_clanove() ? $stavka('uplatnica', 'Moja uplatnica', 0, true) : '') . $stavka('moj-profil', 'Moj profil') . $stavka('moja-prava', 'Moja prava')); ?>
                     <?php $revirSek = revir_sekcije(); if ($revirSek || ima(P_SUSTAV)) echo $grupa('loviste', 'Lovište',
                         ($revirSek ? $stavka('revir', 'Karta lovišta', 0, true) . $stavka('revir/danas', 'Danas u lovištu', $revirObav) . (ima(P_REVIR_DNEVNIK) ? $stavka('revir/dnevnik', 'Lovački dnevnik') : '') : '')
                         . (ima(P_SUSTAV) || ima(P_REVIR_UREDI) ? $stavka('revir/postavke', 'Postavke lovišta') : '')); ?>
@@ -80,6 +80,7 @@ $novaVerzija = $k ? azuriranje_dostupno() : null;
                     <?php if (ima(P_SUSTAV)) echo $grupa('sustav', 'Sustav',
                         $stavka('sustav/udruga', 'Podaci o udruzi')
                         . $stavka('sustav/postavke', 'E-pošta i adresa')
+                        . $stavka('sustav/uplatnica', 'Uplatnica (IBAN)')
                         . $stavka('sustav/korisnici', 'Korisnici', (int) vrijednost('SELECT COUNT(*) FROM Korisnici WHERE Odobren=0 AND Aktivan=1'))
                         . $stavka('sustav/samoprijava', 'Samoprijava', (int) vrijednost('SELECT COUNT(*) FROM Korisnici WHERE Odobren=0 AND ClanId IS NULL'))
                         . $stavka('sustav/uloge', 'Uloge i prava')
@@ -107,6 +108,7 @@ $novaVerzija = $k ? azuriranje_dostupno() : null;
                     <span class="badge <?= e($boja) ?>"><?= e($uloga) ?></span>
                 </a>
                 <a href="<?= e(url('promjena-lozinke')) ?>">Lozinka</a>
+                <?php if ($k['Prava'] && dvofaktor_ukljucen()): ?><a href="<?= e(url('dvofaktorska')) ?>" class="ms-3" title="Dvofaktorska prijava (Google Authenticator)"><?= $k['Ima2fa'] ? '🔐' : '🔓' ?><span class="d-none d-md-inline"> 2FA</span></a><?php endif; ?>
                 <form method="post" action="<?= e(url('odjava')) ?>" class="ms-3 d-inline"><?= csrf() ?>
                     <button type="submit" class="btn btn-link p-0">Odjava</button>
                 </form>

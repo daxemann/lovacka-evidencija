@@ -3,12 +3,16 @@
 $moze = ima(P_CLANARINA_UREDI);
 $sve = redovi('SELECT * FROM Clanarine WHERE ClanId=? ORDER BY Godina DESC', [$id]);
 $pocasniSada = isset(oslobodjeni_clanarine((int) date('Y'))[$id]);
+$uplOk = uplatnica_spremna();
 $zadnjiIznos = vrijednost('SELECT Iznos FROM Clanarine WHERE Godina=(SELECT MAX(Godina) FROM Clanarine) GROUP BY Iznos ORDER BY COUNT(*) DESC LIMIT 1');
 $f = fn(string $r, array $skriveno, string $tekst, string $klasa, string $potvrda = '') =>
     '<form method="post" class="d-inline" action="' . e(url('clanovi/uredi', ['id' => $id])) . '">' . csrf() . '<input type="hidden" name="radnja" value="' . $r . '">'
     . implode('', array_map(fn($k, $v) => '<input type="hidden" name="' . $k . '" value="' . e($v) . '">', array_keys($skriveno), $skriveno))
     . '<button class="btn btn-sm ' . $klasa . '"' . ($potvrda ? ' data-potvrda="' . e($potvrda) . '"' : '') . '>' . $tekst . '</button></form>';
 ?>
+<?php if (!$uplOk && ima(P_SUSTAV)): ?>
+    <div class="small text-muted mb-2 no-print">Uplatnice s 2D kodom: upišite IBAN udruge u <a href="<?= e(url('sustav/uplatnica')) ?>">Sustav → Uplatnica</a>.</div>
+<?php endif; ?>
 <?php if ($pocasniSada): ?>
     <div class="alert alert-info">Počasni član – <b>oslobođen članarine</b>. Članarina se ne zadužuje i ne pojavljuje se kao nepodmirena.</div>
 <?php endif; ?>
@@ -24,6 +28,11 @@ $f = fn(string $r, array $skriveno, string $tekst, string $klasa, string $potvrd
             <?php elseif ($c2['Preostalo'] <= 0.004): ?><span class="badge bg-success ms-auto">Plaćeno</span>
             <?php elseif ($c2['Uplaceno'] > 0): ?><span class="badge bg-warning text-dark ms-auto">Djelomično – preostalo <?= novac($c2['Preostalo']) ?> €</span>
             <?php else: ?><span class="badge bg-danger ms-auto">Nije plaćeno</span><?php endif; ?>
+            <?php if ($uplOk && !$osl && $c2['Preostalo'] > 0.004): ?>
+                <a class="btn btn-sm btn-outline-primary no-print" href="<?= e(url('uplatnica', ['clan' => $id, 'godina' => $cl['Godina']])) ?>">🧾 Uplatnica</a>
+                <?php if ($moze): ?><form method="post" class="d-inline no-print" action="<?= e(url('clanarina', ['godina' => $cl['Godina']])) ?>"><?= csrf() ?><input type="hidden" name="radnja" value="uplatnice-posalji"><input type="hidden" name="clanovi[]" value="<?= (int) $id ?>">
+                    <button class="btn btn-sm btn-outline-success" data-potvrda="Poslati uplatnicu članu?">✉ Pošalji</button></form><?php endif; ?>
+            <?php endif; ?>
             <?php if ($moze && !$c2['Uplate']) echo $f('clanarina-obrisi', ['cid' => $cl['Id']], 'Ukloni zaduženje', 'btn-link text-danger', 'Ukloniti zaduženje za ' . $cl['Godina'] . '.?'); ?>
         </div>
         <?php $rate = rate_clanarine($c2); $planoviGod = planovi_clanarine((int) $cl['Godina']); if ($rate): ?>

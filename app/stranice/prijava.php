@@ -27,6 +27,12 @@ if (je_post()) {
         usleep(300000);
         preusmjeri('prijava', ['greska' => $greska, 'povratak' => ul_str('povratak')]);
     }
+    if (ima_2fa($k)) {
+        // lozinka je točna – još kod iz aplikacije za autentifikaciju
+        session_regenerate_id(true);
+        $_SESSION['2fa'] = ['id' => (int) $k['Id'], 'do' => time() + 300, 'pokusaji' => 0, 'povratak' => ul_str('povratak')];
+        preusmjeri('prijava-kod');
+    }
     azuriraj('Korisnici', (int) $k['Id'], ['NeuspjelePrijave' => 0, 'ZakljucanDo' => null, 'ZadnjaPrijava' => sada()]);
     prijavi($k);
     dnevnik('Prijava', null, null, null, $k);
@@ -59,6 +65,7 @@ ob_start(); ?>
 <?php endif; ?>
 <?php if ($g === '1'): ?><div class="alert alert-danger">Pogrešno korisničko ime ili lozinka.</div><?php endif; ?>
 <?php if ($g === 'odobrenje'): ?><div class="alert alert-warning">Vaš račun još čeka odobrenje administratora. Čim bude odobren, moći ćete se prijaviti.</div><?php endif; ?>
+<?php if ($g === 'isteklo'): ?><div class="alert alert-warning">Vrijeme za upis koda je isteklo. Prijavite se ponovno.</div><?php endif; ?>
 <?php if ($g === 'zakljucano'): ?><div class="alert alert-danger">Previše neuspjelih pokušaja. Pokušajte ponovno za 10 minuta.</div><?php endif; ?>
 <form method="post" action="<?= e(url('prijava')) ?>">
     <?= csrf() ?>

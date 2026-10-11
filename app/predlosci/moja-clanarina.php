@@ -14,7 +14,19 @@ $dosp = $ova && !$osl ? dospjele_rate($rate) : [];
 if (!$sve && !$osl) {
     return;
 }
+// otvoreni iznos u bilo kojoj godini → gumb „Moja uplatnica“
+$otvoreno = 0.0;
+if (!$osl && uplatnica_za_clanove()) {
+    foreach ($sve as $x) {
+        if (!isset(oslobodjeni_clanarine((int) $x['Godina'])[$clanId])) {
+            $otvoreno += max(0, clanarina_clana($clanId, (int) $x['Godina'])['Preostalo']);
+        }
+    }
+}
 ?>
+<?php if ($otvoreno > 0.004): ?>
+    <a class="btn btn-sm btn-outline-primary mb-2" href="<?= e(url('uplatnica')) ?>">🧾 Moja uplatnica <span class="text-muted">(<?= novac($otvoreno) ?> €)</span></a>
+<?php endif; ?>
 <details class="moja-clanarina">
     <summary class="small text-muted">
         Članarina <?= $god ?>.:
@@ -40,5 +52,5 @@ if (!$sve && !$osl) {
 </details>
 <?php if ($dosp): $r = $dosp[0]; ?>
     <div class="small text-muted mt-1 podsjetnik">🔔 Podsjetnik: <?= count($rate) > 1 ? (int) $r['RedniBroj'] . '. rata' : 'članarina' ?> (<?= novac($r['Iznos']) ?> €) dospjela je <?= e(rtrim(datum($r['Dospijece']), '.')) ?><?= $r['Placeno'] > 0 ? ', otvoreno još ' . novac($r['Preostalo']) . ' €' : '' ?>.
-        Ako ste već platili, zanemarite – uplata možda još nije upisana.</div>
+        Ako ste već platili, zanemarite – uplata možda još nije upisana.<?php if ($otvoreno > 0.004): ?> <a href="<?= e(url('uplatnica')) ?>">Uplatnica</a><?php endif; ?></div>
 <?php endif;
