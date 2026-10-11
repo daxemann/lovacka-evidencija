@@ -36,6 +36,9 @@ if (je_post()) {
         if (vrijednost('SELECT 1 FROM ClanVozila WHERE Id=? AND ClanId=?', [(int) ($_POST['id'] ?? 0), $c['Id']])) {
             q('UPDATE ClanVozila SET Zadano=(Id=?) WHERE ClanId=?', [(int) $_POST['id'], $c['Id']]);
         }
+    } elseif (str_starts_with($radnja, 'pas-')) {
+        psi_obradi((int) $c['Id'], $radnja, puno_ime($c));
+        preusmjeri('moj-profil', ['psi' => 1]);
     } elseif ($radnja === 'obrisi-foto') {
         obrisi_sliku($c['FotoDatoteka']);
         azuriraj('Clanovi', (int) $c['Id'], ['FotoDatoteka' => null, 'Azurirano' => sada()]);
@@ -134,13 +137,6 @@ ob_start(); ?>
             <button class="btn btn-outline-primary text-nowrap">Dodaj</button></form>
         <?php endif; ?>
     </div></div></div>
-    <?php $psi = psi_clana((int) $c['Id']); if ($psi): ?>
-    <div class="col-lg-6"><div class="card"><div class="card-header">Moji lovački psi <span class="small text-muted">(upisuje udruga)</span></div>
-        <ul class="list-group list-group-flush small">
-        <?php foreach ($psi as $p): ?><li class="list-group-item"><b>🐕 <?= e($p['Ime']) ?></b> <span class="text-muted"><?= e($p['Pasmina'] ?? '') ?></span><?= $p['Aktivan'] ? '' : ' <span class="badge bg-secondary">neaktivan</span>' ?>
-            <?php foreach ($p['Ispiti'] as $is): ?><div class="text-muted">· <?= e($is['Naziv']) ?><?= $is['Datum'] ? ', ' . e(datum($is['Datum'])) : '' ?><?= $is['Ocjena'] ? ' – ' . e($is['Ocjena']) : '' ?></div><?php endforeach; ?></li><?php endforeach; ?>
-        </ul></div></div>
-    <?php endif; ?>
     <div class="col-lg-6"><div class="card"><div class="card-header">Moji podaci (mijenja ih udruga)</div>
         <ul class="list-group list-group-flush small">
             <li class="list-group-item d-flex"><span class="text-muted">Datum rođenja</span><span class="ms-auto"><?= e(datum($c['DatumRodjenja'])) ?></span></li>
@@ -154,4 +150,7 @@ ob_start(); ?>
         <div class="card-footer small text-muted">Ako nešto nije točno, javite se tajniku ili administratoru.</div>
     </div></div>
 </div>
+<h2 class="h5 mt-4" id="psi">🐕 Moji lovački psi</h2>
+<?= predlozak('clan-psi', ['id' => (int) $c['Id'], 'psiProfil' => true]) ?>
+<?php if (!empty($_GET['psi'])): ?><script>document.getElementById('psi').scrollIntoView();</script><?php endif; ?>
 <?php stranica('Moj profil', ob_get_clean());

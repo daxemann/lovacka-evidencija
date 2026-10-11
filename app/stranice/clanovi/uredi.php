@@ -252,38 +252,11 @@ if (je_post()) {
             }
             $natrag('racun');
         case 'pas-spremi':
-            $treba(P_CLANOVI_UREDI);
-            $pid = (int) ($_POST['pid'] ?? 0);
-            $pod = ['Ime' => mb_substr(ul_str('Ime'), 0, 60), 'Pasmina' => mb_substr(ul_str('Pasmina'), 0, 80) ?: null,
-                'Spol' => in_array(ul_str('Spol'), ['pas', 'kuja'], true) ? ul_str('Spol') : null, 'DatumRodjenja' => u_datum(ul_str('DatumRodjenja')),
-                'Cip' => mb_substr(ul_str('Cip'), 0, 40) ?: null, 'Napomena' => mb_substr(ul_str('Napomena'), 0, 200) ?: null, 'Bodovanje' => isset($_POST['Bodovanje']) ? 1 : 0];
-            if ($pod['Ime'] !== '') {
-                if ($pid && vrijednost('SELECT 1 FROM LovniPsi WHERE Id=? AND ClanId=?', [$pid, $id])) {
-                    azuriraj('LovniPsi', $pid, $pod + ['Aktivan' => isset($_POST['Aktivan']) ? 1 : 0]);
-                    dnevnik('Lovački pas uređen', 'Clan', $id, puno_ime($clan) . ': ' . $pod['Ime']);
-                } elseif (!$pid) {
-                    umetni('LovniPsi', $pod + ['ClanId' => $id, 'Aktivan' => 1, 'Kreirano' => sada()]);
-                    dnevnik('Lovački pas dodan', 'Clan', $id, puno_ime($clan) . ': ' . $pod['Ime']);
-                    poruka('Pas je dodan.');
-                }
-            }
-            $natrag('psi');
         case 'pas-obrisi':
-            $treba(P_CLANOVI_UREDI);
-            q('DELETE FROM LovniPsi WHERE Id=? AND ClanId=?', [(int) ($_POST['pid'] ?? 0), $id]);
-            dnevnik('Lovački pas obrisan', 'Clan', $id, puno_ime($clan));
-            $natrag('psi');
         case 'pas-ispit':
-            $treba(P_CLANOVI_UREDI);
-            $pid = (int) ($_POST['pid'] ?? 0);
-            if (ul_str('Naziv') !== '' && vrijednost('SELECT 1 FROM LovniPsi WHERE Id=? AND ClanId=?', [$pid, $id])) {
-                umetni('PsiIspiti', ['PasId' => $pid, 'Naziv' => mb_substr(ul_str('Naziv'), 0, 100), 'Datum' => u_datum(ul_str('Datum')), 'Ocjena' => mb_substr(ul_str('Ocjena'), 0, 40) ?: null]);
-                dnevnik('Ispit lovačkog psa', 'Clan', $id, puno_ime($clan) . ': ' . ul_str('Naziv'));
-            }
-            $natrag('psi');
         case 'pas-ispit-obrisi':
             $treba(P_CLANOVI_UREDI);
-            q('DELETE FROM PsiIspiti WHERE Id=? AND PasId IN (SELECT Id FROM LovniPsi WHERE ClanId=?)', [(int) ($_POST['iid'] ?? 0), $id]);
+            psi_obradi($id, $radnja, puno_ime($clan));
             $natrag('psi');
         case 'pas-bodovi':
             $treba(P_CLANOVI_UREDI);

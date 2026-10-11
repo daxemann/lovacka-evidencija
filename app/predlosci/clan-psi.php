@@ -1,10 +1,11 @@
 <?php
-/** Kartica Lovački psi. Varijable iz uredi.php: $id, $clan */
-$moze = ima(P_CLANOVI_UREDI);
+/** Kartica Lovački psi. Varijable: $id; iz Moj profil još $psiProfil = true (član uređuje svoje pse). */
+$psiProfil = !empty($psiProfil);
+$moze = $psiProfil || ima(P_CLANOVI_UREDI);
 $psi = psi_clana($id);
 $god = (int) date('Y');
 $std = bodovi_psa_standard();
-$url = e(url('clanovi/uredi', ['id' => $id]));
+$url = e($psiProfil ? url('moj-profil') . '#psi' : url('clanovi/uredi', ['id' => $id]));
 $gumb = fn(string $r, array $skr, string $tekst, string $klasa, string $potvrda = '') =>
     '<form method="post" class="d-inline" action="' . $url . '">' . csrf() . '<input type="hidden" name="radnja" value="' . $r . '">'
     . implode('', array_map(fn($k, $v) => '<input type="hidden" name="' . $k . '" value="' . e((string) $v) . '">', array_keys($skr), $skr))
@@ -33,7 +34,7 @@ $polja = function (?array $p) { ob_start(); ?>
     </div>
     <div class="small text-muted mt-1">Sve se upisuje kao radna akcija <b>na čekanju</b> i odobrava kao i ostali bodovi. Lov: član pri „Dolazim“ u kalendaru označi psa (vrsta termina „lov sa psima“).</div>
 </div></div>
-<?php if (ima(P_SUSTAV) && array_filter($bl, fn($x) => $x['bodovi'] <= 0)): ?><div class="alert alert-warning small py-2">Neki bodovi za pse su 0 – upišite ih u <a href="<?= e(url('akcije/vrste')) ?>">Vrste radnih akcija</a>.</div><?php endif; ?>
+<?php if (!$psiProfil && ima(P_SUSTAV) && array_filter($bl, fn($x) => $x['bodovi'] <= 0)): ?><div class="alert alert-warning small py-2">Neki bodovi za pse su 0 – upišite ih u <a href="<?= e(url('akcije/vrste')) ?>">Vrste radnih akcija</a>.</div><?php endif; ?>
 
 <?php foreach ($psi as $p): $pid = (int) $p['Id']; ?>
     <div class="card mb-3<?= $p['Aktivan'] ? '' : ' opacity-75' ?>"><div class="card-body">
@@ -92,7 +93,7 @@ $polja = function (?array $p) { ob_start(); ?>
         </form>
     </div></div>
     <?php $nema = array_filter($psi, fn($p) => $p['Aktivan'] && $p['Bodovanje'] && !isset($p['Bodovano'][$god]));
-    if ($nema && ima(P_AKCIJE_ODOBRI)): ?>
+    if ($nema && !$psiProfil && ima(P_AKCIJE_ODOBRI)): ?>
         <div class="no-print"><?= $gumb('pas-bodovi', [], 'Upiši bodove za ' . $god . '. sada (' . count($nema) . ' ' . (count($nema) === 1 ? 'pas' : 'psa') . ', na čekanju)', 'btn-outline-success',
             'Upisati radnu akciju „Lovački pas“ za ' . $god . '. (na čekanju odobrenja)?') ?>
             <div class="form-text">Npr. za psa dodanog tijekom godine – automatski upis je samo 1. siječnja.</div></div>

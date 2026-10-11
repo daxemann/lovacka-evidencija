@@ -1,5 +1,8 @@
 # Promjene
 
+## 1.15.1 – 2026-10
+- **Moj profil → Moji lovački psi**: svaki član sam upisuje, uređuje i briše svoje pse i njihove ispite (isto kao na kartici člana). Bodovi i dalje idu na odobrenje.
+
 ## 1.15.0 – 2026-10
 - **Psi na zajedničkom lovu**: nova oznaka vrste termina „lov sa psima“ (Sustav → Kalendar – vrste; zadano za „Zajednički lov“ i novu vrstu „Grupni lov na sitnu divljač“, postojeće vrste s „lov“ u nazivu označene su automatski).
   Član pri „✔ Dolazim“ kvačicom označi psa (ili više njih) kojeg dovodi – svi na terminu vide tko dolazi s psom i koliko pasa dolazi.
