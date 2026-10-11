@@ -3,7 +3,7 @@
  * Upravljanje demo instalacijom – samo za vlasnika (tajni ključ Demo.Kljuc u adresi: index.php?p=demo-vlasnik&k=…).
  * Spremi trenutno stanje kao početno · vrati početno stanje · zamijeni demo podatke kompletnom kopijom (ZIP) · isključi demo.
  */
-$kljuc = (string) postavka('Demo.Kljuc', '');
+$kljuc = demo_kljuc();
 $dano = (string) ($_GET['k'] ?? $_POST['k'] ?? '');
 if ($kljuc === '' || strlen($kljuc) < 16 || !hash_equals($kljuc, $dano)) {
     usleep(500000);
@@ -33,6 +33,10 @@ if (je_post()) {
                 poruka('Nije uspjelo: ' . e($e->getMessage()), 'danger');
             }
         }
+    } elseif ($r === 'novi-kljuc') {
+        $kljuc = bin2hex(random_bytes(12));
+        file_put_contents(podaci('demo-kljuc.txt'), $kljuc);
+        poruka('Novi ključ je postavljen – spremite ovu adresu (stara više ne radi).');
     } elseif ($r === 'iskljuci') {
         spremi_postavku('Demo.Aktivno', '0');
         poruka('Demo je isključen – instalacija radi normalno.');
@@ -50,6 +54,7 @@ ob_start(); ?>
 <p class="small">Demo: <b><?= je_demo() ? 'uključen' : 'isključen' ?></b> · početno stanje: <?= is_file(demo_izvor('evidencija.db')) ? 'spremljeno' : 'nije spremljeno' ?> · zadnji povratak: <?= e($zadnji ?: '–') ?> (svake noći nakon <?= DEMO_SATI_RESETA ?>:00)</p>
 <?= $f('spremi', 'Spremi trenutno stanje kao početno', 'btn-primary', 'Trenutni podaci postaju početno demo stanje?') ?>
 <?= $f('vrati', 'Vrati početno stanje sada', 'btn-outline-primary', 'Vratiti početno demo stanje?') ?>
+<?= $f('novi-kljuc', 'Novi tajni ključ', 'btn-outline-secondary', 'Postaviti novi ključ? Stara adresa ove stranice prestaje raditi.') ?>
 <?= je_demo() ? $f('iskljuci', 'Isključi demo', 'btn-outline-danger', 'Isključiti demo način?') : $f('ukljuci', 'Uključi demo', 'btn-outline-success') ?>
 <hr>
 <form method="post" action="<?= e(url('demo-vlasnik', ['k' => $kljuc])) ?>" enctype="multipart/form-data"><?= csrf() ?><input type="hidden" name="radnja" value="zip">

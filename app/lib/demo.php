@@ -38,6 +38,20 @@ function demo_samo_pregled(string $p): bool
 {
     return je_demo() && (in_array($p, DEMO_ZAKLJUCANO, true) || ($p === 'clanovi/uredi' && ($_GET['kartica'] ?? '') === 'racun'));
 }
+/**
+ * Tajni ključ vlasnika (stranica demo-vlasnik). Čuva se u datoteci podaci/demo-kljuc.txt – izvan baze, pa ga noćni povratak
+ * ni kompletna kopija ne mijenjaju. Prvi put se preuzima iz postavke Demo.Kljuc (iz demo podataka) – vlasnik ga odmah zamijeni novim.
+ */
+function demo_kljuc(): string
+{
+    $dat = podaci('demo-kljuc.txt');
+    $k = trim((string) @file_get_contents($dat));
+    if ($k === '' && ($p = (string) postavka('Demo.Kljuc', '')) !== '') {
+        @file_put_contents($dat, $p);
+        $k = $p;
+    }
+    return $k;
+}
 function demo_lozinka(): string
 {
     return (string) postavka('Demo.Lozinka', 'demo');

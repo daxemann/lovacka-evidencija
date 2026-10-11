@@ -7,7 +7,8 @@
   - član s demo računom ne može se arhivirati ni obrisati,
   - **e-pošta se ne šalje** – stranica „📧 Demo – e-pošta“ prikazuje kako bi poruka izgledala (s PDF privitkom),
   - svake noći nakon 03:00 sve se vraća na početno stanje, a datumi se pomiču da demo ne zastarijeva (termini i dalje nadolazeći),
-  - vlasnik upravlja demom preko `index.php?p=demo-vlasnik&k=<Demo.Kljuc>` (spremi/vrati početno stanje, učitaj ZIP, isključi demo).
+  - vlasnik upravlja demom preko `index.php?p=demo-vlasnik&k=<ključ>` (spremi/vrati početno stanje, učitaj ZIP, novi ključ, isključi demo); ključ je u `podaci/demo-kljuc.txt`.
+- Gotovi demo podaci kao kompletna kopija: `docs/demo/lu-srndac-demo.zip` (Sustav → Sigurnosne kopije → Vrati; nakon toga odmah „Novi tajni ključ“).
 - Demo podaci izmišljene udruge: `php app/demo-podaci.php` (samo iz naredbenog retka, nakon postavljanja).
 
 ## 1.11.1 – 2026-10
