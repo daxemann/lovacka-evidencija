@@ -59,8 +59,9 @@ ob_start(); ?>
 <?php if (ima(P_SUSTAV) && str_starts_with(str_replace('\\', '/', realpath(podaci()) ?: ''), str_replace('\\', '/', realpath(KORIJEN) ?: '-'))): ?>
     <div class="alert alert-danger d-none" id="izlozeno"><b>Upozorenje – baza je javno dostupna!</b> Poslužitelj ne poštuje datoteku .htaccess (npr. nginx), pa se mapa <code>podaci</code> može preuzeti s interneta.
         Premjestite mapu s podacima izvan javne mape weba (config.php → 'podaci') ili zabranite pristup mapi <code>podaci</code> u postavkama poslužitelja. Upute: README.</div>
-    <script>fetch(<?= json_encode(bazni_put() . substr(str_replace('\\', '/', realpath(podaci())), strlen(str_replace('\\', '/', realpath(KORIJEN))) + 1) . '/evidencija.db') ?>, { method: 'HEAD', cache: 'no-store' })
-        .then(function (r) { if (r.ok) document.getElementById('izlozeno').classList.remove('d-none'); }).catch(function () {});</script>
+    <script>fetch(<?= json_encode(bazni_put() . substr(str_replace('\\', '/', realpath(podaci())), strlen(str_replace('\\', '/', realpath(KORIJEN))) + 1) . '/evidencija.db') ?>, { cache: 'no-store', headers: { Range: 'bytes=0-15' } })
+        // stvarna baza počinje s "SQLite format 3" – stranice zaštite hostinga (npr. InfinityFree) vraćaju 200 s HTML-om
+        .then(function (r) { return r.ok ? r.text() : ''; }).then(function (t) { if (t.indexOf('SQLite format 3') === 0) document.getElementById('izlozeno').classList.remove('d-none'); }).catch(function () {});</script>
 <?php endif; ?>
 <?php if ($duplikati > 0): ?>
     <div class="alert alert-warning d-flex align-items-center"><span>Mogući duplikati članova: <b><?= $duplikati ?></b></span>

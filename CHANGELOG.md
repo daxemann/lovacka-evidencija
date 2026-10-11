@@ -1,5 +1,8 @@
 # Promjene
 
+## 1.12.3 – 2026-10
+- Ispravak: upozorenje „baza je javno dostupna“ više se ne pojavljuje lažno na hostinzima sa zaštitnom stranicom (npr. InfinityFree) – provjerava se stvarni sadržaj baze.
+
 ## 1.12.2 – 2026-10
 - Priprema za posebne instalacije (proširenja izvan programa); program se za korisnike ne mijenja.
 
