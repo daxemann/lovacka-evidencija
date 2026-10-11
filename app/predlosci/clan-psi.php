@@ -19,7 +19,7 @@ $polja = function (?array $p) { ob_start(); ?>
     <div class="col-sm-8"><label class="form-label small">Napomena</label><input name="Napomena" class="form-control form-control-sm" maxlength="200" value="<?= e($p['Napomena'] ?? '') ?>"></div>
     <div class="col-12 d-flex flex-wrap gap-3">
         <div class="form-check"><input class="form-check-input" type="checkbox" name="Bodovanje" value="1" id="bod<?= (int) ($p['Id'] ?? 0) ?>"<?= chk($p ? $p['Bodovanje'] : 1) ?>><label class="form-check-label small" for="bod<?= (int) ($p['Id'] ?? 0) ?>">godišnji bodovi za psa (1.1.)</label></div>
-        <div class="form-check"><input class="form-check-input potraga-kv" type="checkbox" name="Potraga" value="1" id="pot<?= (int) ($p['Id'] ?? 0) ?>"<?= chk($p ? $p['Potraga'] : 0) ?><?= $p ? '' : ' data-auto-potraga="1"' ?>><label class="form-check-label small" for="pot<?= (int) ($p['Id'] ?? 0) ?>">🩸 radi potragu (krvni trag / Nachsuche)</label></div>
+        <div class="form-check"><input class="form-check-input potraga-kv" type="checkbox" name="Potraga" value="1" id="pot<?= (int) ($p['Id'] ?? 0) ?>"<?= chk($p ? $p['Potraga'] : 0) ?><?= $p ? '' : ' data-auto-potraga="1"' ?>><label class="form-check-label small" for="pot<?= (int) ($p['Id'] ?? 0) ?>">🩸 radi potragu (krvni trag)</label></div>
         <?php if ($p): ?><div class="form-check"><input class="form-check-input" type="checkbox" name="Aktivan" value="1" id="akt<?= (int) $p['Id'] ?>"<?= chk($p['Aktivan']) ?>><label class="form-check-label small" for="akt<?= (int) $p['Id'] ?>">pas je aktivan (isključite kad ugine / proda se)</label></div><?php endif; ?>
     </div>
 <?php return (string) ob_get_clean(); };

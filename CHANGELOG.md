@@ -1,5 +1,8 @@
 # Promjene
 
+## 1.15.3 – 2026-10
+- Tekst kvačice psa: „radi potragu (krvni trag)“.
+
 ## 1.15.2 – 2026-10
 - **Lovački pas: kvačica „🩸 radi potragu (krvni trag / Nachsuche)“** – za svaku pasminu (npr. njemački oštrodlaki ptičar / Drahthaar). Kod novog psa predlaže se sama prema pasmini, uvijek se može promijeniti.
   Pri prijavi „Potraga s psom“ mogu se odabrati samo psi s tom kvačicom. Postojeći psi je imaju uključenu.
