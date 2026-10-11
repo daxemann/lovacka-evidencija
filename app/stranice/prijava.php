@@ -15,7 +15,7 @@ if (je_post()) {
     } elseif (!$k['Odobren']) {
         $greska = provjeri_lozinku((string) $k['LozinkaHash'], $loz) ? 'odobrenje' : '1';
     } elseif (!provjeri_lozinku((string) $k['LozinkaHash'], $loz)) {
-        $n = (int) $k['NeuspjelePrijave'] + 1;
+        $n = je_demo() ? 0 : (int) $k['NeuspjelePrijave'] + 1; // demo: zajednički računi se ne smiju zaključati
         if ($n >= 5) {
             azuriraj('Korisnici', (int) $k['Id'], ['NeuspjelePrijave' => 0, 'ZakljucanDo' => date('Y-m-d H:i:s', time() + 600)]);
         } else {
@@ -43,6 +43,20 @@ ob_start(); ?>
 <?php if (isset($_GET['postavljeno'])): ?><div class="alert alert-success">Glavni administrator je postavljen. Prijavite se.</div><?php endif; ?>
 <?php if (isset($_GET['lozinka'])): ?><div class="alert alert-success">Nova lozinka je postavljena. Prijavite se.</div><?php endif; ?>
 <?php if (isset($_GET['vraceno'])): ?><div class="alert alert-success">Podaci su vraćeni iz kopije. Prijavite se dosadašnjim korisničkim imenom i lozinkom.</div><?php endif; ?>
+<?php if (isset($_GET['demo-reset'])): ?><div class="alert alert-info">Demo podaci su vraćeni na početno stanje. Prijavite se ponovno.</div><?php endif; ?>
+<?php if (je_demo()): ?>
+<div class="demo-prijava mb-3">
+    <div class="fw-semibold mb-1">🎯 Demo verzija – isprobajte sve</div>
+    <div class="small text-muted mb-2">Izmišljena udruga i podaci. Lozinka za sve račune: <b><?= e(demo_lozinka()) ?></b>. Odaberite ulogu:</div>
+    <div class="d-grid gap-2">
+        <?php foreach (demo_racuni() as $r): ?>
+            <button type="button" class="btn btn-outline-success text-start" data-demo-korisnik="<?= e($r['k']) ?>"><b><?= e($r['naziv'] ?? $r['k']) ?></b><span class="d-block small text-muted"><?= e($r['opis'] ?? '') ?></span></button>
+        <?php endforeach; ?>
+    </div>
+</div>
+<script>document.addEventListener('click', function (e) { var b = e.target.closest('[data-demo-korisnik]'); if (!b) return;
+    var f = document.querySelector('form[action*="prijava"]'); f.korisnik.value = b.getAttribute('data-demo-korisnik'); f.lozinka.value = <?= json_encode(demo_lozinka()) ?>; f.submit(); });</script>
+<?php endif; ?>
 <?php if ($g === '1'): ?><div class="alert alert-danger">Pogrešno korisničko ime ili lozinka.</div><?php endif; ?>
 <?php if ($g === 'odobrenje'): ?><div class="alert alert-warning">Vaš račun još čeka odobrenje administratora. Čim bude odobren, moći ćete se prijaviti.</div><?php endif; ?>
 <?php if ($g === 'zakljucano'): ?><div class="alert alert-danger">Previše neuspjelih pokušaja. Pokušajte ponovno za 10 minuta.</div><?php endif; ?>
@@ -55,5 +69,5 @@ ob_start(); ?>
         <input name="lozinka" type="password" class="form-control" autocomplete="current-password" required></div>
     <button type="submit" class="btn btn-primary w-100">Prijava</button>
 </form>
-<div class="text-center mt-3"><a href="<?= e(url('zaboravljena-lozinka')) ?>">Zaboravljena lozinka?</a></div>
+<?php if (!je_demo()): ?><div class="text-center mt-3"><a href="<?= e(url('zaboravljena-lozinka')) ?>">Zaboravljena lozinka?</a></div><?php endif; ?>
 <?php stranica('Prijava', ob_get_clean(), 'prazno');

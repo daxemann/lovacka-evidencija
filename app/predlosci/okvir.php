@@ -92,7 +92,7 @@ $novaVerzija = $k ? azuriranje_dostupno() : null;
                         . $stavka('sustav/kopije', 'Sigurnosne kopije')
                         . (smije_azurirati() ? $stavka('sustav/azuriranje', 'Ažuriranje programa', $novaVerzija ? 1 : 0) : '')
                         . $stavka('sustav/dnevnik', 'Dnevnik promjena')); ?>
-                    <?= $grupa('program', 'Program', $stavka('pomoc', 'Pomoć i kontakt')) ?>
+                    <?= $grupa('program', 'Program', $stavka('pomoc', 'Pomoć i kontakt') . (je_demo() ? $stavka('demo-posta', '📧 Demo – e-pošta') : '')) ?>
                 <?php endif; ?>
             </nav>
         </div>
@@ -113,6 +113,12 @@ $novaVerzija = $k ? azuriranje_dostupno() : null;
             <?php endif; ?>
         </div>
         <article class="content px-4 pb-5">
+            <?php if (je_demo()): ?>
+            <div class="demo-traka no-print">🎯 <b>Demo verzija</b> – izmišljeni podaci, isprobajte slobodno. E-pošta se ne šalje (<a href="<?= e(url('demo-posta')) ?>">pregled</a>), svake noći sve se vraća na početno stanje.</div>
+            <?php if (demo_samo_pregled($trenutna)): ?>
+            <div class="alert alert-secondary small no-print" id="demo-zakljucano">🔒 <b>Samo pregled u demo verziji</b> – na ovoj stranici izmjene su zaključane (lozinke, korisnici, uloge i postavke sustava). U vašoj instalaciji sve radi normalno.</div>
+            <?php endif; ?>
+            <?php endif; ?>
             <?php if ($k): ?>
             <div id="instal-traka" class="instal-traka no-print" hidden>
                 <img src="<?= e(url('ikona', ['v' => 192, 'x' => postavka('Udruga.Logo')])) ?>" alt="" width="40" height="40">
@@ -152,6 +158,13 @@ $novaVerzija = $k ? azuriranje_dostupno() : null;
 </div></div>
 <script>window.EV = { api: <?= json_encode(url('api/obavijesti')) ?>, poruke: <?= json_encode(url('poruke')) ?>, n: <?= (int) $neprocitano ?>, sw: <?= json_encode(bazni_put() . 'sw.js') ?>, uid: <?= $k ? (int) $k['Id'] : 'null' ?> };</script>
 <script src="<?= e(asset('assets/app.js')) ?>"></script>
+<?php if (demo_samo_pregled($trenutna)): ?>
+<script>/* demo: zaključane stranice – obrasci za izmjene sivi */
+document.querySelectorAll('article form[method=post], article form[method=POST]').forEach(function (f) {
+    f.querySelectorAll('input:not([type=hidden]), select, textarea, button').forEach(function (x) { x.disabled = true; x.title = 'Demo verzija – nije moguće mijenjati'; });
+    f.classList.add('demo-sivo');
+});</script>
+<?php endif; ?>
 <script src="<?= e(asset('assets/dez.js')) ?>" data-api="<?= e(url('api/dez-sync')) ?>" data-sw="<?= e(bazni_put() . 'sw.js') ?>"></script>
 </body>
 </html>

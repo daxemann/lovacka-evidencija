@@ -19,6 +19,9 @@ function posta_postavke(): array
 
 function posta_dostupna(): bool
 {
+    if (je_demo()) {
+        return true;
+    }
     $p = posta_postavke();
     return $p['Posluzitelj'] !== '' && ($p['Posiljatelj'] !== '' || $p['Korisnik'] !== '');
 }
@@ -29,6 +32,10 @@ function posta_dostupna(): bool
  */
 function posalji_mail(array|string $prima, string $naslov, string $tijelo, bool $html = true, ?array $postavke = null, array $privitci = []): void
 {
+    if (je_demo()) {
+        demo_spremi_mail((array) $prima, $naslov, $tijelo, $html, $privitci);
+        return;
+    }
     $p = $postavke ?? posta_postavke();
     if ($p['Posluzitelj'] === '') {
         throw new RuntimeException('Slanje e-pošte nije podešeno (Sustav → E-pošta i adresa).');

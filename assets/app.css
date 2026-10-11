@@ -446,3 +446,8 @@ main {
 .skener-okvir-ciljnik { position: absolute; inset: 18% 14%; border: 3px solid rgba(255,255,255,.85); border-radius: 14px; box-shadow: 0 0 0 999px rgba(0,0,0,.25); pointer-events: none; }
 .skener-zatvori { position: absolute; top: .5rem; right: .5rem; }
 .dez-skeniraj-gumb { display: flex; align-items: center; justify-content: center; gap: .4rem; }
+/* Demo verzija */
+.demo-traka { background: #fff4d6; border: 1px solid #f0d58c; border-radius: 8px; padding: .45rem .75rem; margin: .75rem 0; font-size: .9rem; }
+.demo-prijava { background: #eef6ea; border: 1px solid #cfe3c6; border-radius: 10px; padding: .75rem; }
+.demo-sivo { opacity: .6; }
+.demo-mail-tijelo { width: 100%; min-height: 420px; border: 1px solid #dee2e6; border-radius: 8px; background: #fff; }

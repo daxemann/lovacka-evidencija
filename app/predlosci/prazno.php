@@ -22,6 +22,7 @@
             <div class="auth-logo"><?= e(udruga_naziv()) ?></div>
             <div class="text-muted"><?= e(udruga_podnaslov()) ?></div>
         </div>
+        <?php if (je_demo() && ($_GET['p'] ?? '') !== 'dez'): ?><div class="demo-traka mb-3">🎯 <b>Demo verzija</b> – izmišljeni podaci, ništa se ne može pokvariti.</div><?php endif; ?>
         <div class="card shadow-sm"><div class="card-body p-4">
             <?php foreach (poruke() as [$vrsta, $tekst]): ?>
                 <div class="alert alert-<?= e($vrsta) ?>"><?= $tekst ?></div>

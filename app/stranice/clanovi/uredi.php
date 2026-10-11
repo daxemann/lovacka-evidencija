@@ -28,6 +28,12 @@ $natrag = fn(string $kar = '', array $dod = []) => preusmjeri('clanovi/uredi', [
 if (je_post()) {
     $radnja = (string) ($_POST['radnja'] ?? '');
     $treba = fn(int $p) => ima($p) || zabranjeno();
+    // demo: pristup i uloge zaključani; član s demo računom se ne može arhivirati ni obrisati
+    if (je_demo() && (in_array($radnja, ['uloga-dodaj', 'uloga-ukloni', 'odobri', 'odbij', 'obrisi-racun', 'nova-pocetna', 'poveznica-lozinka'], true)
+        || (in_array($radnja, ['arhiviraj', 'obrisi-trajno', 'obrisi-pogresan'], true) && vrijednost('SELECT 1 FROM Korisnici WHERE ClanId=?', [$id])))) {
+        poruka(demo_poruka_zakljucano(), 'warning');
+        $natrag();
+    }
     switch ($radnja) {
         case 'spremi':
             $treba(P_CLANOVI_UREDI);

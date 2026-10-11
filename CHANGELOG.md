@@ -1,5 +1,15 @@
 # Promjene
 
+## 1.12.0 – 2026-10
+- **Demo način** za javnu probnu instalaciju (postavka `Demo.Aktivno` u bazi ili `'demo' => true` u `config.php`):
+  - prijava jednim klikom za ulogu (glavni admin, tajnik, lovočuvar, član) – ista lozinka za sve,
+  - lozinke, korisnici, uloge, samoprijava, sigurnosne kopije, ažuriranje i postavke sustava su zaključani (sivo, provjerava i poslužitelj); zajednički računi se ne mogu zaključati krivim lozinkama,
+  - član s demo računom ne može se arhivirati ni obrisati,
+  - **e-pošta se ne šalje** – stranica „📧 Demo – e-pošta“ prikazuje kako bi poruka izgledala (s PDF privitkom),
+  - svake noći nakon 03:00 sve se vraća na početno stanje, a datumi se pomiču da demo ne zastarijeva (termini i dalje nadolazeći),
+  - vlasnik upravlja demom preko `index.php?p=demo-vlasnik&k=<Demo.Kljuc>` (spremi/vrati početno stanje, učitaj ZIP, isključi demo).
+- Demo podaci izmišljene udruge: `php app/demo-podaci.php` (samo iz naredbenog retka, nakon postavljanja).
+
 ## 1.11.1 – 2026-10
 - **Izvještaj radnih akcija → Pošalji e-poštom**: umjesto ručnog upisa adrese **odabir primatelja s popisa** (adresa iz podataka člana).
   Član uvijek dobiva **samo svoje** radne akcije i bodove za odabrano razdoblje – bez obzira na to što je na zaslonu.

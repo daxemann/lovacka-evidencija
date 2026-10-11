@@ -36,13 +36,14 @@ set_exception_handler(function (Throwable $e) {
 
 pokreni_sesiju();
 provjeri_csrf();
+demo_odrzavanje();
 
 $p = (string) ($_GET['p'] ?? '');
 if ($p === '' || !preg_match('#^[a-z0-9\-]+(/[a-z0-9\-]+)*$#', $p)) {
     $p = 'pocetna';
 }
 
-$javne = ['prijava', 'odjava', 'postavljanje', 'pozivnica', 'samoprijava', 'kalendar-pretplata', 'ikona', 'zaboravljena-lozinka', 'nova-lozinka', 'logo', 'vrati', 'manifest', 'inspekcija', 'dez-slika', 'skeniraj'];
+$javne = ['demo-vlasnik', 'prijava', 'odjava', 'postavljanje', 'pozivnica', 'samoprijava', 'kalendar-pretplata', 'ikona', 'zaboravljena-lozinka', 'nova-lozinka', 'logo', 'vrati', 'manifest', 'inspekcija', 'dez-slika', 'skeniraj'];
 $nemaKorisnika = !vrijednost('SELECT 1 FROM Korisnici LIMIT 1');
 if ($nemaKorisnika && !in_array($p, ['postavljanje', 'vrati', 'logo', 'manifest', 'ikona'], true)) {
     preusmjeri('postavljanje');
@@ -64,6 +65,7 @@ if (!in_array($p, $javne, true)) {
     dnevna_kopija();
 }
 
+demo_cuvar($p);
 $dat = __DIR__ . '/app/stranice/' . $p . '.php';
 if (!is_file($dat)) {
     nije_pronadjeno('Stranica');
