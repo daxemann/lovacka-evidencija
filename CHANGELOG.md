@@ -1,5 +1,9 @@
 # Promjene
 
+## 1.15.2 – 2026-10
+- **Lovački pas: kvačica „🩸 radi potragu (krvni trag / Nachsuche)“** – za svaku pasminu (npr. njemački oštrodlaki ptičar / Drahthaar). Kod novog psa predlaže se sama prema pasmini, uvijek se može promijeniti.
+  Pri prijavi „Potraga s psom“ mogu se odabrati samo psi s tom kvačicom. Postojeći psi je imaju uključenu.
+
 ## 1.15.1 – 2026-10
 - **Moj profil → Moji lovački psi**: svaki član sam upisuje, uređuje i briše svoje pse i njihove ispite (isto kao na kartici člana). Bodovi i dalje idu na odobrenje.
 

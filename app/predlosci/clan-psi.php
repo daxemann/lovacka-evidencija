@@ -19,11 +19,12 @@ $polja = function (?array $p) { ob_start(); ?>
     <div class="col-sm-8"><label class="form-label small">Napomena</label><input name="Napomena" class="form-control form-control-sm" maxlength="200" value="<?= e($p['Napomena'] ?? '') ?>"></div>
     <div class="col-12 d-flex flex-wrap gap-3">
         <div class="form-check"><input class="form-check-input" type="checkbox" name="Bodovanje" value="1" id="bod<?= (int) ($p['Id'] ?? 0) ?>"<?= chk($p ? $p['Bodovanje'] : 1) ?>><label class="form-check-label small" for="bod<?= (int) ($p['Id'] ?? 0) ?>">godišnji bodovi za psa (1.1.)</label></div>
+        <div class="form-check"><input class="form-check-input potraga-kv" type="checkbox" name="Potraga" value="1" id="pot<?= (int) ($p['Id'] ?? 0) ?>"<?= chk($p ? $p['Potraga'] : 0) ?><?= $p ? '' : ' data-auto-potraga="1"' ?>><label class="form-check-label small" for="pot<?= (int) ($p['Id'] ?? 0) ?>">🩸 radi potragu (krvni trag / Nachsuche)</label></div>
         <?php if ($p): ?><div class="form-check"><input class="form-check-input" type="checkbox" name="Aktivan" value="1" id="akt<?= (int) $p['Id'] ?>"<?= chk($p['Aktivan']) ?>><label class="form-check-label small" for="akt<?= (int) $p['Id'] ?>">pas je aktivan (isključite kad ugine / proda se)</label></div><?php endif; ?>
     </div>
 <?php return (string) ob_get_clean(); };
 ?>
-<datalist id="pasmine"><?php foreach (['Njemački kratkodlaki ptičar', 'Njemački oštrodlaki ptičar', 'Vižla', 'Jazavčar', 'Jagdterijer', 'Bavarski krvoslijednik', 'Hannoverski krvoslijednik', 'Istarski kratkodlaki gonič', 'Istarski oštrodlaki gonič', 'Posavski gonič', 'Brak jazavčar', 'Labrador retriver', 'Engleski seter', 'Irski seter', 'Weimaraner', 'Fox terijer', 'Prepeličar (njemački)', 'Brak'] as $x): ?><option value="<?= e($x) ?>"><?php endforeach; ?></datalist>
+<datalist id="pasmine"><?php foreach (['Njemački kratkodlaki ptičar', 'Njemački oštrodlaki ptičar (Drahthaar)', 'Vižla', 'Jazavčar', 'Jagdterijer', 'Bavarski krvoslijednik', 'Hannoverski krvoslijednik', 'Istarski kratkodlaki gonič', 'Istarski oštrodlaki gonič', 'Posavski gonič', 'Brak jazavčar', 'Labrador retriver', 'Engleski seter', 'Irski seter', 'Weimaraner', 'Fox terijer', 'Prepeličar (njemački)', 'Brak'] as $x): ?><option value="<?= e($x) ?>"><?php endforeach; ?></datalist>
 <?php $bl = bodovna_lista_psi(); ?>
 <div class="card mb-3"><div class="card-body py-2">
     <div class="fw-semibold small mb-1">Bodovna lista – psi <?php if (ima(P_SUSTAV)): ?><a class="fw-normal ms-1" href="<?= e(url('akcije/vrste')) ?>">promijeni bodove</a><?php endif; ?></div>
@@ -41,6 +42,7 @@ $polja = function (?array $p) { ob_start(); ?>
         <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
             <h2 class="h5 mb-0">🐕 <?= e($p['Ime']) ?></h2>
             <span class="text-muted"><?= e(implode(' · ', array_filter([$p['Pasmina'], $p['Spol'], $p['DatumRodjenja'] ? 'rođen ' . datum($p['DatumRodjenja']) : null, $p['Cip'] ? 'čip ' . $p['Cip'] : null]))) ?></span>
+            <?php if ($p['Potraga']): ?><span class="badge bg-danger-subtle text-danger-emphasis border">🩸 potraga</span><?php endif; ?>
             <?php if (!$p['Aktivan']): ?><span class="badge bg-secondary">neaktivan</span><?php endif; ?>
             <span class="ms-auto small">
                 <?php if (isset($p['Bodovano'][$god])): ?><span class="badge bg-success-subtle text-success-emphasis border">bodovi <?= $god ?>. upisani</span>
@@ -98,4 +100,21 @@ $polja = function (?array $p) { ob_start(); ?>
             'Upisati radnu akciju „Lovački pas“ za ' . $god . '. (na čekanju odobrenja)?') ?>
             <div class="form-text">Npr. za psa dodanog tijekom godine – automatski upis je samo 1. siječnja.</div></div>
     <?php endif; ?>
-<?php endif;
+<?php endif; ?>
+
+<script>
+(function () {
+    // nova kvačica „potraga“ predloži se sama prema pasmini (dok je korisnik ne dira)
+    var kljucevi = <?= json_encode(array_map('kljuc', PASMINE_POTRAGA)) ?>;
+    function kl(s) { return (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd'); }
+    document.querySelectorAll('input[data-auto-potraga]').forEach(function (kv) {
+        var f = kv.form, pas = f && f.querySelector('[name=Pasmina]');
+        if (!pas) return;
+        kv.addEventListener('change', function () { kv.removeAttribute('data-auto-potraga'); });
+        pas.addEventListener('input', function () {
+            if (!kv.hasAttribute('data-auto-potraga')) return;
+            var k = kl(pas.value); kv.checked = kljucevi.some(function (x) { return x && k.indexOf(kl(x)) >= 0; });
+        });
+    });
+})();
+</script>

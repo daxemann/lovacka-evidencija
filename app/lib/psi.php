@@ -66,6 +66,18 @@ function psi_clana(int $clanId): array
     }
     return $psi;
 }
+/** Pasmine koje su uobičajeno krvosljednici (kvačica „potraga“ se predlaže sama; uvijek se može promijeniti). */
+const PASMINE_POTRAGA = ['krvoslijed', 'krvosljed', 'jazavčar', 'jazavcar', 'oštrodlaki ptičar', 'ostrodlaki pticar', 'drahthaar', 'kratkodlaki ptičar', 'kratkodlaki pticar', 'brak', 'jagdterijer', 'vižla', 'vizla', 'weimaraner'];
+function pasmina_za_potragu(?string $pasmina): bool
+{
+    $k = kljuc($pasmina);
+    foreach (PASMINE_POTRAGA as $x) {
+        if ($x !== '' && str_contains($k, kljuc($x))) {
+            return true;
+        }
+    }
+    return false;
+}
 function opis_psa(array $p): string
 {
     return $p['Ime'] . ($p['Pasmina'] ? ' (' . $p['Pasmina'] . ')' : '');
@@ -173,7 +185,7 @@ function psi_obradi(int $id, string $radnja, string $ime): void
         $pid = (int) ($_POST['pid'] ?? 0);
         $pod = ['Ime' => mb_substr(ul_str('Ime'), 0, 60), 'Pasmina' => mb_substr(ul_str('Pasmina'), 0, 80) ?: null,
             'Spol' => in_array(ul_str('Spol'), ['pas', 'kuja'], true) ? ul_str('Spol') : null, 'DatumRodjenja' => u_datum(ul_str('DatumRodjenja')),
-            'Cip' => mb_substr(ul_str('Cip'), 0, 40) ?: null, 'Napomena' => mb_substr(ul_str('Napomena'), 0, 200) ?: null, 'Bodovanje' => isset($_POST['Bodovanje']) ? 1 : 0];
+            'Cip' => mb_substr(ul_str('Cip'), 0, 40) ?: null, 'Napomena' => mb_substr(ul_str('Napomena'), 0, 200) ?: null, 'Bodovanje' => isset($_POST['Bodovanje']) ? 1 : 0, 'Potraga' => isset($_POST['Potraga']) ? 1 : 0];
         if ($pod['Ime'] === '') {
             return;
         }

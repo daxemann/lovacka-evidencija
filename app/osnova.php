@@ -5,7 +5,7 @@
  */
 declare(strict_types=1);
 
-const VERZIJA = '1.15.1';
+const VERZIJA = '1.15.2';
 const KONTAKT_EMAIL = 'daxemann@googlemail.com';
 const PROJEKT_URL = 'https://github.com/daxemann/lovacka-evidencija';
 const KORIJEN = __DIR__ . '/..';
@@ -133,7 +133,7 @@ function db(bool $novo = false): PDO
  * Dodatne tablice PHP verzije (PRAGMA user_version). .NET verzija ih ne poznaje i zanemaruje,
  * pa baza i dalje radi u oba smjera.
  */
-const SHEMA_PHP = 13;
+const SHEMA_PHP = 14;
 function nadogradi_bazu(PDO $pdo): void
 {
     $v = (int) $pdo->query('PRAGMA user_version')->fetchColumn();
@@ -462,6 +462,10 @@ SQL);
         }
         // termini koji su već prošli se ne boduju naknadno
         $pdo->exec("UPDATE \"Dogadjaji\" SET \"PsiBodovano\" = datetime('now') WHERE substr(COALESCE(\"Kraj\", \"Pocetak\"),1,10) < date('now')");
+    }
+    if ($v < 14) {
+        // pas osposobljen za potragu (krvni trag) – postojeći psi zadržavaju mogućnost
+        $pdo->exec('ALTER TABLE "LovniPsi" ADD COLUMN "Potraga" INTEGER NOT NULL DEFAULT 0; UPDATE "LovniPsi" SET "Potraga" = 1;');
     }
     $pdo->exec('PRAGMA user_version = ' . SHEMA_PHP);
     $pdo->commit();

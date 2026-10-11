@@ -44,8 +44,8 @@ if (je_post()) {
         'Sati' => dec(u_broj($_POST['sati'] ?? '')), 'Opis' => ul_null('opis'),
         'PasId' => isset($mojiPsi[(int) ($_POST['pas'] ?? 0)]) ? (int) $_POST['pas'] : null,
     ];
-    if ($polja['PasId'] === null && $vrsta === vrsta_akcije_psi('potraga')) {
-        poruka('Za potragu s psom odaberite psa.', 'danger');
+    if ($vrsta === vrsta_akcije_psi('potraga') && ($polja['PasId'] === null || empty($mojiPsi[$polja['PasId']]['Potraga']))) {
+        poruka('Za potragu odaberite psa koji radi potragu (kvačica „🩸 radi potragu“ u Moj profil → Moji lovački psi).', 'danger');
         $_SESSION['moja_akcija'] = $_POST;
         preusmjeri('moje-akcije', ['uredi' => $_POST['aid'] ?? null]);
     }
@@ -108,7 +108,13 @@ ob_start(); ?>
                     <input name="naziv" class="form-control" maxlength="100" placeholder="npr. popravak puta do čeke" value="<?= e($v['naziv']) ?>"></div>
                 <div class="col-4 col-md-2"><label class="form-label small">Sati</label><input name="sati" type="number" step="0.5" min="0" inputmode="decimal" class="form-control" value="<?= e($v['sati']) ?>"></div>
                 <?php if ($mojiPsi): ?><div class="col-8 col-md-3"><label class="form-label small">🐕 Pas (ako je sudjelovao)</label>
-                    <select name="pas" class="form-select"><option value="">— bez psa —</option><?php foreach ($mojiPsi as $pid => $p): ?><option value="<?= $pid ?>"<?= sel((string) $pid, $v['pas']) ?>><?= e(opis_psa($p)) ?></option><?php endforeach; ?></select></div><?php endif; ?>
+                    <select name="pas" class="form-select"><option value="">— bez psa —</option><?php foreach ($mojiPsi as $pid => $p): ?><option value="<?= $pid ?>" data-potraga="<?= (int) $p['Potraga'] ?>"<?= sel((string) $pid, $v['pas']) ?>><?= e(opis_psa($p)) ?><?= $p['Potraga'] ? ' 🩸' : '' ?></option><?php endforeach; ?></select>
+                    <div class="form-text d-none" id="potragaInfo">Za potragu samo psi s kvačicom „🩸 radi potragu“ (<a href="<?= e(url('moj-profil', ['psi' => 1])) ?>">Moj profil</a>).</div></div>
+                    <script>(function () {
+                        var vr = document.querySelector('[name=vrsta]'), ps = document.querySelector('[name=pas]'), pot = '<?= (int) vrsta_akcije_psi('potraga') ?>';
+                        function f() { var je = vr.value === pot; document.getElementById('potragaInfo').classList.toggle('d-none', !je);
+                            ps.querySelectorAll('option[data-potraga]').forEach(function (o) { o.disabled = je && o.dataset.potraga !== '1'; if (o.disabled && o.selected) ps.value = ''; }); }
+                        vr.addEventListener('change', f); f(); })();</script><?php endif; ?>
                 <div class="col-8 col-md-4"><label class="form-label small">Fotografija (neobavezno)</label><input type="file" name="foto" accept="image/*" class="form-control"></div>
                 <div class="col-12"><label class="form-label small">Opis – što je napravljeno, gdje</label><textarea name="opis" rows="2" class="form-control"><?= e($v['opis']) ?></textarea></div>
             </div>
