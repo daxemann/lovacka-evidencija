@@ -5,7 +5,7 @@
  */
 declare(strict_types=1);
 
-const VERZIJA = '1.14.0';
+const VERZIJA = '1.15.0';
 const KONTAKT_EMAIL = 'daxemann@googlemail.com';
 const PROJEKT_URL = 'https://github.com/daxemann/lovacka-evidencija';
 const KORIJEN = __DIR__ . '/..';
@@ -133,7 +133,7 @@ function db(bool $novo = false): PDO
  * Dodatne tablice PHP verzije (PRAGMA user_version). .NET verzija ih ne poznaje i zanemaruje,
  * pa baza i dalje radi u oba smjera.
  */
-const SHEMA_PHP = 12;
+const SHEMA_PHP = 13;
 function nadogradi_bazu(PDO $pdo): void
 {
     $v = (int) $pdo->query('PRAGMA user_version')->fetchColumn();
@@ -442,6 +442,26 @@ CREATE TABLE IF NOT EXISTS "PsiBodovi" (
     PRIMARY KEY ("PasId", "Godina")
 );
 SQL);
+    }
+    if ($v < 13) {
+        // psi na zajedničkom lovu (prijava „dolazim s psom“) i veza radne akcije sa psom
+        $pdo->exec('ALTER TABLE "DogadjajOdgovori" ADD COLUMN "PsiIds" TEXT NULL;
+            ALTER TABLE "RadneAkcije" ADD COLUMN "PasId" INTEGER NULL;
+            ALTER TABLE "Dogadjaji" ADD COLUMN "PsiBodovano" TEXT NULL;');
+        // vrste termina koje su lov: dolazak s psom
+        $st = $pdo->prepare('SELECT Vrijednost FROM Postavke WHERE Kljuc=?');
+        $st->execute(['Kalendar.Vrste']);
+        $vr = json_decode((string) $st->fetchColumn(), true);
+        if (is_array($vr) && $vr) {
+            foreach ($vr as &$x) {
+                $kl = kljuc($x['naziv'] ?? '');
+                $x['psi'] = str_contains($kl, 'lov') && !str_contains($kl, 'radn') && !str_contains($kl, 'sastan');
+            }
+            unset($x);
+            $pdo->prepare('UPDATE Postavke SET Vrijednost=? WHERE Kljuc=?')->execute([json_encode($vr, JSON_UNESCAPED_UNICODE), 'Kalendar.Vrste']);
+        }
+        // termini koji su već prošli se ne boduju naknadno
+        $pdo->exec("UPDATE \"Dogadjaji\" SET \"PsiBodovano\" = datetime('now') WHERE substr(COALESCE(\"Kraj\", \"Pocetak\"),1,10) < date('now')");
     }
     $pdo->exec('PRAGMA user_version = ' . SHEMA_PHP);
     $pdo->commit();

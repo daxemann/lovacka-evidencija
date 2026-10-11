@@ -5,8 +5,10 @@ if (!$k['ClanId']) {
     preusmjeri();
 }
 $cid = $k['ClanId'];
+vrsta_akcije_psi('potraga'); // stvara vrstu „Potraga s psom“ ako je nema
 $vrste = redovi('SELECT * FROM VrsteAkcija WHERE Aktivna=1 ORDER BY Naziv');
 $uredjuje = ul_int('uredi');
+$mojiPsi = aktivni_psi((int) $cid);
 $moja = fn(int $id) => red('SELECT * FROM RadneAkcije WHERE Id=? AND ClanId=? AND Status=0', [$id, $cid]);
 
 if (je_post()) {
@@ -40,7 +42,13 @@ if (je_post()) {
     $polja = [
         'Datum' => $datum, 'VrstaAkcijeId' => $vrsta > 0 ? $vrsta : null, 'VrstaSlobodno' => $vrsta > 0 ? null : mb_substr($naziv, 0, 100),
         'Sati' => dec(u_broj($_POST['sati'] ?? '')), 'Opis' => ul_null('opis'),
+        'PasId' => isset($mojiPsi[(int) ($_POST['pas'] ?? 0)]) ? (int) $_POST['pas'] : null,
     ];
+    if ($polja['PasId'] === null && $vrsta === vrsta_akcije_psi('potraga')) {
+        poruka('Za potragu s psom odaberite psa.', 'danger');
+        $_SESSION['moja_akcija'] = $_POST;
+        preusmjeri('moje-akcije', ['uredi' => $_POST['aid'] ?? null]);
+    }
     $foto = null;
     if (!empty($_FILES['foto']['name'])) {
         try {
@@ -68,14 +76,14 @@ if (je_post()) {
     preusmjeri('moje-akcije');
 }
 
-$lista = redovi('SELECT a.*, v.Naziv AS VrstaNaziv FROM RadneAkcije a LEFT JOIN VrsteAkcija v ON v.Id=a.VrstaAkcijeId WHERE a.ClanId=? ORDER BY a.Datum DESC, a.Id DESC', [$cid]);
+$lista = redovi('SELECT a.*, v.Naziv AS VrstaNaziv, p.Ime AS PasIme FROM RadneAkcije a LEFT JOIN VrsteAkcija v ON v.Id=a.VrstaAkcijeId LEFT JOIN LovniPsi p ON p.Id=a.PasId WHERE a.ClanId=? ORDER BY a.Datum DESC, a.Id DESC', [$cid]);
 $lg = pocetak_lovne_godine();
 $lgKraj = $lg->modify('+1 year -1 day')->format('Y-m-d');
 $bodoviLg = array_sum(array_map(fn($a) => (int) $a['Status'] === AKCIJA_ODOBRENO && substr($a['Datum'], 0, 10) >= $lg->format('Y-m-d') && substr($a['Datum'], 0, 10) <= $lgKraj ? (float) $a['Bodovi'] : 0, $lista));
-$v = ['datum' => danas(), 'vrsta' => '', 'naziv' => '', 'sati' => '', 'opis' => ''];
+$v = ['datum' => danas(), 'vrsta' => '', 'naziv' => '', 'sati' => '', 'opis' => '', 'pas' => ''];
 $ur = $uredjuje ? $moja($uredjuje) : null;
 if ($ur) {
-    $v = ['datum' => substr($ur['Datum'], 0, 10), 'vrsta' => $ur['VrstaAkcijeId'] ?? -1, 'naziv' => $ur['VrstaSlobodno'] ?? '', 'sati' => $ur['Sati'] !== null ? (string) (float) $ur['Sati'] : '', 'opis' => $ur['Opis'] ?? ''];
+    $v = ['datum' => substr($ur['Datum'], 0, 10), 'vrsta' => $ur['VrstaAkcijeId'] ?? -1, 'naziv' => $ur['VrstaSlobodno'] ?? '', 'sati' => $ur['Sati'] !== null ? (string) (float) $ur['Sati'] : '', 'opis' => $ur['Opis'] ?? '', 'pas' => (string) ($ur['PasId'] ?? '')];
 }
 if (isset($_SESSION['moja_akcija'])) {
     $v = array_merge($v, array_intersect_key($_SESSION['moja_akcija'], $v));
@@ -99,6 +107,8 @@ ob_start(); ?>
                 <div class="col-12 col-md-6" id="naziv" style="<?= (string) $v['vrsta'] === '-1' ? '' : 'display:none' ?>"><label class="form-label small">Naziv akcije</label>
                     <input name="naziv" class="form-control" maxlength="100" placeholder="npr. popravak puta do čeke" value="<?= e($v['naziv']) ?>"></div>
                 <div class="col-4 col-md-2"><label class="form-label small">Sati</label><input name="sati" type="number" step="0.5" min="0" inputmode="decimal" class="form-control" value="<?= e($v['sati']) ?>"></div>
+                <?php if ($mojiPsi): ?><div class="col-8 col-md-3"><label class="form-label small">🐕 Pas (ako je sudjelovao)</label>
+                    <select name="pas" class="form-select"><option value="">— bez psa —</option><?php foreach ($mojiPsi as $pid => $p): ?><option value="<?= $pid ?>"<?= sel((string) $pid, $v['pas']) ?>><?= e(opis_psa($p)) ?></option><?php endforeach; ?></select></div><?php endif; ?>
                 <div class="col-8 col-md-4"><label class="form-label small">Fotografija (neobavezno)</label><input type="file" name="foto" accept="image/*" class="form-control"></div>
                 <div class="col-12"><label class="form-label small">Opis – što je napravljeno, gdje</label><textarea name="opis" rows="2" class="form-control"><?= e($v['opis']) ?></textarea></div>
             </div>
@@ -119,7 +129,7 @@ ob_start(); ?>
             <span class="ms-auto d-flex gap-1 align-items-center"><?= status_akcije_oznaka((int) $a['Status']) ?>
                 <?php if ($a['Bodovi'] !== null): ?><span class="badge bg-light text-dark border"><?= e(broj($a['Bodovi'], 2)) ?> b.</span><?php endif; ?></span>
         </div>
-        <div class="fw-semibold"><?= e($a['VrstaNaziv'] ?? $a['VrstaSlobodno'] ?? '—') ?></div>
+        <div class="fw-semibold"><?= e($a['VrstaNaziv'] ?? $a['VrstaSlobodno'] ?? '—') ?><?php if ($a['PasIme'] && !str_contains((string) $a['Opis'], (string) $a['PasIme'])): ?> <span class="fw-normal small">🐕 <?= e($a['PasIme']) ?></span><?php endif; ?></div>
         <?php if ($a['Opis']): ?><div class="small mt-1"><?= e($a['Opis']) ?></div><?php endif; ?>
         <?php if ($a['FotoDatoteka']): ?><div class="small mt-1"><a href="<?= e(foto_url($a['FotoDatoteka'])) ?>" target="_blank">fotografija</a></div><?php endif; ?>
         <?php if ($a['RazlogOdbijanja']): ?><div class="small text-danger mt-1">Razlog odbijanja: <?= e($a['RazlogOdbijanja']) ?></div><?php endif; ?>

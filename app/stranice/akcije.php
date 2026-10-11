@@ -70,8 +70,8 @@ if (je_post() && $moze) {
     preusmjeri('akcije', ['status' => $prikaz]);
 }
 
-$lista = redovi('SELECT a.*, c.Ime, c.Prezime, s.Naziv AS Sekcija, v.Naziv AS VrstaNaziv FROM RadneAkcije a JOIN Clanovi c ON c.Id=a.ClanId
-    LEFT JOIN Sekcije s ON s.Id=c.SekcijaId LEFT JOIN VrsteAkcija v ON v.Id=a.VrstaAkcijeId
+$lista = redovi('SELECT a.*, c.Ime, c.Prezime, s.Naziv AS Sekcija, v.Naziv AS VrstaNaziv, p.Ime AS PasIme FROM RadneAkcije a JOIN Clanovi c ON c.Id=a.ClanId
+    LEFT JOIN Sekcije s ON s.Id=c.SekcijaId LEFT JOIN VrsteAkcija v ON v.Id=a.VrstaAkcijeId LEFT JOIN LovniPsi p ON p.Id=a.PasId
     WHERE a.Status=? AND ' . opseg_sql('c') . ' ORDER BY ' . ($prikaz === AKCIJA_CEKA ? 'a.Datum, a.Id' : 'a.Odluceno DESC, a.Id DESC LIMIT 300'), [$prikaz]);
 $brojCeka = broj_akcija_na_cekanju();
 $uredi = $moze && $prikaz === AKCIJA_CEKA;
@@ -124,7 +124,7 @@ ob_start(); ?>
                 <?php endif; ?>
             </td>
             <td><?= e(broj($a['Sati'])) ?></td>
-            <td class="small"><?= e($a['Opis']) ?>
+            <td class="small"><?php if ($a['PasIme'] && !str_contains((string) $a['Opis'], (string) $a['PasIme'])): ?>🐕 <?= e($a['PasIme']) ?> <?php endif; ?><?= e($a['Opis']) ?>
                 <?php if ($a['FotoDatoteka']): ?><div><a href="<?= e(foto_url($a['FotoDatoteka'])) ?>" target="_blank">fotografija</a></div><?php endif; ?>
                 <?php if ($a['RazlogOdbijanja']): ?><div class="text-danger">Razlog: <?= e($a['RazlogOdbijanja']) ?></div><?php endif; ?></td>
             <td style="width:7rem">

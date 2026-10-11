@@ -1,5 +1,13 @@
 # Promjene
 
+## 1.15.0 – 2026-10
+- **Psi na zajedničkom lovu**: nova oznaka vrste termina „lov sa psima“ (Sustav → Kalendar – vrste; zadano za „Zajednički lov“ i novu vrstu „Grupni lov na sitnu divljač“, postojeće vrste s „lov“ u nazivu označene su automatski).
+  Član pri „✔ Dolazim“ kvačicom označi psa (ili više njih) kojeg dovodi – svi na terminu vide tko dolazi s psom i koliko pasa dolazi.
+  Dan nakon lova za svakog prijavljenog psa automatski nastaje radna akcija **„Pas na lovu“ na čekanju** (psa koji ipak nije bio – odbiti).
+- **Potraga s psom (krvni trag)**: nova vrsta radne akcije koju član sam prijavljuje u „Moje radne akcije“ uz odabir psa.
+- **Bodovna lista za pse** (kartica Lovački psi): posjedovanje psa (1.1.), pas na lovu, potraga s psom – bodovi se mijenjaju u Vrste radnih akcija. Sve ide na odobrenje kao ostali bodovi.
+- Radne akcije su povezane sa psom: na kartici psa „Bodovi psa“ (povijest), u odobravanju i kod člana uz akciju piše ime psa.
+
 ## 1.14.0 – 2026-10
 - **Članovi → kartica „Lovački psi“**: jedan ili više pasa po članu – ime, pasmina, spol, datum rođenja, broj čipa/rodovnika, napomena i **ispiti** (naziv, datum, ocjena/nagrada).
   **Godišnji bodovi za psa**: 1. siječnja program za svakog aktivnog psa sam upisuje radnu akciju „Lovački pas“ **na čekanju** – odobrava se kao i ostale radne akcije

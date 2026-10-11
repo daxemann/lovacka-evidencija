@@ -7,14 +7,18 @@ if (!$d) {
     nije_pronadjeno('Termin');
 }
 $ured = moze_uredjivati_dogadjaj($d);
+$v = vrsta_dogadjaja($d['Vrsta']);
+$saPsima = !empty($v['psi']);
+$mojiPsi = $saPsima && $k['ClanId'] ? aktivni_psi((int) $k['ClanId']) : [];
 if (je_post()) {
     $radnja = (string) ($_POST['radnja'] ?? '');
     if (in_array($radnja, ['dolazim', 'ne-dolazim', 'ponisti'], true) && $k['ClanId']) {
         if ($radnja === 'ponisti') {
             q('DELETE FROM DogadjajOdgovori WHERE DogadjajId=? AND ClanId=?', [$id, $k['ClanId']]);
         } else {
-            q('INSERT INTO DogadjajOdgovori (DogadjajId, ClanId, Dolazi, Vrijeme) VALUES (?,?,?,?) ON CONFLICT(DogadjajId, ClanId) DO UPDATE SET Dolazi=excluded.Dolazi, Vrijeme=excluded.Vrijeme',
-                [$id, $k['ClanId'], $radnja === 'dolazim' ? 1 : 0, sada()]);
+            $psi = $radnja === 'dolazim' ? array_values(array_intersect(array_map('intval', (array) ($_POST['psi'] ?? [])), array_keys($mojiPsi))) : [];
+            q('INSERT INTO DogadjajOdgovori (DogadjajId, ClanId, Dolazi, Vrijeme, PsiIds) VALUES (?,?,?,?,?) ON CONFLICT(DogadjajId, ClanId) DO UPDATE SET Dolazi=excluded.Dolazi, Vrijeme=excluded.Vrijeme, PsiIds=excluded.PsiIds',
+                [$id, $k['ClanId'], $radnja === 'dolazim' ? 1 : 0, sada(), $psi ? implode(',', $psi) : null]);
         }
     } elseif ($radnja === 'obrisi' && $ured) {
         q('DELETE FROM Dogadjaji WHERE Id=?', [$id]);
@@ -24,10 +28,18 @@ if (je_post()) {
     }
     preusmjeri('kalendar/termin', ['id' => $id]);
 }
-$v = vrsta_dogadjaja($d['Vrsta']);
-$moj = $k['ClanId'] ? vrijednost('SELECT Dolazi FROM DogadjajOdgovori WHERE DogadjajId=? AND ClanId=?', [$id, $k['ClanId']]) : null;
-$odg = redovi('SELECT o.Dolazi, c.Id, c.Ime, c.Prezime, c.Nadimak, c.FotoDatoteka FROM DogadjajOdgovori o JOIN Clanovi c ON c.Id=o.ClanId WHERE o.DogadjajId=? ORDER BY o.Dolazi DESC, c.Prezime, c.Ime', [$id]);
+$mojOdg = $k['ClanId'] ? red('SELECT Dolazi, PsiIds FROM DogadjajOdgovori WHERE DogadjajId=? AND ClanId=?', [$id, $k['ClanId']]) : null;
+$moj = $mojOdg['Dolazi'] ?? null;
+$mojiOdabrani = psi_ids($mojOdg['PsiIds'] ?? null);
+$odg = redovi('SELECT o.Dolazi, o.PsiIds, c.Id, c.Ime, c.Prezime, c.Nadimak, c.FotoDatoteka FROM DogadjajOdgovori o JOIN Clanovi c ON c.Id=o.ClanId WHERE o.DogadjajId=? ORDER BY o.Dolazi DESC, c.Prezime, c.Ime', [$id]);
 $dolaze = array_values(array_filter($odg, fn($o) => (int) $o['Dolazi'] === 1));
+$imenaPsa = [];
+if ($saPsima && ($sviIds = array_merge(...array_map(fn($o) => psi_ids($o['PsiIds']), $dolaze ?: [['PsiIds' => null]])))) {
+    foreach (redovi('SELECT Id, Ime, Pasmina FROM LovniPsi WHERE Id IN (' . implode(',', $sviIds) . ')') as $p) {
+        $imenaPsa[(int) $p['Id']] = $p;
+    }
+}
+$brojPasa = count($imenaPsa);
 $neDolaze = array_values(array_filter($odg, fn($o) => (int) $o['Dolazi'] === 0));
 $prosao = substr($d['Kraj'] ?: $d['Pocetak'], 0, 10) < danas();
 $karta = karta_url($d['Mjesto']);
@@ -58,8 +70,19 @@ ob_start(); ?>
 <?php if ($k['ClanId'] && !$prosao): ?>
 <div class="card mb-3"><div class="card-body">
     <div class="small text-muted mb-2">Dolazite? (nije obavezno – organizatoru pomaže u planiranju)</div>
+    <?php if ($mojiPsi): ?>
+    <form method="post" class="mb-2"><?= csrf() ?>
+        <div class="small fw-semibold mb-1">🐕 Dovodim psa:</div>
+        <div class="d-flex flex-wrap gap-3 mb-2">
+            <?php foreach ($mojiPsi as $pid => $p): ?><div class="form-check"><input class="form-check-input" type="checkbox" name="psi[]" value="<?= $pid ?>" id="pas<?= $pid ?>"<?= chk(in_array($pid, $mojiOdabrani, true)) ?>>
+                <label class="form-check-label" for="pas<?= $pid ?>"><?= e(opis_psa($p)) ?></label></div><?php endforeach; ?>
+        </div>
+        <button name="radnja" value="dolazim" class="btn <?= $moj !== null && (int) $moj === 1 ? 'btn-success' : 'btn-outline-success' ?>">✔ Dolazim<?= $moj !== null && (int) $moj === 1 ? ' (spremi pse)' : '' ?></button>
+        <span class="small text-muted ms-1">bez kvačice = dolazim bez psa</span>
+    </form>
+    <?php endif; ?>
     <div class="d-flex flex-wrap gap-2 align-items-center">
-        <?= $gumb('dolazim', '✔ Dolazim', $moj !== null && (int) $moj === 1 ? 'btn-success' : 'btn-outline-success') ?>
+        <?php if (!$mojiPsi) echo $gumb('dolazim', '✔ Dolazim', $moj !== null && (int) $moj === 1 ? 'btn-success' : 'btn-outline-success'); ?>
         <?= $gumb('ne-dolazim', '✖ Ne dolazim', $moj !== null && (int) $moj === 0 ? 'btn-secondary' : 'btn-outline-secondary') ?>
         <?php if ($moj !== null): ?><?= $gumb('ponisti', 'poništi odgovor', 'btn-link btn-sm') ?><?php endif; ?>
     </div>
@@ -67,10 +90,11 @@ ob_start(); ?>
 <?php endif; ?>
 
 <div class="row g-3 mb-3">
-    <div class="col-md-6"><div class="card h-100"><div class="card-header">Dolaze <span class="badge bg-success"><?= count($dolaze) ?></span></div>
+    <div class="col-md-6"><div class="card h-100"><div class="card-header">Dolaze <span class="badge bg-success"><?= count($dolaze) ?></span><?php if ($saPsima): ?> <span class="badge text-bg-light border">🐕 <?= $brojPasa ?> <?= $brojPasa === 1 ? 'pas' : 'pasa' ?></span><?php endif; ?></div>
         <ul class="list-group list-group-flush">
             <?php if (!$dolaze): ?><li class="list-group-item text-muted small">Još nitko nije potvrdio.</li><?php endif; ?>
-            <?php foreach ($dolaze as $o): ?><li class="list-group-item d-flex align-items-center gap-2 py-1"><?= avatar($o) ?> <?= e(puno_ime($o)) ?></li><?php endforeach; ?>
+            <?php foreach ($dolaze as $o): ?><li class="list-group-item d-flex align-items-center gap-2 py-1"><?= avatar($o) ?> <?= e(puno_ime($o)) ?>
+                <?php if ($saPsima): $ps = array_filter(array_map(fn($x) => $imenaPsa[$x] ?? null, psi_ids($o['PsiIds']))); ?><span class="ms-auto small"><?= $ps ? '🐕 ' . e(implode(', ', array_map(fn($p) => $p['Ime'], $ps))) : '<span class="text-muted">bez psa</span>' ?></span><?php endif; ?></li><?php endforeach; ?>
         </ul></div></div>
     <?php if ($neDolaze): ?>
     <div class="col-md-6"><div class="card h-100"><div class="card-header">Ne dolaze <span class="badge bg-secondary"><?= count($neDolaze) ?></span></div>
@@ -80,6 +104,12 @@ ob_start(); ?>
     <?php endif; ?>
 </div>
 
+<?php if ($saPsima && ima(P_AKCIJE_ODOBRI) && $brojPasa): ?>
+<div class="card mb-3 border-warning-subtle"><div class="card-body small">
+    🐕 <b>Bodovi za pse na lovu</b>: <?= $d['PsiBodovano'] ? 'upisani ' . e(datum($d['PsiBodovano'])) . ' – čekaju odobrenje u <a href="' . e(url('akcije')) . '">Radne akcije</a> (psa koji nije bio – odbiti).'
+        : 'upisuju se automatski dan nakon lova za svakog prijavljenog psa (radna akcija „Pas na lovu“, na čekanju odobrenja).' ?>
+</div></div>
+<?php endif; ?>
 <?php if ($v['akcija'] && ima(P_AKCIJE_ODOBRI) && substr($d['Pocetak'], 0, 10) <= danas()): ?>
 <div class="card mb-3 border-success"><div class="card-body">
     <b>Radna akcija je održana?</b>

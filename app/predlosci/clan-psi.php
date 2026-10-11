@@ -23,9 +23,17 @@ $polja = function (?array $p) { ob_start(); ?>
 <?php return (string) ob_get_clean(); };
 ?>
 <datalist id="pasmine"><?php foreach (['Njemački kratkodlaki ptičar', 'Njemački oštrodlaki ptičar', 'Vižla', 'Jazavčar', 'Jagdterijer', 'Bavarski krvoslijednik', 'Hannoverski krvoslijednik', 'Istarski kratkodlaki gonič', 'Istarski oštrodlaki gonič', 'Posavski gonič', 'Brak jazavčar', 'Labrador retriver', 'Engleski seter', 'Irski seter', 'Weimaraner', 'Fox terijer', 'Prepeličar (njemački)', 'Brak'] as $x): ?><option value="<?= e($x) ?>"><?php endforeach; ?></datalist>
-<p class="small text-muted">Za svakog aktivnog psa s uključenim bodovanjem program <b>1. siječnja</b> sam upisuje radnu akciju „Lovački pas“ <b>na čekanju</b> –
-    odobrava se kao i ostale radne akcije (standardno <b><?= broj($std) ?></b> bod.<?php if (ima(P_SUSTAV)): ?>, mijenja se u <a href="<?= e(url('akcije/vrste')) ?>">Vrste radnih akcija</a><?php endif; ?>).</p>
-<?php if ($std <= 0 && ima(P_SUSTAV)): ?><div class="alert alert-warning small py-2">Standardni bodovi za „Lovački pas“ su 0 – upišite ih u <a href="<?= e(url('akcije/vrste')) ?>">Vrste radnih akcija</a>.</div><?php endif; ?>
+<?php $bl = bodovna_lista_psi(); ?>
+<div class="card mb-3"><div class="card-body py-2">
+    <div class="fw-semibold small mb-1">Bodovna lista – psi <?php if (ima(P_SUSTAV)): ?><a class="fw-normal ms-1" href="<?= e(url('akcije/vrste')) ?>">promijeni bodove</a><?php endif; ?></div>
+    <div class="d-flex flex-wrap gap-2 small">
+        <span class="badge text-bg-light border fw-normal">Posjedovanje psa (svake godine 1.1.): <b><?= broj($bl['godisnje']['bodovi']) ?></b></span>
+        <span class="badge text-bg-light border fw-normal">Pas na zajedničkom lovu (po lovu): <b><?= broj($bl['lov']['bodovi']) ?></b></span>
+        <span class="badge text-bg-light border fw-normal">Potraga s psom – krvni trag (prijavi član): <b><?= broj($bl['potraga']['bodovi']) ?></b></span>
+    </div>
+    <div class="small text-muted mt-1">Sve se upisuje kao radna akcija <b>na čekanju</b> i odobrava kao i ostali bodovi. Lov: član pri „Dolazim“ u kalendaru označi psa (vrsta termina „lov sa psima“).</div>
+</div></div>
+<?php if (ima(P_SUSTAV) && array_filter($bl, fn($x) => $x['bodovi'] <= 0)): ?><div class="alert alert-warning small py-2">Neki bodovi za pse su 0 – upišite ih u <a href="<?= e(url('akcije/vrste')) ?>">Vrste radnih akcija</a>.</div><?php endif; ?>
 
 <?php foreach ($psi as $p): $pid = (int) $p['Id']; ?>
     <div class="card mb-3<?= $p['Aktivan'] ? '' : ' opacity-75' ?>"><div class="card-body">
@@ -47,6 +55,13 @@ $polja = function (?array $p) { ob_start(); ?>
                 <td class="text-end"><?php if ($moze) echo $gumb('pas-ispit-obrisi', ['iid' => $is['Id']], '✕', 'btn-link text-danger p-0', 'Obrisati ispit?'); ?></td></tr><?php endforeach; ?>
             </tbody></table>
         <?php else: ?><div class="small text-muted mb-1">Nema upisanih ispita.</div><?php endif; ?>
+        <?php if ($p['Akcije']): ?>
+            <details class="small mb-2"><summary>Bodovi psa (<?= count($p['Akcije']) ?>)</summary>
+                <table class="table table-sm mb-0 mt-1"><tbody>
+                <?php foreach ($p['Akcije'] as $a): ?><tr><td class="text-nowrap"><?= e(datum($a['Datum'])) ?></td><td><?= e($a['VrstaNaziv'] ?? $a['VrstaSlobodno']) ?></td>
+                    <td class="text-muted"><?= e($a['Opis']) ?></td><td><?= status_akcije_oznaka((int) $a['Status']) ?></td><td class="text-end"><?= $a['Bodovi'] !== null ? e(broj($a['Bodovi'], 2)) . ' b.' : '' ?></td></tr><?php endforeach; ?>
+                </tbody></table></details>
+        <?php endif; ?>
         <?php if ($moze): ?>
             <form method="post" action="<?= $url ?>" class="row g-1 align-items-end mb-2 no-print"><?= csrf() ?><input type="hidden" name="radnja" value="pas-ispit"><input type="hidden" name="pid" value="<?= $pid ?>">
                 <div class="col-sm-5"><input name="Naziv" class="form-control form-control-sm" maxlength="100" placeholder="ispit, npr. Uzgojni ispit (UI), ispit na krvnom tragu…" list="ispiti" required></div>
