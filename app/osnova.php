@@ -5,7 +5,7 @@
  */
 declare(strict_types=1);
 
-const VERZIJA = '1.12.1';
+const VERZIJA = '1.12.2';
 const KONTAKT_EMAIL = 'daxemann@googlemail.com';
 const PROJEKT_URL = 'https://github.com/daxemann/lovacka-evidencija';
 const KORIJEN = __DIR__ . '/..';
@@ -93,10 +93,19 @@ function podaci(string $pod = ''): string
     return $pod === '' ? $mapa : $mapa . '/' . ltrim($pod, '/');
 }
 
+/** Posebna instalacija (proširenje u app/lib, nije dio programa na GitHubu). Bez proširenja uvijek false. */
+function je_demo(): bool
+{
+    return function_exists('demo_aktivan') && demo_aktivan();
+}
+
 // ---------- Baza ----------
-function db(): PDO
+function db(bool $novo = false): PDO
 {
     static $pdo = null;
+    if ($novo) {
+        $pdo = null;
+    }
     if ($pdo) {
         return $pdo;
     }

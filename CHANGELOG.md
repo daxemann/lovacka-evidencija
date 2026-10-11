@@ -1,18 +1,7 @@
 # Promjene
 
-## 1.12.1 – 2026-10
-- Demo: tajni ključ vlasnika čuva se izvan baze (`podaci/demo-kljuc.txt`), gumb „Novi tajni ključ“; gotovi demo podaci u `docs/demo/`.
-
-## 1.12.0 – 2026-10
-- **Demo način** za javnu probnu instalaciju (postavka `Demo.Aktivno` u bazi ili `'demo' => true` u `config.php`):
-  - prijava jednim klikom za ulogu (glavni admin, tajnik, lovočuvar, član) – ista lozinka za sve,
-  - lozinke, korisnici, uloge, samoprijava, sigurnosne kopije, ažuriranje i postavke sustava su zaključani (sivo, provjerava i poslužitelj); zajednički računi se ne mogu zaključati krivim lozinkama,
-  - član s demo računom ne može se arhivirati ni obrisati,
-  - **e-pošta se ne šalje** – stranica „📧 Demo – e-pošta“ prikazuje kako bi poruka izgledala (s PDF privitkom),
-  - svake noći nakon 03:00 sve se vraća na početno stanje, a datumi se pomiču da demo ne zastarijeva (termini i dalje nadolazeći),
-  - vlasnik upravlja demom preko `index.php?p=demo-vlasnik&k=<ključ>` (spremi/vrati početno stanje, učitaj ZIP, novi ključ, isključi demo); ključ je u `podaci/demo-kljuc.txt`.
-- Gotovi demo podaci kao kompletna kopija: `docs/demo/lu-srndac-demo.zip` (Sustav → Sigurnosne kopije → Vrati; nakon toga odmah „Novi tajni ključ“).
-- Demo podaci izmišljene udruge: `php app/demo-podaci.php` (samo iz naredbenog retka, nakon postavljanja).
+## 1.12.2 – 2026-10
+- Priprema za posebne instalacije (proširenja izvan programa); program se za korisnike ne mijenja.
 
 ## 1.11.1 – 2026-10
 - **Izvještaj radnih akcija → Pošalji e-poštom**: umjesto ručnog upisa adrese **odabir primatelja s popisa** (adresa iz podataka člana).

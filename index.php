@@ -36,7 +36,9 @@ set_exception_handler(function (Throwable $e) {
 
 pokreni_sesiju();
 provjeri_csrf();
-demo_odrzavanje();
+if (je_demo()) {
+    demo_odrzavanje();
+}
 
 $p = (string) ($_GET['p'] ?? '');
 if ($p === '' || !preg_match('#^[a-z0-9\-]+(/[a-z0-9\-]+)*$#', $p)) {
@@ -65,7 +67,9 @@ if (!in_array($p, $javne, true)) {
     dnevna_kopija();
 }
 
-demo_cuvar($p);
+if (je_demo()) {
+    demo_cuvar($p);
+}
 $dat = __DIR__ . '/app/stranice/' . $p . '.php';
 if (!is_file($dat)) {
     nije_pronadjeno('Stranica');
