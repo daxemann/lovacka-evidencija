@@ -256,7 +256,7 @@ ob_start(); ?>
 <h2 class="h5">Pristup za inspekciju</h2>
 <form method="post" action="<?= e(url('dezinfekcija/postavke')) ?>" class="card card-body" autocomplete="off"><?= csrf() ?><input type="hidden" name="radnja" value="inspekcija">
     <label class="form-label">Lozinka (6–8 znakova)</label>
-    <input name="lozinka" class="form-control font-monospace" minlength="6" maxlength="8" autocomplete="off" value="<?= e($inspLoz ?? '') ?>" placeholder="npr. Fazan24">
+    <input name="lozinka" class="form-control font-monospace" minlength="6" maxlength="8" autocomplete="off" value="<?= e($inspLoz ?? '') ?>" placeholder="npr. Lovac24">
     <div class="form-text mb-2"><?= $inspLoz ? 'Lovočuvar je daje inspektoru na licu mjesta. Promjena odmah vrijedi – stara lozinka više ne radi.' : '<b>Pristup je isključen</b> dok ne upišete lozinku.' ?></div>
     <label class="form-label">Lovište (za zaglavlje PDF-a)</label>
     <input name="loviste" class="form-control mb-3" maxlength="120" value="<?= e(postavka('Dez.Loviste', '')) ?>" placeholder="npr. Zajedničko lovište br. X/Y „Naziv“">

@@ -45,7 +45,7 @@ $ibanOk = ispravan_iban($up['Iban']);
 // primjer s izmišljenim platiteljem
 $primjer = null;
 if ($ibanOk) {
-    $primjer = uplatnica_polja(['Id' => 57, 'Ime' => 'Ivan', 'Prezime' => 'Horvat', 'Ulica' => 'Ulica primjera', 'KucniBroj' => '1', 'PostanskiBroj' => '33000', 'Mjesto' => 'Virovitica', 'Oib' => '12345678903'],
+    $primjer = uplatnica_polja(['Id' => 57, 'Ime' => 'Ivan', 'Prezime' => 'Horvat', 'Ulica' => 'Ulica primjera', 'KucniBroj' => '1', 'PostanskiBroj' => '33000', 'Mjesto' => 'Mjesto', 'Oib' => '12345678903'],
         (int) date('Y'), 2, 3, 100.0, date('Y') . '-06-30');
 }
 ob_start(); ?>
@@ -63,7 +63,7 @@ ob_start(); ?>
     <div class="col-md-6"><label class="form-label">Ulica i kućni broj <span class="text-muted small">(max. 25)</span></label>
         <input name="adresa" class="form-control" maxlength="25" value="<?= e($up['Adresa']) ?>"></div>
     <div class="col-md-6"><label class="form-label">Poštanski broj i mjesto</label>
-        <input name="mjesto" class="form-control" maxlength="27" value="<?= e($up['Mjesto']) ?>" placeholder="33404 Špišić Bukovica"></div>
+        <input name="mjesto" class="form-control" maxlength="27" value="<?= e($up['Mjesto']) ?>" placeholder="poštanski broj i mjesto"></div>
     <div class="col-4 col-md-3"><label class="form-label">Model</label>
         <input name="model" class="form-control" maxlength="4" value="<?= e($up['Model']) ?>"></div>
     <div class="col-8 col-md-9"><label class="form-label">Poziv na broj</label>

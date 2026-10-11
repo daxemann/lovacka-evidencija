@@ -8,7 +8,7 @@ if (je_post()) {
     $naziv = mb_substr(ul_str('naziv'), 0, 60);
     $_SESSION['gmail_carobnjak'] = ['email' => $email, 'naziv' => $naziv];
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        poruka('Upišite punu Gmail adresu (npr. lu.fazan@gmail.com).', 'danger');
+        poruka('Upišite punu Gmail adresu (npr. lovacka.udruga@gmail.com).', 'danger');
         preusmjeri('sustav/gmail');
     }
     if (!preg_match('/^[a-z]{16}$/i', $loz)) {
@@ -45,7 +45,7 @@ ob_start(); ?>
 <div class="card mb-3<?= $korak === 1 ? ' border-primary' : '' ?>"><div class="card-body">
     <h2 class="h6"><span class="badge rounded-pill bg-primary me-1">1</span> Gmail adresa pošiljatelja</h2>
     <div class="row g-2">
-        <div class="col-md-7"><input name="email" type="email" class="form-control" placeholder="lu.fazan@gmail.com" value="<?= e($c['email']) ?>" required></div>
+        <div class="col-md-7"><input name="email" type="email" class="form-control" placeholder="lovacka.udruga@gmail.com" value="<?= e($c['email']) ?>" required></div>
         <div class="col-md-5"><input name="naziv" class="form-control" placeholder="Naziv pošiljatelja" value="<?= e($c['naziv']) ?>" maxlength="60"></div>
     </div>
     <div class="form-text">U pregledniku se prijavite u Google upravo s tim računom (gore desno u Gmailu). Ako ste prijavljeni s više računa, poveznice ispod otvaraju ovaj račun.</div>

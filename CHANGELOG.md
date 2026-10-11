@@ -1,5 +1,8 @@
 # Promjene
 
+## 1.16.3 – 2026-10
+- Primjeri u poljima (placeholderi) više ne sadrže nazive jedne udruge – program je neutralan za svaku udrugu.
+
 ## 1.16.2 – 2026-10
 - **Sustav → Podaci o udruzi: adresa, poštanski broj i mjesto, OIB udruge** (OIB se provjerava). Ispisuju se u zaglavlju knjige dezinfekcije, izjave za inspekciju,
   lovačkog dnevnika i izvještaja, na stranici za inspekciju; adresa je i zadana adresa primatelja na uplatnici.

@@ -82,7 +82,7 @@ ob_start(); ?>
     <div class="col-5 col-md-2 sat"><label class="form-label">Od</label><input type="time" name="VrijemeOd" class="form-control" value="<?= e($v['VrijemeOd']) ?>"></div>
     <div class="col-7 col-md-4"><label class="form-label">Do datuma <span class="small text-muted">(ako traje više dana)</span></label><input type="date" name="DatumDo" class="form-control" value="<?= e($v['DatumDo']) ?>"></div>
     <div class="col-5 col-md-2 sat"><label class="form-label">Do</label><input type="time" name="VrijemeDo" class="form-control" value="<?= e($v['VrijemeDo']) ?>"></div>
-    <div class="col-12"><label class="form-label">Mjesto / okupljanje</label><input name="Mjesto" class="form-control" value="<?= e($v['Mjesto']) ?>" maxlength="300" placeholder="npr. Lovačka kuća Špišić Bukovica – ili zalijepite poveznicu Google Maps">
+    <div class="col-12"><label class="form-label">Mjesto / okupljanje</label><input name="Mjesto" class="form-control" value="<?= e($v['Mjesto']) ?>" maxlength="300" placeholder="npr. Lovačka kuća – ili zalijepite poveznicu Google Maps">
         <div class="form-text">Članovi dobiju gumb za navigaciju (Google Maps).</div></div>
     <div class="col-12"><label class="form-label">Opis</label><textarea name="Opis" class="form-control" rows="4" maxlength="3000" placeholder="što se radi, što ponijeti…"><?= e($v['Opis']) ?></textarea></div>
     <div class="col-12"><label class="form-label">Za koga</label>
