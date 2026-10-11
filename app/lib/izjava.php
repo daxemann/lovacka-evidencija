@@ -110,7 +110,7 @@ function izjava_pdf(array $stanice): string
         .podnozje { position: fixed; bottom: -8mm; left: 0; right: 0; font-size: 7pt; color: #888; }
     </style></head><body>
     <div class="podnozje">' . e(udruga_naziv()) . ' · izjava o vođenju evidencije dezinfekcije · izdano ' . date('d.m.Y.') . '</div>
-    <div class="zag">' . $logo . '<div class="n">' . e(udruga_naziv()) . '</div></div>' . izjava_html($stanice) . '</body></html>';
+    <div class="zag">' . $logo . '<div class="n">' . e(udruga_naziv()) . '</div>' . (udruga_adresa() ? '<div style="color:#555">' . e(udruga_adresa()) . '</div>' : '') . '</div>' . izjava_html($stanice) . '</body></html>';
     $opt = new Dompdf\Options();
     $opt->set('defaultFont', 'DejaVu Sans');
     $opt->set('isRemoteEnabled', false);

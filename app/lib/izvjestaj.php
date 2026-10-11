@@ -226,7 +226,7 @@ function izvjestaj_pdf(array $grupe, string $naslov, string $podnaslov = '', boo
         .uk td { background: #f4f6f2; } .podnozje { position: fixed; bottom: -8mm; left: 0; right: 0; font-size: 7.5pt; color: #888; }
     </style></head><body>
     <div class="podnozje">' . e(udruga_naziv()) . ' · ispisano ' . date('d.m.Y. H:i') . '</div>
-    <div class="zag">' . $logo . '<div class="n">' . e(udruga_naziv()) . '</div><div class="p">' . e($podnaslov) . '</div></div>'
+    <div class="zag">' . $logo . '<div class="n">' . e(udruga_naziv()) . '</div>' . (udruga_adresa() ? '<div style="color:#555">' . e(udruga_adresa()) . '</div>' : '') . '<div class="p">' . e($podnaslov) . '</div></div>'
         . izvjestaj_html($grupe, $naslov, true, $sekcijaStupac) . '</body></html>';
     $opt = new Dompdf\Options();
     $opt->set('defaultFont', 'DejaVu Sans');

@@ -5,7 +5,7 @@
  */
 declare(strict_types=1);
 
-const VERZIJA = '1.16.1';
+const VERZIJA = '1.16.2';
 const KONTAKT_EMAIL = 'daxemann@googlemail.com';
 const PROJEKT_URL = 'https://github.com/daxemann/lovacka-evidencija';
 const KORIJEN = __DIR__ . '/..';
@@ -555,6 +555,16 @@ function spremi_postavku(string $k, ?string $v): void
 function udruga_naziv(): string
 {
     return postavka('Udruga.Naziv', 'Lovačka udruga');
+}
+/** Adresa i OIB udruge u jednom retku (zaglavlja PDF-ova, izjava, uplatnice). */
+function udruga_adresa(bool $saOib = true): string
+{
+    $d = array_filter([
+        trim((string) postavka('Udruga.Adresa', '')),
+        trim((string) postavka('Udruga.Mjesto', '')),
+        $saOib && postavka('Udruga.Oib') ? 'OIB ' . postavka('Udruga.Oib') : '',
+    ]);
+    return implode(', ', $d);
 }
 function udruga_kratko(): string
 {

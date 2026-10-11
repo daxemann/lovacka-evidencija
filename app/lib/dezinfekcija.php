@@ -567,7 +567,7 @@ function dez_pdf(array $upisi, array $stanice, string $razdoblje, string $sekcij
     </style></head><body>
     <div class="podnozje">' . e(udruga_naziv()) . ' · knjiga dezinfekcije · ispisano ' . date('d.m.Y. H:i') . '</div>
     <div class="zag">' . $logo . '<div class="n">' . e(udruga_naziv()) . '</div><div class="p">'
-        . e(($loviste ? 'Lovište: ' . $loviste . "\n" : '') . dez_opis_stanica($stanice, $upisi)) . '</div></div>'
+        . e((udruga_adresa() ? udruga_adresa() . "\n" : '') . ($loviste ? 'Lovište: ' . $loviste . "\n" : '') . dez_opis_stanica($stanice, $upisi)) . '</div></div>'
         . dez_html($upisi, 'Evidencija dezinfekcije vozila, obuće i opreme (ASK)' . ($stanice && $stanice[0]['Vrsta'] === 'M' ? ' – mobilna stanica' : ''), 'Razdoblje: ' . $razdoblje . ' · ' . $sekcijaOpis . ' · upisa: ' . count($upisi), true, count($stanice) > 1 || ($stanice && $stanice[0]['Vrsta'] === 'M'))
         . dez_potpis_pdf_html($stanice)
         . ($liste ? '<div class="pod" style="margin-top:6px">Prilog: ' . count($liste) . ' fotografija papirnatih lista (sljedeće stranice).</div>' . dez_liste_pdf_html($liste) : '')

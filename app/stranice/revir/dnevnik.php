@@ -98,7 +98,7 @@ if (($_GET['izvoz'] ?? '') === 'pdf') {
         .podnozje { position: fixed; bottom: -9mm; left: 0; right: 0; font-size: 7pt; color: #888; }
     </style></head><body>
     <div class="podnozje">' . e(udruga_naziv()) . ' · lovački dnevnik · ispisano ' . date('d.m.Y. H:i') . '</div>
-    <div class="zag">' . $logo . '<div class="n">' . e(udruga_naziv()) . '</div></div>
+    <div class="zag">' . $logo . '<div class="n">' . e(udruga_naziv()) . '</div>' . (udruga_adresa() ? '<div style="color:#555">' . e(udruga_adresa()) . '</div>' : '') . '</div>
     <h2>Lovački dnevnik' . ($aktivnost !== '' ? ' – ' . e($aktivnost) : '') . '</h2>
     <div class="pod">Razdoblje: ' . e(opis_raspona($f)) . ' · ' . e($sekOpis) . ' · upisa: ' . count($upisi) . ' · ukupno ' . e($trajanje($ukupnoMin))
         . (count($poAktivnosti) > 1 ? ' · ' . e(implode(', ', array_map(fn($a, $n) => "$a $n", array_keys($poAktivnosti), $poAktivnosti))) : '') . '</div>

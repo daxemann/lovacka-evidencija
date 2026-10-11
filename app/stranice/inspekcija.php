@@ -177,7 +177,7 @@ ob_start(); ?>
 <?php endif; ?>
 <div class="mb-2">
     <div class="h5 mb-0">Evidencija dezinfekcije vozila, obuće i opreme<?= $mob ? ' – mobilne stanice' : '' ?></div>
-    <div class="text-muted small"><?= e(udruga_naziv()) ?><?= postavka('Dez.Loviste') ? ' · ' . e(postavka('Dez.Loviste')) : '' ?> · <?= e($opis) ?> · <?= e($sekOpis) ?> · <?= count($upisi) ?> upisa</div>
+    <div class="text-muted small"><?= e(udruga_naziv()) ?><?= udruga_adresa(false) ? ' · ' . e(udruga_adresa(false)) : '' ?><?= postavka('Dez.Loviste') ? ' · ' . e(postavka('Dez.Loviste')) : '' ?> · <?= e($opis) ?> · <?= e($sekOpis) ?> · <?= count($upisi) ?> upisa</div>
     <div class="text-muted small" style="white-space:pre-line"><?= e(dez_opis_stanica($stF, $upisi)) ?></div>
 </div>
 <?php if ($upisi): ?>

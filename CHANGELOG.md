@@ -1,5 +1,10 @@
 # Promjene
 
+## 1.16.2 – 2026-10
+- **Sustav → Podaci o udruzi: adresa, poštanski broj i mjesto, OIB udruge** (OIB se provjerava). Ispisuju se u zaglavlju knjige dezinfekcije, izjave za inspekciju,
+  lovačkog dnevnika i izvještaja, na stranici za inspekciju; adresa je i zadana adresa primatelja na uplatnici.
+  Svaka udruga u svojoj instalaciji ima svoj naziv, adresu, logo, stanice, lovište i potpise – ništa od toga nije upisano u program.
+
 ## 1.16.1 – 2026-10
 - **Oglasnik – jednaka veličina slika**: glavna slika oglasa uvijek je u istom okviru 4:3 (cijela slika vidljiva, prazni rub ispunjen zamućenom slikom) – uspravne i široke fotografije više ne mijenjaju veličinu stranice.
   Na popisu oglasa sve sličice imaju istu veličinu i na starijim preglednicima.

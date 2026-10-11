@@ -18,8 +18,8 @@ function uplatnica_postavke(): array
     return [
         'Iban' => postavka('Uplatnica.Iban', ''),
         'Naziv' => postavka('Uplatnica.Naziv', udruga_naziv()),
-        'Adresa' => postavka('Uplatnica.Adresa', ''),
-        'Mjesto' => postavka('Uplatnica.Mjesto', ''),
+        'Adresa' => postavka('Uplatnica.Adresa', postavka('Udruga.Adresa', '')),
+        'Mjesto' => postavka('Uplatnica.Mjesto', postavka('Udruga.Mjesto', '')),
         'Model' => postavka('Uplatnica.Model', 'HR00'),
         'Poziv' => postavka('Uplatnica.Poziv', '{GODINA}-{CLAN}-{RATA}'),
         'Sifra' => postavka('Uplatnica.Sifra', ''),
