@@ -124,5 +124,22 @@ function ogl_salji_obrazac(string $akcija, array $polja, string $poruka): never
 function ogl_povratak(string $stranica, array $par = []): string
 {
     $par = array_filter($par, fn($v) => $v !== null && $v !== '');
-    return trenutna_adresa() . 'index.php?' . http_build_query(['p' => $stranica] + $par);
+    return ogl_baza() . 'index.php?' . http_build_query(['p' => $stranica] + $par);
+}
+
+/**
+ * Javna HTTPS adresa ove aplikacije za poveznice prema Oglasniku.
+ * Iza Tailscale Funnela / proxyja PHP vidi "http", pa se prednost daje postavljenoj javnoj adresi.
+ */
+function ogl_baza(): string
+{
+    $j = javna_adresa();
+    if (str_starts_with($j, 'https://')) {
+        return $j;
+    }
+    $t = trenutna_adresa();
+    if (str_starts_with($t, 'http://') && !adresa_privatna($t)) {
+        return 'https://' . substr($t, 7);
+    }
+    return $t;
 }

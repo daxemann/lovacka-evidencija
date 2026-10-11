@@ -1,5 +1,8 @@
 # Promjene
 
+## 1.18.1 – 2026-10
+- Oglasnik lovaca: povratne poveznice uvijek preko javne HTTPS adrese (ispravka za Home Assistant add-on iza Tailscale Funnela – „Zahtjev nije poslan“).
+
 ## 1.18.0 – 2026-10
 - **🛒 Oglasnik lovaca – zajednički oglasnik svih udruga** (Sustav → Oglasnik lovaca).
   Udruga se jednim klikom prijavi u zajednički Oglasnik (zahtjev s ključem udruge, administrator Oglasnika ga odobri).

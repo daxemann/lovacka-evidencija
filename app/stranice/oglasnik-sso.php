@@ -23,7 +23,7 @@ $token = ogl_potpisi([
     'email' => $clan['Email'] ?? null,
     'phone' => $clan['MobilniTelefon'] ?? null,
     'role' => $uloga,
-    'club' => ['name' => udruga_naziv(), 'url' => trenutna_adresa(), 'contact' => ogl_kontakt()],
+    'club' => ['name' => udruga_naziv(), 'url' => ogl_baza(), 'contact' => ogl_kontakt()],
     'policy' => ogl_politika(),
 ]);
 if (!$token) {

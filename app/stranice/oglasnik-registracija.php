@@ -13,7 +13,7 @@ $zahtjev = ogl_potpisi([
     'pub' => ogl_javni_kljuc(),
     'name' => udruga_naziv(),
     'contact' => ogl_kontakt(),
-    'app_url' => trenutna_adresa() . 'index.php?p=sustav/oglasnik',
+    'app_url' => ogl_baza() . 'index.php?p=sustav/oglasnik',
     'rotate' => ogl_zamjena(),
 ]);
 if (!$zahtjev) {
