@@ -1,5 +1,9 @@
 # Promjene
 
+## 1.16.1 – 2026-10
+- **Oglasnik – jednaka veličina slika**: glavna slika oglasa uvijek je u istom okviru 4:3 (cijela slika vidljiva, prazni rub ispunjen zamućenom slikom) – uspravne i široke fotografije više ne mijenjaju veličinu stranice.
+  Na popisu oglasa sve sličice imaju istu veličinu i na starijim preglednicima.
+
 ## 1.16.0 – 2026-10
 - **Gmail čarobnjak** (Sustav → E-pošta i adresa → „Gmail čarobnjak“): korak po korak – Gmail adresa, poveznica na Googleovu „Potvrdu u 2 koraka“, poveznica na „Lozinke aplikacija“ (otvara se izravno za upisani račun),
   lijepljenje lozinke aplikacije (razmaci se sami brišu), **probna poruka prije spremanja** – postavke se spremaju samo ako slanje uspije.

@@ -43,12 +43,12 @@ ob_start(); ?>
 <div class="row g-4 mt-1">
     <div class="col-lg-7">
         <?php if ($slike): ?>
-            <img src="<?= e(foto_url($slike[0])) ?>" class="oglas-velika" id="velika" alt="">
+            <div class="oglas-okvir" id="okvir" style="--pozadina:url('<?= e(foto_url($slike[0])) ?>')"><img src="<?= e(foto_url($slike[0])) ?>" id="velika" alt=""></div>
             <?php if (count($slike) > 1): ?><div class="d-flex flex-wrap gap-2 mt-2">
                 <?php foreach ($slike as $i => $s): ?><img src="<?= e(foto_url($s)) ?>" class="oglas-palac <?= $i === 0 ? 'odabrana' : '' ?>" alt=""
-                    onclick="document.getElementById('velika').src=this.src;document.querySelectorAll('.oglas-palac').forEach(x=>x.classList.remove('odabrana'));this.classList.add('odabrana')"><?php endforeach; ?>
+                    onclick="document.getElementById('velika').src=this.src;document.getElementById('okvir').style.setProperty('--pozadina','url(\''+this.src+'\')');document.querySelectorAll('.oglas-palac').forEach(x=>x.classList.remove('odabrana'));this.classList.add('odabrana')"><?php endforeach; ?>
             </div><?php endif; ?>
-        <?php else: ?><div class="oglas-velika oglas-bez-slike">bez slike</div><?php endif; ?>
+        <?php else: ?><div class="oglas-okvir oglas-bez-slike">bez slike</div><?php endif; ?>
     </div>
     <div class="col-lg-5">
         <div class="d-flex align-items-start gap-2">
