@@ -59,6 +59,7 @@ ob_start(); ?>
 
 <div class="d-flex flex-wrap gap-2 mb-3">
     <a class="btn btn-outline-secondary btn-sm" href="<?= e(url('imenik')) ?>">📇 Imenik</a>
+    <a class="btn btn-outline-secondary btn-sm" href="<?= e(url('vodici-pasa')) ?>">🐕 Vodiči pasa</a>
     <a class="btn btn-outline-secondary btn-sm" href="<?= e(url('poruke')) ?>">💬 Poruke</a>
     <?php if ($cid): ?><a class="btn btn-outline-secondary btn-sm" href="<?= e(url('moj-profil')) ?>">👤 Moj profil</a><?php endif; ?>
 </div>

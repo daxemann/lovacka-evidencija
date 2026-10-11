@@ -187,7 +187,7 @@ function psi_obradi(int $id, string $radnja, string $ime): void
             'Spol' => in_array(ul_str('Spol'), ['pas', 'kuja'], true) ? ul_str('Spol') : null, 'DatumRodjenja' => u_datum(ul_str('DatumRodjenja')),
             'Cip' => mb_substr(ul_str('Cip'), 0, 40) ?: null,
             'RodnaKnjiga' => mb_substr(ul_str('RodnaKnjiga'), 0, 40) ?: null, 'Boja' => mb_substr(ul_str('Boja'), 0, 60) ?: null, 'Dlaka' => mb_substr(ul_str('Dlaka'), 0, 40) ?: null,
-            'Napomena' => mb_substr(ul_str('Napomena'), 0, 200) ?: null, 'Bodovanje' => isset($_POST['Bodovanje']) ? 1 : 0, 'Potraga' => isset($_POST['Potraga']) ? 1 : 0];
+            'Napomena' => mb_substr(ul_str('Napomena'), 0, 200) ?: null, 'Bodovanje' => isset($_POST['Bodovanje']) ? 1 : 0, 'UPopisu' => isset($_POST['UPopisu']) ? 1 : 0, 'Potraga' => isset($_POST['Potraga']) ? 1 : 0];
         if ($pod['Ime'] === '') {
             return;
         }

@@ -5,7 +5,7 @@
  */
 declare(strict_types=1);
 
-const VERZIJA = '1.16.4';
+const VERZIJA = '1.17.0';
 const KONTAKT_EMAIL = 'daxemann@googlemail.com';
 const PROJEKT_URL = 'https://github.com/daxemann/lovacka-evidencija';
 const KORIJEN = __DIR__ . '/..';
@@ -133,7 +133,7 @@ function db(bool $novo = false): PDO
  * Dodatne tablice PHP verzije (PRAGMA user_version). .NET verzija ih ne poznaje i zanemaruje,
  * pa baza i dalje radi u oba smjera.
  */
-const SHEMA_PHP = 15;
+const SHEMA_PHP = 16;
 function nadogradi_bazu(PDO $pdo): void
 {
     $v = (int) $pdo->query('PRAGMA user_version')->fetchColumn();
@@ -472,6 +472,10 @@ SQL);
         $pdo->exec('ALTER TABLE "LovniPsi" ADD COLUMN "RodnaKnjiga" TEXT NULL;
             ALTER TABLE "LovniPsi" ADD COLUMN "Boja" TEXT NULL;
             ALTER TABLE "LovniPsi" ADD COLUMN "Dlaka" TEXT NULL;');
+    }
+    if ($v < 16) {
+        // pas u popisu „Vodiči pasa“ (vlasnik može isključiti)
+        $pdo->exec('ALTER TABLE "LovniPsi" ADD COLUMN "UPopisu" INTEGER NOT NULL DEFAULT 1;');
     }
     $pdo->exec('PRAGMA user_version = ' . SHEMA_PHP);
     $pdo->commit();

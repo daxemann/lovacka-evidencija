@@ -1,5 +1,11 @@
 # Promjene
 
+## 1.17.0 – 2026-10
+- **🐕 Vodiči pasa** (izbornik Članovi i gumb na početnoj, za sve lovce): popis članova s lovačkim psom – pas, pasmina, godina, 🩸 potraga, ispiti.
+  Filtar „samo psi za potragu (krvni trag)“, pretraga po imenu/psu/pasmini i sekciji.
+  **Kontakt prema dijeljenju člana**: telefon (Nazovi / WhatsApp / Viber) samo ako ga je član sam podijelio u „Moj profil“, inače **💬 Poruka u aplikaciji**.
+- Kod svakog psa kvačica „prikaži u popisu Vodiči pasa“ (zadano uključeno) – vlasnik psa može ga sakriti.
+
 ## 1.16.4 – 2026-10
 - **Lovački pas: broj rodne knjige, boja, dlaka i datum oštenja** (umjesto „rođen“); broj čipa je sada posebno polje. Za boju i dlaku nude se uobičajene vrijednosti, može se upisati i drugo.
 
