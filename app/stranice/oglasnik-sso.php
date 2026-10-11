@@ -30,4 +30,4 @@ if (!$token) {
     stranica('Oglasnik', '<div class="alert alert-danger mt-3">Ključ za Oglasnik nije moguće pročitati. Administrator treba u <b>Sustav → Oglasnik</b> napraviti novi ključ.</div>');
 }
 $povratak = ogl_povratak('oglasnik-sso', ['r' => $cilj !== '/' ? $cilj : null, 'retry' => isset($_GET['retry']) ? '1' : null]);
-ogl_salji_obrazac(ogl_adresa() . '/sso?' . http_build_query(['from' => $povratak]), ['token' => $token[0] . '.' . $token[1], 'r' => $cilj], 'Otvaram Oglasnik…');
+ogl_otvori(ogl_adresa() . '/sso?' . http_build_query(['from' => $povratak]), ['token' => $token[0] . '.' . $token[1], 'r' => $cilj]);

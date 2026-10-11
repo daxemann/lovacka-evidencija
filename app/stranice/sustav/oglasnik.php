@@ -66,15 +66,15 @@ ob_start(); ?>
         <?php if (!$imaKljuc): ?>
             <p>Klikom na gumb aplikacija napravi <b>ključ udruge</b> i pošalje <b>zahtjev</b> Oglasniku (naziv udruge i kontakt iz točke 3).
                 Administrator Oglasnika zahtjev odobri – nakon toga uključite Oglasnik (točka 4).</p>
-            <button class="btn btn-primary" name="radnja" value="registracija">Pošalji zahtjev za registraciju</button>
+            <button class="btn btn-primary" name="radnja" value="registracija" formtarget="_blank">Pošalji zahtjev za registraciju</button>
         <?php else: ?>
             <p class="mb-2">Kod udruge: <code class="fs-6"><?= e(ogl_kod()) ?></code>
                 <?php if ($zahtjev): ?><span class="text-muted small"> · zahtjev poslan <?= e(datum_vrijeme($zahtjev)) ?></span><?php endif; ?></p>
             <p class="small text-muted mb-2">Je li udruga odobrena, vidjet ćete kad otvorite Oglasnik (izbornik Članovi → Oglasnik) nakon uključivanja.
                 Ako zahtjev nije stigao, pošaljite ga ponovno.</p>
             <div class="d-flex flex-wrap gap-2">
-                <button class="btn btn-outline-primary btn-sm" name="radnja" value="registracija">Pošalji zahtjev ponovno</button>
-                <button class="btn btn-outline-danger btn-sm" name="radnja" value="novi_kljuc" data-potvrda="Napraviti novi ključ? (npr. ako sumnjate da je stari ključ otkriven) Novi ključ odmah se šalje Oglasniku.">Novi ključ</button>
+                <button class="btn btn-outline-primary btn-sm" name="radnja" value="registracija" formtarget="_blank">Pošalji zahtjev ponovno</button>
+                <button class="btn btn-outline-danger btn-sm" name="radnja" value="novi_kljuc" formtarget="_blank" data-potvrda="Napraviti novi ključ? (npr. ako sumnjate da je stari ključ otkriven) Novi ključ odmah se šalje Oglasniku.">Novi ključ</button>
             </div>
             <details class="small mt-2"><summary>Javni ključ</summary><code class="d-block text-break mt-1"><?= e(ogl_javni_kljuc()) ?></code>
                 <span class="text-muted">Javni ključ nije tajna. Privatni ključ ostaje samo u ovoj aplikaciji (šifrirano).</span></details>

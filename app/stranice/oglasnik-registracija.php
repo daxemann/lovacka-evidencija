@@ -23,4 +23,4 @@ if (!$zahtjev) {
 spremi_postavku('Oglasnik.Zahtjev', sada());
 dnevnik('Oglasnik – zahtjev za registraciju poslan', null, null, ogl_kod());
 $povratak = ogl_povratak('oglasnik-registracija', ['retry' => isset($_GET['retry']) ? '1' : null]);
-ogl_salji_obrazac(ogl_adresa() . '/registracija?' . http_build_query(['from' => $povratak]), ['payload' => $zahtjev[0], 'sig' => $zahtjev[1]], 'Šaljem zahtjev Oglasniku…');
+ogl_otvori(ogl_adresa() . '/registracija?' . http_build_query(['from' => $povratak]), ['payload' => $zahtjev[0], 'sig' => $zahtjev[1]]);

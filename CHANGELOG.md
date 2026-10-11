@@ -1,5 +1,9 @@
 # Promjene
 
+## 1.18.2 – 2026-10
+- Oglasnik lovaca: prijava i zahtjev za registraciju rade i kad Oglasnik stoji na besplatnom hostingu sa zaštitom od botova (podaci idu u #dio adrese, ne obrascem s druge domene).
+- Oglasnik se otvara u novoj kartici.
+
 ## 1.18.1 – 2026-10
 - Oglasnik lovaca: povratne poveznice uvijek preko javne HTTPS adrese (ispravka za Home Assistant add-on iza Tailscale Funnela – „Zahtjev nije poslan“).
 

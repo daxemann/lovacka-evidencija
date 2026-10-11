@@ -102,21 +102,16 @@ function ogl_kontakt(): array
     ];
 }
 
-/** Stranica koja preglednikom šalje (POST) podatke Oglasniku. */
-function ogl_salji_obrazac(string $akcija, array $polja, string $poruka): never
+/**
+ * Otvara Oglasnik običnom poveznicom (GET); podaci idu u #fragment adrese – fragment preglednik nikad ne šalje
+ * poslužitelju (ni u zapisnike). Stranica Oglasnika ih zatim šalje POST-om sa svoje domene.
+ * (POST s druge domene besplatni hosting Oglasnika blokira zaštitom od botova.)
+ */
+function ogl_otvori(string $adresa, array $fragment): never
 {
     header('Referrer-Policy: no-referrer');
     header('Cache-Control: no-store');
-    echo '<!doctype html><html lang="hr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">'
-        . '<meta name="referrer" content="no-referrer"><title>Oglasnik</title></head>'
-        . '<body style="font-family:system-ui,sans-serif;text-align:center;padding:3rem 1rem;color:#1f3d1f">'
-        . '<p>' . e($poruka) . '</p>'
-        . '<form id="f" method="post" action="' . e($akcija) . '">';
-    foreach ($polja as $k => $v) {
-        echo '<input type="hidden" name="' . e($k) . '" value="' . e($v) . '">';
-    }
-    echo '<noscript><button>Nastavi</button></noscript></form>'
-        . '<script>document.getElementById("f").submit();</script></body></html>';
+    header('Location: ' . $adresa . '#' . http_build_query($fragment));
     exit;
 }
 

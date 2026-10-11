@@ -169,5 +169,6 @@ document.querySelectorAll('article form[method=post], article form[method=POST]'
 });</script>
 <?php endif; ?>
 <script src="<?= e(asset('assets/dez.js')) ?>" data-api="<?= e(url('api/dez-sync')) ?>" data-sw="<?= e(bazni_put() . 'sw.js') ?>"></script>
+<script>document.querySelectorAll('a[href*="p=oglasnik-sso"]').forEach(function (a) { a.target = '_blank'; a.rel = 'noopener'; });</script>
 </body>
 </html>

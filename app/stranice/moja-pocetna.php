@@ -50,7 +50,7 @@ ob_start(); ?>
 <div class="card mb-3"><div class="card-body d-flex align-items-center gap-3">
     <div class="fs-2">🛒</div>
     <div class="flex-grow-1"><b>Oglasnik lovaca</b><div class="small text-muted">oglasi vaše udruge i lovaca iz drugih udruga</div></div>
-    <a class="btn btn-primary" href="<?= e(url('oglasnik-sso')) ?>">Otvori</a>
+    <a class="btn btn-primary" href="<?= e(url('oglasnik-sso')) ?>" target="_blank" rel="noopener">Otvori</a>
 </div></div>
 <?php else: ?>
 <div class="card mb-3"><div class="card-header d-flex align-items-center"><b class="me-auto">🛒 Oglasnik</b><a class="small" href="<?= e(url('oglasnik')) ?>">svi oglasi →</a></div>
