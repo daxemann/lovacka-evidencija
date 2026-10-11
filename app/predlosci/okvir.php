@@ -58,6 +58,7 @@ $novaVerzija = $k ? azuriranje_dostupno() : null;
             <nav class="nav flex-column">
                 <?php if ($k): ?>
                     <?= $stavka('pocetna', 'Početna', 0, true) ?>
+                    <?= $stavka('skeniraj', '📷 Skeniraj QR stanice', 0, true) ?>
                     <?= $stavka('kalendar', 'Kalendar') ?>
                     <?php if ($k['ClanId']) echo $grupa('moje', 'Moje', $stavka('moje-akcije', 'Moje radne akcije') . $stavka('moj-profil', 'Moj profil') . $stavka('moja-prava', 'Moja prava')); ?>
                     <?php $revirSek = revir_sekcije(); if ($revirSek || ima(P_SUSTAV)) echo $grupa('loviste', 'Lovište',
@@ -149,7 +150,7 @@ $novaVerzija = $k ? azuriranje_dostupno() : null;
         <p><b>Otvorite je u Chromeu (Android) ili Safariju (iPhone):</b> dodirnite <b>⋮</b> ili <b>…</b> → „Otvori u pregledniku“, ili kopirajte adresu:</p>
         <div class="input-group"><input class="form-control form-control-sm" id="instal-adresa" readonly value="<?= e(javna_adresa()) ?>"><button class="btn btn-sm btn-outline-secondary" type="button" data-kopiraj="#instal-adresa">Kopiraj</button></div></div>
 </div></div>
-<script>window.EV = { api: <?= json_encode(url('api/obavijesti')) ?>, poruke: <?= json_encode(url('poruke')) ?>, n: <?= (int) $neprocitano ?>, sw: <?= json_encode(bazni_put() . 'sw.js') ?> };</script>
+<script>window.EV = { api: <?= json_encode(url('api/obavijesti')) ?>, poruke: <?= json_encode(url('poruke')) ?>, n: <?= (int) $neprocitano ?>, sw: <?= json_encode(bazni_put() . 'sw.js') ?>, uid: <?= $k ? (int) $k['Id'] : 'null' ?> };</script>
 <script src="<?= e(asset('assets/app.js')) ?>"></script>
 <script src="<?= e(asset('assets/dez.js')) ?>" data-api="<?= e(url('api/dez-sync')) ?>" data-sw="<?= e(bazni_put() . 'sw.js') ?>"></script>
 </body>

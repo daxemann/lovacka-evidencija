@@ -58,7 +58,7 @@ $js = [
     'token' => $st['Token'], 'lat' => $imaKoord ? (float) $stP['Lat'] : null, 'lon' => $imaKoord ? (float) $stP['Lon'] : null,
     'r' => max(10, (int) $st['Radijus']), 'mob' => $mob, 'aktivna' => (bool) $stP, 'naziv' => $st['Naziv'],
     'api' => url('api/dez-sync'), 'potvrda' => url('dez/potvrda'), 'ja' => $ja, 'clanId' => $clan['Id'] ?? null,
-    'spremljeno' => date('d.m.Y. H:i'),
+    'spremljeno' => date('d.m.Y. H:i'), 'kid' => (int) $k['Id'],
 ];
 ob_start(); ?>
 <div class="dez-glava mb-3">
@@ -68,6 +68,7 @@ ob_start(); ?>
 </div>
 <div id="dez-offline-traka" class="alert alert-info small py-2" hidden>📴 Nema interneta – upis se sprema na mobitelu i šalje se automatski čim bude signala.</div>
 <div id="dez-red-traka" class="alert alert-light border small py-2" hidden></div>
+<div id="dez-sat" class="alert alert-warning small py-2" hidden></div>
 <?php if ($mob && !$stP): ?>
     <div class="alert alert-warning" id="dez-neaktivna"><b>Mobilna stanica trenutno nije aktivna.</b><br>Voditelj lova / lovočuvar je aktivira na mjestu dezinfekcije.
         Kad je aktivirana, osvježite stranicu.</div>
@@ -155,7 +156,7 @@ ob_start(); ?>
     <div class="row g-1"><div class="col-6"><input name="gost_ime[]" class="form-control form-control-sm" placeholder="Ime" maxlength="60"></div>
     <div class="col-6"><input name="gost_prezime[]" class="form-control form-control-sm" placeholder="Prezime" maxlength="60"></div>
     <div class="col-12"><input name="gost_oznaka[]" class="form-control form-control-sm text-uppercase" placeholder="Reg. oznaka (prazno = moje vozilo)" maxlength="20"></div></div></div></template>
-<div class="text-center mt-3"><a class="small" href="<?= e(url()) ?>">Početna</a></div>
+<div class="text-center mt-3"><a class="small" href="<?= e(url()) ?>">Početna</a> · <a class="small" href="<?= e(url('skeniraj')) ?>">📷 Skeniraj drugu stanicu</a></div>
 <script>window.DEZ = <?= json_encode($js, JSON_UNESCAPED_UNICODE) ?>; window.DEZ_MAX = [<?= DEZ_MAX_SUPUTNIKA ?>, <?= DEZ_MAX_GOSTIJU ?>];</script>
 <script src="<?= e(asset('assets/dez.js')) ?>" data-sw="<?= e(bazni_put() . 'sw.js') ?>"></script>
 <?php stranica('Dezinfekcija', ob_get_clean(), 'prazno');

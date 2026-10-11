@@ -30,5 +30,10 @@
         </div></div>
     </div>
 </div>
+<?php if (($_GET['p'] ?? '') === 'prijava' && !korisnik()): ?>
+<script>/* odjava / nova prijava: stranice stanica spremljene na mobitelu sadrže podatke prethodnog korisnika */
+try { ['ev-dez-predmem', 'ev-dez-stanice', 'ev-dez-kid', 'ev-dez-provjera'].forEach(function (k) { localStorage.removeItem(k); }); } catch (x) {}
+if ('serviceWorker' in navigator && navigator.serviceWorker.controller) navigator.serviceWorker.controller.postMessage({ tip: 'dez-brisi' });</script>
+<?php endif; ?>
 </body>
 </html>

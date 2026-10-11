@@ -18,6 +18,18 @@ const DEZ_MAX_SUPUTNIKA = 3;
 const DEZ_MAX_GOSTIJU = 6;
 /** Najveća dopuštena nepreciznost GPS-a (m) izvan radijusa – dalje od radijus + 1000 m upis se odbija. */
 const DEZ_MAX_TOLERANCIJA = 1000;
+/** Odstupanje sata mobitela (s) iznad kojeg se upozorava (izvanmrežni upisi koriste sat mobitela). */
+const DEZ_SAT_TOLERANCIJA = 300;
+function dez_trajanje(int $s): string
+{
+    if ($s >= 86400) {
+        return round($s / 86400, 1) . ' dana';
+    }
+    if ($s >= 3600) {
+        return floor($s / 3600) . ' h ' . floor($s % 3600 / 60) . ' min';
+    }
+    return max(1, (int) round($s / 60)) . ' min';
+}
 
 // ---------- Stanice ----------
 function dez_stanica(int $id): ?array
@@ -199,7 +211,7 @@ function dodaj_vozilo(int $clanId, string $oznaka, bool $zadano = false): void
  * $grupa: oznaka upisa (izvanmrežni upis je šalje sam – ponovno slanje se ne upisuje dvaput).
  * @return array{ok:bool, poruka?:string, grupa?:string, ponovljeno?:bool}
  */
-function dez_spremi_upis(array $st, array $k, array $u, ?int $klijentVrijeme = null, ?string $grupa = null): array
+function dez_spremi_upis(array $st, array $k, array $u, ?int $klijentVrijeme = null, ?string $grupa = null, ?int $pomakSata = null): array
 {
     $greska = fn(string $p) => ['ok' => false, 'poruka' => $p];
     if (!$st['Aktivna']) {
@@ -330,8 +342,10 @@ function dez_spremi_upis(array $st, array $k, array $u, ?int $klijentVrijeme = n
                 'Oznaka' => $oz ?? $oznaka, 'Vozilo' => ($oz !== null || $saVozilom) ? 1 : 0, 'PozvaoIme' => $ja]);
         }
     });
+    $sat = $izvan && $pomakSata !== null && abs($pomakSata) > DEZ_SAT_TOLERANCIJA
+        ? ' · sat mobitela ' . ($pomakSata > 0 ? 'kasni ' : 'žuri ') . dez_trajanje(abs($pomakSata)) : '';
     dnevnik('Dezinfekcija – ' . mb_strtolower(DEZ_SMJER[$smjer]) . ($izvan ? ' (izvanmrežno)' : ''), 'DezStanica', (int) $st['Id'],
-        ($zaDrugog ? puno_ime($zaDrugog) . ' (upisao ' . $ja . ')' : $ja) . ' + ' . count($suputnici) . ' suputnika, ' . count($gosti) . ' gostiju · ' . DEZ_LOKACIJA[$lok], $k);
+        ($zaDrugog ? puno_ime($zaDrugog) . ' (upisao ' . $ja . ')' : $ja) . ' + ' . count($suputnici) . ' suputnika, ' . count($gosti) . ' gostiju · ' . DEZ_LOKACIJA[$lok] . $sat, $k);
     return ['ok' => true, 'grupa' => $grupa];
 }
 

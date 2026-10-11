@@ -1,5 +1,18 @@
 # Promjene
 
+## 1.11.0 – 2026-10
+- **Rad bez signala – nova stranica „📷 Skeniraj QR stanice“** (izbornik, i ispod upisa na stanici). Bez interneta se aplikacija otvara upravo na njoj (umjesto „Nema interneta“):
+  skener QR oznake **unutar aplikacije** (kamera), upisi koji čekaju slanje s gumbom „Pošalji sada“ i popis stanica spremljenih na mobitelu.
+  Na iPhoneu skeniranje iz aplikacije rješava problem da kamera mobitela otvara Safari (koji ima odvojenu memoriju od aplikacije).
+  Prepoznaje i QR oznake ispisane s drugom adresom programa (npr. stalna adresa za QR). Stanica koja nije spremljena → jasna poruka.
+- **Slanje u pozadini** (Android / Chrome): upisi spremljeni bez signala šalju se kad se signal vrati i kad je aplikacija zatvorena. iPhone to ne podržava – tamo se šalju čim se aplikacija otvori.
+  Isti upis se ne može upisati dvaput (stranica i pozadina šalju jedan po jedan, poslužitelj prepoznaje već poslane).
+- **Promjena korisnika na istom mobitelu**: spremljene stranice stanica (ime, vozila) brišu se pri odjavi i kad se prijavi drugi korisnik.
+  Upis koji je bez signala spremio jedan korisnik ne može poslati drugi – čeka na mobitelu dok se onaj prvi ne prijavi.
+- **Sat mobitela**: upozorenje na stanici i na „Skeniraj“ kad sat mobitela odstupa više od 5 minuta (upisi bez signala koriste sat mobitela);
+  odstupanje se bilježi u dnevnik promjena uz izvanmrežni upis.
+- Stranice za rad bez signala ponovno se spremaju na mobitel i nakon ažuriranja programa (ne čeka se 6 sati).
+
 ## 1.10.0 – 2026-10
 - **Ažuriranje programa iz aplikacije** (Sustav → Ažuriranje programa, samo glavni admin): program sam provjerava GitHub (najviše svakih 6 sati) i glavnom adminu pokazuje traku „Dostupna je nova verzija“.
   Jedan klik: **sigurnosna kopija baze** + kopija trenutnog programa → preuzimanje izdanja s GitHuba → zamjena programskih datoteka. `podaci/` i `config.php` se ne diraju, baza se sama proširuje.

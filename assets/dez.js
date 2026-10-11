@@ -8,10 +8,13 @@
     var API = (window.DEZ && DEZ.api) || (skripta && skripta.getAttribute('data-api'));
     var SW = skripta && skripta.getAttribute('data-sw');
     if (!API) return;
-    var KL_RED = 'ev-dez-red', KL_PORUKE = 'ev-dez-poruke', KL_PREDMEM = 'ev-dez-predmem';
+    var KL_RED = 'ev-dez-red', KL_PORUKE = 'ev-dez-poruke', KL_PREDMEM = 'ev-dez-predmem', KL_KID = 'ev-dez-kid',
+        KL_STANICE = 'ev-dez-stanice', KL_SAT = 'ev-dez-sat', KL_PROVJERA = 'ev-dez-provjera';
+    var SAT_TOL = 300; // s – iznad toga upozorenje da sat mobitela nije točan
     var ls = {
         get: function (k, z) { try { var v = localStorage.getItem(k); return v ? JSON.parse(v) : z; } catch (x) { return z; } },
-        set: function (k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (x) { return false; } }
+        set: function (k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (x) { return false; } },
+        del: function (k) { try { localStorage.removeItem(k); } catch (x) { /* privatni način */ } }
     };
     function red() { return ls.get(KL_RED, []); }
     function hex16() { var a = new Uint8Array(8); (window.crypto || window.msCrypto).getRandomValues(a); return Array.prototype.map.call(a, function (b) { return ('0' + b.toString(16)).slice(-2); }).join(''); }
@@ -22,6 +25,65 @@
         clearTimeout(t._z); t._z = setTimeout(function () { t.hidden = true; }, 9000);
     }
     function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+    var swOk = 'serviceWorker' in navigator && window.isSecureContext;
+
+    // ---------- tko je prijavljen na ovom mobitelu ----------
+    // Spremljene stranice stanica sadrže ime i vozila korisnika – pri promjeni korisnika se brišu.
+    var trenutni = (window.DEZ && DEZ.kid) || (window.EV && EV.uid) || null;
+    function promjenaKorisnika(uid) {
+        if (!uid) return;
+        var bio = ls.get(KL_KID, null);
+        ls.set(KL_KID, uid);
+        if (bio === null || bio === uid) return;
+        ls.del(KL_PREDMEM); ls.del(KL_STANICE);
+        if (swOk) navigator.serviceWorker.ready.then(function (reg) { if (reg.active) reg.active.postMessage({ tip: 'dez-brisi' }); });
+    }
+    promjenaKorisnika(trenutni);
+
+    // ---------- red upisa: kopija za service worker (slanje i kad je aplikacija zatvorena – Android) ----------
+    function zrcali(potvrdeno) {
+        if (!swOk) return;
+        navigator.serviceWorker.ready.then(function (reg) {
+            if (reg.active) reg.active.postMessage({ tip: 'dez-red', api: API, red: red(), potvrdeno: potvrdeno || [] });
+        }).catch(function () {});
+    }
+    function spremiRed(r) { var ok = ls.set(KL_RED, r); zrcali(); return ok; }
+    /** Upisi koje je pozadina poslala dok stranica nije bila otvorena → makni iz reda, pokaži ishod. */
+    function preuzmiIshode() {
+        if (!swOk || !navigator.serviceWorker.controller) return Promise.resolve();
+        return new Promise(function (gotovo) {
+            var k = new MessageChannel(), rok = setTimeout(gotovo, 1500);
+            k.port1.onmessage = function (e) { clearTimeout(rok); obradiIshode((e.data && e.data.ishodi) || {}); gotovo(); };
+            navigator.serviceWorker.controller.postMessage({ tip: 'dez-ishodi?' }, [k.port2]);
+        });
+    }
+    function obradiIshode(ishodi) {
+        var ids = Object.keys(ishodi);
+        if (!ids.length) return;
+        var r = red(), poslano = 0, poruke = ls.get(KL_PORUKE, []);
+        r.forEach(function (x) {
+            var i = ishodi[x.id]; if (!i) return;
+            if (i.ok) poslano++; else poruke.push({ v: x.t, n: x.naziv, p: i.poruka });
+        });
+        ls.set(KL_RED, r.filter(function (x) { return !ishodi[x.id]; }));
+        ls.set(KL_PORUKE, poruke.slice(-10));
+        zrcali(ids);
+        if (poslano) obavijest('<b>✓ Poslano ' + poslano + (poslano === 1 ? ' upis' : ' upisa') + ' dezinfekcije</b><div class="small">spremljeno na mobitelu dok nije bilo signala</div>', 'ok');
+        prikaziPoruke(); prikaziRed();
+    }
+    if (swOk) navigator.serviceWorker.addEventListener('message', function (e) { if (e.data && e.data.tip === 'dez-ishodi') obradiIshode(e.data.ishodi || {}); });
+
+    // ---------- sat mobitela ----------
+    function pomakSata() { var s = ls.get(KL_SAT, null); return s && Date.now() - s.kada < 14 * 86400000 ? s.p : null; }
+    function prikaziSat() {
+        var el = document.getElementById('dez-sat'), p = pomakSata();
+        if (!el) return;
+        if (p === null || Math.abs(p) <= SAT_TOL) { el.hidden = true; return; }
+        var m = Math.round(Math.abs(p) / 60), t = m >= 120 ? Math.round(m / 60) + ' h' : m + ' min';
+        el.innerHTML = '⚠ <b>Sat na mobitelu nije točan</b> – ' + (p > 0 ? 'kasni' : 'žuri') + ' oko ' + t + '. Upisi bez signala spremaju se s vremenom mobitela. '
+            + 'Uključite <b>automatsko vrijeme</b> (Postavke → Datum i vrijeme).';
+        el.hidden = false;
+    }
 
     // ---------- slanje spremljenih upisa ----------
     var salje = false;
@@ -29,13 +91,17 @@
         var r = red();
         if (salje || !r.length || navigator.onLine === false) return Promise.resolve();
         salje = true;
+        var uid = null;
         return fetch(API, { credentials: 'same-origin', cache: 'no-store' }).then(function (o) {
             if (o.status === 401) throw { prijava: true };
             if (!o.ok) throw {};
             return o.json();
         }).then(function (j) {
+            primiProvjeru(j); uid = j.uid;
+            var moji = r.filter(function (x) { return !x.u || x.u === uid; });
+            if (!moji.length) throw { drugi: true };
             return fetch(API, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json', 'X-CSRF': j.csrf },
-                body: JSON.stringify({ stavke: r.map(function (x) { return { id: x.id, s: x.s, t: x.t, polja: x.polja }; }) }) });
+                body: JSON.stringify({ stavke: moji.map(function (x) { return { id: x.id, s: x.s, t: x.t, u: x.u, po: x.po != null ? x.po : pomakSata(), polja: x.polja }; }) }) });
         }).then(function (o) { if (!o.ok) throw {}; return o.json(); }).then(function (j) {
             var gotovo = {}, poslano = 0, poruke = ls.get(KL_PORUKE, []);
             (j.rezultati || []).forEach(function (x) {
@@ -46,46 +112,84 @@
                     poruke.push({ v: st.t, n: st.naziv, p: x.poruka });
                 }
             });
-            ls.set(KL_RED, red().filter(function (x) { return !gotovo[x.id]; }));
+            spremiRed(red().filter(function (x) { return !gotovo[x.id]; }));
             ls.set(KL_PORUKE, poruke.slice(-10));
             if (poslano) obavijest('<b>✓ Poslano ' + poslano + (poslano === 1 ? ' upis' : ' upisa') + ' dezinfekcije</b><div class="small">spremljeno na mobitelu dok nije bilo signala</div>', 'ok');
             prikaziPoruke(); prikaziRed();
         }).catch(function (e) {
             if (e && e.prijava) obavijest('<b>Upisi dezinfekcije čekaju na mobitelu.</b><div class="small">Prijavite se u aplikaciju da se pošalju.</div>', 'upoz');
+            prikaziRed();
         }).then(function () { salje = false; });
     }
+    function vrijeme(t) { return new Date(t * 1000).toLocaleString('hr-HR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }); }
     function prikaziRed() {
-        var b = document.getElementById('dez-red-traka'), n = red().length;
-        if (b) { b.hidden = !n; b.textContent = '⏳ Na ovom mobitelu ' + (n === 1 ? 'čeka 1 upis' : 'čeka ' + n + ' upisa') + ' za slanje (šalje se automatski kad ima interneta).'; }
+        var r = red(), n = r.length, kid = ls.get(KL_KID, null);
+        var tudji = r.filter(function (x) { return x.u && kid && x.u !== kid; });
+        var b = document.getElementById('dez-red-traka');
+        if (b) {
+            b.hidden = !n;
+            b.textContent = '⏳ Na ovom mobitelu ' + (n === 1 ? 'čeka 1 upis' : 'čeka ' + n + ' upisa') + ' za slanje (šalje se automatski kad ima interneta).'
+                + (tudji.length ? ' ' + tudji.length + ' od toga spremio je drugi korisnik – poslat će se kad se on prijavi.' : '');
+        }
+        var p = document.getElementById('dez-red-popis');
+        if (p) {
+            p.innerHTML = n ? '<ul class="list-unstyled mb-0">' + r.map(function (x) {
+                var drugi = x.u && kid && x.u !== kid;
+                return '<li class="py-1 border-bottom">⏳ <b>' + (x.polja && x.polja.smjer === 'D' ? 'Dolazak' : 'Odlazak') + '</b> · ' + esc(vrijeme(x.t)) + '<br><span class="text-body">' + esc(x.naziv || '') + '</span>'
+                    + (x.imena && x.imena.length ? '<br><span class="text-muted">' + esc(x.imena.join(', ')) + '</span>' : '')
+                    + (drugi ? '<br><span class="text-warning-emphasis">spremio ' + esc(x.ime || 'drugi korisnik') + ' – šalje se kad se on prijavi</span>' : '') + '</li>';
+            }).join('') + '</ul>' : 'Nema upisa koji čekaju slanje.';
+            var g = document.getElementById('sk-posalji'); if (g) g.hidden = !n || navigator.onLine === false;
+        }
     }
     function prikaziPoruke() {
         var p = ls.get(KL_PORUKE, []);
         if (!p.length) return;
         var g = document.getElementById('dez-greska');
         var html = '<b>Neki spremljeni upisi nisu prihvaćeni:</b><ul class="mb-1">' + p.map(function (x) {
-            return '<li>' + (x.v ? new Date(x.v * 1000).toLocaleString('hr-HR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) + ' · ' : '') + esc(x.n) + ': ' + esc(x.p) + '</li>';
+            return '<li>' + (x.v ? vrijeme(x.v) + ' · ' : '') + esc(x.n) + ': ' + esc(x.p) + '</li>';
         }).join('') + '</ul><div class="small">Javite se lovočuvaru za naknadni upis.</div>';
         if (g) { g.innerHTML = html; g.hidden = false; } else { obavijest(html, 'upoz'); }
         ls.set(KL_PORUKE, []);
     }
-    window.addEventListener('online', function () { sinkroniziraj(); traka(); });
-    window.addEventListener('offline', traka);
+    window.addEventListener('online', function () { sinkroniziraj(); traka(); prikaziRed(); });
+    window.addEventListener('offline', function () { traka(); prikaziRed(); });
     setInterval(function () { if (red().length) sinkroniziraj(); }, 60000);
+    document.addEventListener('visibilitychange', function () { if (!document.hidden && red().length) sinkroniziraj(); });
+
+    // ---------- provjera s poslužiteljem: korisnik, sat, popis stanica ----------
+    function primiProvjeru(j) {
+        if (!j) return;
+        if (typeof j.sada === 'number') ls.set(KL_SAT, { p: Math.round(j.sada - Date.now() / 1000), kada: Date.now() });
+        if (j.uid) promjenaKorisnika(j.uid);
+        if (j.popis) ls.set(KL_STANICE, j.popis);
+        prikaziSat();
+    }
+    function provjeri() {
+        if (navigator.onLine === false) return Promise.resolve(null);
+        if (Date.now() - ls.get(KL_PROVJERA, 0) < 10 * 60000 && ls.get(KL_STANICE, null)) return Promise.resolve(null);
+        return fetch(API, { credentials: 'same-origin', cache: 'no-store' }).then(function (o) { return o.ok ? o.json() : null; }).then(function (j) {
+            if (j) { ls.set(KL_PROVJERA, Date.now()); primiProvjeru(j); }
+            return j;
+        }).catch(function () { return null; });
+    }
+    window.DEZ_RED = { red: red, sinkroniziraj: sinkroniziraj, prikaziRed: prikaziRed, stanice: function () { return ls.get(KL_STANICE, []); }, provjeri: provjeri };
 
     // ---------- spremanje stranica stanica na mobitel ----------
     function predmemoriraj() {
-        if (!('serviceWorker' in navigator) || !window.isSecureContext || navigator.onLine === false) return;
-        var zadnje = ls.get(KL_PREDMEM, 0);
-        if (Date.now() - zadnje < 6 * 3600 * 1000) return;
-        fetch(API, { credentials: 'same-origin', cache: 'no-store' }).then(function (o) { return o.ok ? o.json() : null; }).then(function (j) {
+        if (!swOk || navigator.onLine === false) return;
+        var zadnje = ls.get(KL_PREDMEM, null), inacica = skripta ? skripta.src : '';
+        if (zadnje && typeof zadnje === 'object' && Date.now() - zadnje.t < 6 * 3600 * 1000 && zadnje.v === inacica) return;
+        ls.del(KL_PROVJERA);
+        provjeri().then(function (j) {
             if (!j) return;
             var resursi = Array.prototype.map.call(document.querySelectorAll('link[rel=stylesheet][href], script[src]'), function (x) { return x.href || x.src; });
             navigator.serviceWorker.ready.then(function (reg) {
-                if (reg.active) { reg.active.postMessage({ tip: 'dez-predmem', urls: j.stanice.concat(resursi) }); ls.set(KL_PREDMEM, Date.now()); }
+                if (reg.active) { reg.active.postMessage({ tip: 'dez-predmem', urls: j.stanice.concat(j.resursi || [], resursi) }); ls.set(KL_PREDMEM, { t: Date.now(), v: inacica }); }
             });
-        }).catch(function () {});
+        });
     }
-    if ('serviceWorker' in navigator && window.isSecureContext && SW) { navigator.serviceWorker.register(SW).catch(function () {}); }
+    if (swOk && SW) { navigator.serviceWorker.register(SW).catch(function () {}); }
 
     // ---------- stranica stanice ----------
     function traka() { var t = document.getElementById('dez-offline-traka'); if (t) t.hidden = navigator.onLine !== false; }
@@ -97,7 +201,7 @@
         var btn = document.getElementById('posalji'), nap = document.getElementById('posalji-napomena'), forma = document.getElementById('dez-obrazac');
         var greska = document.getElementById('dez-greska');
         var najbolja = null, gotovo = false, blokirano = false;
-        traka(); prikaziRed(); prikaziPoruke();
+        traka(); prikaziRed(); prikaziPoruke(); prikaziSat();
         var neaktivna = ST.mob && !ST.aktivna;
         function stanje(klasa, n, t) { gps.className = 'dez-gps ' + klasa + ' mb-3'; nas.textContent = n; txt.textContent = t; }
         function omoguci(t) {
@@ -195,8 +299,9 @@
         function spremiLokalno(st) {
             st.t = Math.floor(Date.now() / 1000);
             st.naziv = ST.naziv; st.imena = imena(st.polja);
+            st.u = ST.kid || null; st.ime = ST.ja; st.po = pomakSata();
             var r = red(); r.push(st);
-            if (!ls.set(KL_RED, r)) { prikaziGresku('Mobitel ne dopušta spremanje (privatni način preglednika?). Upis nije spremljen.'); return; }
+            if (!spremiRed(r)) { prikaziGresku('Mobitel ne dopušta spremanje (privatni način preglednika?). Upis nije spremljen.'); return; }
             forma.hidden = true; gps.hidden = true;
             document.getElementById('sp-naslov').textContent = (st.polja.smjer === 'D' ? 'Dolazak' : 'Odlazak') + ' spremljen na mobitelu';
             document.getElementById('sp-vrijeme').textContent = new Date(st.t * 1000).toLocaleTimeString('hr-HR', { hour: '2-digit', minute: '2-digit' });
@@ -208,7 +313,7 @@
         function prikaziGresku(t) { greska.textContent = t; greska.hidden = false; btn.disabled = false; btn.textContent = 'POTVRDI'; window.scrollTo(0, 0); }
         function posaljiOnline(st, csrf, ponovno) {
             return fetch(API, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json', 'X-CSRF': csrf },
-                body: JSON.stringify({ stavke: [{ id: st.id, s: st.s, t: null, polja: st.polja }] }) }).then(function (o) {
+                body: JSON.stringify({ stavke: [{ id: st.id, s: st.s, t: null, u: ST.kid || null, polja: st.polja }] }) }).then(function (o) {
                 if (o.status === 400 && !ponovno) { // istekla stranica (npr. iz memorije) – novi sigurnosni ključ
                     return fetch(API, { credentials: 'same-origin', cache: 'no-store' }).then(function (g) { return g.json(); }).then(function (j) { return posaljiOnline(st, j.csrf, true); });
                 }
@@ -236,6 +341,8 @@
         });
     }
 
-    sinkroniziraj();
+    prikaziSat(); prikaziRed();
+    preuzmiIshode().then(function () { zrcali(); return sinkroniziraj(); });
     if (document.readyState === 'complete') predmemoriraj(); else window.addEventListener('load', predmemoriraj);
+    provjeri();
 })();
