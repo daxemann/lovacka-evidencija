@@ -1,5 +1,8 @@
 # Promjene
 
+## 1.12.1 – 2026-10
+- Demo: tajni ključ vlasnika čuva se izvan baze (`podaci/demo-kljuc.txt`), gumb „Novi tajni ključ“; gotovi demo podaci u `docs/demo/`.
+
 ## 1.12.0 – 2026-10
 - **Demo način** za javnu probnu instalaciju (postavka `Demo.Aktivno` u bazi ili `'demo' => true` u `config.php`):
   - prijava jednim klikom za ulogu (glavni admin, tajnik, lovočuvar, član) – ista lozinka za sve,
