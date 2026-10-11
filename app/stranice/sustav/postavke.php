@@ -13,6 +13,9 @@ if (je_post()) {
     $radnja = (string) ($_POST['radnja'] ?? 'spremi');
     $p = $iz();
     $novaLoz = (string) ($_POST['lozinka'] ?? '');
+    if (str_contains($p['Posluzitelj'], 'gmail')) {
+        $novaLoz = (string) preg_replace('/\s+/', '', $novaLoz); // lozinka aplikacije se kopira s razmacima
+    }
     if ($radnja === 'proba') {
         $pp = $p + ['Lozinka' => $novaLoz !== '' ? $novaLoz : (posta_postavke()['Lozinka'] ?? '')];
         $prima = ul_str('proba');
@@ -20,7 +23,7 @@ if (je_post()) {
             posalji_mail($prima, 'Probna poruka – ' . udruga_kratko(), '<p>Slanje e-pošte iz evidencije radi. ✔</p>', true, $pp);
             poruka(e("Probna poruka poslana na $prima. Ako je stigla, kliknite „Spremi postavke“."));
         } catch (Throwable $e) {
-            poruka('Slanje nije uspjelo: ' . e($e->getMessage()), 'danger');
+            poruka(e(objasni_smtp_gresku($e, $pp['Posluzitelj'])), 'danger');
         }
         $_SESSION['smtp_obrazac'] = $_POST;
         preusmjeri('sustav/postavke');
@@ -76,6 +79,10 @@ ob_start(); ?>
         <div class="form-text">Koristi se u pozivnicama, poveznicama za novu lozinku i u e-pošti. Ako je prazno, uzima se adresa kojom je aplikacija upravo otvorena.</div>
     </div></div>
     <div class="card mb-3"><div class="card-header">2. Slanje e-pošte (SMTP)</div><div class="card-body">
+        <div class="alert alert-success d-flex flex-wrap align-items-center gap-2 py-2">
+            <span class="me-auto"><b>Gmail?</b> Najlakše preko čarobnjaka – korak po korak s poveznicama na Google i probom prije spremanja.</span>
+            <a class="btn btn-success btn-sm" href="<?= e(url('sustav/gmail')) ?>">Gmail čarobnjak →</a>
+        </div>
         <div class="row g-3">
             <div class="col-12"><label class="form-label">Brzi odabir</label>
                 <div class="d-flex flex-wrap gap-2"><?php foreach ($pruzatelji as $n => [$h, $port]): ?>
@@ -92,8 +99,8 @@ ob_start(); ?>
             <div class="col-md-6"><label class="form-label">Naziv pošiljatelja</label><input name="naziv" class="form-control" value="<?= e($p['NazivPosiljatelja']) ?>" placeholder="<?= e(udruga_kratko()) ?>"></div>
         </div>
         <?php if (str_contains($p['Posluzitelj'], 'gmail')): ?>
-        <div class="alert alert-info small mt-3 mb-0"><b>Gmail:</b> obična lozinka ne radi. U Google računu uključite potvrdu u 2 koraka, zatim
-            <i>Sigurnost → Lozinke aplikacija</i> → napravite lozinku (16 znakova) i upišite je ovdje.</div>
+        <div class="alert alert-info small mt-3 mb-0"><b>Gmail:</b> obična lozinka ne radi – potrebna je lozinka aplikacije (16 slova).
+            <a href="<?= e(url('sustav/gmail')) ?>">Gmail čarobnjak</a> vodi kroz sve korake.</div>
         <?php endif; ?>
         <div class="input-group mt-3" style="max-width:480px">
             <input name="proba" type="email" class="form-control" placeholder="probno pošalji na…">

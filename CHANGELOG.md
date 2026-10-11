@@ -1,5 +1,10 @@
 # Promjene
 
+## 1.16.0 – 2026-10
+- **Gmail čarobnjak** (Sustav → E-pošta i adresa → „Gmail čarobnjak“): korak po korak – Gmail adresa, poveznica na Googleovu „Potvrdu u 2 koraka“, poveznica na „Lozinke aplikacija“ (otvara se izravno za upisani račun),
+  lijepljenje lozinke aplikacije (razmaci se sami brišu), **probna poruka prije spremanja** – postavke se spremaju samo ako slanje uspije.
+- **Razumljive greške pri slanju e-pošte**: umjesto „Could not authenticate“ program kaže što je krivo (npr. „Google traži lozinku aplikacije, ne običnu lozinku“, kriva lozinka, nema veze s poslužiteljem).
+
 ## 1.15.3 – 2026-10
 - Tekst kvačice psa: „radi potragu (krvni trag)“.
 

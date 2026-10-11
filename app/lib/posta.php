@@ -42,6 +42,14 @@ function posalji_mail(array|string $prima, string $naslov, string $tijelo, bool 
     }
     $m = new PHPMailer(true);
     $m->isSMTP();
+    // zadnji odgovori poslužitelja – za razumljive poruke o grešci (lozinka se ne bilježi)
+    $GLOBALS['smtp_dijalog'] = [];
+    $m->SMTPDebug = 2;
+    $m->Debugoutput = function ($s) {
+        if (preg_match('/^SERVER -> CLIENT: (.*)$/s', trim((string) $s), $x)) {
+            $GLOBALS['smtp_dijalog'][] = trim($x[1]);
+        }
+    };
     $m->CharSet = 'UTF-8';
     $m->Host = $p['Posluzitelj'];
     $m->Port = $p['Port'] ?: 587;
@@ -82,4 +90,27 @@ function tekst_u_html(string $t): string
     $t = e($t);
     $t = (string) preg_replace('#(https?://[^\s<]+)#', '<a href="$1">$1</a>', $t);
     return '<div style="font-family:Arial,sans-serif;font-size:14px;line-height:1.5">' . nl2br($t) . '</div>';
+}
+
+/** Razumljivo objašnjenje greške pri slanju (posebno Gmail). */
+function objasni_smtp_gresku(Throwable $e, string $posluzitelj = ''): string
+{
+    $sve = implode("\n", $GLOBALS['smtp_dijalog'] ?? []) . "\n" . $e->getMessage();
+    $gmail = str_contains($posluzitelj, 'gmail') || str_contains($posluzitelj, 'google');
+    if (preg_match('/5\.7\.9|Application-specific password required/i', $sve)) {
+        return 'Google traži LOZINKU APLIKACIJE (16 znakova), ne običnu lozinku Google računa. Napravite je u koraku 3 čarobnjaka.';
+    }
+    if (preg_match('/5\.7\.8|Username and Password not accepted|BadCredentials|authenticate/i', $sve)) {
+        return $gmail
+            ? 'Google nije prihvatio prijavu. Najčešće: upisana je obična lozinka umjesto lozinke aplikacije, lozinka aplikacije je prepisana s greškom, ili korisničko ime nije puna Gmail adresa (npr. ime@gmail.com).'
+            : 'Poslužitelj nije prihvatio korisničko ime ili lozinku.';
+    }
+    if (preg_match('/5\.7\.0.*(disabled|admin)|not allowed/i', $sve)) {
+        return 'Slanje je zabranjeno na računu (kod Google Workspacea to određuje administrator domene).';
+    }
+    if (preg_match('/connect|Connection|timed out|getaddrinfo/i', $sve)) {
+        return 'Nema veze s poslužiteljem e-pošte (adresa ili port su krivi, ili poslužitelj blokira odlazni port).';
+    }
+    $zadnji = end($GLOBALS['smtp_dijalog']) ?: $e->getMessage();
+    return 'Slanje nije uspjelo: ' . $zadnji;
 }
