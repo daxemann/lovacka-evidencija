@@ -5,7 +5,7 @@
  */
 declare(strict_types=1);
 
-const VERZIJA = '1.16.3';
+const VERZIJA = '1.16.4';
 const KONTAKT_EMAIL = 'daxemann@googlemail.com';
 const PROJEKT_URL = 'https://github.com/daxemann/lovacka-evidencija';
 const KORIJEN = __DIR__ . '/..';
@@ -133,7 +133,7 @@ function db(bool $novo = false): PDO
  * Dodatne tablice PHP verzije (PRAGMA user_version). .NET verzija ih ne poznaje i zanemaruje,
  * pa baza i dalje radi u oba smjera.
  */
-const SHEMA_PHP = 14;
+const SHEMA_PHP = 15;
 function nadogradi_bazu(PDO $pdo): void
 {
     $v = (int) $pdo->query('PRAGMA user_version')->fetchColumn();
@@ -466,6 +466,12 @@ SQL);
     if ($v < 14) {
         // pas osposobljen za potragu (krvni trag) – postojeći psi zadržavaju mogućnost
         $pdo->exec('ALTER TABLE "LovniPsi" ADD COLUMN "Potraga" INTEGER NOT NULL DEFAULT 0; UPDATE "LovniPsi" SET "Potraga" = 1;');
+    }
+    if ($v < 15) {
+        // lovački pas: broj rodne knjige, boja, dlaka (datum oštenja = DatumRodjenja)
+        $pdo->exec('ALTER TABLE "LovniPsi" ADD COLUMN "RodnaKnjiga" TEXT NULL;
+            ALTER TABLE "LovniPsi" ADD COLUMN "Boja" TEXT NULL;
+            ALTER TABLE "LovniPsi" ADD COLUMN "Dlaka" TEXT NULL;');
     }
     $pdo->exec('PRAGMA user_version = ' . SHEMA_PHP);
     $pdo->commit();

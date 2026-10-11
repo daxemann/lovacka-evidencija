@@ -1,5 +1,8 @@
 # Promjene
 
+## 1.16.4 – 2026-10
+- **Lovački pas: broj rodne knjige, boja, dlaka i datum oštenja** (umjesto „rođen“); broj čipa je sada posebno polje. Za boju i dlaku nude se uobičajene vrijednosti, može se upisati i drugo.
+
 ## 1.16.3 – 2026-10
 - Primjeri u poljima (placeholderi) više ne sadrže nazive jedne udruge – program je neutralan za svaku udrugu.
 

@@ -14,9 +14,12 @@ $polja = function (?array $p) { ob_start(); ?>
     <div class="col-sm-4"><label class="form-label small">Ime psa</label><input name="Ime" class="form-control form-control-sm" maxlength="60" required value="<?= e($p['Ime'] ?? '') ?>"></div>
     <div class="col-sm-4"><label class="form-label small">Pasmina</label><input name="Pasmina" class="form-control form-control-sm" maxlength="80" list="pasmine" value="<?= e($p['Pasmina'] ?? '') ?>"></div>
     <div class="col-sm-2"><label class="form-label small">Spol</label><select name="Spol" class="form-select form-select-sm"><option value=""></option><option<?= sel('pas', $p['Spol'] ?? '') ?> value="pas">pas (m)</option><option<?= sel('kuja', $p['Spol'] ?? '') ?> value="kuja">kuja (ž)</option></select></div>
-    <div class="col-sm-2"><label class="form-label small">Rođen</label><input type="date" name="DatumRodjenja" class="form-control form-control-sm" value="<?= e(substr((string) ($p['DatumRodjenja'] ?? ''), 0, 10)) ?>"></div>
-    <div class="col-sm-4"><label class="form-label small">Broj čipa / rodovnika</label><input name="Cip" class="form-control form-control-sm" maxlength="40" value="<?= e($p['Cip'] ?? '') ?>"></div>
-    <div class="col-sm-8"><label class="form-label small">Napomena</label><input name="Napomena" class="form-control form-control-sm" maxlength="200" value="<?= e($p['Napomena'] ?? '') ?>"></div>
+    <div class="col-sm-2"><label class="form-label small">Datum oštenja</label><input type="date" name="DatumRodjenja" class="form-control form-control-sm" value="<?= e(substr((string) ($p['DatumRodjenja'] ?? ''), 0, 10)) ?>"></div>
+    <div class="col-sm-4"><label class="form-label small">Broj rodne knjige</label><input name="RodnaKnjiga" class="form-control form-control-sm" maxlength="40" placeholder="npr. HRK NjKP 1234" value="<?= e($p['RodnaKnjiga'] ?? '') ?>"></div>
+    <div class="col-sm-4"><label class="form-label small">Broj čipa</label><input name="Cip" class="form-control form-control-sm" maxlength="40" inputmode="numeric" value="<?= e($p['Cip'] ?? '') ?>"></div>
+    <div class="col-6 col-sm-2"><label class="form-label small">Boja</label><input name="Boja" class="form-control form-control-sm" maxlength="60" list="boje" value="<?= e($p['Boja'] ?? '') ?>"></div>
+    <div class="col-6 col-sm-2"><label class="form-label small">Dlaka</label><input name="Dlaka" class="form-control form-control-sm" maxlength="40" list="dlake" value="<?= e($p['Dlaka'] ?? '') ?>"></div>
+    <div class="col-12"><label class="form-label small">Napomena</label><input name="Napomena" class="form-control form-control-sm" maxlength="200" value="<?= e($p['Napomena'] ?? '') ?>"></div>
     <div class="col-12 d-flex flex-wrap gap-3">
         <div class="form-check"><input class="form-check-input" type="checkbox" name="Bodovanje" value="1" id="bod<?= (int) ($p['Id'] ?? 0) ?>"<?= chk($p ? $p['Bodovanje'] : 1) ?>><label class="form-check-label small" for="bod<?= (int) ($p['Id'] ?? 0) ?>">godišnji bodovi za psa (1.1.)</label></div>
         <div class="form-check"><input class="form-check-input potraga-kv" type="checkbox" name="Potraga" value="1" id="pot<?= (int) ($p['Id'] ?? 0) ?>"<?= chk($p ? $p['Potraga'] : 0) ?><?= $p ? '' : ' data-auto-potraga="1"' ?>><label class="form-check-label small" for="pot<?= (int) ($p['Id'] ?? 0) ?>">🩸 radi potragu (krvni trag)</label></div>
@@ -24,6 +27,8 @@ $polja = function (?array $p) { ob_start(); ?>
     </div>
 <?php return (string) ob_get_clean(); };
 ?>
+<datalist id="boje"><?php foreach (['smeđa', 'smeđe-bijela', 'smeđi čilaš', 'crna', 'crno-bijela', 'crveno-smeđa', 'žuta', 'žuto-bijela', 'bijelo-narančasta', 'crveni', 'jelenje crvena', 'tigrasta', 'trobojna'] as $x): ?><option value="<?= e($x) ?>"><?php endforeach; ?></datalist>
+<datalist id="dlake"><?php foreach (['kratka', 'oštra', 'duga', 'glatka', 'kovrčava'] as $x): ?><option value="<?= e($x) ?>"><?php endforeach; ?></datalist>
 <datalist id="pasmine"><?php foreach (['Njemački kratkodlaki ptičar', 'Njemački oštrodlaki ptičar (Drahthaar)', 'Vižla', 'Jazavčar', 'Jagdterijer', 'Bavarski krvoslijednik', 'Hannoverski krvoslijednik', 'Istarski kratkodlaki gonič', 'Istarski oštrodlaki gonič', 'Posavski gonič', 'Brak jazavčar', 'Labrador retriver', 'Engleski seter', 'Irski seter', 'Weimaraner', 'Fox terijer', 'Prepeličar (njemački)', 'Brak'] as $x): ?><option value="<?= e($x) ?>"><?php endforeach; ?></datalist>
 <?php $bl = bodovna_lista_psi(); ?>
 <div class="card mb-3"><div class="card-body py-2">
@@ -41,7 +46,8 @@ $polja = function (?array $p) { ob_start(); ?>
     <div class="card mb-3<?= $p['Aktivan'] ? '' : ' opacity-75' ?>"><div class="card-body">
         <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
             <h2 class="h5 mb-0">🐕 <?= e($p['Ime']) ?></h2>
-            <span class="text-muted"><?= e(implode(' · ', array_filter([$p['Pasmina'], $p['Spol'], $p['DatumRodjenja'] ? 'rođen ' . datum($p['DatumRodjenja']) : null, $p['Cip'] ? 'čip ' . $p['Cip'] : null]))) ?></span>
+            <span class="text-muted"><?= e(implode(' · ', array_filter([$p['Pasmina'], $p['Spol'], $p['Boja'] ?? null, $p['Dlaka'] ? 'dlaka ' . $p['Dlaka'] : null, $p['DatumRodjenja'] ? 'oštenje ' . datum($p['DatumRodjenja']) : null,
+                $p['RodnaKnjiga'] ? 'RK ' . $p['RodnaKnjiga'] : null, $p['Cip'] ? 'čip ' . $p['Cip'] : null]))) ?></span>
             <?php if ($p['Potraga']): ?><span class="badge bg-danger-subtle text-danger-emphasis border">🩸 potraga</span><?php endif; ?>
             <?php if (!$p['Aktivan']): ?><span class="badge bg-secondary">neaktivan</span><?php endif; ?>
             <span class="ms-auto small">
