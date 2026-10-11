@@ -46,6 +46,13 @@ ob_start(); ?>
     </div></div>
 <?php endif; ?>
 
+<?php if (ogl_aktivan()): ?>
+<div class="card mb-3"><div class="card-body d-flex align-items-center gap-3">
+    <div class="fs-2">🛒</div>
+    <div class="flex-grow-1"><b>Oglasnik lovaca</b><div class="small text-muted">oglasi vaše udruge i lovaca iz drugih udruga</div></div>
+    <a class="btn btn-primary" href="<?= e(url('oglasnik-sso')) ?>">Otvori</a>
+</div></div>
+<?php else: ?>
 <div class="card mb-3"><div class="card-header d-flex align-items-center"><b class="me-auto">🛒 Oglasnik</b><a class="small" href="<?= e(url('oglasnik')) ?>">svi oglasi →</a></div>
     <div class="list-group list-group-flush">
     <?php foreach ($oglasi as $o): ?>
@@ -56,6 +63,7 @@ ob_start(); ?>
     <?php endforeach; ?>
     <?php if (!$oglasi): ?><div class="list-group-item small text-muted">Trenutno nema oglasa.</div><?php endif; ?>
     </div></div>
+<?php endif; ?>
 
 <div class="d-flex flex-wrap gap-2 mb-3">
     <a class="btn btn-outline-secondary btn-sm" href="<?= e(url('imenik')) ?>">📇 Imenik</a>

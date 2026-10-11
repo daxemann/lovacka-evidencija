@@ -1,5 +1,15 @@
 # Promjene
 
+## 1.18.0 – 2026-10
+- **🛒 Oglasnik lovaca – zajednički oglasnik svih udruga** (Sustav → Oglasnik lovaca).
+  Udruga se jednim klikom prijavi u zajednički Oglasnik (zahtjev s ključem udruge, administrator Oglasnika ga odobri).
+  Članovi ulaze iz izbornika **Oglasnik** bez posebne lozinke (jednokratna potpisana prijava, Ed25519); privatni ključ ostaje samo u bazi udruge, šifriran.
+- Administrator udruge određuje pravila za svoje članove: objava **samo za udrugu** ili **i za sve udruge**, vide li se oglasi drugih udruga,
+  smije li se broj telefona prikazati drugim udrugama, javni oglasi odmah ili **nakon odobrenja**.
+- Novo pravo **„Oglasnik – moderacija“** (odobravanje javnih oglasa, skrivanje oglasa, prijave). Uloge sa svim pravima ga dobivaju automatski.
+- **Zadano isključeno** – dok udruga Oglasnik ne uključi, sve radi kao prije (interni oglasnik udruge). Dosadašnji oglasi ostaju pod „Interni oglasi“.
+- Potrebno PHP proširenje **sodium** (uobičajeno uključeno).
+
 ## 1.17.0 – 2026-10
 - **🐕 Vodiči pasa** (izbornik Članovi i gumb na početnoj, za sve lovce): popis članova s lovačkim psom – pas, pasmina, godina, 🩸 potraga, ispiti.
   Filtar „samo psi za potragu (krvni trag)“, pretraga po imenu/psu/pasmini i sekciji.
