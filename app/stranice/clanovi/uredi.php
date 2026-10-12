@@ -387,7 +387,7 @@ ob_start(); ?>
         <?php if ($uredi && $id): ?>
             <div class="mt-2 no-print">
                 <label class="btn btn-sm btn-outline-primary">Učitaj fotografiju
-                    <input type="file" accept="image/*" class="d-none" form="obrazacFoto" name="foto" onchange="this.form.submit()"></label>
+                    <input type="file" accept="image/*" data-smanji="1200" class="d-none" form="obrazacFoto" name="foto" onchange="this.form.submit()"></label>
                 <?php if ($clan['FotoDatoteka']): ?><button type="submit" form="obrazacFotoBrisi" class="btn btn-sm btn-link text-danger">Ukloni</button><?php endif; ?>
             </div>
         <?php endif; ?>

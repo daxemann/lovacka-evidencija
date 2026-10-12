@@ -146,7 +146,7 @@ if ($dok || $novi):
             </ul>
         <?php endif; ?>
         <input type="hidden" name="dat" value=""><input type="hidden" name="smjer" value="">
-        <input type="file" name="datoteke[]" class="form-control" accept="application/pdf,.pdf,image/*" multiple>
+        <input type="file" name="datoteke[]" class="form-control" accept="application/pdf,.pdf,image/*" data-smanji="2400" multiple>
         <div class="form-text">PDF (do <?= DOK_MAX_PDF_MB ?> MB) ili fotografije papira – više stranica odjednom, redom kako trebaju biti. Najviše <?= e(ini_get('upload_max_filesize')) ?> po datoteci.</div>
     </div></div>
 

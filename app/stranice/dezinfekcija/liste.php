@@ -70,7 +70,7 @@ ob_start(); ?>
         <div class="col-6"><label class="form-label">Lista od</label><input type="date" name="od" class="form-control" required max="<?= danas() ?>" value="<?= danas() ?>"></div>
         <div class="col-6"><label class="form-label">do</label><input type="date" name="do" class="form-control" max="<?= danas() ?>" value="<?= danas() ?>"></div>
         <div class="col-12"><label class="form-label">Fotografija (može više stranica)</label>
-            <input type="file" name="slike[]" class="form-control" accept="image/*" multiple required>
+            <input type="file" name="slike[]" class="form-control" accept="image/*" data-smanji="2400" multiple required>
             <div class="form-text">Na mobitelu: „Kamera“ ili iz galerije. Snimite ravno odozgo, cijeli list, dobro osvijetljen.</div></div>
         <div class="col-12"><label class="form-label">Napomena</label><input name="napomena" class="form-control" maxlength="200" placeholder="npr. list 2/3"></div>
     </div>

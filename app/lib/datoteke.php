@@ -2,6 +2,9 @@
 /** Fotografije, slanje datoteka, učitavanje. */
 declare(strict_types=1);
 
+const SLIKA_MAX_MP = 60;          // veće slike se odbijaju (memorija poslužitelja)
+const SLIKA_MAX_ORIGINAL_MB = 4;  // bez smanjivanja (nema GD) sprema se samo do ove veličine
+
 function posalji_datoteku(string $put, int $cache = 0, ?string $ime = null, ?string $tip = null): never
 {
     $tip ??= match (strtolower(pathinfo($put, PATHINFO_EXTENSION))) {
@@ -46,6 +49,14 @@ function spremi_sliku(array $f, string $prefiks, int $max = 1600, bool $png = fa
     if (!$info || !in_array($info[2], [IMAGETYPE_JPEG, IMAGETYPE_PNG, IMAGETYPE_WEBP, IMAGETYPE_GIF], true)) {
         throw new RuntimeException('Datoteka nije slika (JPG, PNG, WEBP).');
     }
+    // zaštita poslužitelja: preveliku sliku ne otvaramo (memorija) i ne spremamo kao original
+    $mp = $info[0] * $info[1] / 1e6;
+    if ($mp > SLIKA_MAX_MP) {
+        throw new RuntimeException('Slika je prevelika (' . round($mp) . ' megapiksela, najviše ' . SLIKA_MAX_MP . '). Smanjite je ili snimite manjom rezolucijom.');
+    }
+    if (function_exists('imagecreatefromstring')) {
+        @ini_set('memory_limit', '512M'); // GD treba ~5 B po pikselu (npr. 48 MP ≈ 250 MB)
+    }
     $ext = $png ? 'png' : 'jpg';
     $ime = $prefiks . bin2hex(random_bytes(6)) . '.' . $ext;
     $cilj = podaci('foto/' . $ime);
@@ -76,7 +87,10 @@ function spremi_sliku(array $f, string $prefiks, int $max = 1600, bool $png = fa
             }
         }
     }
-    // bez GD-a: spremi original
+    // bez GD-a (ili GD nije uspio): original samo ako nije prevelik
+    if (filesize($f['tmp_name']) > SLIKA_MAX_ORIGINAL_MB * 1024 * 1024) {
+        throw new RuntimeException('Slika je prevelika (' . round(filesize($f['tmp_name']) / 1048576, 1) . ' MB), a poslužitelj je ne može smanjiti. Najviše ' . SLIKA_MAX_ORIGINAL_MB . ' MB.');
+    }
     $ext = image_type_to_extension($info[2], false) === 'jpeg' ? 'jpg' : image_type_to_extension($info[2], false);
     $ime = $prefiks . bin2hex(random_bytes(6)) . '.' . $ext;
     $ok = is_uploaded_file($f['tmp_name']) ? move_uploaded_file($f['tmp_name'], podaci('foto/' . $ime)) : copy($f['tmp_name'], podaci('foto/' . $ime));

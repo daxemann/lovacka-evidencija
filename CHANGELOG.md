@@ -1,5 +1,9 @@
 # Promjene
 
+## 1.21.4 – 2026-10
+- **Fotografije se smanjuju već na mobitelu/računalu prije slanja** (fotografija člana i Moj profil 1200 px, radne akcije i oglasi 1600 px, papirnate liste i dokumenti 2400 px) – umjesto 5–15 MB šalje se nekoliko stotina kB, brže i na slabom signalu.
+- Zaštita poslužitelja: slika veća od 60 megapiksela se odbija; ako poslužitelj nema GD za smanjivanje, original se sprema samo do 4 MB. Fotografija člana se na poslužitelju i dalje sprema najviše 800 px.
+
 ## 1.21.3 – 2026-10
 - Početna: bez gumba Inventura (ostaje u izborniku Udruga → Inventura).
 

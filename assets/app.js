@@ -18,6 +18,40 @@ window.viberPoruka = function (broj) {
         var b = e.target.closest('[data-potvrda]');
         if (b && !window.confirm(b.getAttribute('data-potvrda'))) { e.preventDefault(); e.stopPropagation(); }
     }, true);
+    // smanjivanje fotografija prije slanja: <input type=file data-smanji="1200"> (najveća strana u px)
+    // – mobitel ne šalje 10+ MB, poslužitelj ne mora otvarati ogromne slike. PDF i ostalo ostaje nepromijenjeno.
+    document.addEventListener('change', function (e) {
+        var inp = e.target;
+        if (!inp.matches || !inp.matches('input[type=file][data-smanji]')) return;
+        if (inp._smanjeno) { inp._smanjeno = false; return; } // već smanjeno – pusti dalje (onchange, pregled)
+        if (!inp.files || !inp.files.length || !window.DataTransfer || !window.createImageBitmap) return;
+        e.stopImmediatePropagation(); // onchange (npr. this.form.submit()) tek nakon smanjivanja
+        var max = parseInt(inp.getAttribute('data-smanji'), 10) || 1600, form = inp.form;
+        var gumbi = form ? form.querySelectorAll('button[type=submit],button:not([type])') : [];
+        gumbi.forEach(function (b) { b.disabled = true; });
+        function jedna(f) {
+            if (!/^image\/(jpeg|png|webp|heic|heif)/i.test(f.type)) return Promise.resolve(f);
+            return createImageBitmap(f, { imageOrientation: 'from-image' }).then(function (bm) {
+                var s = Math.min(1, max / Math.max(bm.width, bm.height));
+                if (s === 1 && f.size < 1.5 * 1024 * 1024) { bm.close && bm.close(); return f; }
+                var c = document.createElement('canvas');
+                c.width = Math.round(bm.width * s); c.height = Math.round(bm.height * s);
+                var g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height);
+                g.drawImage(bm, 0, 0, c.width, c.height); bm.close && bm.close();
+                return new Promise(function (ok) { c.toBlob(function (b) {
+                    ok(b && b.size < f.size ? new File([b], f.name.replace(/\.[^.]+$/, '') + '.jpg', { type: 'image/jpeg', lastModified: f.lastModified }) : f);
+                }, 'image/jpeg', 0.86); });
+            }).catch(function () { return f; });
+        }
+        Promise.all(Array.prototype.map.call(inp.files, jedna)).then(function (dat) {
+            var dt = new DataTransfer(); dat.forEach(function (f) { dt.items.add(f); });
+            inp.files = dt.files;
+        }).catch(function () {}).then(function () {
+            gumbi.forEach(function (b) { b.disabled = false; });
+            inp._smanjeno = true;
+            inp.dispatchEvent(new Event('change', { bubbles: true }));
+        });
+    }, true);
     // automatsko slanje obrasca kad se promijeni izbor: <select data-auto>
     document.addEventListener('change', function (e) {
         if (e.target.matches('[data-auto]')) { e.target.form.submit(); }

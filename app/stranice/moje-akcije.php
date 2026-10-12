@@ -115,7 +115,7 @@ ob_start(); ?>
                         function f() { var je = vr.value === pot; document.getElementById('potragaInfo').classList.toggle('d-none', !je);
                             ps.querySelectorAll('option[data-potraga]').forEach(function (o) { o.disabled = je && o.dataset.potraga !== '1'; if (o.disabled && o.selected) ps.value = ''; }); }
                         vr.addEventListener('change', f); f(); })();</script><?php endif; ?>
-                <div class="col-8 col-md-4"><label class="form-label small">Fotografija (neobavezno)</label><input type="file" name="foto" accept="image/*" class="form-control"></div>
+                <div class="col-8 col-md-4"><label class="form-label small">Fotografija (neobavezno)</label><input type="file" name="foto" accept="image/*" data-smanji="1600" class="form-control"></div>
                 <div class="col-12"><label class="form-label small">Opis – što je napravljeno, gdje</label><textarea name="opis" rows="2" class="form-control"><?= e($v['opis']) ?></textarea></div>
             </div>
             <div class="d-flex gap-2 mt-3">

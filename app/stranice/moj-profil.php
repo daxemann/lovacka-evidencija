@@ -73,7 +73,7 @@ ob_start(); ?>
         <div class="mt-1">
             <form method="post" action="<?= e(url('moj-profil')) ?>" enctype="multipart/form-data" class="d-inline"><?= csrf() ?><input type="hidden" name="radnja" value="foto">
                 <label class="btn btn-sm btn-outline-primary mb-0"><?= $c['FotoDatoteka'] ? 'Promijeni sliku' : 'Dodaj sliku' ?>
-                    <input type="file" name="foto" accept="image/*" class="d-none" onchange="this.form.submit()"></label></form>
+                    <input type="file" name="foto" accept="image/*" data-smanji="1200" class="d-none" onchange="this.form.submit()"></label></form>
             <?php if ($c['FotoDatoteka']): ?>
                 <form method="post" action="<?= e(url('moj-profil')) ?>" class="d-inline"><?= csrf() ?><input type="hidden" name="radnja" value="obrisi-foto">
                     <button class="btn btn-sm btn-link text-danger" data-potvrda="Ukloniti sliku?">Ukloni</button></form>

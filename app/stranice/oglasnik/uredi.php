@@ -86,7 +86,7 @@ ob_start(); ?>
             <?php endforeach; ?>
             <?php if (count($slike) < MAX_SLIKA_OGLASA): ?>
                 <label class="oglas-mini oglas-dodaj">+ Dodaj slike
-                    <input type="file" name="slike[]" accept="image/*" multiple class="d-none" id="slikeUnos"></label>
+                    <input type="file" name="slike[]" accept="image/*" data-smanji="1600" multiple class="d-none" id="slikeUnos"></label>
             <?php endif; ?>
         </div>
         <div class="small text-muted mt-2" id="odabraneSlike"></div>
