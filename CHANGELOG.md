@@ -1,5 +1,9 @@
 # Promjene
 
+## 1.20.1 – 2026-10
+- **Inventura: dva prava** (Sustav → Uloge i prava): **„Inventura – pregled“** (vidi mape, treba/stvarno, manjak/višak, ispisuje PDF – bez izmjena)
+  i **„Inventura – uređivanje“** (mape, stavke, upis količina, nova inventura). Tko je do sada imao „Inventura“, zadržava i uređivanje.
+
 ## 1.20.0 – 2026-10
 - **📦 Inventura** (izbornik Udruga → Inventura i gumb na početnoj): mape (npr. Lovački dom, Hranilišta, Oprema) – svaka za cijelu udrugu ili za jednu sekciju (sekcije i ovdje odvojene).
   U mapi tablica stavki: naziv, jedinica, **Treba** i **Stvarno**; „+ Dodaj stavku“ / „−“ uklanja redak, Enter u zadnjem retku dodaje novi.

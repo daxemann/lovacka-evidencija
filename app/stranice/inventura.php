@@ -1,12 +1,18 @@
 <?php
 /** Inventura: mape i stavke (treba / stvarno), manjak i višak, PDF lista za popis. */
-trazi(P_INVENTURA);
+if (!ima(P_INVENTURA) && !ima(P_INVENTURA_UREDI)) {
+    zabranjeno();
+}
+$uredi = ima(P_INVENTURA_UREDI);
 $k = korisnik();
 $id = (int) ($_GET['mapa'] ?? 0);
 $mapa = $id ? inv_mapa($id) : null;
 $sekcijeOpseg = moje_sekcije();
 
 if (je_post()) {
+    if (!$uredi) {
+        zabranjeno();
+    }
     $radnja = (string) ($_POST['radnja'] ?? '');
 
     if ($radnja === 'nova_mapa') {
@@ -107,7 +113,40 @@ if (je_post()) {
 
 ob_start();
 
-// ---------- jedna mapa ----------
+// ---------- jedna mapa – samo pregled (pravo „Inventura – pregled“) ----------
+if ($mapa && !$uredi):
+    $stavke = inv_stavke($id); ?>
+<p class="mb-2"><a href="<?= e(url('inventura')) ?>">← Sve mape</a></p>
+<div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+    <h1 class="h3 mb-0 me-auto">📁 <?= e($mapa['Naziv']) ?></h1>
+    <a class="btn btn-outline-secondary" href="<?= e(url('izvoz/inventura-pdf', ['mapa' => $id])) ?>">🖨️ PDF za popis</a>
+    <a class="btn btn-outline-secondary" href="<?= e(url('izvoz/inventura-pdf', ['mapa' => $id, 'rezultat' => 1])) ?>">📄 PDF s rezultatom</a>
+</div>
+<p class="text-muted small mb-3"><?= $mapa['Sekcija'] ? 'Sekcija: ' . e($mapa['Sekcija']) . ' · ' : 'Cijela udruga · ' ?>
+    <?= $mapa['Azurirano'] ? 'zadnja izmjena ' . e(datum_vrijeme($mapa['Azurirano'])) . ($mapa['AzuriraoIme'] ? ' (' . e($mapa['AzuriraoIme']) . ')' : '') : 'još nema izmjena' ?>
+    · <span class="badge bg-secondary">samo pregled</span></p>
+<?php if (!$stavke): ?>
+    <div class="alert alert-info">Mapa još nema stavki.</div>
+<?php else: ?>
+<div class="table-responsive">
+<table class="table table-sm table-striped align-middle inv-tablica">
+    <thead><tr><th>Naziv stvari</th><th class="d-none d-md-table-cell">Jed.</th><th class="text-end">Treba</th><th class="text-end">Stvarno</th><th class="text-end">Razlika</th><th class="d-none d-md-table-cell">Napomena</th></tr></thead>
+    <tbody>
+    <?php foreach ($stavke as $s): ?>
+        <tr><td><?= e($s['Naziv']) ?></td><td class="d-none d-md-table-cell"><?= e($s['Jedinica']) ?></td>
+            <td class="text-end"><?= e(broj($s['Treba'], 2)) ?></td><td class="text-end"><?= e(broj($s['Stvarno'], 2)) ?></td>
+            <td class="text-end text-nowrap"><?= inv_razlika_html($s) ?></td><td class="d-none d-md-table-cell small"><?= e($s['Napomena']) ?></td></tr>
+    <?php endforeach; ?>
+    </tbody>
+</table>
+</div>
+<?php endif; ?>
+<style>@media (max-width: 575px) { .inv-tablica .inv-rijec { display: none; } }</style>
+<?php
+    stranica('Inventura – ' . $mapa['Naziv'], ob_get_clean());
+endif;
+
+// ---------- jedna mapa – uređivanje ----------
 if ($mapa):
     $stavke = inv_stavke($id); ?>
 <p class="mb-2"><a href="<?= e(url('inventura')) ?>">← Sve mape</a></p>
@@ -217,6 +256,7 @@ $mape = inv_mape(); ?>
     <?php endif; ?>
 </div>
 
+<?php if ($uredi): ?>
 <form method="post" action="<?= e(url('inventura')) ?>" class="card mb-3"><div class="card-body d-flex flex-wrap gap-2 align-items-end"><?= csrf() ?>
     <div class="flex-grow-1" style="min-width:200px"><label class="form-label small mb-1">Nova mapa</label>
         <input name="naziv" class="form-control" maxlength="100" required placeholder="npr. Lovački dom, Hranilišta, Oprema, Hladnjača"></div>
@@ -229,9 +269,10 @@ $mape = inv_mape(); ?>
     <?php endif; ?>
     <button class="btn btn-success" name="radnja" value="nova_mapa">+ Dodaj mapu</button>
 </div></form>
+<?php endif; ?>
 
 <?php if (!$mape): ?>
-    <div class="alert alert-info">Još nema mapa. Dodajte prvu (npr. „Lovački dom“), zatim u njoj stavke s količinom koja treba biti. Lista za popis ispisuje se kao PDF s praznim stupcem „Stvarno“.</div>
+    <div class="alert alert-info"><?= $uredi ? '' : 'Još nema mapa inventure.' ?><?php if ($uredi): ?>Još nema mapa. Dodajte prvu (npr. „Lovački dom“), zatim u njoj stavke s količinom koja treba biti. Lista za popis ispisuje se kao PDF s praznim stupcem „Stvarno“.<?php endif; ?></div>
 <?php else: ?>
 <div class="list-group mb-3">
     <?php foreach ($mape as $n => $m): ?>
@@ -246,11 +287,11 @@ $mape = inv_mape(); ?>
             <?php if ($m['Stavki'] && !$m['Manjak'] && !$m['Visak'] && !$m['Nepopisano']): ?><span class="badge bg-success-subtle text-success-emphasis">✓ sve u redu</span><?php endif; ?>
             <?php if ($m['Nepopisano'] && $m['Nepopisano'] < $m['Stavki']): ?><span class="badge bg-secondary-subtle text-secondary-emphasis" title="još nije popisano"><?= (int) $m['Nepopisano'] ?> nepopisano</span><?php endif; ?>
         </span>
-        <form method="post" action="<?= e(url('inventura')) ?>" class="text-nowrap"><?= csrf() ?><input type="hidden" name="id" value="<?= (int) $m['Id'] ?>">
+        <?php if ($uredi): ?><form method="post" action="<?= e(url('inventura')) ?>" class="text-nowrap"><?= csrf() ?><input type="hidden" name="id" value="<?= (int) $m['Id'] ?>">
             <?php if ($n > 0): ?><button class="btn btn-sm btn-link p-0" name="radnja" value="poredak" onclick="this.form.smjer.value='gore'" title="Gore">▲</button><?php endif; ?>
             <?php if ($n < count($mape) - 1): ?><button class="btn btn-sm btn-link p-0" name="radnja" value="poredak" onclick="this.form.smjer.value='dolje'" title="Dolje">▼</button><?php endif; ?>
             <input type="hidden" name="smjer" value="">
-        </form>
+        </form><?php endif; ?>
     </div>
     <?php endforeach; ?>
 </div>

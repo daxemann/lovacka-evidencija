@@ -1,6 +1,8 @@
 <?php
 /** PDF inventure: lista za popis (prazan stupac „Stvarno“) ili rezultat s manjkom / viškom. Jedna mapa ili sve vidljive. */
-trazi(P_INVENTURA);
+if (!ima(P_INVENTURA) && !ima(P_INVENTURA_UREDI)) {
+    zabranjeno();
+}
 $id = (int) ($_GET['mapa'] ?? 0);
 $mape = $id ? [inv_mapa($id)] : inv_mape();
 $rezultat = ($_GET['rezultat'] ?? '') === '1';

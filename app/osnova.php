@@ -5,7 +5,7 @@
  */
 declare(strict_types=1);
 
-const VERZIJA = '1.20.0';
+const VERZIJA = '1.20.1';
 const KONTAKT_EMAIL = 'daxemann@googlemail.com';
 const PROJEKT_URL = 'https://github.com/daxemann/lovacka-evidencija';
 const KORIJEN = __DIR__ . '/..';
@@ -31,8 +31,9 @@ const P_REVIR_NADZOR = 65536;
 const P_REVIR_DNEVNIK = 131072;
 const P_OGLASNIK_MOD = 262144;
 const P_INVENTURA = 524288;
+const P_INVENTURA_UREDI = 1048576;
 const P_OSNOVNA = 255; // prava iz .NET verzije
-const P_SVE = 1048575;
+const P_SVE = 2097151;
 
 const PRAVA_OPIS = [
     P_CLANOVI_CITAJ => ['Članovi – pregled', 'vidi popis članova i njihove podatke'],
@@ -53,7 +54,8 @@ const PRAVA_OPIS = [
     P_REVIR_UREDI => ['Lovište – lovne naprave', 'dodaje, premješta i uređuje lovne naprave (čeke) na karti lovišta za sekcije u svom opsegu'],
     P_REVIR_NADZOR => ['Lovište – nadzor', 'prima obavijesti o zauzimanju lovnih naprava u svojim sekcijama i smije obrisati zauzeće'],
     P_OGLASNIK_MOD => ['Oglasnik – moderacija', 'u zajedničkom Oglasniku lovaca odobrava javne oglase članova udruge, skriva neprimjerene oglase i obrađuje prijave'],
-    P_INVENTURA => ['Inventura', 'mape inventure (npr. lovački dom, hranilišta, oprema), stavke s količinom „treba“ i „stvarno“, PDF lista za popis, manjak/višak'],
+    P_INVENTURA => ['Inventura – pregled', 'vidi mape inventure (svoje sekcije i cijele udruge), stanje „treba“ / „stvarno“, manjak i višak, ispisuje PDF listu za popis – bez izmjena'],
+    P_INVENTURA_UREDI => ['Inventura – uređivanje', 'dodaje i briše mape i stavke, upisuje „treba“ i „stvarno“, nova inventura, preuzimanje stanja'],
     P_REVIR_DNEVNIK => ['Lovište – lovački dnevnik', 'vidi lovački dnevnik (tko, kada, gdje) za sekcije u svom opsegu, ispis i PDF; bez ovog prava dnevnik se ne prikazuje'],
 ];
 
@@ -137,7 +139,7 @@ function db(bool $novo = false): PDO
  * Dodatne tablice PHP verzije (PRAGMA user_version). .NET verzija ih ne poznaje i zanemaruje,
  * pa baza i dalje radi u oba smjera.
  */
-const SHEMA_PHP = 19;
+const SHEMA_PHP = 20;
 function nadogradi_bazu(PDO $pdo): void
 {
     $v = (int) $pdo->query('PRAGMA user_version')->fetchColumn();
@@ -526,6 +528,10 @@ SQL);
                 "Redoslijed" INTEGER NOT NULL DEFAULT 0);
             CREATE INDEX IF NOT EXISTS "IX_InvStavke_MapaId" ON "InvStavke" ("MapaId");
             UPDATE "Uloge" SET "Prava" = "Prava" | 524288 WHERE ("Prava" & 524287) = 524287 OR "Naziv" = \'Domar\';');
+    }
+    if ($v < 20) {
+        // Inventura razdvojena na pregled i uređivanje: tko je do sada imao „Inventura“, dobiva i uređivanje
+        $pdo->exec('UPDATE "Uloge" SET "Prava" = "Prava" | 1048576 WHERE ("Prava" & 524288) = 524288;');
     }
     $pdo->exec('PRAGMA user_version = ' . SHEMA_PHP);
     $pdo->commit();
