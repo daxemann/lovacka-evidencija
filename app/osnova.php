@@ -5,7 +5,7 @@
  */
 declare(strict_types=1);
 
-const VERZIJA = '1.19.1';
+const VERZIJA = '1.20.0';
 const KONTAKT_EMAIL = 'daxemann@googlemail.com';
 const PROJEKT_URL = 'https://github.com/daxemann/lovacka-evidencija';
 const KORIJEN = __DIR__ . '/..';
@@ -30,8 +30,9 @@ const P_REVIR_UREDI = 32768;
 const P_REVIR_NADZOR = 65536;
 const P_REVIR_DNEVNIK = 131072;
 const P_OGLASNIK_MOD = 262144;
+const P_INVENTURA = 524288;
 const P_OSNOVNA = 255; // prava iz .NET verzije
-const P_SVE = 524287;
+const P_SVE = 1048575;
 
 const PRAVA_OPIS = [
     P_CLANOVI_CITAJ => ['Članovi – pregled', 'vidi popis članova i njihove podatke'],
@@ -52,6 +53,7 @@ const PRAVA_OPIS = [
     P_REVIR_UREDI => ['Lovište – lovne naprave', 'dodaje, premješta i uređuje lovne naprave (čeke) na karti lovišta za sekcije u svom opsegu'],
     P_REVIR_NADZOR => ['Lovište – nadzor', 'prima obavijesti o zauzimanju lovnih naprava u svojim sekcijama i smije obrisati zauzeće'],
     P_OGLASNIK_MOD => ['Oglasnik – moderacija', 'u zajedničkom Oglasniku lovaca odobrava javne oglase članova udruge, skriva neprimjerene oglase i obrađuje prijave'],
+    P_INVENTURA => ['Inventura', 'mape inventure (npr. lovački dom, hranilišta, oprema), stavke s količinom „treba“ i „stvarno“, PDF lista za popis, manjak/višak'],
     P_REVIR_DNEVNIK => ['Lovište – lovački dnevnik', 'vidi lovački dnevnik (tko, kada, gdje) za sekcije u svom opsegu, ispis i PDF; bez ovog prava dnevnik se ne prikazuje'],
 ];
 
@@ -135,7 +137,7 @@ function db(bool $novo = false): PDO
  * Dodatne tablice PHP verzije (PRAGMA user_version). .NET verzija ih ne poznaje i zanemaruje,
  * pa baza i dalje radi u oba smjera.
  */
-const SHEMA_PHP = 18;
+const SHEMA_PHP = 19;
 function nadogradi_bazu(PDO $pdo): void
 {
     $v = (int) $pdo->query('PRAGMA user_version')->fetchColumn();
@@ -502,6 +504,28 @@ SQL);
                 "Naziv" TEXT NOT NULL,
                 "Redoslijed" INTEGER NOT NULL DEFAULT 0);
             CREATE INDEX IF NOT EXISTS "IX_DokumentDatoteke_DokumentId" ON "DokumentDatoteke" ("DokumentId");');
+    }
+    if ($v < 19) {
+        // Inventura: mape (npr. lovački dom, sekcija) sa stavkama „treba“ / „stvarno“
+        $pdo->exec('CREATE TABLE IF NOT EXISTS "InvMape" (
+                "Id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                "Naziv" TEXT NOT NULL,
+                "SekcijaId" INTEGER NULL REFERENCES "Sekcije" ("Id") ON DELETE SET NULL,
+                "Redoslijed" INTEGER NOT NULL DEFAULT 0,
+                "Kreirano" TEXT NOT NULL,
+                "Azurirano" TEXT NULL,
+                "AzuriraoIme" TEXT NULL);
+            CREATE TABLE IF NOT EXISTS "InvStavke" (
+                "Id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                "MapaId" INTEGER NOT NULL REFERENCES "InvMape" ("Id") ON DELETE CASCADE,
+                "Naziv" TEXT NOT NULL,
+                "Jedinica" TEXT NULL,
+                "Treba" REAL NULL,
+                "Stvarno" REAL NULL,
+                "Napomena" TEXT NULL,
+                "Redoslijed" INTEGER NOT NULL DEFAULT 0);
+            CREATE INDEX IF NOT EXISTS "IX_InvStavke_MapaId" ON "InvStavke" ("MapaId");
+            UPDATE "Uloge" SET "Prava" = "Prava" | 524288 WHERE ("Prava" & 524287) = 524287 OR "Naziv" = \'Domar\';');
     }
     $pdo->exec('PRAGMA user_version = ' . SHEMA_PHP);
     $pdo->commit();

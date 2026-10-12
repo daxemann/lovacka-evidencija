@@ -1,5 +1,13 @@
 # Promjene
 
+## 1.20.0 – 2026-10
+- **📦 Inventura** (izbornik Udruga → Inventura i gumb na početnoj): mape (npr. Lovački dom, Hranilišta, Oprema) – svaka za cijelu udrugu ili za jednu sekciju (sekcije i ovdje odvojene).
+  U mapi tablica stavki: naziv, jedinica, **Treba** i **Stvarno**; „+ Dodaj stavku“ / „−“ uklanja redak, Enter u zadnjem retku dodaje novi.
+- **Razlika** na kraju retka: **crveno manjak** (−), **zeleno višak** (+) ili ✓ kad se slaže; na popisu mapa broj stavki s manjkom / viškom.
+- **PDF za popis**: „Treba“ ispunjeno, stupac „Stvarno“ i napomena prazni za upis rukom, potpis i datum – za jednu mapu ili sve. **PDF s rezultatom** s manjkom i viškom.
+- „Nova inventura“ isprazni stupac „Stvarno“; „Preuzmi Stvarno kao Treba“ nakon završenog popisa.
+- Novo pravo **„Inventura“** – dobivaju ga uloge sa svim pravima i Domar; ostalima se dodjeljuje u Sustav → Uloge i prava.
+
 ## 1.19.1 – 2026-10
 - Izbornik: ikona uz svaku stavku; „Statut i pravilnici“ na kraju skupine Članovi (ispod oglasa).
 
