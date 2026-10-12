@@ -28,5 +28,19 @@ ob_start(); ?>
         <?php if (ima(P_SUSTAV)): ?><p class="small text-muted mt-2 mb-0">Za administratore: prije slanja greške pogledajte i <a href="<?= e(url('sustav/dnevnik')) ?>">dnevnik promjena</a>.</p><?php endif; ?>
     </div></div></div>
 </div>
+<?php if (PODRSKA_PAYPAL !== ''): ?>
+<div class="card mt-3 border-warning-subtle"><div class="card-body d-flex flex-wrap align-items-center gap-3">
+    <div class="flex-grow-1" style="min-width:240px">
+        <h2 class="h5 mb-1">☕ Podržite razvoj programa</h2>
+        <p class="small text-muted mb-0">Program je besplatan i takav ostaje – sve funkcije rade bez plaćanja. Ako vam pomaže u udruzi, autoru možete častiti kavu.
+            Dobrovoljno, bez ikakve obveze.</p>
+    </div>
+    <div class="d-grid gap-1" style="min-width:220px">
+        <a class="btn btn-warning" target="_blank" rel="noopener" href="<?= e('https://www.paypal.com/donate/?business=' . rawurlencode(PODRSKA_PAYPAL) . '&currency_code=EUR&item_name=' . rawurlencode('Lovačka evidencija – podrška razvoju')) ?>">☕ Podrži putem PayPala</a>
+        <div class="input-group input-group-sm"><input class="form-control" id="podrska-paypal" readonly value="<?= e(PODRSKA_PAYPAL) ?>" aria-label="PayPal adresa"><button class="btn btn-outline-secondary" type="button" data-kopiraj="#podrska-paypal">Kopiraj</button></div>
+        <div class="form-text mt-0">ili u PayPal aplikaciji „Pošalji“ na ovu adresu</div>
+    </div>
+</div></div>
+<?php endif; ?>
 <p class="small text-muted mt-3">Napomena: autor nema pristup podacima vaše udruge – svi podaci ostaju na vašem poslužitelju. Ne šaljite osobne podatke članova e-poštom.</p>
 <?php stranica('Pomoć i kontakt', ob_get_clean());

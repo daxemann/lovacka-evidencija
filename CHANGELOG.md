@@ -1,5 +1,8 @@
 # Promjene
 
+## 1.21.1 – 2026-10
+- Pomoć i kontakt: **☕ Podržite razvoj programa** – dobrovoljna podrška autoru putem PayPala. Sve funkcije i dalje rade bez plaćanja.
+
 ## 1.21.0 – 2026-10
 - **Inventura po sekcijama**: mape su grupirane – „Cijela udruga“, zatim svaka sekcija – sa zbrojem stavki, manjka i viška po skupini.
   Gumbi **Sve / Cijela udruga / sekcija** prikazuju samo odabranu skupinu (vidljive su samo sekcije u opsegu korisnika).
