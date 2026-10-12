@@ -1,5 +1,8 @@
 # Promjene
 
+## 1.21.2 – 2026-10
+- Pomoć i kontakt: podrška razvoju samo gumbom PayPal (bez prikaza adrese).
+
 ## 1.21.1 – 2026-10
 - Pomoć i kontakt: **☕ Podržite razvoj programa** – dobrovoljna podrška autoru putem PayPala. Sve funkcije i dalje rade bez plaćanja.
 

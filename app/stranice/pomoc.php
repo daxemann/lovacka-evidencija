@@ -37,8 +37,6 @@ ob_start(); ?>
     </div>
     <div class="d-grid gap-1" style="min-width:220px">
         <a class="btn btn-warning" target="_blank" rel="noopener" href="<?= e('https://www.paypal.com/donate/?business=' . rawurlencode(PODRSKA_PAYPAL) . '&currency_code=EUR&item_name=' . rawurlencode('Lovačka evidencija – podrška razvoju')) ?>">☕ Podrži putem PayPala</a>
-        <div class="input-group input-group-sm"><input class="form-control" id="podrska-paypal" readonly value="<?= e(PODRSKA_PAYPAL) ?>" aria-label="PayPal adresa"><button class="btn btn-outline-secondary" type="button" data-kopiraj="#podrska-paypal">Kopiraj</button></div>
-        <div class="form-text mt-0">ili u PayPal aplikaciji „Pošalji“ na ovu adresu</div>
     </div>
 </div></div>
 <?php endif; ?>
