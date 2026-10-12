@@ -147,7 +147,7 @@ function vrati_kompletnu_kopiju(string $zipPut): void
                 }
                 continue;
             }
-            if ($m[1] === 'foto' && !preg_match('/\.(jpe?g|png|webp|gif)$/i', $m[2])) {
+            if ($m[1] === 'foto' && !preg_match('/\.(jpe?g|png|webp|gif)$/i', $m[2]) && !preg_match('/^dok-\d+-[0-9a-f]+\.pdf$/', $m[2])) {
                 continue;
             }
             if ($m[1] === 'kljucevi' && !preg_match('/\.xml$/i', $m[2])) {

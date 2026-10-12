@@ -64,7 +64,7 @@ $novaVerzija = $k ? azuriranje_dostupno() : null;
                     <?php $revirSek = revir_sekcije(); if ($revirSek || ima(P_SUSTAV)) echo $grupa('loviste', 'Lovište',
                         ($revirSek ? $stavka('revir', 'Karta lovišta', 0, true) . $stavka('revir/danas', 'Danas u lovištu', $revirObav) . (ima(P_REVIR_DNEVNIK) ? $stavka('revir/dnevnik', 'Lovački dnevnik') : '') : '')
                         . (ima(P_SUSTAV) || ima(P_REVIR_UREDI) ? $stavka('revir/postavke', 'Postavke lovišta') : '')); ?>
-                    <?= $grupa('clanovi', 'Članovi', $stavka('imenik', 'Imenik') . $stavka('vodici-pasa', '🐕 Vodiči pasa') . $stavka('poruke', 'Poruke', $neprocitano) . (ogl_aktivan() ? $stavka('oglasnik-sso', '🛒 Oglasnik', 0, true) . (vrijednost('SELECT 1 FROM Oglasi WHERE Status IN (0,1) LIMIT 1') ? $stavka('oglasnik', 'Interni oglasi') : '') : $stavka('oglasnik', 'Oglasnik'))) ?>
+                    <?= $grupa('clanovi', 'Članovi', $stavka('imenik', 'Imenik') . $stavka('dokumenti', '📜 Statut i pravilnici') . $stavka('vodici-pasa', '🐕 Vodiči pasa') . $stavka('poruke', 'Poruke', $neprocitano) . (ogl_aktivan() ? $stavka('oglasnik-sso', '🛒 Oglasnik', 0, true) . (vrijednost('SELECT 1 FROM Oglasi WHERE Status IN (0,1) LIMIT 1') ? $stavka('oglasnik', 'Interni oglasi') : '') : $stavka('oglasnik', 'Oglasnik'))) ?>
                     <?php if ($k['Prava']) echo $grupa('udruga', 'Udruga',
                         (ima(P_CLANOVI_CITAJ) ? $stavka('clanovi', 'Članovi') : '')
                         . (ima(P_CLANARINA_CITAJ) ? $stavka('clanarina', 'Članarina') : '')
@@ -81,6 +81,7 @@ $novaVerzija = $k ? azuriranje_dostupno() : null;
                         $stavka('sustav/udruga', 'Podaci o udruzi')
                         . $stavka('sustav/postavke', 'E-pošta i adresa')
                         . $stavka('sustav/uplatnica', 'Uplatnica (IBAN)')
+                        . $stavka('sustav/dokumenti', 'Statut i pravilnici')
                         . $stavka('sustav/oglasnik', 'Oglasnik lovaca')
                         . $stavka('sustav/korisnici', 'Korisnici', (int) vrijednost('SELECT COUNT(*) FROM Korisnici WHERE Odobren=0 AND Aktivan=1'))
                         . $stavka('sustav/samoprijava', 'Samoprijava', (int) vrijednost('SELECT COUNT(*) FROM Korisnici WHERE Odobren=0 AND ClanId IS NULL'))

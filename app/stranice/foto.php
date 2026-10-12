@@ -8,7 +8,17 @@ if ($ime === '' || !is_file($dat)) {
 }
 $k = korisnik();
 $dozvoljeno = str_starts_with($ime, 'oglas-') || str_starts_with($ime, 'vrsta-') || $ime === basename((string) postavka('Udruga.Logo'));
-if (!$dozvoljeno && str_starts_with($ime, 'naprava-')) {
+if (!$dozvoljeno && str_starts_with($ime, 'dok-')) {
+    $dozvoljeno = dok_smije_datoteku($ime);
+    if ($dozvoljeno && str_ends_with($ime, '.pdf')) {
+        $n = vrijednost('SELECT Naziv FROM DokumentDatoteke WHERE Datoteka=?', [$ime]);
+        if (!empty($_GET['preuzmi'])) {
+            posalji_datoteku($dat, 0, dok_naziv_datoteke((string) $n) . '.pdf');
+        }
+        header('Content-Disposition: inline; filename="' . str_replace('"', '', dok_naziv_datoteke((string) $n)) . '.pdf"');
+        posalji_datoteku($dat, 0);
+    }
+} elseif (!$dozvoljeno && str_starts_with($ime, 'naprava-')) {
     $n = red('SELECT SekcijaId FROM RevirNaprave WHERE Foto=?', [$ime]);
     $dozvoljeno = $n && revir_moze_vidjeti($n['SekcijaId'] !== null ? (int) $n['SekcijaId'] : null);
 } elseif (!$dozvoljeno) {

@@ -5,7 +5,7 @@
  */
 declare(strict_types=1);
 
-const VERZIJA = '1.18.2';
+const VERZIJA = '1.19.0';
 const KONTAKT_EMAIL = 'daxemann@googlemail.com';
 const PROJEKT_URL = 'https://github.com/daxemann/lovacka-evidencija';
 const KORIJEN = __DIR__ . '/..';
@@ -135,7 +135,7 @@ function db(bool $novo = false): PDO
  * Dodatne tablice PHP verzije (PRAGMA user_version). .NET verzija ih ne poznaje i zanemaruje,
  * pa baza i dalje radi u oba smjera.
  */
-const SHEMA_PHP = 17;
+const SHEMA_PHP = 18;
 function nadogradi_bazu(PDO $pdo): void
 {
     $v = (int) $pdo->query('PRAGMA user_version')->fetchColumn();
@@ -482,6 +482,26 @@ SQL);
     if ($v < 17) {
         // novo pravo „Oglasnik – moderacija“: dobivaju ga uloge sa svim dosadašnjim pravima
         $pdo->exec('UPDATE "Uloge" SET "Prava" = "Prava" | 262144 WHERE ("Prava" & 262143) = 262143;');
+    }
+    if ($v < 18) {
+        // Statut i pravilnici: dokumenti udruge (tekst + PDF / slike), članovi ih samo čitaju
+        $pdo->exec('CREATE TABLE IF NOT EXISTS "Dokumenti" (
+                "Id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                "Naslov" TEXT NOT NULL,
+                "Opis" TEXT NULL,
+                "Tekst" TEXT NULL,
+                "Redoslijed" INTEGER NOT NULL DEFAULT 0,
+                "Objavljeno" INTEGER NOT NULL DEFAULT 1,
+                "Kreirano" TEXT NOT NULL,
+                "Azurirano" TEXT NOT NULL);
+            CREATE TABLE IF NOT EXISTS "DokumentDatoteke" (
+                "Id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                "DokumentId" INTEGER NOT NULL REFERENCES "Dokumenti" ("Id") ON DELETE CASCADE,
+                "Datoteka" TEXT NOT NULL,
+                "Vrsta" TEXT NOT NULL,
+                "Naziv" TEXT NOT NULL,
+                "Redoslijed" INTEGER NOT NULL DEFAULT 0);
+            CREATE INDEX IF NOT EXISTS "IX_DokumentDatoteke_DokumentId" ON "DokumentDatoteke" ("DokumentId");');
     }
     $pdo->exec('PRAGMA user_version = ' . SHEMA_PHP);
     $pdo->commit();

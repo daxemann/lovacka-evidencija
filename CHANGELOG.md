@@ -1,5 +1,10 @@
 # Promjene
 
+## 1.19.0 – 2026-10
+- **📜 Statut i pravilnici** (Članovi → Statut i pravilnici): statut, pravilnici, odluke… za sve članove – samo za čitanje.
+  Administrator ih uređuje u Sustav → Statut i pravilnici: upisani tekst (podnaslovi s #), PDF i/ili fotografije papira (više odjednom), redoslijed, skrivanje.
+- PDF-ovi dokumenata ulaze u kompletnu sigurnosnu kopiju i vraćaju se iz nje.
+
 ## 1.18.2 – 2026-10
 - Oglasnik lovaca: prijava i zahtjev za registraciju rade i kad Oglasnik stoji na besplatnom hostingu sa zaštitom od botova (podaci idu u #dio adrese, ne obrascem s druge domene).
 - Oglasnik se otvara u novoj kartici.
