@@ -15,8 +15,20 @@ $lista = redovi('SELECT r.*, o.Naslov, o.KorisnikId AS ProdavateljId,
       AND (NOT EXISTS (SELECT 1 FROM SkriveniRazgovori s WHERE s.Vrsta=\'o\' AND s.RazgovorId=r.Id AND s.KorisnikId=?)
            OR EXISTS (SELECT 1 FROM PorukeRazgovora p WHERE p.RazgovorId=r.Id AND p.Id > (SELECT s.DoPorukeId FROM SkriveniRazgovori s WHERE s.Vrsta=\'o\' AND s.RazgovorId=r.Id AND s.KorisnikId=?)))
     ORDER BY r.ZadnjaPoruka DESC', [$k['Id'], $k['Id'], $k['Id'], $k['Id'], $k['Id']]);
+$obavijesti = array_slice(obav_moje($k['ClanId']), 0, 5);
 ob_start(); ?>
 <div class="d-flex align-items-center mb-3"><h1 class="h4 mb-0 me-auto">Poruke</h1><a class="btn btn-sm btn-primary" href="<?= e(url('imenik')) ?>">+ Nova poruka (imenik)</a></div>
+<?php if ($obavijesti): ?><div class="d-flex align-items-baseline"><h2 class="h6 text-muted me-auto">📢 Obavijesti udruge</h2><a class="small" href="<?= e(url('obavijesti')) ?>">sve obavijesti →</a></div>
+<div class="list-group mb-4">
+<?php foreach ($obavijesti as $o): $nova = $o['MojaPotvrda'] === null; ?>
+    <a href="<?= e(url('obavijesti', ['id' => $o['Id']])) ?>" class="list-group-item list-group-item-action d-flex align-items-center gap-3 <?= $nova ? 'fw-semibold' : '' ?>">
+        <div class="flex-grow-1 overflow-hidden"><div class="text-truncate"><?= e($o['Naslov']) ?></div>
+            <div class="small text-muted text-truncate fw-normal"><?= e($o['KreiraoIme']) ?> · <?= e(mb_strimwidth(preg_replace('/\s+/', ' ', $o['Tekst']), 0, 90, '…')) ?></div></div>
+        <div class="text-end"><div class="small text-muted fw-normal"><?= e(date('d.m. H:i', strtotime($o['Kreirano']))) ?></div>
+            <?php if ($nova): ?><span class="badge bg-danger"><?= $o['Obavezno'] ? 'potvrdi' : 'novo' ?></span><?php else: ?><span class="small text-success">✔</span><?php endif; ?></div>
+    </a>
+<?php endforeach; ?>
+</div><?php endif; ?>
 <?php if ($izravni): ?><h2 class="h6 text-muted">Članovi</h2>
 <div class="list-group mb-4">
 <?php foreach ($izravni as $r): $dc = red('SELECT c.* FROM Korisnici k JOIN Clanovi c ON c.Id=k.ClanId WHERE k.Id=?', [$r['Drugi']]); ?>
@@ -43,5 +55,5 @@ ob_start(); ?>
     </a>
 <?php endforeach; ?>
 </div>
-<?php if (!$lista && !$izravni): ?><div class="text-muted py-4 text-center">Još nemate poruka. Pišite članu iz <a href="<?= e(url('imenik')) ?>">imenika</a> ili prodavatelju iz <a href="<?= e(url('oglasnik')) ?>">oglasnika</a>.</div><?php endif; ?>
+<?php if (!$lista && !$izravni && !$obavijesti): ?><div class="text-muted py-4 text-center">Još nemate poruka. Pišite članu iz <a href="<?= e(url('imenik')) ?>">imenika</a> ili prodavatelju iz <a href="<?= e(url('oglasnik')) ?>">oglasnika</a>.</div><?php endif; ?>
 <?php stranica('Poruke', ob_get_clean());

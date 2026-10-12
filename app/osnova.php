@@ -5,7 +5,7 @@
  */
 declare(strict_types=1);
 
-const VERZIJA = '1.21.4';
+const VERZIJA = '1.22.0';
 const KONTAKT_EMAIL = 'daxemann@googlemail.com';
 const PODRSKA_PAYPAL = 'darko.bakic@freenet.de'; // dobrovoljna podrška razvoju (Pomoć i kontakt)
 const PROJEKT_URL = 'https://github.com/daxemann/lovacka-evidencija';
@@ -33,8 +33,9 @@ const P_REVIR_DNEVNIK = 131072;
 const P_OGLASNIK_MOD = 262144;
 const P_INVENTURA = 524288;
 const P_INVENTURA_UREDI = 1048576;
+const P_OBAVIJESTI = 2097152;
 const P_OSNOVNA = 255; // prava iz .NET verzije
-const P_SVE = 2097151;
+const P_SVE = 4194303;
 
 const PRAVA_OPIS = [
     P_CLANOVI_CITAJ => ['Članovi – pregled', 'vidi popis članova i njihove podatke'],
@@ -57,6 +58,7 @@ const PRAVA_OPIS = [
     P_OGLASNIK_MOD => ['Oglasnik – moderacija', 'u zajedničkom Oglasniku lovaca odobrava javne oglase članova udruge, skriva neprimjerene oglase i obrađuje prijave'],
     P_INVENTURA => ['Inventura – pregled', 'vidi mape inventure (svoje sekcije i cijele udruge), stanje „treba“ / „stvarno“, manjak i višak, ispisuje PDF listu za popis – bez izmjena'],
     P_INVENTURA_UREDI => ['Inventura – uređivanje', 'dodaje i briše mape i stavke, upisuje „treba“ i „stvarno“, nova inventura, preuzimanje stanja'],
+    P_OBAVIJESTI => ['Obavijesti – slanje', 'šalje obavijesti članovima svojih sekcija (svima, sekciji, funkciji ili odabranima), po želji s obaveznom potvrdom „Pročitao/la sam“; vidi tko je potvrdio, bilježi usmeno obaviještene, PDF'],
     P_REVIR_DNEVNIK => ['Lovište – lovački dnevnik', 'vidi lovački dnevnik (tko, kada, gdje) za sekcije u svom opsegu, ispis i PDF; bez ovog prava dnevnik se ne prikazuje'],
 ];
 
@@ -140,7 +142,7 @@ function db(bool $novo = false): PDO
  * Dodatne tablice PHP verzije (PRAGMA user_version). .NET verzija ih ne poznaje i zanemaruje,
  * pa baza i dalje radi u oba smjera.
  */
-const SHEMA_PHP = 20;
+const SHEMA_PHP = 21;
 function nadogradi_bazu(PDO $pdo): void
 {
     $v = (int) $pdo->query('PRAGMA user_version')->fetchColumn();
@@ -533,6 +535,28 @@ SQL);
     if ($v < 20) {
         // Inventura razdvojena na pregled i uređivanje: tko je do sada imao „Inventura“, dobiva i uređivanje
         $pdo->exec('UPDATE "Uloge" SET "Prava" = "Prava" | 1048576 WHERE ("Prava" & 524288) = 524288;');
+    }
+    if ($v < 21) {
+        // Obavijesti članovima s obaveznom potvrdom čitanja (jednom, „Pročitao/la sam“)
+        $pdo->exec('CREATE TABLE IF NOT EXISTS "Obavijesti" (
+                "Id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                "Naslov" TEXT NOT NULL,
+                "Tekst" TEXT NOT NULL,
+                "Obavezno" INTEGER NOT NULL DEFAULT 1,
+                "Primatelji" TEXT NULL,
+                "Sekcije" TEXT NULL,
+                "KreiraoId" INTEGER NULL,
+                "KreiraoIme" TEXT NULL,
+                "Kreirano" TEXT NOT NULL);
+            CREATE TABLE IF NOT EXISTS "ObavijestPrimatelji" (
+                "ObavijestId" INTEGER NOT NULL REFERENCES "Obavijesti" ("Id") ON DELETE CASCADE,
+                "ClanId" INTEGER NOT NULL REFERENCES "Clanovi" ("Id") ON DELETE CASCADE,
+                "Potvrdjeno" TEXT NULL,
+                "Nacin" TEXT NULL,
+                "Biljezio" TEXT NULL,
+                PRIMARY KEY ("ObavijestId", "ClanId"));
+            CREATE INDEX IF NOT EXISTS "IX_ObavijestPrimatelji_ClanId" ON "ObavijestPrimatelji" ("ClanId");
+            UPDATE "Uloge" SET "Prava" = "Prava" | 2097152 WHERE ("Prava" & 2097151) = 2097151 OR "Naziv" LIKE \'Predsjednik%\' OR "Naziv" = \'Admin sekcije\';');
     }
     $pdo->exec('PRAGMA user_version = ' . SHEMA_PHP);
     $pdo->commit();

@@ -23,6 +23,12 @@ $grupa = function (string $id, string $naslov, string $stavke): string {
 $neprocitano = $k ? broj_neprocitanih((int) $k['Id']) : 0;
 $revirObav = $k ? revir_broj_obavijesti() : 0;
 $novaVerzija = $k ? azuriranje_dostupno() : null;
+$obavNove = $k ? obav_broj_nepotvrdjenih() : 0;
+// obavezna obavijest preko cijelog zaslona dok je član ne potvrdi (ne na stranicama lozinke / 2FA i ne na samoj obavijesti)
+$obavObavezna = $k && !in_array($trenutna, ['promjena-lozinke', 'dvofaktorska', 'odjava'], true) ? obav_obavezna_na_cekanju() : null;
+if ($obavObavezna && $trenutna === 'obavijesti' && (int) ($_GET['id'] ?? 0) === (int) $obavObavezna['Id']) {
+    $obavObavezna = null;
+}
 [$uloga, $boja] = oznaka_uloge();
 ?><!doctype html>
 <html lang="hr">
@@ -64,7 +70,7 @@ $novaVerzija = $k ? azuriranje_dostupno() : null;
                     <?php $revirSek = revir_sekcije(); if ($revirSek || ima(P_SUSTAV)) echo $grupa('loviste', 'Lovište',
                         ($revirSek ? $stavka('revir', '🗺️ Karta lovišta', 0, true) . $stavka('revir/danas', '🌲 Danas u lovištu', $revirObav) . (ima(P_REVIR_DNEVNIK) ? $stavka('revir/dnevnik', '📓 Lovački dnevnik') : '') : '')
                         . (ima(P_SUSTAV) || ima(P_REVIR_UREDI) ? $stavka('revir/postavke', '⚙️ Postavke lovišta') : '')); ?>
-                    <?= $grupa('clanovi', 'Članovi', $stavka('imenik', '📒 Imenik') . $stavka('vodici-pasa', '🐕 Vodiči pasa') . $stavka('poruke', '✉️ Poruke', $neprocitano) . (ogl_aktivan() ? $stavka('oglasnik-sso', '🛒 Oglasnik', 0, true) . (vrijednost('SELECT 1 FROM Oglasi WHERE Status IN (0,1) LIMIT 1') ? $stavka('oglasnik', '📌 Interni oglasi') : '') : $stavka('oglasnik', '🛒 Oglasnik')) . $stavka('dokumenti', '📜 Statut i pravilnici')) ?>
+                    <?= $grupa('clanovi', 'Članovi', $stavka('imenik', '📒 Imenik') . $stavka('vodici-pasa', '🐕 Vodiči pasa') . ($k['ClanId'] || ima(P_OBAVIJESTI) ? $stavka('obavijesti', '📢 Obavijesti', $obavNove) : '') . $stavka('poruke', '✉️ Poruke', $neprocitano) . (ogl_aktivan() ? $stavka('oglasnik-sso', '🛒 Oglasnik', 0, true) . (vrijednost('SELECT 1 FROM Oglasi WHERE Status IN (0,1) LIMIT 1') ? $stavka('oglasnik', '📌 Interni oglasi') : '') : $stavka('oglasnik', '🛒 Oglasnik')) . $stavka('dokumenti', '📜 Statut i pravilnici')) ?>
                     <?php if ($k['Prava']) echo $grupa('udruga', 'Udruga',
                         (ima(P_CLANOVI_CITAJ) ? $stavka('clanovi', '👥 Članovi') : '')
                         . (ima(P_CLANARINA_CITAJ) ? $stavka('clanarina', '💶 Članarina') : '')
@@ -149,6 +155,19 @@ $novaVerzija = $k ? azuriranje_dostupno() : null;
     </main>
 </div>
 <div id="obavijest" class="lf-toast" style="display:none"></div>
+<?php if ($obavObavezna): $obavJos = (int) vrijednost('SELECT COUNT(*) FROM ObavijestPrimatelji p JOIN Obavijesti o ON o.Id=p.ObavijestId WHERE p.ClanId=? AND p.Potvrdjeno IS NULL AND o.Obavezno=1', [$k['ClanId']]); ?>
+<div class="modal-pozadina obav-pozadina" role="dialog" aria-modal="true" aria-labelledby="obav-naslov"><div class="modal-okvir obav-okvir">
+    <div class="small text-muted mb-1">📢 Obavijest udruge<?= $obavJos > 1 ? ' · 1 od ' . $obavJos : '' ?></div>
+    <h2 class="h5 mb-1" id="obav-naslov"><?= e($obavObavezna['Naslov']) ?></h2>
+    <div class="small text-muted mb-2"><?= e($obavObavezna['KreiraoIme']) ?> · <?= e(datum_vrijeme($obavObavezna['Kreirano'])) ?></div>
+    <div class="obav-tekst mb-3"><?= obav_tekst_html($obavObavezna['Tekst']) ?></div>
+    <form method="post" action="<?= e(url('obavijesti')) ?>"><?= csrf() ?>
+        <input type="hidden" name="radnja" value="potvrdi"><input type="hidden" name="id" value="<?= (int) $obavObavezna['Id'] ?>">
+        <input type="hidden" name="povratak" value="<?= e((string) ($_SERVER['REQUEST_URI'] ?? '')) ?>">
+        <button class="btn btn-success w-100 btn-lg">✔ Pročitao/la sam</button>
+    </form>
+</div></div>
+<?php endif; ?>
 <div class="modal-pozadina" id="instal-upute" hidden><div class="modal-okvir">
     <button type="button" class="btn-close float-end" aria-label="Zatvori" data-upute-zatvori></button>
     <h2 class="h5 mb-3">📲 Dodaj na početni zaslon</h2>

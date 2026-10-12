@@ -1,5 +1,13 @@
 # Promjene
 
+## 1.22.0 – 2026-10
+- **📢 Obavijesti s obaveznom potvrdom čitanja** (Članovi → Obavijesti, i na vrhu stranice Poruke).
+  Tko ima novo pravo **„Obavijesti – slanje“** piše obavijest **svim članovima**, odabranim **sekcijama**, članovima s određenom **funkcijom** ili **odabranim članovima** – uvijek samo u svom opsegu sekcija.
+- **Obavezna potvrda**: članu se obavijest pri sljedećem otvaranju aplikacije prikaže preko cijelog zaslona, dok jednom ne dodirne **„Pročitao/la sam“** (s vremenom potvrde). Bez obavezne potvrde obavijest se samo označi kao pročitana kad je član otvori.
+- Pošiljatelj vidi **tko je potvrdio i kada** (npr. 34 / 52), a članove bez aplikacije označi kao **„usmeno obaviješten“** (s datumom i imenom tko je upisao). **PDF s potvrdama** kao dokaz.
+- Obavijest ostaje trajno pod Obavijesti; pošiljatelj je može obrisati.
+- Novo pravo dobivaju uloge sa svim pravima, „Predsjednik / Tajnik“ i „Admin sekcije“; ostalima se dodjeljuje u Sustav → Uloge i prava.
+
 ## 1.21.4 – 2026-10
 - **Fotografije se smanjuju već na mobitelu/računalu prije slanja** (fotografija člana i Moj profil 1200 px, radne akcije i oglasi 1600 px, papirnate liste i dokumenti 2400 px) – umjesto 5–15 MB šalje se nekoliko stotina kB, brže i na slabom signalu.
 - Zaštita poslužitelja: slika veća od 60 megapiksela se odbija; ako poslužitelj nema GD za smanjivanje, original se sprema samo do 4 MB. Fotografija člana se na poslužitelju i dalje sprema najviše 800 px.
