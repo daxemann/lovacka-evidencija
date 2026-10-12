@@ -1,5 +1,8 @@
 # Promjene
 
+## 1.21.3 – 2026-10
+- Početna: bez gumba Inventura (ostaje u izborniku Udruga → Inventura).
+
 ## 1.21.2 – 2026-10
 - Pomoć i kontakt: podrška razvoju samo gumbom PayPal (bez prikaza adrese).
 

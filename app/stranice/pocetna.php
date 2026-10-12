@@ -54,7 +54,6 @@ usort($isk, fn($a, $b) => strcmp($a['IskaznicaVrijediDo'], $b['IskaznicaVrijediD
 ob_start(); ?>
 <div class="d-flex flex-wrap align-items-center gap-2 mb-4">
     <h1 class="h3 mb-0 me-auto">Dobro došli, <?= e($k['Naziv']) ?></h1>
-    <?php if (ima(P_INVENTURA) || ima(P_INVENTURA_UREDI)): ?><a href="<?= e(url('inventura')) ?>" class="btn btn-outline-secondary">📦 Inventura</a><?php endif; ?>
     <?php if (ima(P_AKCIJE_ODOBRI)): ?><a href="<?= e(url('akcije/nova')) ?>" class="btn btn-primary">+ Nova radna akcija</a><?php endif; ?>
 </div>
 <?php if (ima(P_SUSTAV) && str_starts_with(str_replace('\\', '/', realpath(podaci()) ?: ''), str_replace('\\', '/', realpath(KORIJEN) ?: '-'))): ?>
