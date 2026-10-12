@@ -57,45 +57,45 @@ $novaVerzija = $k ? azuriranje_dostupno() : null;
         <div class="nav-scrollable" onclick="if (event.target.closest('a')) document.querySelector('.navbar-toggler').click()">
             <nav class="nav flex-column">
                 <?php if ($k): ?>
-                    <?= $stavka('pocetna', 'Početna', 0, true) ?>
+                    <?= $stavka('pocetna', '🏠 Početna', 0, true) ?>
                     <?= $stavka('skeniraj', '📷 Skeniraj QR stanice', 0, true) ?>
-                    <?= $stavka('kalendar', 'Kalendar') ?>
-                    <?php if ($k['ClanId']) echo $grupa('moje', 'Moje', $stavka('moje-akcije', 'Moje radne akcije') . (uplatnica_za_clanove() ? $stavka('uplatnica', 'Moja uplatnica', 0, true) : '') . $stavka('moj-profil', 'Moj profil') . $stavka('moja-prava', 'Moja prava')); ?>
+                    <?= $stavka('kalendar', '📅 Kalendar') ?>
+                    <?php if ($k['ClanId']) echo $grupa('moje', 'Moje', $stavka('moje-akcije', '🛠️ Moje radne akcije') . (uplatnica_za_clanove() ? $stavka('uplatnica', '💳 Moja uplatnica', 0, true) : '') . $stavka('moj-profil', '👤 Moj profil') . $stavka('moja-prava', '🔑 Moja prava')); ?>
                     <?php $revirSek = revir_sekcije(); if ($revirSek || ima(P_SUSTAV)) echo $grupa('loviste', 'Lovište',
-                        ($revirSek ? $stavka('revir', 'Karta lovišta', 0, true) . $stavka('revir/danas', 'Danas u lovištu', $revirObav) . (ima(P_REVIR_DNEVNIK) ? $stavka('revir/dnevnik', 'Lovački dnevnik') : '') : '')
-                        . (ima(P_SUSTAV) || ima(P_REVIR_UREDI) ? $stavka('revir/postavke', 'Postavke lovišta') : '')); ?>
-                    <?= $grupa('clanovi', 'Članovi', $stavka('imenik', 'Imenik') . $stavka('dokumenti', '📜 Statut i pravilnici') . $stavka('vodici-pasa', '🐕 Vodiči pasa') . $stavka('poruke', 'Poruke', $neprocitano) . (ogl_aktivan() ? $stavka('oglasnik-sso', '🛒 Oglasnik', 0, true) . (vrijednost('SELECT 1 FROM Oglasi WHERE Status IN (0,1) LIMIT 1') ? $stavka('oglasnik', 'Interni oglasi') : '') : $stavka('oglasnik', 'Oglasnik'))) ?>
+                        ($revirSek ? $stavka('revir', '🗺️ Karta lovišta', 0, true) . $stavka('revir/danas', '🌲 Danas u lovištu', $revirObav) . (ima(P_REVIR_DNEVNIK) ? $stavka('revir/dnevnik', '📓 Lovački dnevnik') : '') : '')
+                        . (ima(P_SUSTAV) || ima(P_REVIR_UREDI) ? $stavka('revir/postavke', '⚙️ Postavke lovišta') : '')); ?>
+                    <?= $grupa('clanovi', 'Članovi', $stavka('imenik', '📒 Imenik') . $stavka('vodici-pasa', '🐕 Vodiči pasa') . $stavka('poruke', '✉️ Poruke', $neprocitano) . (ogl_aktivan() ? $stavka('oglasnik-sso', '🛒 Oglasnik', 0, true) . (vrijednost('SELECT 1 FROM Oglasi WHERE Status IN (0,1) LIMIT 1') ? $stavka('oglasnik', '📌 Interni oglasi') : '') : $stavka('oglasnik', '🛒 Oglasnik')) . $stavka('dokumenti', '📜 Statut i pravilnici')) ?>
                     <?php if ($k['Prava']) echo $grupa('udruga', 'Udruga',
-                        (ima(P_CLANOVI_CITAJ) ? $stavka('clanovi', 'Članovi') : '')
-                        . (ima(P_CLANARINA_CITAJ) ? $stavka('clanarina', 'Članarina') : '')
-                        . (ima(P_AKCIJE_ODOBRI) ? $stavka('akcije/nova', '+ Nova radna akcija', 0, true) : '')
-                        . (ima(P_AKCIJE_CITAJ) ? $stavka('akcije', 'Radne akcije', broj_akcija_na_cekanju(), true) : '')
-                        . (ima(P_IZVJESTAJI) ? $stavka('izvjestaji/akcije', 'Izvještaj radnih akcija') : '')); ?>
+                        (ima(P_CLANOVI_CITAJ) ? $stavka('clanovi', '👥 Članovi') : '')
+                        . (ima(P_CLANARINA_CITAJ) ? $stavka('clanarina', '💶 Članarina') : '')
+                        . (ima(P_AKCIJE_ODOBRI) ? $stavka('akcije/nova', '➕ Nova radna akcija', 0, true) : '')
+                        . (ima(P_AKCIJE_CITAJ) ? $stavka('akcije', '🔨 Radne akcije', broj_akcija_na_cekanju(), true) : '')
+                        . (ima(P_IZVJESTAJI) ? $stavka('izvjestaji/akcije', '📊 Izvještaj radnih akcija') : '')); ?>
                     <?php if (ima(P_DEZ_PREGLED) || ima(P_DEZ_UREDI) || ima(P_DEZ_POSTAVKE) || ima(P_DEZ_MOBILNA)) echo $grupa('dezinfekcija', 'Dezinfekcija',
-                        (ima(P_DEZ_PREGLED) ? $stavka('dezinfekcija', 'Knjiga dezinfekcije', 0, true) : '')
-                        . (ima(P_DEZ_MOBILNA) ? $stavka('dezinfekcija/mobilna', 'Mobilna stanica', (int) vrijednost("SELECT COUNT(*) FROM DezAktivacije WHERE Zatvoreno IS NULL AND Od<=? AND Do>=?", [sada(), sada()])) : '')
-                        . (ima(P_DEZ_UREDI) ? $stavka('dezinfekcija/naknadno', '+ Naknadni upis') : '')
-                        . (ima(P_DEZ_UREDI) ? $stavka('dezinfekcija/liste', 'Papirnate liste') : '')
-                        . (ima(P_DEZ_POSTAVKE) ? $stavka('dezinfekcija/postavke', 'Stanice i QR') : '')); ?>
+                        (ima(P_DEZ_PREGLED) ? $stavka('dezinfekcija', '🧴 Knjiga dezinfekcije', 0, true) : '')
+                        . (ima(P_DEZ_MOBILNA) ? $stavka('dezinfekcija/mobilna', '📱 Mobilna stanica', (int) vrijednost("SELECT COUNT(*) FROM DezAktivacije WHERE Zatvoreno IS NULL AND Od<=? AND Do>=?", [sada(), sada()])) : '')
+                        . (ima(P_DEZ_UREDI) ? $stavka('dezinfekcija/naknadno', '➕ Naknadni upis') : '')
+                        . (ima(P_DEZ_UREDI) ? $stavka('dezinfekcija/liste', '📄 Papirnate liste') : '')
+                        . (ima(P_DEZ_POSTAVKE) ? $stavka('dezinfekcija/postavke', '🔳 Stanice i QR') : '')); ?>
                     <?php if (ima(P_SUSTAV)) echo $grupa('sustav', 'Sustav',
-                        $stavka('sustav/udruga', 'Podaci o udruzi')
-                        . $stavka('sustav/postavke', 'E-pošta i adresa')
-                        . $stavka('sustav/uplatnica', 'Uplatnica (IBAN)')
-                        . $stavka('sustav/dokumenti', 'Statut i pravilnici')
-                        . $stavka('sustav/oglasnik', 'Oglasnik lovaca')
-                        . $stavka('sustav/korisnici', 'Korisnici', (int) vrijednost('SELECT COUNT(*) FROM Korisnici WHERE Odobren=0 AND Aktivan=1'))
-                        . $stavka('sustav/samoprijava', 'Samoprijava', (int) vrijednost('SELECT COUNT(*) FROM Korisnici WHERE Odobren=0 AND ClanId IS NULL'))
-                        . $stavka('sustav/uloge', 'Uloge i prava')
-                        . $stavka('sustav/sekcije', 'Sekcije')
-                        . $stavka('akcije/vrste', 'Vrste radnih akcija')
-                        . $stavka('sustav/poruke', 'Predlošci poruka')
-                        . $stavka('sustav/kalendar', 'Kalendar – vrste')
-                        . $stavka('sustav/uvoz', 'Uvoz (Google kontakti)')
-                        . $stavka('sustav/duplikati', 'Provjera duplikata')
-                        . $stavka('sustav/kopije', 'Sigurnosne kopije')
-                        . (smije_azurirati() ? $stavka('sustav/azuriranje', 'Ažuriranje programa', $novaVerzija ? 1 : 0) : '')
-                        . $stavka('sustav/dnevnik', 'Dnevnik promjena')); ?>
-                    <?= $grupa('program', 'Program', $stavka('pomoc', 'Pomoć i kontakt') . (je_demo() ? $stavka('demo-posta', '📧 Demo – e-pošta') : '')) ?>
+                        $stavka('sustav/udruga', '🏛️ Podaci o udruzi')
+                        . $stavka('sustav/postavke', '📧 E-pošta i adresa')
+                        . $stavka('sustav/uplatnica', '🏦 Uplatnica (IBAN)')
+                        . $stavka('sustav/dokumenti', '📜 Statut i pravilnici')
+                        . $stavka('sustav/oglasnik', '🛒 Oglasnik lovaca')
+                        . $stavka('sustav/korisnici', '🧑‍💻 Korisnici', (int) vrijednost('SELECT COUNT(*) FROM Korisnici WHERE Odobren=0 AND Aktivan=1'))
+                        . $stavka('sustav/samoprijava', '📝 Samoprijava', (int) vrijednost('SELECT COUNT(*) FROM Korisnici WHERE Odobren=0 AND ClanId IS NULL'))
+                        . $stavka('sustav/uloge', '🛡️ Uloge i prava')
+                        . $stavka('sustav/sekcije', '🗂️ Sekcije')
+                        . $stavka('akcije/vrste', '🏷️ Vrste radnih akcija')
+                        . $stavka('sustav/poruke', '💬 Predlošci poruka')
+                        . $stavka('sustav/kalendar', '🗓️ Kalendar – vrste')
+                        . $stavka('sustav/uvoz', '📥 Uvoz (Google kontakti)')
+                        . $stavka('sustav/duplikati', '🔍 Provjera duplikata')
+                        . $stavka('sustav/kopije', '💾 Sigurnosne kopije')
+                        . (smije_azurirati() ? $stavka('sustav/azuriranje', '🔄 Ažuriranje programa', $novaVerzija ? 1 : 0) : '')
+                        . $stavka('sustav/dnevnik', '🧾 Dnevnik promjena')); ?>
+                    <?= $grupa('program', 'Program', $stavka('pomoc', '❓ Pomoć i kontakt') . (je_demo() ? $stavka('demo-posta', '📧 Demo – e-pošta') : '')) ?>
                 <?php endif; ?>
             </nav>
         </div>

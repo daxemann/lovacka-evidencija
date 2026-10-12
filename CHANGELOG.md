@@ -1,5 +1,8 @@
 # Promjene
 
+## 1.19.1 – 2026-10
+- Izbornik: ikona uz svaku stavku; „Statut i pravilnici“ na kraju skupine Članovi (ispod oglasa).
+
 ## 1.19.0 – 2026-10
 - **📜 Statut i pravilnici** (Članovi → Statut i pravilnici): statut, pravilnici, odluke… za sve članove – samo za čitanje.
   Administrator ih uređuje u Sustav → Statut i pravilnici: upisani tekst (podnaslovi s #), PDF i/ili fotografije papira (više odjednom), redoslijed, skrivanje.
