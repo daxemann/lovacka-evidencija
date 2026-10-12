@@ -1,5 +1,12 @@
 # Promjene
 
+## 1.21.0 – 2026-10
+- **Inventura po sekcijama**: mape su grupirane – „Cijela udruga“, zatim svaka sekcija – sa zbrojem stavki, manjka i viška po skupini.
+  Gumbi **Sve / Cijela udruga / sekcija** prikazuju samo odabranu skupinu (vidljive su samo sekcije u opsegu korisnika).
+- **Ispis po izboru**: PDF za popis ili rezultat za sve, za cijelu udrugu, za jednu sekciju (gumb u zaglavlju skupine), za jednu mapu
+  ili za **kvačicom odabrane mape**. U zaglavlju PDF-a piše opseg (npr. „Sekcija Jug“).
+- Nova mapa predlaže sekciju koja je odabrana; „← natrag“ iz mape vodi u njezinu sekciju; premještanje ▲▼ unutar skupine.
+
 ## 1.20.1 – 2026-10
 - **Inventura: dva prava** (Sustav → Uloge i prava): **„Inventura – pregled“** (vidi mape, treba/stvarno, manjak/višak, ispisuje PDF – bez izmjena)
   i **„Inventura – uređivanje“** (mape, stavke, upis količina, nova inventura). Tko je do sada imao „Inventura“, zadržava i uređivanje.

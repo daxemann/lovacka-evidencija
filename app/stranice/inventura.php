@@ -36,7 +36,11 @@ if (je_post()) {
     }
 
     if ($radnja === 'poredak') {
-        $sve = array_map('intval', array_column(inv_mape(), 'Id'));
+        $pm = red('SELECT * FROM InvMape WHERE Id=?', [(int) ($_POST['id'] ?? 0)]);
+        if (!inv_smije($pm)) {
+            zabranjeno();
+        }
+        $sve = array_map('intval', array_column(inv_mape(inv_skupina($pm)), 'Id'));
         $i = array_search((int) ($_POST['id'] ?? 0), $sve, true);
         $j = $i === false ? false : ($_POST['smjer'] === 'gore' ? $i - 1 : $i + 1);
         if ($i !== false && isset($sve[$j])) {
@@ -45,7 +49,7 @@ if (je_post()) {
         foreach ($sve as $r => $mid) {
             q('UPDATE InvMape SET Redoslijed=? WHERE Id=?', [$r, $mid]);
         }
-        preusmjeri('inventura');
+        preusmjeri('inventura', ['sekcija' => ul_str('filtar')]);
     }
 
     if (!$mapa) {
@@ -56,7 +60,7 @@ if (je_post()) {
         q('DELETE FROM InvMape WHERE Id=?', [$id]);
         dnevnik('Inventura – mapa obrisana', 'InvMapa', $id, $mapa['Naziv']);
         poruka('Mapa „' . e($mapa['Naziv']) . '“ je obrisana.');
-        preusmjeri('inventura');
+        preusmjeri('inventura', ['sekcija' => inv_skupina($mapa)]);
     }
 
     if ($radnja === 'nova_inventura') {
@@ -116,7 +120,7 @@ ob_start();
 // ---------- jedna mapa – samo pregled (pravo „Inventura – pregled“) ----------
 if ($mapa && !$uredi):
     $stavke = inv_stavke($id); ?>
-<p class="mb-2"><a href="<?= e(url('inventura')) ?>">← Sve mape</a></p>
+<p class="mb-2"><a href="<?= e(url('inventura', ['sekcija' => inv_skupina($mapa)])) ?>">← <?= e(inv_filtar_naziv(inv_skupina($mapa))) ?></a></p>
 <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
     <h1 class="h3 mb-0 me-auto">📁 <?= e($mapa['Naziv']) ?></h1>
     <a class="btn btn-outline-secondary" href="<?= e(url('izvoz/inventura-pdf', ['mapa' => $id])) ?>">🖨️ PDF za popis</a>
@@ -149,7 +153,7 @@ endif;
 // ---------- jedna mapa – uređivanje ----------
 if ($mapa):
     $stavke = inv_stavke($id); ?>
-<p class="mb-2"><a href="<?= e(url('inventura')) ?>">← Sve mape</a></p>
+<p class="mb-2"><a href="<?= e(url('inventura', ['sekcija' => inv_skupina($mapa)])) ?>">← <?= e(inv_filtar_naziv(inv_skupina($mapa))) ?></a></p>
 <form method="post" action="<?= e(url('inventura', ['mapa' => $id])) ?>" id="inv-obrazac"><?= csrf() ?>
 <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
     <input name="naziv_mape" class="form-control form-control-lg fw-semibold flex-grow-1" style="max-width:520px" maxlength="100" value="<?= e($mapa['Naziv']) ?>" aria-label="Naziv mape">
@@ -247,14 +251,38 @@ if ($mapa):
 endif;
 
 // ---------- popis mapa ----------
-$mape = inv_mape(); ?>
-<div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+$filtar = inv_filtar_iz_upita();
+$sveMape = inv_mape();
+$mape = array_values(array_filter($sveMape, fn($m) => inv_u_filtru($m, $filtar)));
+// filtri: sve, cijela udruga (ako postoji mapa), sekcije u opsegu
+$filtri = ['' => 'Sve'];
+if ($k['SveSekcije'] || array_filter($sveMape, fn($m) => $m['SekcijaId'] === null)) {
+    $filtri['udruga'] = 'Cijela udruga';
+}
+foreach ($sekcijeOpseg as $s) {
+    $filtri[(string) $s['Id']] = $s['Naziv'];
+}
+$skupine = [];
+foreach ($mape as $m) {
+    $skupine[inv_skupina($m)][] = $m;
+}
+$pdf = fn(array $par, bool $rez) => url('izvoz/inventura-pdf', $par + ($rez ? ['rezultat' => 1] : []));
+$zbroj = fn(array $ms, string $polje) => array_sum(array_map(fn($m) => (int) $m[$polje], $ms));
+?>
+<div class="d-flex flex-wrap align-items-center gap-2 mb-2">
     <h1 class="h3 mb-0 me-auto">📦 Inventura</h1>
     <?php if ($mape): ?>
-        <a class="btn btn-outline-secondary" href="<?= e(url('izvoz/inventura-pdf')) ?>">🖨️ PDF za popis (sve mape)</a>
-        <a class="btn btn-outline-secondary" href="<?= e(url('izvoz/inventura-pdf', ['rezultat' => 1])) ?>">📄 Rezultat (sve)</a>
+        <a class="btn btn-outline-secondary" href="<?= e($pdf(['sekcija' => $filtar], false)) ?>">🖨️ PDF za popis – <?= e($filtar === '' ? 'sve' : $filtri[$filtar] ?? '') ?></a>
+        <a class="btn btn-outline-secondary" href="<?= e($pdf(['sekcija' => $filtar], true)) ?>">📄 Rezultat</a>
     <?php endif; ?>
 </div>
+<?php if (count($filtri) > 2): ?>
+<div class="d-flex flex-wrap gap-1 mb-3 no-print">
+    <?php foreach ($filtri as $f => $naziv): $f = (string) $f; ?>
+        <a class="btn btn-sm <?= $filtar === $f ? 'btn-success' : 'btn-outline-secondary' ?>" href="<?= e(url('inventura', ['sekcija' => $f])) ?>"><?= e($naziv) ?></a>
+    <?php endforeach; ?>
+</div>
+<?php endif; ?>
 
 <?php if ($uredi): ?>
 <form method="post" action="<?= e(url('inventura')) ?>" class="card mb-3"><div class="card-body d-flex flex-wrap gap-2 align-items-end"><?= csrf() ?>
@@ -264,7 +292,7 @@ $mape = inv_mape(); ?>
     <div><label class="form-label small mb-1">Pripada</label>
         <select name="sekcija" class="form-select">
             <?php if ($k['SveSekcije']): ?><option value="">Cijela udruga</option><?php endif; ?>
-            <?php foreach ($sekcijeOpseg as $s): ?><option value="<?= (int) $s['Id'] ?>"><?= e($s['Naziv']) ?></option><?php endforeach; ?>
+            <?php foreach ($sekcijeOpseg as $s): ?><option value="<?= (int) $s['Id'] ?>"<?= sel($s['Id'], $filtar) ?>><?= e($s['Naziv']) ?></option><?php endforeach; ?>
         </select></div>
     <?php endif; ?>
     <button class="btn btn-success" name="radnja" value="nova_mapa">+ Dodaj mapu</button>
@@ -272,14 +300,26 @@ $mape = inv_mape(); ?>
 <?php endif; ?>
 
 <?php if (!$mape): ?>
-    <div class="alert alert-info"><?= $uredi ? '' : 'Još nema mapa inventure.' ?><?php if ($uredi): ?>Još nema mapa. Dodajte prvu (npr. „Lovački dom“), zatim u njoj stavke s količinom koja treba biti. Lista za popis ispisuje se kao PDF s praznim stupcem „Stvarno“.<?php endif; ?></div>
+    <div class="alert alert-info"><?php if ($sveMape): ?>U ovom odabiru nema mapa.<?php elseif ($uredi): ?>Još nema mapa. Dodajte prvu (npr. „Lovački dom“), zatim u njoj stavke s količinom koja treba biti. Lista za popis ispisuje se kao PDF s praznim stupcem „Stvarno“.<?php else: ?>Još nema mapa inventure.<?php endif; ?></div>
 <?php else: ?>
-<div class="list-group mb-3">
-    <?php foreach ($mape as $n => $m): ?>
+<form method="get" action="<?= e(bazni_put() . 'index.php') ?>" id="inv-ispis"><input type="hidden" name="p" value="izvoz/inventura-pdf"></form>
+<?php foreach ($skupine as $sk => $ms): ?>
+<div class="card mb-3">
+    <div class="card-header d-flex flex-wrap align-items-center gap-2">
+        <span class="fw-semibold me-auto"><?= $sk === 'udruga' ? '🏛️ Cijela udruga' : '🗂️ ' . e($ms[0]['Sekcija']) ?>
+            <span class="small text-muted fw-normal">· <?= count($ms) ?> map<?= count($ms) === 1 ? 'a' : 'e' ?>, <?= $zbroj($ms, 'Stavki') ?> stavki</span></span>
+        <?php if ($n = $zbroj($ms, 'Manjak')): ?><span class="badge bg-danger">− <?= $n ?> manjak</span><?php endif; ?>
+        <?php if ($n = $zbroj($ms, 'Visak')): ?><span class="badge bg-success">+ <?= $n ?> višak</span><?php endif; ?>
+        <a class="btn btn-sm btn-outline-secondary" href="<?= e($pdf(['sekcija' => $sk], false)) ?>" title="PDF za popis – cijela skupina">🖨️ PDF</a>
+        <a class="btn btn-sm btn-outline-secondary" href="<?= e($pdf(['sekcija' => $sk], true)) ?>" title="Rezultat – cijela skupina">📄</a>
+    </div>
+    <div class="list-group list-group-flush">
+    <?php foreach ($ms as $n => $m): ?>
     <div class="list-group-item d-flex flex-wrap align-items-center gap-2">
+        <input type="checkbox" class="form-check-input mt-0" name="mape[]" value="<?= (int) $m['Id'] ?>" form="inv-ispis" aria-label="Odaberi za ispis" data-inv-odabir>
         <a class="flex-grow-1 text-decoration-none" href="<?= e(url('inventura', ['mapa' => $m['Id']])) ?>">
             <span class="fw-semibold">📁 <?= e($m['Naziv']) ?></span>
-            <span class="small text-muted ms-1"><?= $m['Sekcija'] ? e($m['Sekcija']) : 'cijela udruga' ?> · <?= (int) $m['Stavki'] ?> stavki<?= $m['Azurirano'] ? ' · ' . e(datum($m['Azurirano'])) : '' ?></span>
+            <span class="small text-muted ms-1"><?= (int) $m['Stavki'] ?> stavki<?= $m['Azurirano'] ? ' · ' . e(datum($m['Azurirano'])) : '' ?></span>
         </a>
         <span class="text-nowrap">
             <?php if ($m['Manjak']): ?><span class="badge bg-danger" title="stavke s manjkom">− <?= (int) $m['Manjak'] ?> manjak</span><?php endif; ?>
@@ -287,13 +327,32 @@ $mape = inv_mape(); ?>
             <?php if ($m['Stavki'] && !$m['Manjak'] && !$m['Visak'] && !$m['Nepopisano']): ?><span class="badge bg-success-subtle text-success-emphasis">✓ sve u redu</span><?php endif; ?>
             <?php if ($m['Nepopisano'] && $m['Nepopisano'] < $m['Stavki']): ?><span class="badge bg-secondary-subtle text-secondary-emphasis" title="još nije popisano"><?= (int) $m['Nepopisano'] ?> nepopisano</span><?php endif; ?>
         </span>
-        <?php if ($uredi): ?><form method="post" action="<?= e(url('inventura')) ?>" class="text-nowrap"><?= csrf() ?><input type="hidden" name="id" value="<?= (int) $m['Id'] ?>">
+        <?php if ($uredi && count($ms) > 1): ?><form method="post" action="<?= e(url('inventura')) ?>" class="text-nowrap"><?= csrf() ?><input type="hidden" name="id" value="<?= (int) $m['Id'] ?>"><input type="hidden" name="filtar" value="<?= e($filtar) ?>">
             <?php if ($n > 0): ?><button class="btn btn-sm btn-link p-0" name="radnja" value="poredak" onclick="this.form.smjer.value='gore'" title="Gore">▲</button><?php endif; ?>
-            <?php if ($n < count($mape) - 1): ?><button class="btn btn-sm btn-link p-0" name="radnja" value="poredak" onclick="this.form.smjer.value='dolje'" title="Dolje">▼</button><?php endif; ?>
+            <?php if ($n < count($ms) - 1): ?><button class="btn btn-sm btn-link p-0" name="radnja" value="poredak" onclick="this.form.smjer.value='dolje'" title="Dolje">▼</button><?php endif; ?>
             <input type="hidden" name="smjer" value="">
         </form><?php endif; ?>
     </div>
     <?php endforeach; ?>
+    </div>
 </div>
+<?php endforeach; ?>
+<div class="inv-ispis-traka card shadow-sm" id="inv-ispis-traka" hidden><div class="card-body py-2 d-flex flex-wrap align-items-center gap-2">
+    <span class="me-auto small">Odabrano: <b id="inv-broj">0</b></span>
+    <button class="btn btn-sm btn-primary" form="inv-ispis" type="submit">🖨️ PDF za popis</button>
+    <button class="btn btn-sm btn-outline-primary" form="inv-ispis" type="submit" name="rezultat" value="1">📄 Rezultat</button>
+    <button class="btn btn-sm btn-link" type="button" id="inv-ponisti">Poništi</button>
+</div></div>
+<p class="small text-muted">Kvačicom odaberite pojedine mape za zajednički ispis.</p>
+<style>.inv-ispis-traka { position: sticky; bottom: .5rem; z-index: 5; }</style>
+<script>
+(function () {
+    var kv = document.querySelectorAll('[data-inv-odabir]'), traka = document.getElementById('inv-ispis-traka');
+    function osvjezi() { var n = 0; kv.forEach(function (c) { if (c.checked) n++; }); document.getElementById('inv-broj').textContent = n; traka.hidden = n === 0; }
+    kv.forEach(function (c) { c.addEventListener('change', osvjezi); });
+    document.getElementById('inv-ponisti').addEventListener('click', function () { kv.forEach(function (c) { c.checked = false; }); osvjezi(); });
+    osvjezi();
+})();
+</script>
 <?php endif;
 stranica('Inventura', ob_get_clean());

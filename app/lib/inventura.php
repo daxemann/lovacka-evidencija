@@ -2,16 +2,55 @@
 /** Inventura: mape (lovački dom, sekcija, hranilišta…) sa stavkama „treba“ i „stvarno“; PDF lista za popis. */
 declare(strict_types=1);
 
-/** Mape koje trenutni korisnik smije vidjeti (mapa bez sekcije = cijela udruga). */
-function inv_mape(): array
+/**
+ * Mape koje trenutni korisnik smije vidjeti (mapa bez sekcije = cijela udruga), poredane: cijela udruga, pa sekcije redom.
+ * $filtar: '' = sve, 'udruga' = samo mape cijele udruge, broj = Id sekcije.
+ */
+function inv_mape(string $filtar = ''): array
 {
     $mape = redovi('SELECT m.*, s.Naziv AS Sekcija,
             (SELECT COUNT(*) FROM InvStavke i WHERE i.MapaId=m.Id) AS Stavki,
             (SELECT COUNT(*) FROM InvStavke i WHERE i.MapaId=m.Id AND i.Stvarno IS NOT NULL AND i.Stvarno < COALESCE(i.Treba,0) - 0.00001) AS Manjak,
             (SELECT COUNT(*) FROM InvStavke i WHERE i.MapaId=m.Id AND i.Stvarno IS NOT NULL AND i.Stvarno > COALESCE(i.Treba,0) + 0.00001) AS Visak,
             (SELECT COUNT(*) FROM InvStavke i WHERE i.MapaId=m.Id AND i.Stvarno IS NULL) AS Nepopisano
-        FROM InvMape m LEFT JOIN Sekcije s ON s.Id=m.SekcijaId ORDER BY m.Redoslijed, m.Naziv');
-    return array_values(array_filter($mape, fn($m) => inv_smije($m)));
+        FROM InvMape m LEFT JOIN Sekcije s ON s.Id=m.SekcijaId
+        ORDER BY (m.SekcijaId IS NOT NULL), s.Redoslijed, s.Naziv, m.Redoslijed, m.Naziv');
+    return array_values(array_filter($mape, fn($m) => inv_smije($m) && inv_u_filtru($m, $filtar)));
+}
+
+function inv_u_filtru(array $m, string $filtar): bool
+{
+    return match (true) {
+        $filtar === '' => true,
+        $filtar === 'udruga' => $m['SekcijaId'] === null,
+        default => (string) $m['SekcijaId'] === $filtar,
+    };
+}
+
+/** Ključ skupine mape za filtar: 'udruga' ili Id sekcije. */
+function inv_skupina(array $m): string
+{
+    return $m['SekcijaId'] === null ? 'udruga' : (string) $m['SekcijaId'];
+}
+
+/** Naziv filtra / skupine za naslove i PDF. */
+function inv_filtar_naziv(string $filtar): string
+{
+    return match (true) {
+        $filtar === '' => 'Sve sekcije',
+        $filtar === 'udruga' => 'Cijela udruga',
+        default => 'Sekcija ' . naziv_sekcije((int) $filtar),
+    };
+}
+
+/** Filtar iz upita, samo ako ga korisnik smije vidjeti. */
+function inv_filtar_iz_upita(): string
+{
+    $f = (string) ($_GET['sekcija'] ?? '');
+    if ($f === 'udruga' || ($f !== '' && ctype_digit($f) && moze_sekciju((int) $f))) {
+        return $f;
+    }
+    return '';
 }
 
 function inv_smije(?array $m): bool
@@ -66,7 +105,7 @@ function inv_razlika_html(array $s): string
  * PDF za inventuru. $sRezultatom = false: stupac „Stvarno“ prazan (lista za popis na licu mjesta);
  * true: upisano stanje i razlika (manjak / višak).
  */
-function inv_pdf(array $mape, bool $sRezultatom): string
+function inv_pdf(array $mape, bool $sRezultatom, string $opseg = ''): string
 {
     $logo = '';
     if (ima_logo()) {
@@ -75,7 +114,7 @@ function inv_pdf(array $mape, bool $sRezultatom): string
         $logo = '<img src="data:' . $mime . ';base64,' . base64_encode((string) file_get_contents($l)) . '" style="height:46px;float:left;margin-right:10px">';
     }
     $zag = '<div class="zag">' . $logo . '<div class="n">' . e(udruga_naziv()) . '</div>' . (udruga_adresa() ? '<div style="color:#555">' . e(udruga_adresa()) . '</div>' : '')
-        . '<div class="p">' . ($sRezultatom ? 'Inventura – rezultat popisa' : 'Inventura – lista za popis') . '</div></div>';
+        . '<div class="p">' . ($sRezultatom ? 'Inventura – rezultat popisa' : 'Inventura – lista za popis') . ($opseg !== '' ? ' · ' . e($opseg) : '') . '</div></div>';
     $tijelo = '';
     foreach ($mape as $i => $m) {
         $stavke = inv_stavke((int) $m['Id']);
