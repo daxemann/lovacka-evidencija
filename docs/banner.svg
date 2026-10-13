@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="420" viewBox="0 0 1280 420" role="img" aria-label="Lovačka evidencija – besplatno, zauvijek">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#16261A"/>
+      <stop offset="1" stop-color="#3B5A2C"/>
+    </linearGradient>
+  </defs>
+  <rect width="1280" height="420" rx="24" fill="url(#bg)"/>
+  <!-- tree line -->
+  <g fill="#0F1C12" opacity="0.55">
+    <path d="M0 420 L0 360 L30 300 L60 360 L80 320 L110 270 L140 330 L170 290 L200 350 L230 310 L260 360 L290 330 L320 380 L360 330 L400 390 L1280 390 L1280 420 Z"/>
+    <path d="M1280 420 L1280 340 L1250 280 L1220 340 L1195 300 L1165 250 L1135 320 L1105 285 L1075 345 L1045 305 L1015 360 L985 330 L955 380 L920 340 L880 395 L0 395 L0 420 Z"/>
+  </g>
+  <!-- logo A (deer) -->
+  <g transform="translate(110 70) scale(2.3)">
+    <g fill="none" stroke="#F3EEE2" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M52 50 C44 40 38 30 36 12"/><path d="M41 30 L26 22"/><path d="M38 20 L28 8"/><path d="M46 40 L32 38"/>
+      <path d="M68 50 C76 40 82 30 84 12"/><path d="M79 30 L94 22"/><path d="M82 20 L92 8"/><path d="M74 40 L88 38"/>
+    </g>
+    <path d="M48 50 Q60 44 72 50 L68 80 Q60 96 52 80 Z" fill="#F3EEE2"/>
+    <path d="M49 53 L32 48 L46 61 Z" fill="#F3EEE2"/><path d="M71 53 L88 48 L74 61 Z" fill="#F3EEE2"/>
+  </g>
+  <g font-family="Georgia, 'Times New Roman', serif" fill="#F3EEE2">
+    <text x="440" y="150" font-size="64" font-weight="700">Lovačka evidencija</text>
+  </g>
+  <g font-family="'Segoe UI', Helvetica, Arial, sans-serif">
+    <text x="442" y="200" font-size="26" fill="#CFD8C4">Sve za lovačku udrugu – na vašem serveru, u vašem džepu.</text>
+    <rect x="440" y="236" width="520" height="72" rx="14" fill="#E7B84B"/>
+    <text x="700" y="284" font-size="36" font-weight="800" fill="#16261A" text-anchor="middle" letter-spacing="2">BESPLATNO. ZAUVIJEK.</text>
+  </g>
+</svg>
