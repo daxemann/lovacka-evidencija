@@ -12,6 +12,7 @@
   <img src="https://img.shields.io/badge/cijena-0_€_zauvijek-3B5A2C" alt="0 € zauvijek">
   <img src="https://img.shields.io/badge/pretplata-nema-3B5A2C" alt="bez pretplate">
   <img src="https://img.shields.io/badge/podaci-na_vašem_serveru-3B5A2C" alt="podaci na vašem serveru">
+  <img src="https://img.shields.io/badge/licenca-AGPL--3.0-3B5A2C" alt="AGPL-3.0">
   <img src="https://img.shields.io/badge/PHP-8.1+-777BB4?logo=php&logoColor=white" alt="PHP 8.1+">
 </p>
 
@@ -203,7 +204,9 @@ Ne. Na mobitelu u pregledniku odaberite „Dodaj na početni zaslon“ – izgle
 
 ## ⚖️ Licenca i odgovornost
 
-[MIT](LICENSE) – slobodno za korištenje, mijenjanje i dijeljenje.
+[AGPL-3.0](LICENSE) © Darko Bakić – slobodno za korištenje, mijenjanje i dijeljenje. Izmijenjene verzije moraju ostati otvorene i besplatno dostupne pod istom licencom, i kad se nude kao online usluga. Verzije objavljene prije 1.24.0 bile su pod licencom MIT.
+
+Naziv „Lovačka evidencija“ i logo nisu dio licence – izmijenjene verzije moraju koristiti drugi naziv i logo.
 
 Privatni, nekomercijalni open-source projekt. Softver se daje besplatno i „kakav jest“, bez ikakvog jamstva.
 Svaka udruga koja ga instalira sama je odgovorna za svoj server, podatke i zakonitu obradu osobnih podataka svojih članova (GDPR).

@@ -1,7 +1,7 @@
 {
   "name": "daxemann/lovacka-evidencija",
   "description": "Evidencija članova, radnih akcija i članarine za lovačke udruge (PHP + SQLite)",
-  "license": "MIT",
+  "license": "AGPL-3.0-only",
   "require": {
     "php": ">=8.1",
     "phpmailer/phpmailer": "^6.9",
