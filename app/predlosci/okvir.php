@@ -102,7 +102,7 @@ if ($obavObavezna && $trenutna === 'obavijesti' && (int) ($_GET['id'] ?? 0) === 
                         . $stavka('sustav/kopije', '💾 Sigurnosne kopije')
                         . (smije_azurirati() ? $stavka('sustav/azuriranje', '🔄 Ažuriranje programa', $novaVerzija ? 1 : 0) : '')
                         . $stavka('sustav/dnevnik', '🧾 Dnevnik promjena')); ?>
-                    <?= $grupa('program', 'Program', $stavka('pomoc', '❓ Pomoć i kontakt') . (je_demo() ? $stavka('demo-posta', '📧 Demo – e-pošta') : '')) ?>
+                    <?= $grupa('program', 'Program', $stavka('upute', '📖 Upute za korištenje') . $stavka('pomoc', '❓ Pomoć i kontakt') . (je_demo() ? $stavka('demo-posta', '📧 Demo – e-pošta') : '')) ?>
                 <?php endif; ?>
             </nav>
         </div>

@@ -1,5 +1,9 @@
 # Promjene
 
+## 1.23.0 – 2026-10
+- **📖 Upute za korištenje** (izbornik Program): kratke upute za svaki dio programa – prvi koraci, Moje, Kalendar, upis dezinfekcije, Lovište, Imenik/Poruke/Oglasnik, česta pitanja.
+  Svatko vidi samo upute za ono što smije koristiti (član ne vidi upute za upravu i Sustav). Pretraga po uputama (radi i bez č/ć/š/ž/đ).
+
 ## 1.22.0 – 2026-10
 - **📢 Obavijesti s obaveznom potvrdom čitanja** (Članovi → Obavijesti, i na vrhu stranice Poruke).
   Tko ima novo pravo **„Obavijesti – slanje“** piše obavijest **svim članovima**, odabranim **sekcijama**, članovima s određenom **funkcijom** ili **odabranim članovima** – uvijek samo u svom opsegu sekcija.

@@ -99,6 +99,6 @@ Pronašli ste grešku, trebate pomoć ili imate prijedlog?
 
 - ✉️ E-pošta: **daxemann@googlemail.com**
 - 🐞 GitHub: [Issues](https://github.com/daxemann/lovacka-evidencija/issues)
-- U samom programu: izbornik **Pomoć i kontakt** (verzija programa se automatski dodaje u poruku)
+- U samom programu: izbornik **Program → Upute za korištenje** (kratke upute za svaki dio programa) i **Pomoć i kontakt** (verzija programa se automatski dodaje u poruku)
 
 Autor nema pristup podacima vaše udruge – svi podaci ostaju na vašem poslužitelju.
