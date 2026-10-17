@@ -76,6 +76,15 @@ Svoju prijavu možete označiti riješenom ili je povući dok je nitko nije preu
 </ul>');
 }
 
+$o('push', '🔔 Push obavijesti na mobitel', '
+<ul>
+<li>Obavijest stiže na mobitel i kad je aplikacija <b>zatvorena</b> – nova poruka, obavijest udruge, radna akcija odobrena/odbijena' . (revir_sekcije() && (ima(P_REVIR_NADZOR) || ima(P_REVIR_UREDI)) ? ', kvarovi na napravama' : '') . (ima(P_REVIR_NADZOR) ? ', zauzimanje čeka' : '') . '.</li>
+<li>Uključite je u izborniku <b>Moje → Push obavijesti</b> → <b>Uključi obavijesti</b> i dopustite obavijesti kad mobitel pita. Gumb <b>Pošalji probnu</b> provjerava da sve radi.</li>
+<li><b>Android:</b> radi u Chromeu, i bez dodavanja na početni zaslon. <b>iPhone:</b> samo iz aplikacije na početnom zaslonu (iOS 16.4 ili noviji) – Safari → Dijeli → Dodaj na početni zaslon.</li>
+<li>Što ne želite primati, isključite na istoj stranici. Uključuje se posebno na svakom uređaju (mobitel, računalo).</li>
+<li>Nakon <b>odjave</b> uređaj više ne prima obavijesti za vaš račun.</li>
+</ul>');
+
 $o('clanovi-svi', '👥 Imenik, poruke, oglasi, dokumenti', '
 <ul>
 <li><b>Imenik:</b> članovi udruge s kontaktima koje su sami podijelili. Svoje postavke mijenjate u Moj profil.</li>

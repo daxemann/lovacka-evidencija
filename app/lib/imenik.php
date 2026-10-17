@@ -62,6 +62,7 @@ function posalji_izravnu_poruku(int $razgovorId, int $posiljateljId, string $tek
     $vecCeka = vrijednost('SELECT 1 FROM Poruke2 WHERE RazgovorId=? AND PosiljateljId=? AND Procitano=0', [$razgovorId, $posiljateljId]);
     umetni('Poruke2', ['RazgovorId' => $razgovorId, 'PosiljateljId' => $posiljateljId, 'Tekst' => $tekst, 'Vrijeme' => sada(), 'Procitano' => 0]);
     q('UPDATE Razgovori2 SET ZadnjaPoruka=? WHERE Id=?', [sada(), $razgovorId]);
+    push_posalji([(int) $r['Drugi']], 'poruke', '💬 ' . ime_korisnika($posiljateljId), $tekst, 'poruke/osoba', ['r' => $razgovorId], 'poruka-' . $razgovorId);
     if (!$vecCeka && posta_dostupna()) {
         $email = vrijednost('SELECT c.Email FROM Korisnici k JOIN Clanovi c ON c.Id=k.ClanId WHERE k.Id=? AND k.Aktivan=1', [$r['Drugi']]);
         if ($email) {

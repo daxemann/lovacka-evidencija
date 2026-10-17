@@ -71,6 +71,9 @@ if (je_post()) {
         $id = umetni('RadneAkcije', $polja + ['ClanId' => $cid, 'Status' => AKCIJA_CEKA, 'Bodovi' => null, 'RazlogOdbijanja' => null, 'FotoDatoteka' => $foto,
             'UnioKorisnikId' => $k['Id'], 'Kreirano' => sada(), 'OdlucioKorisnikId' => null, 'OdlucioIme' => null, 'Odluceno' => null]);
         dnevnik('Član prijavio radnu akciju', 'RadnaAkcija', $id, $k['Naziv']);
+        $sekC = vrijednost('SELECT SekcijaId FROM Clanovi WHERE Id=?', [$cid]);
+        push_posalji(push_korisnici_s_pravom(P_AKCIJE_ODOBRI, $sekC !== null ? (int) $sekC : null), 'akcije', '🛠️ Radna akcija čeka odobrenje',
+            $k['Naziv'] . ' · ' . datum((string) ($polja['Datum'] ?? danas())) . (!empty($polja['Opis']) ? ' · ' . mb_substr((string) $polja['Opis'], 0, 100) : ''), 'akcije', [], 'akcije-cekaju');
         poruka('Poslano na odobrenje. Bodove dodjeljuje administrator.');
     }
     preusmjeri('moje-akcije');

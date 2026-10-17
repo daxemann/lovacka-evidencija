@@ -66,7 +66,7 @@ if ($obavObavezna && $trenutna === 'obavijesti' && (int) ($_GET['id'] ?? 0) === 
                     <?= $stavka('pocetna', '🏠 Početna', 0, true) ?>
                     <?= $stavka('skeniraj', '📷 Skeniraj QR stanice', 0, true) ?>
                     <?= $stavka('kalendar', '📅 Kalendar') ?>
-                    <?php if ($k['ClanId']) echo $grupa('moje', 'Moje', $stavka('moje-akcije', '🛠️ Moje radne akcije') . (uplatnica_za_clanove() ? $stavka('uplatnica', '💳 Moja uplatnica', 0, true) : '') . $stavka('moj-profil', '👤 Moj profil') . $stavka('moja-prava', '🔑 Moja prava')); ?>
+                    <?php if ($k['ClanId']) echo $grupa('moje', 'Moje', $stavka('moje-akcije', '🛠️ Moje radne akcije') . (uplatnica_za_clanove() ? $stavka('uplatnica', '💳 Moja uplatnica', 0, true) : '') . $stavka('moj-profil', '👤 Moj profil') . $stavka('push', '🔔 Push obavijesti') . $stavka('moja-prava', '🔑 Moja prava')); ?>
                     <?php $revirSek = revir_sekcije(); if ($revirSek || ima(P_SUSTAV)) echo $grupa('loviste', 'Lovište',
                         ($revirSek ? $stavka('revir', '🗺️ Karta lovišta', 0, true) . $stavka('revir/danas', '🌲 Danas u lovištu', $revirObav) . $stavka('revir/kvarovi', '🔧 Kvarovi na napravama', revir_broj_kvarova()) . (ima(P_REVIR_DNEVNIK) ? $stavka('revir/dnevnik', '📓 Lovački dnevnik') : '') : '')
                         . (ima(P_SUSTAV) || ima(P_REVIR_UREDI) ? $stavka('revir/postavke', '⚙️ Postavke lovišta') : '')); ?>
@@ -102,7 +102,7 @@ if ($obavObavezna && $trenutna === 'obavijesti' && (int) ($_GET['id'] ?? 0) === 
                         . $stavka('sustav/kopije', '💾 Sigurnosne kopije')
                         . (smije_azurirati() ? $stavka('sustav/azuriranje', '🔄 Ažuriranje programa', $novaVerzija ? 1 : 0) : '')
                         . $stavka('sustav/dnevnik', '🧾 Dnevnik promjena')); ?>
-                    <?= $grupa('program', 'Program', $stavka('upute', '📖 Upute za korištenje') . $stavka('pomoc', '❓ Pomoć i kontakt') . (je_demo() ? $stavka('demo-posta', '📧 Demo – e-pošta') : '')) ?>
+                    <?= $grupa('program', 'Program', (!$k['ClanId'] ? $stavka('push', '🔔 Push obavijesti') : '') . $stavka('upute', '📖 Upute za korištenje') . $stavka('pomoc', '❓ Pomoć i kontakt') . (je_demo() ? $stavka('demo-posta', '📧 Demo – e-pošta') : '')) ?>
                 <?php endif; ?>
             </nav>
         </div>
@@ -131,6 +131,12 @@ if ($obavObavezna && $trenutna === 'obavijesti' && (int) ($_GET['id'] ?? 0) === 
             <?php endif; ?>
             <?php endif; ?>
             <?php if ($k): ?>
+            <div id="push-traka" class="instal-traka no-print" hidden>
+                <span style="font-size:1.8rem;line-height:1" aria-hidden="true">🔔</span>
+                <div class="flex-grow-1 small"><b>Obavijesti na mobitel</b><div class="text-muted">Poruke i obavijesti udruge i kad je aplikacija zatvorena.</div></div>
+                <button type="button" class="btn btn-sm btn-success" data-push-ukljuci>Uključi</button>
+                <button type="button" class="btn-close ms-1" aria-label="Zatvori" data-push-zatvori></button>
+            </div>
             <div id="instal-traka" class="instal-traka no-print" hidden>
                 <img src="<?= e(url('ikona', ['v' => 192, 'x' => postavka('Udruga.Logo')])) ?>" alt="" width="40" height="40">
                 <div class="flex-grow-1 small"><b>Aplikacija na mobitelu</b><div class="text-muted">Ikona na početnom zaslonu – otvara se kao prava aplikacija.</div></div>
@@ -180,8 +186,9 @@ if ($obavObavezna && $trenutna === 'obavijesti' && (int) ($_GET['id'] ?? 0) === 
         <p><b>Otvorite je u Chromeu (Android) ili Safariju (iPhone):</b> dodirnite <b>⋮</b> ili <b>…</b> → „Otvori u pregledniku“, ili kopirajte adresu:</p>
         <div class="input-group"><input class="form-control form-control-sm" id="instal-adresa" readonly value="<?= e(javna_adresa()) ?>"><button class="btn btn-sm btn-outline-secondary" type="button" data-kopiraj="#instal-adresa">Kopiraj</button></div></div>
 </div></div>
-<script>window.EV = { api: <?= json_encode(url('api/obavijesti')) ?>, poruke: <?= json_encode(url('poruke')) ?>, n: <?= (int) $neprocitano ?>, sw: <?= json_encode(bazni_put() . 'sw.js') ?>, uid: <?= $k ? (int) $k['Id'] : 'null' ?> };</script>
+<script>window.EV = { api: <?= json_encode(url('api/obavijesti')) ?>, poruke: <?= json_encode(url('poruke')) ?>, n: <?= (int) $neprocitano ?>, sw: <?= json_encode(bazni_put() . 'sw.js') ?>, push: <?= $k && push_podrzan() ? json_encode(url('api/push')) : 'null' ?>, uid: <?= $k ? (int) $k['Id'] : 'null' ?> };</script>
 <script src="<?= e(asset('assets/app.js')) ?>"></script>
+<?php if ($k && push_podrzan()): ?><script src="<?= e(asset('assets/push.js')) ?>"></script><?php endif; ?>
 <?php if (je_demo() && demo_samo_pregled($trenutna)): ?>
 <script>/* demo: zaključane stranice – obrasci za izmjene sivi */
 document.querySelectorAll('article form[method=post], article form[method=POST]').forEach(function (f) {

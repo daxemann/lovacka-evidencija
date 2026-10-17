@@ -201,6 +201,14 @@ function revir_zavrsi(array $z, string $nacin, ?string $obrisao = null, ?string 
 function revir_obavijest(?int $sid, string $vrsta, string $tekst): void
 {
     umetni('RevirObavijesti', ['SekcijaId' => $sid, 'Vrijeme' => sada(), 'Vrsta' => $vrsta, 'Tekst' => $tekst, 'KorisnikId' => korisnik()['Id'] ?? null]);
+    // push: kvarovi lovočuvaru i zaduženima za naprave, zauzimanje samo nadzoru
+    $kvar = $vrsta === 'kvar';
+    $primatelji = push_korisnici_s_pravom(P_REVIR_NADZOR, $sid);
+    if ($kvar) {
+        $primatelji = array_merge($primatelji, push_korisnici_s_pravom(P_REVIR_UREDI, $sid));
+    }
+    push_posalji($primatelji, $kvar ? 'kvarovi' : 'loviste', ($kvar ? '🔧 Kvar' : '🌲 Lovište') . ($sid !== null ? ' · ' . naziv_sekcije($sid) : ''),
+        $tekst, $kvar ? 'revir/kvarovi' : 'revir/danas', [], $kvar ? 'kvar' : 'loviste');
 }
 
 /** Zauzimanje naprave za sebe ($gost === null) ili za gosta. Vraća poruku greške ili null. */

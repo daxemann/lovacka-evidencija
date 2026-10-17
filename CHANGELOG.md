@@ -1,5 +1,15 @@
 # Promjene
 
+## 1.25.0 – 2026-10
+- **🔔 Push obavijesti na mobitel** (Moje → Push obavijesti): stižu i kad je aplikacija zatvorena – besplatno, preko push servisa preglednika (bez SMS-a, bez dodatne aplikacije).
+  Android (Chrome) odmah, iPhone od iOS 16.4 kad je aplikacija na početnom zaslonu. Gumb **Pošalji probnu**, popis vlastitih uređaja.
+- Što stiže: **nova poruka** (članovi i oglasnik), **obavijest udruge**, **radna akcija** odobrena / odbijena (član) i nova prijava na odobrenje (tko odobrava),
+  **kvar na lovnoj napravi** (lovočuvar, lovne naprave) i **zauzimanje čeka** (nadzor lovišta) – uvijek samo za sekcije u opsegu.
+- Svaki korisnik sam isključuje vrste koje ne želi. Vlastite radnje ne šalju obavijest samome sebi.
+- Traka „Obavijesti na mobitel – Uključi“ jednom se ponudi u aplikaciji. Odjava isključuje obavijesti na tom uređaju; istekle pretplate brišu se same.
+- Tehnički: Web Push s VAPID ključevima koji nastaju sami pri prvoj upotrebi (u bazi, dio sigurnosne kopije); šifriranje aes128gcm samo s PHP OpenSSL – bez novih biblioteka.
+  Slanje paralelno nakon odgovora pregledniku. Na hostingu koji blokira odlazne veze push ne radi.
+
 ## 1.24.0 – 2026-10
 - **🔧 Kvarovi na lovnim napravama**: na karti lovišta dodir na napravu → **Prijavi kvar** (opis, po želji fotografija s mobitela).
   Oznaka **„Nesigurno – ne sjedati“**: naprava dobiva crveni ⚠ na karti, a prije zauzimanja program upozorava.

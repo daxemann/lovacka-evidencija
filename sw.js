@@ -147,3 +147,34 @@ self.addEventListener('fetch', function (e) {
             .catch(function () { return caches.match(req.url).then(function (m) { return m || Response.error(); }); }));
     }
 });
+
+// ---------- Push obavijesti (stižu i kad je aplikacija zatvorena) ----------
+self.addEventListener('push', function (e) {
+    var d = {};
+    try { d = e.data ? e.data.json() : {}; } catch (x) { d = { b: e.data ? e.data.text() : '' }; }
+    var naslov = d.t || 'Evidencija';
+    e.waitUntil(self.registration.showNotification(naslov, {
+        body: d.b || '', icon: d.i || undefined, badge: d.i || undefined, tag: d.g || undefined, renotify: !!d.g,
+        data: { url: d.u || self.registration.scope }, lang: 'hr'
+    }).then(function () {
+        // otvorene stranice odmah osvježe brojače (zvono, poruke)
+        return self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (cl) { cl.forEach(function (c) { c.postMessage({ tip: 'push', g: d.g }); }); });
+    }));
+});
+self.addEventListener('notificationclick', function (e) {
+    e.notification.close();
+    var cilj = (e.notification.data && e.notification.data.url) || self.registration.scope;
+    e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (cl) {
+        for (var i = 0; i < cl.length; i++) {
+            var c = cl[i];
+            if (c.url.indexOf(self.registration.scope) === 0 && 'focus' in c) {
+                return c.focus().then(function (f) { return (f || c).navigate ? (f || c).navigate(cilj) : null; }).catch(function () { return self.clients.openWindow(cilj); });
+            }
+        }
+        return self.clients.openWindow(cilj);
+    }));
+});
+self.addEventListener('pushsubscriptionchange', function (e) {
+    // preglednik je obnovio pretplatu – stranica je pri sljedećem otvaranju ponovno prijavi (sinkronizacija u push.js)
+    e.waitUntil(Promise.resolve());
+});

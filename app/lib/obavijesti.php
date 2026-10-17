@@ -70,6 +70,8 @@ function obav_posalji(string $naslov, string $tekst, bool $obavezno, array $clan
                 [$id, $c, $ja ? sada() : null, $ja ? OBAV_NACIN_APP : null]);
         }
         dnevnik('Poslana obavijest' . ($obavezno ? ' (obavezna potvrda)' : ''), 'Obavijest', $id, $naslov . ' · ' . $opis . ' · ' . count($clanIds) . ' primatelja');
+        push_posalji(push_korisnici_clanova($clanIds), 'obavijesti', '📢 ' . $naslov, mb_substr(preg_replace('/\s+/u', ' ', $tekst), 0, 200)
+            . ($obavezno ? ' · potrebna potvrda čitanja' : ''), 'obavijesti', ['id' => $id], 'obavijest-' . $id);
         return $id;
     });
 }

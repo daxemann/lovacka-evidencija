@@ -98,6 +98,7 @@ function posalji_poruku(int $razgovorId, int $posiljateljId, string $tekst): voi
     $vecCeka = vrijednost('SELECT 1 FROM PorukeRazgovora WHERE RazgovorId=? AND PosiljateljId=? AND Procitano=0', [$razgovorId, $posiljateljId]);
     umetni('PorukeRazgovora', ['RazgovorId' => $razgovorId, 'PosiljateljId' => $posiljateljId, 'Tekst' => $tekst, 'Vrijeme' => sada(), 'Procitano' => 0]);
     q('UPDATE Razgovori SET ZadnjaPoruka=? WHERE Id=?', [sada(), $razgovorId]);
+    push_posalji([$primatelj], 'poruke', '🛒 ' . ime_korisnika($posiljateljId) . ' – ' . $r['Naslov'], $tekst, 'poruke/razgovor', ['id' => $razgovorId], 'oglas-' . $razgovorId);
     if (!$vecCeka && posta_dostupna()) {
         $email = vrijednost('SELECT c.Email FROM Korisnici k JOIN Clanovi c ON c.Id=k.ClanId WHERE k.Id=? AND k.Aktivan=1', [$primatelj]);
         if ($email) {

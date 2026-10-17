@@ -31,6 +31,7 @@ $odobri = function (array $a, ?string $bodUnos, ?string $vrstaUnos) use ($k, $vr
         'OdlucioKorisnikId' => $k['Id'], 'OdlucioIme' => $k['Naziv'], 'Odluceno' => sada(),
     ]);
     dnevnik('Odobrena radna akcija', 'RadnaAkcija', (int) $a['Id'], prezime_ime($a) . ' ' . datum($a['Datum']) . ': ' . broj($bod, 2) . ' b.');
+    push_posalji(push_korisnici_clanova([(int) $a['ClanId']]), 'akcije', '✅ Radna akcija odobrena', datum($a['Datum']) . ' · ' . broj($bod, 2) . ' bodova', 'moje-akcije', [], 'akcija-' . $a['Id']);
     return true;
 };
 
@@ -49,6 +50,7 @@ if (je_post() && $moze) {
             azuriraj('RadneAkcije', (int) $a['Id'], ['Status' => AKCIJA_ODBIJENO, 'Bodovi' => null, 'RazlogOdbijanja' => $razlog !== '' ? $razlog : null,
                 'OdlucioKorisnikId' => $k['Id'], 'OdlucioIme' => $k['Naziv'], 'Odluceno' => sada()]);
             dnevnik('Odbijena radna akcija', 'RadnaAkcija', (int) $a['Id'], prezime_ime($a) . ' ' . datum($a['Datum']) . ($razlog ? ": $razlog" : ''));
+            push_posalji(push_korisnici_clanova([(int) $a['ClanId']]), 'akcije', '❌ Radna akcija odbijena', datum($a['Datum']) . ($razlog !== '' ? ' · ' . $razlog : ''), 'moje-akcije', [], 'akcija-' . $a['Id']);
         }
     } elseif (isset($_POST['vrati'])) {
         $a = $akcija((int) $_POST['vrati']);

@@ -5,7 +5,7 @@
  */
 declare(strict_types=1);
 
-const VERZIJA = '1.24.0';
+const VERZIJA = '1.25.0';
 const KONTAKT_EMAIL = 'daxemann@googlemail.com';
 const PODRSKA_PAYPAL = 'darko.bakic@freenet.de'; // dobrovoljna podrška razvoju (Pomoć i kontakt)
 const PROJEKT_URL = 'https://github.com/daxemann/lovacka-evidencija';
@@ -142,7 +142,7 @@ function db(bool $novo = false): PDO
  * Dodatne tablice PHP verzije (PRAGMA user_version). .NET verzija ih ne poznaje i zanemaruje,
  * pa baza i dalje radi u oba smjera.
  */
-const SHEMA_PHP = 22;
+const SHEMA_PHP = 23;
 function nadogradi_bazu(PDO $pdo): void
 {
     $v = (int) $pdo->query('PRAGMA user_version')->fetchColumn();
@@ -580,6 +580,24 @@ SQL);
                 "Napomena" TEXT NULL);
             CREATE INDEX IF NOT EXISTS "IX_RevirKvarovi_Status" ON "RevirKvarovi" ("Status", "SekcijaId");
             CREATE INDEX IF NOT EXISTS "IX_RevirKvarovi_NapravaId" ON "RevirKvarovi" ("NapravaId");');
+    }
+    if ($v < 23) {
+        // Push obavijesti (Web Push): pretplate po uređaju i vrste koje je korisnik isključio
+        $pdo->exec('CREATE TABLE IF NOT EXISTS "PushPretplate" (
+                "Id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                "KorisnikId" INTEGER NOT NULL REFERENCES "Korisnici" ("Id") ON DELETE CASCADE,
+                "Endpoint" TEXT NOT NULL UNIQUE,
+                "P256dh" TEXT NOT NULL,
+                "Auth" TEXT NOT NULL,
+                "Uredjaj" TEXT NULL,
+                "Kreirano" TEXT NOT NULL,
+                "ZadnjeSlanje" TEXT NULL,
+                "Greske" INTEGER NOT NULL DEFAULT 0);
+            CREATE INDEX IF NOT EXISTS "IX_PushPretplate_KorisnikId" ON "PushPretplate" ("KorisnikId");
+            CREATE TABLE IF NOT EXISTS "PushIskljuceno" (
+                "KorisnikId" INTEGER NOT NULL REFERENCES "Korisnici" ("Id") ON DELETE CASCADE,
+                "Vrsta" TEXT NOT NULL,
+                PRIMARY KEY ("KorisnikId", "Vrsta"));');
     }
     $pdo->exec('PRAGMA user_version = ' . SHEMA_PHP);
     $pdo->commit();
