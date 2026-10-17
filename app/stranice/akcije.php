@@ -3,6 +3,8 @@
 trazi(P_AKCIJE_CITAJ);
 $k = korisnik();
 $moze = ima(P_AKCIJE_ODOBRI);
+// bodove ručno mijenja samo admin (Sustav); ostali odobravaju bodove iz postavki vrste (+ oprema)
+$smijeBodove = ima(P_SUSTAV);
 $prikaz = (int) ($_GET['status'] ?? AKCIJA_CEKA);
 if (!isset(STATUSI_AKCIJE[$prikaz])) {
     $prikaz = AKCIJA_CEKA;
@@ -14,14 +16,16 @@ $vrstaPoId = array_column($vrste, null, 'Id');
 $akcija = function (int $id) {
     return red('SELECT a.*, c.SekcijaId, c.Ime, c.Prezime FROM RadneAkcije a JOIN Clanovi c ON c.Id=a.ClanId WHERE a.Id=? AND ' . opseg_sql('c'), [$id]);
 };
-$odobri = function (array $a, ?string $bodUnos, ?string $vrstaUnos) use ($k, $vrstaPoId): bool {
+$odobri = function (array $a, ?string $bodUnos, ?string $vrstaUnos) use ($k, $vrstaPoId, $smijeBodove): bool {
     $vrstaId = $a['VrstaAkcijeId'];
     if ($vrstaUnos !== null && $vrstaUnos !== '') {
         $vrstaId = (int) $vrstaUnos ?: null;
     }
-    $bod = u_broj($bodUnos);
-    if ($bod === null) {
-        $bod = $a['Bodovi'] !== null ? (float) $a['Bodovi'] : ($vrstaId && isset($vrstaPoId[$vrstaId]) ? (float) $vrstaPoId[$vrstaId]['StandardniBodovi'] + oprema_zbroj($a['Oprema']) : null);
+    $izPostavki = $vrstaId && isset($vrstaPoId[$vrstaId]) ? (float) $vrstaPoId[$vrstaId]['StandardniBodovi'] + oprema_zbroj($a['Oprema']) : null;
+    if ($smijeBodove) {
+        $bod = u_broj($bodUnos) ?? ($a['Bodovi'] !== null ? (float) $a['Bodovi'] : $izPostavki);
+    } else {
+        $bod = $izPostavki; // upisani bodovi se ne uzimaju u obzir
     }
     if ($bod === null) {
         return false;
@@ -41,7 +45,7 @@ if (je_post() && $moze) {
     if (isset($_POST['odobri'])) {
         $a = $akcija((int) $_POST['odobri']);
         if ($a && !$odobri($a, $bodovi[$a['Id']] ?? null, $vrstaU[$a['Id']] ?? null)) {
-            poruka('Za vlastitu akciju upišite bodove.', 'warning');
+            poruka($smijeBodove ? 'Za vlastitu akciju upišite bodove.' : 'Akciju bez vrste boduje admin – odaberite vrstu ili je ostavite adminu.', 'warning');
         }
     } elseif (isset($_POST['odbij'])) {
         $a = $akcija((int) $_POST['odbij']);
@@ -67,7 +71,7 @@ if (je_post() && $moze) {
                 $odobri($a, $bodovi[$a['Id']] ?? null, $vrstaU[$a['Id']] ?? null) ? $n++ : $presk++;
             }
         }
-        poruka("Odobreno: $n." . ($presk ? " Preskočeno $presk (vlastite akcije bez upisanih bodova)." : ''), $presk ? 'warning' : 'success');
+        poruka("Odobreno: $n." . ($presk ? " Preskočeno $presk (" . ($smijeBodove ? 'vlastite akcije bez upisanih bodova' : 'akcije bez vrste – boduje admin') . ").": ''), $presk ? 'warning' : 'success');
     }
     preusmjeri('akcije', ['status' => $prikaz]);
 }
@@ -93,7 +97,7 @@ ob_start(); ?>
 <form method="post" action="<?= e(url('akcije', ['status' => $prikaz])) ?>"><?= csrf() ?>
 <?php if ($uredi && $lista): ?>
     <div class="mb-2 d-flex gap-2 align-items-center">
-        <button class="btn btn-sm btn-success" name="radnja" value="odobri-odabrane" id="odobriOdabrane" disabled>Odobri odabrane (<span id="brojOdabranih">0</span>) s upisanim bodovima</button>
+        <button class="btn btn-sm btn-success" name="radnja" value="odobri-odabrane" id="odobriOdabrane" disabled>Odobri odabrane (<span id="brojOdabranih">0</span>) <?= $smijeBodove ? 's upisanim bodovima' : 's bodovima iz postavki' ?></button>
         <label class="btn btn-sm btn-link mb-0"><input type="checkbox" class="d-none" data-sve="odabrani[]">Odaberi sve</label>
     </div>
 <?php endif; ?>
@@ -134,7 +138,11 @@ ob_start(); ?>
                 <?php if ($a['RazlogOdbijanja']): ?><div class="text-danger">Razlog: <?= e($a['RazlogOdbijanja']) ?></div><?php endif; ?></td>
             <td style="width:7rem">
                 <?php if ($uredi): ?>
+                    <?php if ($smijeBodove): ?>
                     <input name="bodovi[<?= $aid ?>]" id="bod<?= $aid ?>" type="number" step="0.5" min="0" placeholder="bodovi" class="form-control form-control-sm <?= $trebaBodove ? 'border-warning' : '' ?>" value="<?= $trebaBodove ? '' : e((string) (float) $bodZadano) ?>">
+                    <?php else: ?>
+                    <input id="bod<?= $aid ?>" class="form-control form-control-sm bg-light" readonly tabindex="-1" title="Bodovi iz postavki – mijenja samo admin" placeholder="admin" value="<?= $trebaBodove ? '' : e((string) (float) ($a['VrstaAkcijeId'] && isset($vrstaPoId[$a['VrstaAkcijeId']]) ? (float) $vrstaPoId[$a['VrstaAkcijeId']]['StandardniBodovi'] + $oprBod : $bodZadano)) ?>">
+                    <?php endif; ?>
                 <?php else: ?><?= e(broj($a['Bodovi'], 2)) ?><?php endif; ?>
             </td>
             <?php if ($prikaz !== AKCIJA_CEKA): ?><td class="small"><?= e($a['OdlucioIme']) ?><div class="text-muted"><?= e(datum($a['Odluceno'])) ?></div></td><?php endif; ?>

@@ -1,5 +1,11 @@
 # Promjene
 
+## 1.26.2 – 2026-10
+- **Bodove radnih akcija određuju samo postavke**: u Novoj radnoj akciji (grupni unos) osnovni bodovi i bodovi dodatne opreme više se ne mogu upisivati – prikazuju se iz
+  Sustav → Vrste radnih akcija (mijenja ih samo admin). Poslužitelj uvijek računa bodove iz postavki, i kad bi netko poslao druge.
+- **Odobravanje**: bodove ručno mijenja samo admin (pravo Sustav). Ostali odobravatelji (npr. Domar) odobravaju bodove iz postavki (osnovni + oprema);
+  akciju bez vrste („druga akcija“) boduje admin.
+
 ## 1.26.1 – 2026-10
 - **Ispravka: grupni unos radne akcije** (Udruga → Nova radna akcija, i upis iz kalendara) više se ne odobrava sam – ide **na odobrenje** s predloženim bodovima (osnovni + oprema),
   kao i prijave članova. Bodovi vrijede tek nakon „Odobri“ (Radne akcije → Na čekanju); tko odobrava dobiva push obavijest.

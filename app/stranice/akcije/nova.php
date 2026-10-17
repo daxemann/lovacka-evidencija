@@ -1,12 +1,12 @@
 <?php
-/** Grupni unos radne akcije (admin / Domar): jedna akcija, više članova, predloženi bodovi – ide na odobrenje kao i prijave članova. */
+/** Grupni unos radne akcije (admin / Domar): jedna akcija, više članova – ide na odobrenje. Bodovi samo iz postavki (Vrste radnih akcija), ovdje se ne upisuju. */
 trazi(P_AKCIJE_ODOBRI);
 $k = korisnik();
 $vrste = redovi('SELECT * FROM VrsteAkcija WHERE Aktivna=1 ORDER BY Naziv');
 $clanovi = redovi('SELECT c.Id, c.Ime, c.Prezime, c.SekcijaId FROM Clanovi c WHERE c.Status=0 AND ' . opseg_sql('c'));
 $coll = class_exists('Collator') ? new Collator('hr_HR') : null;
 usort($clanovi, fn($a, $b) => $coll ? $coll->compare(prezime_ime($a), prezime_ime($b)) : strcmp(kljuc(prezime_ime($a)), kljuc(prezime_ime($b))));
-$v = ['datum' => danas(), 'vrsta' => '', 'naziv' => '', 'sati' => '', 'bodovi' => '', 'opis' => '', 'odabrani' => [], 'oprema' => [], 'obod' => []];
+$v = ['datum' => danas(), 'vrsta' => '', 'naziv' => '', 'sati' => '', 'opis' => '', 'odabrani' => [], 'oprema' => []];
 if (($c0 = ul_int('clan')) !== null) {
     $v['odabrani'] = [$c0];
 }
@@ -26,13 +26,13 @@ if ($dog && !je_post()) {
 if (je_post()) {
     $v = [
         'datum' => u_datum(ul_str('datum')) ?? danas(), 'vrsta' => (string) ($_POST['vrsta'] ?? ''), 'naziv' => ul_str('naziv'),
-        'sati' => ul_str('sati'), 'bodovi' => ul_str('bodovi'), 'opis' => ul_str('opis'),
+        'sati' => ul_str('sati'), 'opis' => ul_str('opis'),
         'odabrani' => array_map('intval', (array) ($_POST['odabrani'] ?? [])),
         'oprema' => array_map(fn($x) => array_map('intval', (array) $x), (array) ($_POST['oprema'] ?? [])), // [clanId => [opremaId, ...]]
-        'obod' => array_map('strval', (array) ($_POST['obod'] ?? [])),                                     // ručno promijenjeni bodovi opreme
     ];
     $vrstaId = (int) $v['vrsta'];
-    $bod = u_broj($v['bodovi']);
+    // bodovi isključivo iz postavki vrste; „druga akcija“ bez vrste – bodove određuje admin pri odobrenju
+    $bod = $vrstaId > 0 ? (float) vrijednost('SELECT StandardniBodovi FROM VrsteAkcija WHERE Id=? AND Aktivna=1', [$vrstaId]) : null;
     $g = null;
     if ($v['vrsta'] === '' || $vrstaId === 0) {
         $g = 'Odaberite vrstu akcije.';
@@ -42,8 +42,8 @@ if (je_post()) {
         $g = 'Označite barem jednog člana.';
     } elseif ($v['datum'] > danas()) {
         $g = 'Datum ne može biti u budućnosti.';
-    } elseif ($bod === null) {
-        $g = 'Upišite bodove po članu.';
+    } elseif ($vrstaId > 0 && !vrijednost('SELECT 1 FROM VrsteAkcija WHERE Id=? AND Aktivna=1', [$vrstaId])) {
+        $g = 'Odaberite vrstu akcije.';
     }
     if (!$g) {
         $dozvoljeni = array_flip(array_map('intval', array_column($clanovi, 'Id')));
@@ -64,12 +64,12 @@ if (je_post()) {
                     $vec[] = $cid;
                     continue;
                 }
-                $opr = $vrstaId > 0 ? oprema_odabir($vrstaId, $v['oprema'][$cid] ?? [], $v['obod']) : [];
-                $ukupno += $bod + oprema_zbroj($opr);
+                $opr = $vrstaId > 0 ? oprema_odabir($vrstaId, $v['oprema'][$cid] ?? []) : [];
+                $ukupno += (float) $bod + oprema_zbroj($opr);
                 $sOpremom += $opr ? 1 : 0;
                 umetni('RadneAkcije', [
                     'ClanId' => $cid, 'Datum' => $v['datum'], 'VrstaAkcijeId' => $vrstaId > 0 ? $vrstaId : null, 'VrstaSlobodno' => $vrstaId > 0 ? null : $v['naziv'],
-                    'Sati' => dec(u_broj($v['sati'])), 'Opis' => $v['opis'] !== '' ? $v['opis'] : null, 'Status' => AKCIJA_CEKA, 'Bodovi' => dec($bod + oprema_zbroj($opr)),
+                    'Sati' => dec(u_broj($v['sati'])), 'Opis' => $v['opis'] !== '' ? $v['opis'] : null, 'Status' => AKCIJA_CEKA, 'Bodovi' => $bod === null ? null : dec($bod + oprema_zbroj($opr)),
                     'Oprema' => oprema_json($opr),
                     'RazlogOdbijanja' => null, 'FotoDatoteka' => null, 'UnioKorisnikId' => $k['Id'], 'Kreirano' => sada(),
                     'OdlucioKorisnikId' => null, 'OdlucioIme' => null, 'Odluceno' => null,
@@ -81,7 +81,7 @@ if (je_post()) {
         if (!$novi) {
             $g = 'Ništa nije spremljeno – svi označeni već imaju tu akciju za taj dan.';
         } else {
-            $sazetak = count($novi) . ' članova × ' . broj($bod, 2) . ' b.' . ($sOpremom ? ' + oprema kod ' . $sOpremom . ' (ukupno ' . broj($ukupno, 2) . ' b.)' : '');
+            $sazetak = count($novi) . ' članova × ' . ($bod === null ? 'bodove određuje admin' : broj($bod, 2) . ' b.') . ($sOpremom ? ' + oprema kod ' . $sOpremom . ' (ukupno ' . broj($ukupno, 2) . ' b.)' : '');
             dnevnik('Grupni unos radne akcije (na odobrenje)', null, null, date('d.m.Y', strtotime($v['datum'])) . " $naziv: " . $sazetak);
             $odobravatelji = [];
             foreach (array_unique(array_map(fn($c) => $c['SekcijaId'] === null ? null : (int) $c['SekcijaId'], array_filter($clanovi, fn($c) => in_array((int) $c['Id'], $novi, true)))) as $sid) {
@@ -118,10 +118,11 @@ ob_start(); ?>
             </select></div>
         <div class="col-12 col-md-6" id="nazivPolje" style="<?= $v['vrsta'] === '-1' ? '' : 'display:none' ?>"><label class="form-label small">Naziv akcije</label><input name="naziv" class="form-control" maxlength="100" value="<?= e($v['naziv']) ?>"></div>
         <div class="col-4 col-md-2"><label class="form-label small">Sati</label><input name="sati" type="number" step="0.5" min="0" class="form-control" value="<?= e($v['sati']) ?>"></div>
-        <div class="col-8 col-md-2"><label class="form-label small">Osnovni bodovi po članu</label><input name="bodovi" id="bodovi" type="number" step="0.5" min="0" class="form-control fw-bold" value="<?= e($v['bodovi']) ?>" required></div>
+        <div class="col-8 col-md-2"><label class="form-label small">Bodovi po članu</label><input id="bodovi" class="form-control fw-bold bg-light" readonly tabindex="-1" value="" title="Iz postavki (Sustav → Vrste radnih akcija)"></div>
+        <div class="col-12 small text-muted" id="bodoviNapomena">Bodovi se uzimaju iz postavki (Sustav → Vrste radnih akcija) i ovdje se ne mijenjaju.<span id="bodoviAdmin" hidden> Za „drugu akciju“ bodove određuje admin pri odobrenju.</span></div>
         <div class="col-12" id="opremaPolje" hidden>
             <div class="border rounded p-2 bg-light">
-                <div class="small fw-semibold mb-1">🧰 Dodatna oprema – bodovi povrh osnovnih <span class="fw-normal text-muted">(predloženo iz postavki, možete promijeniti)</span></div>
+                <div class="small fw-semibold mb-1">🧰 Dodatna oprema – bodovi povrh osnovnih <span class="fw-normal text-muted">(iz postavki)</span></div>
                 <div class="d-flex flex-wrap gap-2" id="opremaBodovi"></div>
                 <div class="small text-muted mt-1">Kod svakog označenog člana kvačicom odaberite što je donio.</div>
             </div>
@@ -160,31 +161,28 @@ ob_start(); ?>
     <button class="btn btn-primary btn-lg w-100" id="spremi">Spremi</button>
 </div>
 </form>
-<script id="oprema-cfg" type="application/json"><?= json_encode(['oprema' => oprema_js(), 'odabrano' => $v['oprema'], 'obod' => $v['obod']], JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP) ?></script>
+<script id="oprema-cfg" type="application/json"><?= json_encode(['oprema' => oprema_js(), 'odabrano' => $v['oprema']], JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP) ?></script>
 <script>
 (function () {
     var vrsta = document.getElementById('vrsta'), bodovi = document.getElementById('bodovi'), naziv = document.getElementById('nazivPolje');
     var OC = JSON.parse(document.getElementById('oprema-cfg').textContent), OPR = OC.oprema || {};
-    var odabrano = OC.odabrano || {}, obod = OC.obod || {};
+    var odabrano = OC.odabrano || {};
     var esc = function (t) { var d = document.createElement('div'); d.textContent = t; return d.innerHTML; };
     var br = function (x) { return String(Math.round(x * 100) / 100).replace('.', ','); };
     var lista = function () { return OPR[vrsta.value] || []; };
-    var bodOpreme = function (id) { var i = document.querySelector('[name="obod[' + id + ']"]'); var x = i ? parseFloat(i.value) : NaN; return isNaN(x) ? 0 : x; };
+    var bodOpreme = function (id) { var o = lista().filter(function (x) { return String(x.id) === String(id); })[0]; return o ? o.b : 0; };
     // pamti kvačice opreme dok se mijenja vrsta / osvježava
     var zapamti = function () {
         document.querySelectorAll('.clan-oprema input').forEach(function (c) {
             var cid = c.dataset.cid, l = odabrano[cid] = (odabrano[cid] || []).filter(function (x) { return String(x) !== c.value; });
             if (c.checked) l.push(+c.value);
         });
-        document.querySelectorAll('#opremaBodovi input').forEach(function (i) { obod[i.dataset.id] = i.value; });
     };
     var crtajOpremu = function () {
         var l = lista();
         document.getElementById('opremaPolje').hidden = !l.length;
         document.getElementById('opremaBodovi').innerHTML = l.map(function (o) {
-            var b = obod[o.id] !== undefined && obod[o.id] !== '' ? obod[o.id] : o.b;
-            return '<label class="input-group input-group-sm w-auto"><span class="input-group-text">' + esc(o.n) + ' +</span>' +
-                '<input type="number" step="0.5" min="0" class="form-control" style="width:5rem" name="obod[' + o.id + ']" data-id="' + o.id + '" value="' + esc(String(b)) + '"><span class="input-group-text">b.</span></label>';
+            return '<span class="badge rounded-pill text-bg-light border fs-6 fw-normal">' + esc(o.n) + ' <b>+' + br(o.b) + ' b.</b></span>';
         }).join('');
         document.querySelectorAll('.clan-oprema').forEach(function (d) {
             var cid = d.dataset.cid, moje = (odabrano[cid] || []).map(String);
@@ -194,10 +192,15 @@ ob_start(); ?>
             }).join('');
         });
     };
+    var postaviBodove = function () {
+        var o = vrsta.options[vrsta.selectedIndex];
+        bodovi.value = o && o.dataset.bodovi ? o.dataset.bodovi.replace(',', '.') : '';
+        document.getElementById('bodoviAdmin').hidden = vrsta.value !== '-1';
+    };
     vrsta.addEventListener('change', function () {
         var o = vrsta.options[vrsta.selectedIndex];
         naziv.style.display = vrsta.value === '-1' ? '' : 'none';
-        if (o.dataset.bodovi) bodovi.value = o.dataset.bodovi.replace(',', '.');
+        postaviBodove();
         zapamti(); crtajOpremu();
         osvjezi();
     });
@@ -227,6 +230,7 @@ ob_start(); ?>
         document.getElementById('oznaceni').innerHTML = n ? '<b>Označeni:</b> ' + oz.map(function (p) { return esc(p.querySelector('span').textContent); }).join(', ') : '';
         document.getElementById('spremi').textContent = 'Pošalji na odobrenje za ' + n + ' ' + (n === 1 ? 'člana' : 'članova') + ' – ' + br(osn) + ' b. svakome'
             + (sOpr ? ' + oprema kod ' + sOpr + ' (ukupno ' + br(zbroj) + ' b.)' : '');
+        if (vrsta.value === '-1') document.getElementById('spremi').textContent = 'Pošalji na odobrenje za ' + n + ' ' + (n === 1 ? 'člana' : 'članova') + ' – bodove određuje admin';
     };
     document.getElementById('trazi').addEventListener('input', filtriraj);
     document.querySelectorAll('#sekcijeFilter [data-sek]').forEach(function (b) {
@@ -239,7 +243,7 @@ ob_start(); ?>
     document.getElementById('sviPrikazani').addEventListener('click', function () { polja.forEach(function (p) { if (p.style.display !== 'none') p.querySelector('input').checked = true; }); osvjezi(); });
     document.getElementById('ponisti').addEventListener('click', function () { polja.forEach(function (p) { p.querySelector('input').checked = false; }); osvjezi(); });
     document.addEventListener('change', osvjezi);
-    document.addEventListener('input', function (e) { if (e.target.closest('#opremaBodovi') || e.target === bodovi) osvjezi(); });
+    postaviBodove();
     crtajOpremu();
     osvjezi();
 })();
