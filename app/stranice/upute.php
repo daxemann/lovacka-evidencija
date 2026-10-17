@@ -106,7 +106,7 @@ if (ima(P_CLANARINA_CITAJ)) {
     $udruga .= '<li><b>Članarina:</b> plan plaćanja po godini (jednokratno ili 1–12 rata), uplate se raspoređuju po ratama, filtar „Dospjela rata“. Odabranim članovima uplatnice šaljete e-poštom / WhatsAppom / Viberom ili ispisujete (3 po A4).</li>';
 }
 if (ima(P_AKCIJE_CITAJ) || ima(P_AKCIJE_ODOBRI)) {
-    $udruga .= '<li><b>Radne akcije:</b> prijave članova čekaju odobrenje (broj u izborniku). <b>Nova radna akcija</b> – upišete jednom i označite sve koji su bili. Psi (posjed 1.1., pas na lovu) dolaze sami na odobrenje.</li>'
+    $udruga .= '<li><b>Radne akcije:</b> prijave članova čekaju odobrenje (broj u izborniku). <b>Nova radna akcija</b> – upišete jednom i označite sve koji su bili; ide na odobrenje s predloženim bodovima (vrijede tek kad se odobre). Psi (posjed 1.1., pas na lovu) dolaze sami na odobrenje.</li>'
         . '<li><b>Dodatna oprema</b> (Sustav → Vrste radnih akcija): uz vrstu upišite opremu s bodovima (npr. Košnja: Traktor +5, Trimer +2). Kod nove akcije uz svakog člana kvačicom označite što je donio – bodovi se zbrajaju sami, a bodove opreme i osnovne možete prije spremanja promijeniti. Kod odobravanja prijava predlaže se osnovno + oprema.</li>';
 }
 if (ima(P_IZVJESTAJI)) {

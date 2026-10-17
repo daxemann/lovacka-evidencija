@@ -1,5 +1,10 @@
 # Promjene
 
+## 1.26.1 – 2026-10
+- **Ispravka: grupni unos radne akcije** (Udruga → Nova radna akcija, i upis iz kalendara) više se ne odobrava sam – ide **na odobrenje** s predloženim bodovima (osnovni + oprema),
+  kao i prijave članova. Bodovi vrijede tek nakon „Odobri“ (Radne akcije → Na čekanju); tko odobrava dobiva push obavijest.
+- Na čekanju se vidi tko je akciju upisao. Član vidi predložene bodove („?“) i ne može mijenjati ni brisati akciju koju je upisala uprava.
+
 ## 1.26.0 – 2026-10
 - **🧰 Dodatna oprema kod radnih akcija**: u Sustav → Vrste radnih akcija uz svaku vrstu upisujete opremu s dodatnim bodovima (npr. **Košnja**: Traktor +5, Trimer +2, Motorna pila +3).
 - **Nova radna akcija** (grupni unos): kad vrsta ima opremu, uz svakog označenog člana kvačicama odaberete što je donio (i/ili). Bodovi se zbrajaju **sami** (osnovni + oprema),

@@ -72,7 +72,8 @@ if (je_post() && $moze) {
     preusmjeri('akcije', ['status' => $prikaz]);
 }
 
-$lista = redovi('SELECT a.*, c.Ime, c.Prezime, s.Naziv AS Sekcija, v.Naziv AS VrstaNaziv, p.Ime AS PasIme FROM RadneAkcije a JOIN Clanovi c ON c.Id=a.ClanId
+$lista = redovi('SELECT a.*, c.Ime, c.Prezime, s.Naziv AS Sekcija, v.Naziv AS VrstaNaziv, p.Ime AS PasIme, uk.ClanId AS UnioClanId FROM RadneAkcije a JOIN Clanovi c ON c.Id=a.ClanId
+    LEFT JOIN Korisnici uk ON uk.Id=a.UnioKorisnikId
     LEFT JOIN Sekcije s ON s.Id=c.SekcijaId LEFT JOIN VrsteAkcija v ON v.Id=a.VrstaAkcijeId LEFT JOIN LovniPsi p ON p.Id=a.PasId
     WHERE a.Status=? AND ' . opseg_sql('c') . ' ORDER BY ' . ($prikaz === AKCIJA_CEKA ? 'a.Datum, a.Id' : 'a.Odluceno DESC, a.Id DESC LIMIT 300'), [$prikaz]);
 $brojCeka = broj_akcija_na_cekanju();
@@ -113,7 +114,8 @@ ob_start(); ?>
         <tr>
             <?php if ($uredi): ?><td><input type="checkbox" class="form-check-input" name="odabrani[]" value="<?= $aid ?>"></td><?php endif; ?>
             <td class="text-nowrap"><?= e(datum($a['Datum'])) ?></td>
-            <td><a href="<?= e(url('clanovi/uredi', ['id' => $a['ClanId'], 'kartica' => 'akcije'])) ?>"><?= e(prezime_ime($a)) ?></a><div class="small text-muted"><?= e($a['Sekcija']) ?></div></td>
+            <td><a href="<?= e(url('clanovi/uredi', ['id' => $a['ClanId'], 'kartica' => 'akcije'])) ?>"><?= e(prezime_ime($a)) ?></a><div class="small text-muted"><?= e($a['Sekcija']) ?></div>
+                <?php if ($a['UnioKorisnikId'] !== null && $a['UnioClanId'] !== null ? (int) $a['UnioClanId'] !== (int) $a['ClanId'] : $a['UnioKorisnikId'] !== null): ?><div class="small text-muted">upisao <?= e(ime_korisnika((int) $a['UnioKorisnikId'])) ?></div><?php endif; ?></td>
             <td>
                 <?php if ($uredi): ?>
                     <select name="vrsta[<?= $aid ?>]" class="form-select form-select-sm vrsta-izbor" data-id="<?= $aid ?>" data-oprema="<?= e((string) $oprBod) ?>">

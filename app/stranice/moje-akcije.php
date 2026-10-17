@@ -9,7 +9,8 @@ vrsta_akcije_psi('potraga'); // stvara vrstu „Potraga s psom“ ako je nema
 $vrste = redovi('SELECT * FROM VrsteAkcija WHERE Aktivna=1 ORDER BY Naziv');
 $uredjuje = ul_int('uredi');
 $mojiPsi = aktivni_psi((int) $cid);
-$moja = fn(int $id) => red('SELECT * FROM RadneAkcije WHERE Id=? AND ClanId=? AND Status=0', [$id, $cid]);
+// član mijenja / briše samo prijave koje je sam upisao (grupni unos uprave ne)
+$moja = fn(int $id) => red('SELECT * FROM RadneAkcije WHERE Id=? AND ClanId=? AND Status=0 AND (UnioKorisnikId IS NULL OR UnioKorisnikId=?)', [$id, $cid, $k['Id']]);
 
 if (je_post()) {
     $radnja = (string) ($_POST['radnja'] ?? '');
@@ -159,14 +160,16 @@ ob_start(); ?>
             <span class="text-nowrap"><?= e(datum($a['Datum'])) ?></span>
             <?php if ($a['Sati'] !== null): ?><span class="text-muted small text-nowrap"><?= e(broj($a['Sati'])) ?> h</span><?php endif; ?>
             <span class="ms-auto d-flex gap-1 align-items-center"><?= status_akcije_oznaka((int) $a['Status']) ?>
-                <?php if ($a['Bodovi'] !== null): ?><span class="badge bg-light text-dark border"><?= e(broj($a['Bodovi'], 2)) ?> b.</span><?php endif; ?></span>
+                <?php if ($a['Bodovi'] !== null): ?><span class="badge bg-light <?= (int) $a['Status'] === AKCIJA_ODOBRENO ? 'text-dark' : 'text-muted' ?> border"<?= (int) $a['Status'] === AKCIJA_CEKA ? ' title="predloženo – vrijedi nakon odobrenja"' : '' ?>><?= e(broj($a['Bodovi'], 2)) ?> b.<?= (int) $a['Status'] === AKCIJA_CEKA ? ' ?' : '' ?></span><?php endif; ?></span>
         </div>
         <div class="fw-semibold"><?= e($a['VrstaNaziv'] ?? $a['VrstaSlobodno'] ?? '—') ?><?php if ($a['PasIme'] && !str_contains((string) $a['Opis'], (string) $a['PasIme'])): ?> <span class="fw-normal small">🐕 <?= e($a['PasIme']) ?></span><?php endif; ?></div>
         <?php if ($a['Oprema']): ?><div class="small mt-1"><?= oprema_html($a['Oprema']) ?></div><?php endif; ?>
         <?php if ($a['Opis']): ?><div class="small mt-1"><?= e($a['Opis']) ?></div><?php endif; ?>
         <?php if ($a['FotoDatoteka']): ?><div class="small mt-1"><a href="<?= e(foto_url($a['FotoDatoteka'])) ?>" target="_blank">fotografija</a></div><?php endif; ?>
         <?php if ($a['RazlogOdbijanja']): ?><div class="small text-danger mt-1">Razlog odbijanja: <?= e($a['RazlogOdbijanja']) ?></div><?php endif; ?>
-        <?php if ((int) $a['Status'] === AKCIJA_CEKA): ?>
+        <?php if ((int) $a['Status'] === AKCIJA_CEKA && $a['UnioKorisnikId'] !== null && (int) $a['UnioKorisnikId'] !== (int) $k['Id']): ?>
+            <div class="small text-muted mt-1">Upisao <?= e(ime_korisnika((int) $a['UnioKorisnikId'])) ?> – čeka odobrenje<?= $a['Bodovi'] !== null ? ' (predloženo ' . e(broj($a['Bodovi'], 2)) . ' b.)' : '' ?>.</div>
+        <?php elseif ((int) $a['Status'] === AKCIJA_CEKA): ?>
             <div class="mt-1">
                 <a class="btn btn-sm btn-link px-0" href="<?= e(url('moje-akcije', ['uredi' => $a['Id']])) ?>">Uredi</a>
                 <form method="post" action="<?= e(url('moje-akcije')) ?>" class="d-inline"><?= csrf() ?><input type="hidden" name="radnja" value="obrisi"><input type="hidden" name="aid" value="<?= (int) $a['Id'] ?>">

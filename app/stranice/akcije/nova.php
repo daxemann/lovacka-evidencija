@@ -1,5 +1,5 @@
 <?php
-/** Grupni unos radne akcije (admin / Domar): jedna akcija, više članova, isti bodovi, odmah odobreno. */
+/** Grupni unos radne akcije (admin / Domar): jedna akcija, više članova, predloženi bodovi – ide na odobrenje kao i prijave članova. */
 trazi(P_AKCIJE_ODOBRI);
 $k = korisnik();
 $vrste = redovi('SELECT * FROM VrsteAkcija WHERE Aktivna=1 ORDER BY Naziv');
@@ -69,10 +69,10 @@ if (je_post()) {
                 $sOpremom += $opr ? 1 : 0;
                 umetni('RadneAkcije', [
                     'ClanId' => $cid, 'Datum' => $v['datum'], 'VrstaAkcijeId' => $vrstaId > 0 ? $vrstaId : null, 'VrstaSlobodno' => $vrstaId > 0 ? null : $v['naziv'],
-                    'Sati' => dec(u_broj($v['sati'])), 'Opis' => $v['opis'] !== '' ? $v['opis'] : null, 'Status' => AKCIJA_ODOBRENO, 'Bodovi' => dec($bod + oprema_zbroj($opr)),
+                    'Sati' => dec(u_broj($v['sati'])), 'Opis' => $v['opis'] !== '' ? $v['opis'] : null, 'Status' => AKCIJA_CEKA, 'Bodovi' => dec($bod + oprema_zbroj($opr)),
                     'Oprema' => oprema_json($opr),
                     'RazlogOdbijanja' => null, 'FotoDatoteka' => null, 'UnioKorisnikId' => $k['Id'], 'Kreirano' => sada(),
-                    'OdlucioKorisnikId' => $k['Id'], 'OdlucioIme' => $k['Naziv'], 'Odluceno' => sada(),
+                    'OdlucioKorisnikId' => null, 'OdlucioIme' => null, 'Odluceno' => null,
                 ]);
                 $novi[] = $cid;
             }
@@ -82,8 +82,14 @@ if (je_post()) {
             $g = 'Ništa nije spremljeno – svi označeni već imaju tu akciju za taj dan.';
         } else {
             $sazetak = count($novi) . ' članova × ' . broj($bod, 2) . ' b.' . ($sOpremom ? ' + oprema kod ' . $sOpremom . ' (ukupno ' . broj($ukupno, 2) . ' b.)' : '');
-            dnevnik('Grupni unos radne akcije', null, null, date('d.m.Y', strtotime($v['datum'])) . " $naziv: " . $sazetak);
-            poruka(e("Spremljeno: $naziv, " . date('d.m.Y', strtotime($v['datum'])) . ' – ' . $sazetak
+            dnevnik('Grupni unos radne akcije (na odobrenje)', null, null, date('d.m.Y', strtotime($v['datum'])) . " $naziv: " . $sazetak);
+            $odobravatelji = [];
+            foreach (array_unique(array_map(fn($c) => $c['SekcijaId'] === null ? null : (int) $c['SekcijaId'], array_filter($clanovi, fn($c) => in_array((int) $c['Id'], $novi, true)))) as $sid) {
+                $odobravatelji = array_merge($odobravatelji, push_korisnici_s_pravom(P_AKCIJE_ODOBRI, $sid));
+            }
+            push_posalji($odobravatelji, 'akcije', '🛠️ Grupna radna akcija čeka odobrenje',
+                $k['Naziv'] . ' · ' . $naziv . ' ' . date('d.m.Y', strtotime($v['datum'])) . ' · ' . count($novi) . ' članova', 'akcije', [], 'akcije-cekaju');
+            poruka(e("Poslano na odobrenje: $naziv, " . date('d.m.Y', strtotime($v['datum'])) . ' – ' . $sazetak . '. Bodovi vrijede tek kad se odobre (Radne akcije → Na čekanju).'
                 . ($vec ? ' Preskočeno (već upisano za taj dan): ' . $imena($vec) . '.' : '')));
             if ($dog) {
                 q('UPDATE Dogadjaji SET AkcijeUpisane=? WHERE Id=?', [sada(), $dog['Id']]);
@@ -97,7 +103,7 @@ if (je_post()) {
 $sekcije = moje_sekcije();
 ob_start(); ?>
 <h1 class="h3 mb-1">Nova radna akcija</h1>
-<p class="text-muted">Upišite akciju jednom i označite sve koji su bili – svi dobiju iste bodove (odmah odobreno).</p>
+<p class="text-muted">Upišite akciju jednom i označite sve koji su bili. Akcija ide <b>na odobrenje</b> s predloženim bodovima – bodovi vrijede tek kad se odobre (Radne akcije → Na čekanju).</p>
 <?php if ($dog): ?><div class="alert alert-info py-2">Iz kalendara: <b><?= e($dog['Naslov']) ?></b> (<?= e(datum($dog['Pocetak'])) ?>) – označeni su članovi koji su potvrdili dolazak.</div><?php endif; ?>
 <form method="post" action="<?= e(url('akcije/nova', $dog ? ['dogadjaj' => $dog['Id']] : [])) ?>" id="obrazac"><?= csrf() ?>
 <div class="card mb-3">
@@ -219,7 +225,7 @@ ob_start(); ?>
         var n = oz.length;
         document.getElementById('broj').textContent = n;
         document.getElementById('oznaceni').innerHTML = n ? '<b>Označeni:</b> ' + oz.map(function (p) { return esc(p.querySelector('span').textContent); }).join(', ') : '';
-        document.getElementById('spremi').textContent = 'Spremi za ' + n + ' ' + (n === 1 ? 'člana' : 'članova') + ' – ' + br(osn) + ' b. svakome'
+        document.getElementById('spremi').textContent = 'Pošalji na odobrenje za ' + n + ' ' + (n === 1 ? 'člana' : 'članova') + ' – ' + br(osn) + ' b. svakome'
             + (sOpr ? ' + oprema kod ' + sOpr + ' (ukupno ' + br(zbroj) + ' b.)' : '');
     };
     document.getElementById('trazi').addEventListener('input', filtriraj);
