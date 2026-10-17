@@ -5,7 +5,7 @@
  */
 declare(strict_types=1);
 
-const VERZIJA = '1.25.0';
+const VERZIJA = '1.26.0';
 const KONTAKT_EMAIL = 'daxemann@googlemail.com';
 const PODRSKA_PAYPAL = 'darko.bakic@freenet.de'; // dobrovoljna podrška razvoju (Pomoć i kontakt)
 const PROJEKT_URL = 'https://github.com/daxemann/lovacka-evidencija';
@@ -142,7 +142,7 @@ function db(bool $novo = false): PDO
  * Dodatne tablice PHP verzije (PRAGMA user_version). .NET verzija ih ne poznaje i zanemaruje,
  * pa baza i dalje radi u oba smjera.
  */
-const SHEMA_PHP = 23;
+const SHEMA_PHP = 24;
 function nadogradi_bazu(PDO $pdo): void
 {
     $v = (int) $pdo->query('PRAGMA user_version')->fetchColumn();
@@ -598,6 +598,17 @@ SQL);
                 "KorisnikId" INTEGER NOT NULL REFERENCES "Korisnici" ("Id") ON DELETE CASCADE,
                 "Vrsta" TEXT NOT NULL,
                 PRIMARY KEY ("KorisnikId", "Vrsta"));');
+    }
+    if ($v < 24) {
+        // Dodatna oprema uz vrstu radne akcije (npr. Košnja: traktor, trimer, motorna pila) s dodatnim bodovima
+        $pdo->exec('CREATE TABLE IF NOT EXISTS "VrstaOprema" (
+                "Id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                "VrstaAkcijeId" INTEGER NOT NULL REFERENCES "VrsteAkcija" ("Id") ON DELETE CASCADE,
+                "Naziv" TEXT NOT NULL,
+                "Bodovi" TEXT NOT NULL DEFAULT \'0\',
+                "Redoslijed" INTEGER NOT NULL DEFAULT 0);
+            CREATE INDEX IF NOT EXISTS "IX_VrstaOprema_Vrsta" ON "VrstaOprema" ("VrstaAkcijeId");
+            ALTER TABLE "RadneAkcije" ADD COLUMN "Oprema" TEXT NULL;');
     }
     $pdo->exec('PRAGMA user_version = ' . SHEMA_PHP);
     $pdo->commit();

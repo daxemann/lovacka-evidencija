@@ -24,7 +24,7 @@ foreach ($akcije as $a) {
             <td class="text-nowrap"><?= e(datum($a['Datum'])) ?></td>
             <td><?= e($a['VrstaNaziv'] ?? $a['VrstaSlobodno'] ?? '—') ?></td>
             <td><?= e(broj($a['Sati'])) ?></td>
-            <td class="small"><?= e($a['Opis']) ?><?php if ((int) $a['Status'] === AKCIJA_ODBIJENO && $a['RazlogOdbijanja']): ?><div class="text-danger">Razlog: <?= e($a['RazlogOdbijanja']) ?></div><?php endif; ?></td>
+            <td class="small"><?= !empty($a['Oprema']) ? '<div>' . oprema_html($a['Oprema']) . '</div>' : '' ?><?= e($a['Opis']) ?><?php if ((int) $a['Status'] === AKCIJA_ODBIJENO && $a['RazlogOdbijanja']): ?><div class="text-danger">Razlog: <?= e($a['RazlogOdbijanja']) ?></div><?php endif; ?></td>
             <td><?= status_akcije_oznaka((int) $a['Status']) ?></td>
             <td class="text-end"><?= e(broj($a['Bodovi'], 2)) ?></td>
         </tr>

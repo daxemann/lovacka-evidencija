@@ -21,7 +21,7 @@ $odobri = function (array $a, ?string $bodUnos, ?string $vrstaUnos) use ($k, $vr
     }
     $bod = u_broj($bodUnos);
     if ($bod === null) {
-        $bod = $a['Bodovi'] !== null ? (float) $a['Bodovi'] : ($vrstaId && isset($vrstaPoId[$vrstaId]) ? (float) $vrstaPoId[$vrstaId]['StandardniBodovi'] : null);
+        $bod = $a['Bodovi'] !== null ? (float) $a['Bodovi'] : ($vrstaId && isset($vrstaPoId[$vrstaId]) ? (float) $vrstaPoId[$vrstaId]['StandardniBodovi'] + oprema_zbroj($a['Oprema']) : null);
     }
     if ($bod === null) {
         return false;
@@ -108,14 +108,15 @@ ob_start(); ?>
         $aid = (int) $a['Id'];
         $vlastita = $a['VrstaAkcijeId'] === null;
         $trebaBodove = $vlastita && $a['Bodovi'] === null;
-        $bodZadano = $a['Bodovi'] ?? ($a['VrstaAkcijeId'] ? ($vrstaPoId[$a['VrstaAkcijeId']]['StandardniBodovi'] ?? null) : null); ?>
+        $oprBod = oprema_zbroj($a['Oprema']);
+        $bodZadano = $a['Bodovi'] ?? ($a['VrstaAkcijeId'] && isset($vrstaPoId[$a['VrstaAkcijeId']]) ? (float) $vrstaPoId[$a['VrstaAkcijeId']]['StandardniBodovi'] + $oprBod : null); ?>
         <tr>
             <?php if ($uredi): ?><td><input type="checkbox" class="form-check-input" name="odabrani[]" value="<?= $aid ?>"></td><?php endif; ?>
             <td class="text-nowrap"><?= e(datum($a['Datum'])) ?></td>
             <td><a href="<?= e(url('clanovi/uredi', ['id' => $a['ClanId'], 'kartica' => 'akcije'])) ?>"><?= e(prezime_ime($a)) ?></a><div class="small text-muted"><?= e($a['Sekcija']) ?></div></td>
             <td>
                 <?php if ($uredi): ?>
-                    <select name="vrsta[<?= $aid ?>]" class="form-select form-select-sm vrsta-izbor" data-id="<?= $aid ?>">
+                    <select name="vrsta[<?= $aid ?>]" class="form-select form-select-sm vrsta-izbor" data-id="<?= $aid ?>" data-oprema="<?= e((string) $oprBod) ?>">
                         <?php if ($vlastita): ?><option value="0">Vlastita: <?= e($a['VrstaSlobodno']) ?></option><?php endif; ?>
                         <?php foreach ($vrste as $v): if (!$v['Aktivna'] && $v['Id'] != $a['VrstaAkcijeId']) continue; ?>
                             <option value="<?= (int) $v['Id'] ?>" data-bodovi="<?= e((string) (float) $v['StandardniBodovi']) ?>"<?= sel($v['Id'], $a['VrstaAkcijeId']) ?>><?= e($v['Naziv']) ?> (<?= e(broj($v['StandardniBodovi'], 1)) ?> b.)</option>
@@ -126,7 +127,7 @@ ob_start(); ?>
                 <?php endif; ?>
             </td>
             <td><?= e(broj($a['Sati'])) ?></td>
-            <td class="small"><?php if ($a['PasIme'] && !str_contains((string) $a['Opis'], (string) $a['PasIme'])): ?>🐕 <?= e($a['PasIme']) ?> <?php endif; ?><?= e($a['Opis']) ?>
+            <td class="small"><?= $a['Oprema'] ? '<div>' . oprema_html($a['Oprema']) . '</div>' : '' ?><?php if ($a['PasIme'] && !str_contains((string) $a['Opis'], (string) $a['PasIme'])): ?>🐕 <?= e($a['PasIme']) ?> <?php endif; ?><?= e($a['Opis']) ?>
                 <?php if ($a['FotoDatoteka']): ?><div><a href="<?= e(foto_url($a['FotoDatoteka'])) ?>" target="_blank">fotografija</a></div><?php endif; ?>
                 <?php if ($a['RazlogOdbijanja']): ?><div class="text-danger">Razlog: <?= e($a['RazlogOdbijanja']) ?></div><?php endif; ?></td>
             <td style="width:7rem">
@@ -163,7 +164,8 @@ ob_start(); ?>
     };
     document.addEventListener('change', osvj); document.addEventListener('ev-oznaceno', osvj);
     document.querySelectorAll('.vrsta-izbor').forEach(function (s) {
-        s.addEventListener('change', function () { var o = s.options[s.selectedIndex]; if (o.dataset.bodovi) document.getElementById('bod' + s.dataset.id).value = o.dataset.bodovi; });
+        // nova vrsta: standardni bodovi + bodovi opreme koju je član donio
+        s.addEventListener('change', function () { var o = s.options[s.selectedIndex]; if (o.dataset.bodovi) document.getElementById('bod' + s.dataset.id).value = Math.round((parseFloat(o.dataset.bodovi) + (parseFloat(s.dataset.oprema) || 0)) * 100) / 100; });
     });
 })();
 </script>

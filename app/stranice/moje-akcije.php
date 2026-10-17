@@ -43,6 +43,7 @@ if (je_post()) {
         'Datum' => $datum, 'VrstaAkcijeId' => $vrsta > 0 ? $vrsta : null, 'VrstaSlobodno' => $vrsta > 0 ? null : mb_substr($naziv, 0, 100),
         'Sati' => dec(u_broj($_POST['sati'] ?? '')), 'Opis' => ul_null('opis'),
         'PasId' => isset($mojiPsi[(int) ($_POST['pas'] ?? 0)]) ? (int) $_POST['pas'] : null,
+        'Oprema' => $vrsta > 0 ? oprema_json(oprema_odabir($vrsta, (array) ($_POST['oprema'] ?? []))) : null,
     ];
     if ($vrsta === vrsta_akcije_psi('potraga') && ($polja['PasId'] === null || empty($mojiPsi[$polja['PasId']]['Potraga']))) {
         poruka('Za potragu odaberite psa koji radi potragu (kvačica „🩸 radi potragu“ u Moj profil → Moji lovački psi).', 'danger');
@@ -83,10 +84,11 @@ $lista = redovi('SELECT a.*, v.Naziv AS VrstaNaziv, p.Ime AS PasIme FROM RadneAk
 $lg = pocetak_lovne_godine();
 $lgKraj = $lg->modify('+1 year -1 day')->format('Y-m-d');
 $bodoviLg = array_sum(array_map(fn($a) => (int) $a['Status'] === AKCIJA_ODOBRENO && substr($a['Datum'], 0, 10) >= $lg->format('Y-m-d') && substr($a['Datum'], 0, 10) <= $lgKraj ? (float) $a['Bodovi'] : 0, $lista));
-$v = ['datum' => danas(), 'vrsta' => '', 'naziv' => '', 'sati' => '', 'opis' => '', 'pas' => ''];
+$v = ['datum' => danas(), 'vrsta' => '', 'naziv' => '', 'sati' => '', 'opis' => '', 'pas' => '', 'oprema' => []];
 $ur = $uredjuje ? $moja($uredjuje) : null;
 if ($ur) {
-    $v = ['datum' => substr($ur['Datum'], 0, 10), 'vrsta' => $ur['VrstaAkcijeId'] ?? -1, 'naziv' => $ur['VrstaSlobodno'] ?? '', 'sati' => $ur['Sati'] !== null ? (string) (float) $ur['Sati'] : '', 'opis' => $ur['Opis'] ?? '', 'pas' => (string) ($ur['PasId'] ?? '')];
+    $v = ['datum' => substr($ur['Datum'], 0, 10), 'vrsta' => $ur['VrstaAkcijeId'] ?? -1, 'naziv' => $ur['VrstaSlobodno'] ?? '', 'sati' => $ur['Sati'] !== null ? (string) (float) $ur['Sati'] : '', 'opis' => $ur['Opis'] ?? '', 'pas' => (string) ($ur['PasId'] ?? ''),
+        'oprema' => array_column(oprema_lista($ur['Oprema']), 'id')];
 }
 if (isset($_SESSION['moja_akcija'])) {
     $v = array_merge($v, array_intersect_key($_SESSION['moja_akcija'], $v));
@@ -118,6 +120,27 @@ ob_start(); ?>
                         function f() { var je = vr.value === pot; document.getElementById('potragaInfo').classList.toggle('d-none', !je);
                             ps.querySelectorAll('option[data-potraga]').forEach(function (o) { o.disabled = je && o.dataset.potraga !== '1'; if (o.disabled && o.selected) ps.value = ''; }); }
                         vr.addEventListener('change', f); f(); })();</script><?php endif; ?>
+                <div class="col-12" id="opremaClan" hidden>
+                    <div class="border rounded p-2 bg-light">
+                        <div class="small fw-semibold mb-1">🧰 Donio/la sam opremu <span class="fw-normal text-muted">(dodatni bodovi)</span></div>
+                        <div class="d-flex flex-wrap gap-2" id="opremaIzbor"></div>
+                    </div>
+                </div>
+                <script id="oprema-cfg" type="application/json"><?= json_encode(['oprema' => oprema_js(), 'odabrano' => array_map('intval', (array) $v['oprema'])], JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP) ?></script>
+                <script>(function () {
+                    var vr = document.querySelector('[name=vrsta]'), C = JSON.parse(document.getElementById('oprema-cfg').textContent), oz = (C.odabrano || []).map(String);
+                    var esc = function (t) { var d = document.createElement('div'); d.textContent = t; return d.innerHTML; };
+                    function f() {
+                        document.querySelectorAll('#opremaIzbor input:checked').forEach(function (x) { if (oz.indexOf(x.value) === -1) oz.push(x.value); });
+                        document.querySelectorAll('#opremaIzbor input:not(:checked)').forEach(function (x) { oz = oz.filter(function (y) { return y !== x.value; }); });
+                        var l = C.oprema[vr.value] || [];
+                        document.getElementById('opremaClan').hidden = !l.length;
+                        document.getElementById('opremaIzbor').innerHTML = l.map(function (o) {
+                            return '<label class="d-inline-flex align-items-center gap-2 border rounded px-2 py-1 m-0 bg-white"><input class="form-check-input m-0" type="checkbox" name="oprema[]" value="' + o.id + '"'
+                                + (oz.indexOf(String(o.id)) !== -1 ? ' checked' : '') + '> ' + esc(o.n) + (o.b ? ' <span class="text-success fw-semibold">+' + String(o.b).replace('.', ',') + ' b.</span>' : '') + '</label>';
+                        }).join('');
+                    }
+                    vr.addEventListener('change', f); f(); })();</script>
                 <div class="col-8 col-md-4"><label class="form-label small">Fotografija (neobavezno)</label><input type="file" name="foto" accept="image/*" data-smanji="1600" class="form-control"></div>
                 <div class="col-12"><label class="form-label small">Opis – što je napravljeno, gdje</label><textarea name="opis" rows="2" class="form-control"><?= e($v['opis']) ?></textarea></div>
             </div>
@@ -139,6 +162,7 @@ ob_start(); ?>
                 <?php if ($a['Bodovi'] !== null): ?><span class="badge bg-light text-dark border"><?= e(broj($a['Bodovi'], 2)) ?> b.</span><?php endif; ?></span>
         </div>
         <div class="fw-semibold"><?= e($a['VrstaNaziv'] ?? $a['VrstaSlobodno'] ?? '—') ?><?php if ($a['PasIme'] && !str_contains((string) $a['Opis'], (string) $a['PasIme'])): ?> <span class="fw-normal small">🐕 <?= e($a['PasIme']) ?></span><?php endif; ?></div>
+        <?php if ($a['Oprema']): ?><div class="small mt-1"><?= oprema_html($a['Oprema']) ?></div><?php endif; ?>
         <?php if ($a['Opis']): ?><div class="small mt-1"><?= e($a['Opis']) ?></div><?php endif; ?>
         <?php if ($a['FotoDatoteka']): ?><div class="small mt-1"><a href="<?= e(foto_url($a['FotoDatoteka'])) ?>" target="_blank">fotografija</a></div><?php endif; ?>
         <?php if ($a['RazlogOdbijanja']): ?><div class="small text-danger mt-1">Razlog odbijanja: <?= e($a['RazlogOdbijanja']) ?></div><?php endif; ?>

@@ -1,5 +1,12 @@
 # Promjene
 
+## 1.26.0 – 2026-10
+- **🧰 Dodatna oprema kod radnih akcija**: u Sustav → Vrste radnih akcija uz svaku vrstu upisujete opremu s dodatnim bodovima (npr. **Košnja**: Traktor +5, Trimer +2, Motorna pila +3).
+- **Nova radna akcija** (grupni unos): kad vrsta ima opremu, uz svakog označenog člana kvačicama odaberete što je donio (i/ili). Bodovi se zbrajaju **sami** (osnovni + oprema),
+  a bodove opreme za tu akciju možete **ručno** promijeniti. Gumb pokazuje ukupne bodove, uz člana njegov zbroj.
+- **Moje radne akcije**: član kod prijave označi opremu koju je donio; kod odobravanja se predlaže osnovno + oprema (admin i dalje može promijeniti).
+- Oprema se vidi uz akciju (Radne akcije, Moje radne akcije, kartica člana, izvještaj, PDF i CSV). Uz akciju se sprema naziv i bodovi opreme u tom trenutku – kasnija promjena bodova ne mijenja stare akcije.
+
 ## 1.25.0 – 2026-10
 - **🔔 Push obavijesti na mobitel** (Moje → Push obavijesti): stižu i kad je aplikacija zatvorena – besplatno, preko push servisa preglednika (bez SMS-a, bez dodatne aplikacije).
   Android (Chrome) odmah, iPhone od iOS 16.4 kad je aplikacija na početnom zaslonu. Gumb **Pošalji probnu**, popis vlastitih uređaja.

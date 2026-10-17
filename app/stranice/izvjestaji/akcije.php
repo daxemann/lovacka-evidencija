@@ -224,7 +224,7 @@ ob_start(); ?>
         <tbody>
         <?php foreach ($g['retci'] as $r): ?>
             <tr><td class="text-nowrap"><?= e(date('d.m.Y', strtotime($r['Datum']))) ?></td><td><?= e($r['Clan']) ?></td><td><?= e($r['Sekcija']) ?></td><td><?= e($r['Vrsta']) ?></td>
-                <td class="text-end"><?= e(broj($r['Sati'])) ?></td><td class="small"><?= e($r['Opis']) ?></td><td><?= STATUSI_AKCIJE[$r['Status']] ?></td><td class="text-end"><?= e(broj($r['Bodovi'], 2)) ?></td></tr>
+                <td class="text-end"><?= e(broj($r['Sati'])) ?></td><td class="small"><?= !empty($r['Oprema']) ? '<div>' . oprema_html($r['Oprema']) . '</div>' : '' ?><?= e($r['Opis']) ?></td><td><?= STATUSI_AKCIJE[$r['Status']] ?></td><td class="text-end"><?= e(broj($r['Bodovi'], 2)) ?></td></tr>
         <?php endforeach; ?>
         <tr class="fw-bold"><td colspan="4">Ukupno (<?= count($g['retci']) ?>)</td><td class="text-end"><?= e(broj(ukupno_sati($g['retci']))) ?></td><td colspan="2"></td><td class="text-end"><?= e(broj(ukupno_bodova($g['retci']), 2)) ?></td></tr>
         </tbody>

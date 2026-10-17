@@ -22,6 +22,7 @@ if ($k['ClanId']) {
 <ul>
 <li><b>Moje radne akcije:</b> upišite što ste radili (vrsta, datum, opis, po želji fotografija) i dodirnite <b>Pošalji na odobrenje</b>.
 Bodovi vrijede tek kad akciju odobri uprava. Dok nije odobrena, možete je urediti ili obrisati. Gore vidite bodove u lovnoj godini (1.4.–31.3.).</li>
+<li><b>Dodatna oprema:</b> kod nekih vrsta (npr. Košnja) kvačicom označite što ste donijeli – traktor, trimer, motorna pila… Svaka oprema donosi dodatne bodove.</li>
 <li><b>Potraga s psom (krvni trag)</b> prijavljuje se isto u Moje radne akcije, uz odabir psa.</li>
 <li><b>Moj profil:</b> fotografija, kontakt, <b>što drugi vide u Imeniku</b> (mobitel, e-mail, adresa – vi odlučujete), <b>moja vozila</b> (reg. oznake za dezinfekciju) i <b>moji lovački psi</b> s ispitima.</li>'
     . (uplatnica_za_clanove() ? '
@@ -105,7 +106,8 @@ if (ima(P_CLANARINA_CITAJ)) {
     $udruga .= '<li><b>Članarina:</b> plan plaćanja po godini (jednokratno ili 1–12 rata), uplate se raspoređuju po ratama, filtar „Dospjela rata“. Odabranim članovima uplatnice šaljete e-poštom / WhatsAppom / Viberom ili ispisujete (3 po A4).</li>';
 }
 if (ima(P_AKCIJE_CITAJ) || ima(P_AKCIJE_ODOBRI)) {
-    $udruga .= '<li><b>Radne akcije:</b> prijave članova čekaju odobrenje (broj u izborniku). <b>Nova radna akcija</b> – upišete jednom i označite sve koji su bili. Psi (posjed 1.1., pas na lovu) dolaze sami na odobrenje.</li>';
+    $udruga .= '<li><b>Radne akcije:</b> prijave članova čekaju odobrenje (broj u izborniku). <b>Nova radna akcija</b> – upišete jednom i označite sve koji su bili. Psi (posjed 1.1., pas na lovu) dolaze sami na odobrenje.</li>'
+        . '<li><b>Dodatna oprema</b> (Sustav → Vrste radnih akcija): uz vrstu upišite opremu s bodovima (npr. Košnja: Traktor +5, Trimer +2). Kod nove akcije uz svakog člana kvačicom označite što je donio – bodovi se zbrajaju sami, a bodove opreme i osnovne možete prije spremanja promijeniti. Kod odobravanja prijava predlaže se osnovno + oprema.</li>';
 }
 if (ima(P_IZVJESTAJI)) {
     $udruga .= '<li><b>Izvještaj radnih akcija:</b> razdoblje (i lovna godina), grupiranje po članu/mjesecu/vrsti/sekciji, ispis, PDF, slanje e-poštom – član dobiva samo svoje.</li>';

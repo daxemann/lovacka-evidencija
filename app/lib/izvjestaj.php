@@ -179,7 +179,7 @@ function izvjestaj_csv(array $grupe): string
     foreach ($grupe as $g) {
         foreach ($g['retci'] as $r) {
             $o .= implode(';', [$esc($g['naziv']), date('d.m.Y', strtotime($r['Datum'])), $esc($r['Clan']), $esc($r['Sekcija']), $esc($r['Vrsta']),
-                $broj($r['Sati']), $esc($r['Opis']), STATUSI_AKCIJE[$r['Status']], $broj($r['Bodovi'])]) . "\r\n";
+                $broj($r['Sati']), $esc(trim((!empty($r['Oprema']) ? 'Oprema: ' . oprema_tekst($r['Oprema']) . '. ' : '') . $r['Opis'])), STATUSI_AKCIJE[$r['Status']], $broj($r['Bodovi'])]) . "\r\n";
         }
     }
     return $o;
@@ -198,7 +198,7 @@ function izvjestaj_html(array $grupe, string $naslov, bool $zaPdf = false, bool 
         $o .= "<table $t><thead><tr><th>Datum</th><th>Član</th>" . ($sekcijaStupac ? '<th>Sekcija</th>' : '') . "<th>Vrsta</th><th>Sati</th><th>Opis</th><th>Status</th><th>Bodovi</th></tr></thead><tbody>";
         foreach ($g['retci'] as $r) {
             $o .= '<tr><td>' . date('d.m.Y', strtotime($r['Datum'])) . '</td><td>' . e($r['Clan']) . '</td>' . ($sekcijaStupac ? '<td>' . e($r['Sekcija']) . '</td>' : '') . '<td>' . e($r['Vrsta']) . '</td><td class="d">'
-                . broj($r['Sati']) . '</td><td>' . e($r['Opis']) . '</td><td>' . STATUSI_AKCIJE[$r['Status']] . '</td><td class="d">' . broj($r['Bodovi'], 2) . '</td></tr>';
+                . broj($r['Sati']) . '</td><td>' . (!empty($r['Oprema']) ? '<i>Oprema: ' . e(oprema_tekst($r['Oprema'])) . '</i> ' : '') . e($r['Opis']) . '</td><td>' . STATUSI_AKCIJE[$r['Status']] . '</td><td class="d">' . broj($r['Bodovi'], 2) . '</td></tr>';
         }
         $o .= "<tr class='uk'><td colspan='" . ($sekcijaStupac ? 4 : 3) . "'><b>Ukupno</b></td><td class='d'><b>" . broj(ukupno_sati($g['retci'])) . "</b></td><td colspan='2'></td><td class='d'><b>"
             . broj(ukupno_bodova($g['retci']), 2) . '</b></td></tr></tbody></table>';

@@ -17,6 +17,27 @@ if (je_post()) {
             }
             azuriraj('VrsteAkcija', (int) $id, ['Naziv' => mb_substr($n, 0, 100), 'StandardniBodovi' => dec(u_broj($v['Bodovi'] ?? '') ?? 0.0), 'Aktivna' => isset($v['Aktivna']) ? 1 : 0]);
         }
+        // dodatna oprema: postojeće (izmjena / brisanje) i nove stavke
+        foreach ((array) ($_POST['o'] ?? []) as $oid => $o) {
+            $n = mb_substr(trim((string) ($o['Naziv'] ?? '')), 0, 60);
+            if (isset($o['Obrisi']) || $n === '') {
+                q('DELETE FROM VrstaOprema WHERE Id=?', [(int) $oid]);
+            } else {
+                azuriraj('VrstaOprema', (int) $oid, ['Naziv' => $n, 'Bodovi' => dec(u_broj($o['Bodovi'] ?? '') ?? 0.0), 'Redoslijed' => (int) ($o['Red'] ?? 0)]);
+            }
+        }
+        foreach ((array) ($_POST['on'] ?? []) as $vid => $redovi) {
+            if (!vrijednost('SELECT 1 FROM VrsteAkcija WHERE Id=?', [(int) $vid])) {
+                continue;
+            }
+            $red = (int) vrijednost('SELECT COALESCE(MAX(Redoslijed),0) FROM VrstaOprema WHERE VrstaAkcijeId=?', [(int) $vid]);
+            foreach ((array) $redovi as $o) {
+                $n = mb_substr(trim((string) ($o['Naziv'] ?? '')), 0, 60);
+                if ($n !== '') {
+                    umetni('VrstaOprema', ['VrstaAkcijeId' => (int) $vid, 'Naziv' => $n, 'Bodovi' => dec(u_broj($o['Bodovi'] ?? '') ?? 0.0), 'Redoslijed' => ++$red]);
+                }
+            }
+        }
         dnevnik('Uređene vrste radnih akcija');
         poruka('Spremljeno.');
     }
@@ -25,7 +46,8 @@ if (je_post()) {
 $vrste = redovi('SELECT v.*, (SELECT COUNT(*) FROM RadneAkcije a WHERE a.VrstaAkcijeId=v.Id) AS Broj FROM VrsteAkcija v ORDER BY v.Aktivna DESC, v.Naziv');
 ob_start(); ?>
 <h1 class="h3 mb-1">Vrste radnih akcija</h1>
-<p class="text-muted">Standardni bodovi se predlažu kod odobravanja – admin ih uvijek može promijeniti.</p>
+<p class="text-muted">Standardni bodovi se predlažu kod odobravanja – admin ih uvijek može promijeniti.
+    <b>Dodatna oprema</b> (npr. kod košnje traktor, trimer, motorna pila) daje dodatne bodove onome tko ju je donio – nudi se kao kvačica kod upisa akcije.</p>
 <form method="post" action="<?= e(url('akcije/vrste')) ?>" style="max-width:760px"><?= csrf() ?>
 <table class="table align-middle">
     <thead><tr><th>Naziv</th><th style="width:9rem">Standardni bodovi</th><th>Aktivna</th><th class="text-muted small">korišteno</th></tr></thead>
@@ -37,6 +59,31 @@ ob_start(); ?>
             <td><input type="checkbox" class="form-check-input" name="v[<?= $i ?>][Aktivna]" value="1"<?= chk($v['Aktivna']) ?>></td>
             <td class="small text-muted"><?= (int) $v['Broj'] ?>×</td>
         </tr>
+        <?php $opr = oprema_vrste($i); ?>
+        <tr class="oprema-red"><td colspan="4" class="pt-0 border-top-0">
+            <details<?= $opr ? ' open' : '' ?>><summary class="small text-muted">🧰 Dodatna oprema<?= $opr ? ': ' . e(implode(', ', array_map(fn($o) => $o['Naziv'] . ' +' . broj($o['Bodovi'], 1), $opr))) : ' (nema)' ?></summary>
+                <div class="ps-3 pt-2" style="max-width:520px">
+                <?php foreach ($opr as $o): $oi = (int) $o['Id']; ?>
+                    <div class="input-group input-group-sm mb-1">
+                        <input name="o[<?= $oi ?>][Naziv]" class="form-control" maxlength="60" value="<?= e($o['Naziv']) ?>" aria-label="Oprema">
+                        <span class="input-group-text">+</span>
+                        <input name="o[<?= $oi ?>][Bodovi]" type="number" step="0.5" min="0" class="form-control" style="max-width:6rem" value="<?= e((string) (float) $o['Bodovi']) ?>" aria-label="Bodovi">
+                        <span class="input-group-text">b.</span>
+                        <input type="hidden" name="o[<?= $oi ?>][Red]" value="<?= (int) $o['Redoslijed'] ?>">
+                        <label class="input-group-text text-danger" title="Obriši"><input type="checkbox" class="form-check-input mt-0 me-1" name="o[<?= $oi ?>][Obrisi]" value="1">✕</label>
+                    </div>
+                <?php endforeach; ?>
+                <?php for ($n = 0; $n < ($opr ? 1 : 3); $n++): ?>
+                    <div class="input-group input-group-sm mb-1">
+                        <input name="on[<?= $i ?>][<?= $n ?>][Naziv]" class="form-control" maxlength="60" placeholder="<?= e(['npr. Traktor', 'npr. Trimer', 'npr. Motorna pila'][$n] ?? 'nova oprema') ?>" aria-label="Nova oprema">
+                        <span class="input-group-text">+</span>
+                        <input name="on[<?= $i ?>][<?= $n ?>][Bodovi]" type="number" step="0.5" min="0" class="form-control" style="max-width:6rem" placeholder="0" aria-label="Bodovi">
+                        <span class="input-group-text">b.</span>
+                    </div>
+                <?php endfor; ?>
+                </div>
+            </details>
+        </td></tr>
     <?php endforeach; ?>
     </tbody>
 </table>
