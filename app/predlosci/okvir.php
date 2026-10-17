@@ -73,6 +73,7 @@ $glUTijeku = $glMoj && (int) $glMoj['ja']['Odgovor'] === 1 && $glMoj['ja']['Otis
                     <?= $stavka('pocetna', '🏠 Početna', 0, true) ?>
                     <?= $stavka('skeniraj', '📷 Skeniraj QR stanice', 0, true) ?>
                     <?= $stavka('kalendar', '📅 Kalendar') ?>
+                    <?php if (dom_ima_vidljivih() || ima(P_DOMOVI)) echo $stavka('domovi', '🏡 Lovački domovi', dom_broj_na_cekanju()); ?>
                     <?php if ($glVidljivo) echo $stavka('grupni-lov', $glAktivan ? '🎯 Grupni lov – u tijeku' : '🎯 Grupni lov', $glBroj); ?>
                     <?php if ($k['ClanId']) echo $grupa('moje', 'Moje', $stavka('moje-akcije', '🛠️ Moje radne akcije') . (uplatnica_za_clanove() ? $stavka('uplatnica', '💳 Moja uplatnica', 0, true) : '') . $stavka('moj-profil', '👤 Moj profil') . $stavka('push', '🔔 Push obavijesti') . $stavka('moja-prava', '🔑 Moja prava')); ?>
                     <?php $revirSek = revir_sekcije(); if ($revirSek || ima(P_SUSTAV)) echo $grupa('loviste', 'Lovište',

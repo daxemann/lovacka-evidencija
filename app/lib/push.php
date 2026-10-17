@@ -13,6 +13,7 @@ const PUSH_VRSTE = [
     'obavijesti' => ['📢 Obavijesti udruge', 'nova obavijest uprave'],
     'akcije' => ['🛠️ Radne akcije', 'vaša prijava odobrena / odbijena; prijave koje čekaju vaše odobrenje'],
     'kvarovi' => ['🔧 Kvarovi na napravama', 'nova prijava kvara, preuzeto, riješeno (lovočuvar / lovne naprave)'],
+    'domovi' => ['🏡 Lovački domovi', 'vaša rezervacija odobrena / odbijena / otkazana; novi zahtjevi za rezervaciju (upravitelj doma)'],
     'loviste' => ['🌲 Zauzimanje čeka', 'tko je zauzeo ili oslobodio napravu u vašoj sekciji (nadzor lovišta)'],
 ];
 

@@ -40,6 +40,20 @@ $o('kalendar', '📅 Kalendar', '
 <li><i>Uređivanje:</i> novi termin za cijelu udrugu ili odabrane sekcije (ostali ga ne vide). Nakon radne akcije jednim klikom upišete akciju svima koji su potvrdili dolazak.</li>' : '') . '
 </ul>');
 
+if (dom_ima_vidljivih() || ima(P_DOMOVI)) {
+    $o('domovi', '🏡 Lovački domovi – rezervacija', '
+<ul>
+<li><b>🏡 Lovački domovi</b> pokazuje domove cijele udruge i vaše sekcije – fotografija, kapacitet, tko ima ključ i <b>🧭 Navigacija</b> do doma.</li>
+<li>Kalendar doma: zeleno = slobodno, žuto = na čekanju, crveno = zauzeto, plavo = događaj udruge. Ostali vide samo „zauzeto“ i ime – razlog vidi samo upravitelj doma.</li>
+<li><b>Rezervacija:</b> dodirnite slobodan dan (ili upišite od – do). Uvijek cijeli dan(i), najviše ' . DOM_MAX_MJESECI . ' mjeseci unaprijed. Zahtjev odobrava upravitelj doma – stiže vam obavijest.</li>
+<li>Isti dani ne mogu se rezervirati dvaput. <b>Događaj udruge ima prednost</b>: ako uprava u vašem terminu zakaže događaj, vaša rezervacija se otkazuje i dobivate obavijest.</li>
+<li>Svoju rezervaciju otkazujete u <b>Moje rezervacije</b> ili u popisu ispod kalendara.</li>'
+    . (ima(P_DOMOVI) ? '
+<li><i>Upravitelj doma:</i> <b>➕ Novi lovački dom</b> (za cijelu udrugu ili sekciju, položaj dodirom na kartu ili <b>📍 Moja pozicija</b>). Zahtjevi na čekanju: <b>Odobri / Odbij</b> s napomenom.
+<b>🏛️ Događaj udruge</b> vrijedi odmah; ako se preklapa s privatnim rezervacijama, program ih nabroji i otkazuje tek nakon potvrde. PDF plan zauzeća.</li>' : '') . '
+</ul>');
+}
+
 $o('dezinfekcija-upis', '🧴 Dezinfekcija – upis na stanici', '
 <ol>
 <li>Na dezinfekcijskoj stanici skenirajte <b>QR oznaku</b> – najbolje u programu: <b>📷 Skeniraj QR stanice</b> (na iPhoneu obavezno ovako, ne kamerom mobitela).</li>

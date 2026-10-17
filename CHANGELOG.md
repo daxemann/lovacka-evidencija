@@ -1,5 +1,17 @@
 # Promjene
 
+## 1.28.0 – 2026-10
+- **🏡 Lovački domovi** (novo u izborniku): domovi za **cijelu udrugu** ili za **sekciju** (sekcije i ovdje odvojene – dom sekcije vide i rezerviraju samo njezini članovi).
+  Naziv, fotografija, opis, kapacitet, tko ima ključ, **položaj na karti** (dodir na kartu, povlačenje pina ili **📍 Moja pozicija**) i gumb **🧭 Navigacija** za dolazak. Karta svih domova s granicama lovišta.
+- **Kalendar zauzeća** po domu (mjesec): slobodno / na čekanju / zauzeto / događaj udruge. Dodir na slobodan dan otvara rezervaciju.
+- **Rezervacija uvijek za cijele dane**, najviše **12 mjeseci unaprijed**. Dvostruka rezervacija nije moguća (i kod istodobnog slanja).
+- **Privatno** (član): zahtjev ide **na čekanje** – upravitelj doma **odobrava / odbija** (s napomenom), član dobiva push obavijest. Dok čeka, isti dani su blokirani.
+- **Događaj udruge** (upravitelj): vrijedi odmah i **ima prednost** – privatne rezervacije u tom razdoblju program nabroji i nakon potvrde otkazuje, članovi dobivaju obavijest s razlogom.
+- **Privatnost**: ostali vide samo „Zauzeto od – do · ime“, bez razloga; napomenu vidi samo upravitelj doma.
+- **Moje rezervacije** s otkazivanjem; upravitelj vidi **zahtjeve na čekanju** (broj u izborniku), **PDF plan zauzeća**.
+- Novo pravo **Lovački domovi – upravljanje** (Sustav → Uloge i prava; zadano Glavni admin, Predsjednik / Tajnik, Domar). Dom cijele udruge uređuje samo uloga za sve sekcije.
+- Nova vrsta push obavijesti **🏡 Lovački domovi** (može se isključiti).
+
 ## 1.27.2 – 2026-10
 - **Ispravka:** u Sustav → Uloge i prava nedostajao je stupac **Grupni lov – organizacija** – pravo se sada može dodijeliti svakoj ulozi.
 

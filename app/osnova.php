@@ -5,7 +5,7 @@
  */
 declare(strict_types=1);
 
-const VERZIJA = '1.27.2';
+const VERZIJA = '1.28.0';
 const KONTAKT_EMAIL = 'daxemann@googlemail.com';
 const PODRSKA_PAYPAL = 'darko.bakic@freenet.de'; // dobrovoljna podrška razvoju (Pomoć i kontakt)
 const PROJEKT_URL = 'https://github.com/daxemann/lovacka-evidencija';
@@ -35,8 +35,9 @@ const P_INVENTURA = 524288;
 const P_INVENTURA_UREDI = 1048576;
 const P_OBAVIJESTI = 2097152;
 const P_GRUPNI_LOV = 4194304;
+const P_DOMOVI = 8388608;
 const P_OSNOVNA = 255; // prava iz .NET verzije
-const P_SVE = 8388607;
+const P_SVE = 16777215;
 
 const PRAVA_OPIS = [
     P_CLANOVI_CITAJ => ['Članovi – pregled', 'vidi popis članova i njihove podatke'],
@@ -61,6 +62,7 @@ const PRAVA_OPIS = [
     P_INVENTURA_UREDI => ['Inventura – uređivanje', 'dodaje i briše mape i stavke, upisuje „treba“ i „stvarno“, nova inventura, preuzimanje stanja'],
     P_OBAVIJESTI => ['Obavijesti – slanje', 'šalje obavijesti članovima svojih sekcija (svima, sekciji, funkciji ili odabranima), po želji s obaveznom potvrdom „Pročitao/la sam“; vidi tko je potvrdio, bilježi usmeno obaviještene, PDF'],
     P_GRUPNI_LOV => ['Grupni lov – organizacija', 'pokreće grupni lov za sekcije u svom opsegu (poziv svima na mobitel), vidi uživo položaj sudionika na karti, prima SOS i upozorenje o gubitku signala, završava lov'],
+    P_DOMOVI => ['Lovački domovi – upravljanje', 'dodaje i uređuje lovačke domove (položaj, fotografija) za sekcije u svom opsegu, odobrava i odbija privatne rezervacije, upisuje događaje udruge (imaju prednost), otkazuje rezervacije'],
     P_REVIR_DNEVNIK => ['Lovište – lovački dnevnik', 'vidi lovački dnevnik (tko, kada, gdje) za sekcije u svom opsegu, ispis i PDF; bez ovog prava dnevnik se ne prikazuje'],
 ];
 
@@ -144,7 +146,7 @@ function db(bool $novo = false): PDO
  * Dodatne tablice PHP verzije (PRAGMA user_version). .NET verzija ih ne poznaje i zanemaruje,
  * pa baza i dalje radi u oba smjera.
  */
-const SHEMA_PHP = 25;
+const SHEMA_PHP = 26;
 function nadogradi_bazu(PDO $pdo): void
 {
     $v = (int) $pdo->query('PRAGMA user_version')->fetchColumn();
@@ -655,6 +657,42 @@ SQL);
             CREATE INDEX IF NOT EXISTS "IX_GrupniLovSudionici_Korisnik" ON "GrupniLovSudionici" ("KorisnikId");
             CREATE UNIQUE INDEX IF NOT EXISTS "IX_GrupniLovSudionici_Token" ON "GrupniLovSudionici" ("Token");
             UPDATE "Uloge" SET "Prava" = "Prava" | 4194304 WHERE ("Prava" & 4194303) = 4194303 OR "Naziv" LIKE \'Lovnik%\';');
+    }
+    if ($v < 26) {
+        // Lovački domovi: dom za cijelu udrugu ili sekciju, rezervacije po danima (privatno na odobrenje, događaj udruge ima prednost)
+        $pdo->exec('CREATE TABLE IF NOT EXISTS "LovackiDomovi" (
+                "Id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                "Naziv" TEXT NOT NULL,
+                "SekcijaId" INTEGER NULL REFERENCES "Sekcije" ("Id") ON DELETE SET NULL,
+                "Opis" TEXT NULL,
+                "Kapacitet" INTEGER NULL,
+                "Kontakt" TEXT NULL,
+                "Lat" REAL NULL,
+                "Lon" REAL NULL,
+                "Foto" TEXT NULL,
+                "Aktivan" INTEGER NOT NULL DEFAULT 1,
+                "Redoslijed" INTEGER NOT NULL DEFAULT 0,
+                "Kreirano" TEXT NOT NULL,
+                "Azurirano" TEXT NULL);
+            CREATE TABLE IF NOT EXISTS "DomRezervacije" (
+                "Id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                "DomId" INTEGER NOT NULL REFERENCES "LovackiDomovi" ("Id") ON DELETE CASCADE,
+                "Od" TEXT NOT NULL,
+                "Do" TEXT NOT NULL,
+                "Vrsta" TEXT NOT NULL,
+                "Status" TEXT NOT NULL,
+                "Naslov" TEXT NULL,
+                "Napomena" TEXT NULL,
+                "ClanId" INTEGER NULL REFERENCES "Clanovi" ("Id") ON DELETE SET NULL,
+                "KorisnikId" INTEGER NULL,
+                "Ime" TEXT NOT NULL,
+                "Kreirano" TEXT NOT NULL,
+                "ObradioIme" TEXT NULL,
+                "Obradjeno" TEXT NULL,
+                "Razlog" TEXT NULL);
+            CREATE INDEX IF NOT EXISTS "IX_DomRezervacije_Dom" ON "DomRezervacije" ("DomId", "Od", "Do");
+            CREATE INDEX IF NOT EXISTS "IX_DomRezervacije_Status" ON "DomRezervacije" ("Status");
+            UPDATE "Uloge" SET "Prava" = "Prava" | 8388608 WHERE ("Prava" & 8388607) = 8388607 OR "Naziv" = \'Domar\' OR "Naziv" LIKE \'Predsjednik%\';');
     }
     $pdo->exec('PRAGMA user_version = ' . SHEMA_PHP);
     $pdo->commit();

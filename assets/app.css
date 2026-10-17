@@ -509,3 +509,27 @@ main {
 .gl-poziv-okvir { text-align: center; }
 .gl-poziv-okvir .gl-poziv-ikona { font-size: 2.6rem; line-height: 1; }
 @media print { .gl-u-tijeku, .gl-sos-gumb { display: none !important; } }
+
+/* ---------- Lovački domovi ---------- */
+.dom-karta { height: 360px; border-radius: 8px; border: 1px solid #dee2e6; }
+.dom-foto { height: 170px; object-fit: cover; }
+.dom-foto-mala { width: 180px; max-width: 45vw; height: 120px; object-fit: cover; border-radius: 6px; }
+.dom-pin { font-size: 22px; line-height: 34px; text-align: center; width: 34px; height: 34px; background: #fff; border: 2px solid #3d6b2f; border-radius: 50%; box-shadow: 0 1px 4px rgba(0,0,0,.35); }
+.dom-mini { border-left: 3px solid #6c757d; padding-left: .35rem; margin-top: 2px; }
+.dom-mini.odobreno { border-color: #c62828; } .dom-mini.ceka { border-color: #ffb300; } .dom-mini.udruga { border-color: #1f5fa8; }
+.dom-kal .kal-dan { position: relative; min-height: 4.6rem; }
+.dom-kal .dom-slobodno { background: #f1f8ee; }
+.dom-kal .dom-odobreno { background: #fde3e3; }
+.dom-kal .dom-ceka { background: #fff4d1; }
+.dom-kal .dom-udruga { background: #dde9f8; }
+.dom-kal .dom-prosli { opacity: .55; }
+.dom-kal .kal-van.dom-slobodno { background: #f7fbf5; }
+.dom-dan-link { display: block; position: absolute; inset: 0; padding: .15rem; color: inherit; text-decoration: none; }
+.dom-dan-link:hover { background: rgba(61,107,47,.12); }
+.dom-oznaka { font-size: .7rem; line-height: 1.15; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; word-break: break-word; }
+.dom-legenda { display: flex; flex-wrap: wrap; gap: .6rem; }
+.dom-legenda i { display: inline-block; width: .8rem; height: .8rem; border-radius: 2px; vertical-align: -1px; border: 1px solid #ccc; }
+.dom-legenda .slobodno { background: #f1f8ee; } .dom-legenda .ceka { background: #fff4d1; } .dom-legenda .odobreno { background: #fde3e3; } .dom-legenda .udruga { background: #dde9f8; }
+.dom-red.odobreno { border-left: 4px solid #c62828; } .dom-red.ceka { border-left: 4px solid #ffb300; } .dom-red.udruga { border-left: 4px solid #1f5fa8; }
+.dom-red.otkazano, .dom-red.odbijeno { border-left: 4px solid #adb5bd; opacity: .7; }
+@media (max-width: 640px) { .dom-kal .kal-dan { min-height: 3.8rem; } .dom-oznaka { font-size: .58rem; -webkit-line-clamp: 2; } .dom-legenda { display: none; } }

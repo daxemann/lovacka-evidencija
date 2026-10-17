@@ -24,6 +24,9 @@ if (!$dozvoljeno && str_starts_with($ime, 'dok-')) {
 } elseif (!$dozvoljeno && str_starts_with($ime, 'naprava-')) {
     $n = red('SELECT SekcijaId FROM RevirNaprave WHERE Foto=?', [$ime]);
     $dozvoljeno = $n && revir_moze_vidjeti($n['SekcijaId'] !== null ? (int) $n['SekcijaId'] : null);
+} elseif (!$dozvoljeno && str_starts_with($ime, 'dom-')) {
+    $dm = red('SELECT SekcijaId FROM LovackiDomovi WHERE Foto=?', [$ime]);
+    $dozvoljeno = $dm && (dom_vidi($dm) || dom_upravlja($dm));
 } elseif (!$dozvoljeno) {
     $c = red('SELECT Id, SekcijaId FROM Clanovi WHERE FotoDatoteka=?', [$ime]);
     if ($c) {

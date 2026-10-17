@@ -71,6 +71,9 @@ Pas uz lovca, bodovi za psa.
 #### 📅 Kalendar
 Termini za udrugu ili sekciju, „dolazim / ne dolazim“, pretplata u kalendar mobitela.
 
+#### 🏡 Lovački domovi
+Domovi udruge i sekcija na karti s navigacijom. Rezervacija po danima (privatno na odobrenje, događaj udruge ima prednost), kalendar zauzeća bez dvostrukih rezervacija, PDF plan.
+
 </td>
 <td width="50%" valign="top">
 
