@@ -1,5 +1,8 @@
 # Promjene
 
+## 1.27.2 – 2026-10
+- **Ispravka:** u Sustav → Uloge i prava nedostajao je stupac **Grupni lov – organizacija** – pravo se sada može dodijeliti svakoj ulozi.
+
 ## 1.27.1 – 2026-10
 - **SOS u grupnom lovu stiže svima koji su u lovu**: organizatoru, svakome s pravom „Grupni lov – organizacija“ za tu sekciju (npr. **Lovnik na licu mjesta**) i svim sudionicima.
   Svaki sudionik vidi crvenu SOS traku s telefonom i može dodirnuti **🚑 Idem pomoći** – lovac dobiva „Pomoć stiže“, ostali vide tko je krenuo.
