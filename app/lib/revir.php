@@ -303,6 +303,7 @@ function revir_stanje(array $sekcije): array
             $zauz[(int) $z['NapravaId']] = $z;
         }
     }
+    $kvarovi = revir_kvarovi_za(array_map(fn($n) => (int) $n['Id'], $naprave));
     $out = [];
     foreach ($naprave as $n) {
         $sid = $n['SekcijaId'] !== null ? (int) $n['SekcijaId'] : null;
@@ -318,6 +319,7 @@ function revir_stanje(array $sekcije): array
                 'odDatum' => datum($z['Od']), 'moje' => $k['ClanId'] !== null && (int) $z['ClanId'] === (int) $k['ClanId'],
             ] : null,
             'mozeZauzeti' => revir_moze_zauzeti($sid) && revir_zauzima_se($n), 'mozeObrisati' => revir_moze_nadzor($sid), 'mozeUrediti' => revir_moze_urediti($sid),
+            'kvarovi' => $kvarovi[(int) $n['Id']] ?? [], 'mozeKvar' => revir_moze_kvar($sid),
         ];
     }
     return $out;
@@ -530,4 +532,162 @@ function revir_dnevnik_dez(string $uvjet, string $od, string $do, ?int $sekcija)
         $dodaj($r, null);
     }
     return $out;
+}
+
+// ---------- Kvarovi na lovnim napravama ----------
+// Prijaviti može svatko tko vidi napravu; popis vide svi lovci sekcije. Preuzimanje, „riješeno“ i brisanje:
+// tko smije uređivati naprave ili ima nadzor u toj sekciji; prijavitelj smije svoju prijavu označiti riješenom ili povući dok je otvorena.
+const KVAR_STATUSI = ['otvoreno' => 'Otvoreno', 'u_radu' => 'U radu', 'rijeseno' => 'Riješeno'];
+
+function revir_kvar(int $id): ?array
+{
+    return red('SELECT * FROM RevirKvarovi WHERE Id=?', [$id]);
+}
+function revir_kvar_sid(array $kv): ?int
+{
+    return $kv['SekcijaId'] !== null ? (int) $kv['SekcijaId'] : null;
+}
+/** Smije li korisnik obrađivati kvarove sekcije (preuzeti, riješiti, obrisati). */
+function revir_moze_kvar(?int $sid): bool
+{
+    return revir_moze_urediti($sid) || revir_moze_nadzor($sid);
+}
+function revir_kvar_moj(array $kv): bool
+{
+    $k = korisnik();
+    return $k && (int) $kv['PrijavioKorisnikId'] === (int) $k['Id'];
+}
+/** SQL uvjet: kvarovi u sekcijama koje korisnik vidi na karti. */
+function revir_kvar_sql(array $sekcije, string $stupac = 'SekcijaId'): string
+{
+    if (!$sekcije) {
+        return '1=0';
+    }
+    $uv = [];
+    $ids = array_filter(array_keys($sekcije));
+    if ($ids) {
+        $uv[] = $stupac . ' IN (' . implode(',', array_map('intval', $ids)) . ')';
+    }
+    if (array_key_exists(0, $sekcije)) {
+        $uv[] = $stupac . ' IS NULL';
+    }
+    return '(' . implode(' OR ', $uv) . ')';
+}
+/** Broj otvorenih kvarova (izbornik) – samo za one koji ih obrađuju. */
+function revir_broj_kvarova(): int
+{
+    $sek = revir_sekcije();
+    if (!$sek || !(ima(P_REVIR_UREDI) || ima(P_REVIR_NADZOR))) {
+        return 0;
+    }
+    $n = 0;
+    foreach (redovi("SELECT SekcijaId FROM RevirKvarovi WHERE Status<>'rijeseno' AND " . revir_kvar_sql($sek)) as $r) {
+        $n += revir_moze_kvar($r['SekcijaId'] !== null ? (int) $r['SekcijaId'] : null) ? 1 : 0;
+    }
+    return $n;
+}
+/** Otvoreni kvarovi po napravi za kartu: [napravaId => [...]]. */
+function revir_kvarovi_za(array $napravaIds): array
+{
+    $out = [];
+    if (!$napravaIds) {
+        return $out;
+    }
+    foreach (redovi("SELECT * FROM RevirKvarovi WHERE Status<>'rijeseno' AND NapravaId IN (" . implode(',', array_map('intval', $napravaIds)) . ') ORDER BY Nesigurno DESC, Id DESC') as $kv) {
+        $out[(int) $kv['NapravaId']][] = revir_kvar_js($kv);
+    }
+    return $out;
+}
+function revir_kvar_js(array $kv): array
+{
+    return [
+        'id' => (int) $kv['Id'], 'opis' => $kv['Opis'], 'nesigurno' => (bool) $kv['Nesigurno'], 'status' => $kv['Status'],
+        'ime' => $kv['PrijavioIme'], 'datum' => datum($kv['Prijavljeno']), 'preuzeo' => $kv['PreuzeoIme'],
+        'foto' => $kv['Foto'] ? foto_url($kv['Foto']) : null, 'moje' => revir_kvar_moj($kv),
+    ];
+}
+
+/** Nova prijava kvara. Vraća poruku greške ili null. */
+function revir_kvar_prijavi(int $napravaId, string $opis, bool $nesigurno, ?array $foto): ?string
+{
+    $k = korisnik();
+    $n = revir_naprava($napravaId);
+    if (!$n) {
+        return 'Lovna naprava ne postoji.';
+    }
+    $sid = $n['SekcijaId'] !== null ? (int) $n['SekcijaId'] : null;
+    if (!revir_moze_vidjeti($sid)) {
+        return 'Kvar možete prijaviti samo za naprave svoje sekcije.';
+    }
+    $opis = mb_substr(trim($opis), 0, 500);
+    if ($opis === '') {
+        return 'Opišite kvar (npr. „slomljena prečka na ljestvama“).';
+    }
+    $datoteka = null;
+    if ($foto && ($foto['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
+        try {
+            $datoteka = spremi_sliku($foto, 'kvar-', 1600);
+        } catch (RuntimeException $e) {
+            return $e->getMessage();
+        }
+    }
+    $ime = $k['ClanId'] ? puno_ime(red('SELECT Ime, Prezime FROM Clanovi WHERE Id=?', [$k['ClanId']])) : $k['Naziv'];
+    $id = umetni('RevirKvarovi', [
+        'NapravaId' => $napravaId, 'Naprava' => revir_oznaka($n), 'SekcijaId' => $sid, 'Opis' => $opis, 'Nesigurno' => $nesigurno ? 1 : 0,
+        'Foto' => $datoteka, 'Status' => 'otvoreno', 'PrijavioClanId' => $k['ClanId'], 'PrijavioKorisnikId' => $k['Id'], 'PrijavioIme' => $ime, 'Prijavljeno' => sada(),
+    ]);
+    revir_obavijest($sid, 'kvar', ($nesigurno ? '⚠️ NESIGURNO – ' : '🔧 Kvar – ') . revir_oznaka($n) . ': ' . mb_substr($opis, 0, 120) . ' (' . $ime . ')');
+    dnevnik('Lovište – prijavljen kvar', 'RevirKvar', $id, revir_oznaka($n) . ' · ' . mb_substr($opis, 0, 120));
+    return null;
+}
+
+/** Preuzimanje / riješeno / ponovno otvoreno / brisanje. Vraća poruku greške ili null. */
+function revir_kvar_radnja(int $id, string $radnja, string $napomena = ''): ?string
+{
+    $k = korisnik();
+    $kv = revir_kvar($id);
+    if (!$kv) {
+        return null; // već obrisano
+    }
+    $sid = revir_kvar_sid($kv);
+    if (!revir_moze_vidjeti($sid)) {
+        return 'Nemate pristup ovoj sekciji.';
+    }
+    $obrada = revir_moze_kvar($sid);
+    $moj = revir_kvar_moj($kv);
+    $napomena = mb_substr(trim($napomena), 0, 500);
+    switch ($radnja) {
+        case 'preuzmi':
+            if (!$obrada) {
+                return 'Kvar preuzimaju lovočuvar ili zaduženi za lovne naprave.';
+            }
+            azuriraj('RevirKvarovi', $id, ['Status' => 'u_radu', 'PreuzeoIme' => $k['Naziv'], 'Preuzeto' => sada()]);
+            revir_obavijest($sid, 'kvar', '🛠️ ' . $kv['Naprava'] . ' – kvar preuzeo ' . $k['Naziv']);
+            dnevnik('Lovište – kvar preuzet', 'RevirKvar', $id, $kv['Naprava']);
+            return null;
+        case 'rijeseno':
+            if (!$obrada && !$moj) {
+                return 'Nemate pravo zatvoriti ovaj kvar.';
+            }
+            azuriraj('RevirKvarovi', $id, ['Status' => 'rijeseno', 'RijesioIme' => $k['Naziv'], 'Rijeseno' => sada(), 'Napomena' => $napomena !== '' ? $napomena : $kv['Napomena']]);
+            revir_obavijest($sid, 'kvar', '✅ ' . $kv['Naprava'] . ' – kvar riješen (' . $k['Naziv'] . ')' . ($napomena !== '' ? ': ' . mb_substr($napomena, 0, 120) : ''));
+            dnevnik('Lovište – kvar riješen', 'RevirKvar', $id, $kv['Naprava'] . ($napomena !== '' ? ' · ' . $napomena : ''));
+            return null;
+        case 'otvori':
+            if (!$obrada) {
+                return 'Nemate pravo.';
+            }
+            azuriraj('RevirKvarovi', $id, ['Status' => 'otvoreno', 'RijesioIme' => null, 'Rijeseno' => null, 'PreuzeoIme' => null, 'Preuzeto' => null]);
+            dnevnik('Lovište – kvar ponovno otvoren', 'RevirKvar', $id, $kv['Naprava']);
+            return null;
+        case 'obrisi':
+            if (!$obrada && !($moj && $kv['Status'] === 'otvoreno')) {
+                return 'Prijavu može obrisati lovočuvar ili prijavitelj dok nije preuzeta.';
+            }
+            q('DELETE FROM RevirKvarovi WHERE Id=?', [$id]);
+            obrisi_sliku($kv['Foto']);
+            dnevnik('Lovište – obrisana prijava kvara', 'RevirKvar', $id, $kv['Naprava'] . ' · ' . mb_substr($kv['Opis'], 0, 120));
+            return null;
+    }
+    return 'Nepoznata radnja.';
 }

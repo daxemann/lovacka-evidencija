@@ -60,11 +60,16 @@ if ($revir) {
 <li>Dodir na napravu → <b>Zauzmi – sjedim ovdje</b>. Kad idete, dodirnite <b>Odlazim</b>. Ako zaboravite, naprava se sama oslobodi u 03:00.</li>
 <li><b>Gost</b> sjedi na drugoj napravi: <b>Zauzmi za gosta</b> – za gosta odgovarate vi.</li>
 <li>Prelaskom na drugu napravu stara se sama oslobađa.</li>
-<li><b>Danas u lovištu:</b> tko gdje sjedi danas.</li>'
+<li><b>Danas u lovištu:</b> tko gdje sjedi danas.</li>
+<li><b>Kvar na napravi</b> (slomljena prečka, krov, ljestve…): dodir na napravu → <b>🔧 Prijavi kvar</b>, kratki opis, po želji fotografija.
+Ako je opasno, označite <b>Nesigurno</b> – svi vide crveni ⚠ na karti. Popis svih prijava: <b>Lovište → Kvarovi na napravama</b>.
+Svoju prijavu možete označiti riješenom ili je povući dok je nitko nije preuzeo.</li>'
     . (ima(P_REVIR_DNEVNIK) ? '
 <li><b>Lovački dnevnik</b> nastaje sam (tko, kada, gdje) iz zauzeća naprava i dolazaka iz knjige dezinfekcije; filtar po aktivnosti (lov, radna akcija, hranjenje…), ispis i PDF.</li>' : '')
     . (ima(P_REVIR_NADZOR) ? '
 <li><i>Nadzor:</i> 🔔 gore desno pokazuje zauzimanja i oslobađanja u vašoj sekciji; zauzeće možete obrisati.</li>' : '')
+    . (ima(P_REVIR_NADZOR) || ima(P_REVIR_UREDI) ? '
+<li><i>Kvarovi:</i> nova prijava stiže u 🔔. Na popisu kvarova: <b>Preuzimam</b> (svi vide tko radi na tome), <b>Riješeno</b> s napomenom, <b>Obriši</b>; PDF popis za obilazak ili radnu akciju.</li>' : '')
     . (ima(P_SUSTAV) || ima(P_REVIR_UREDI) ? '
 <li><i>Postavke lovišta:</i> granice iz KML/KMZ datoteke (Google My Maps / Earth), vrste naprava sa sličicama, nove naprave dodirom na kartu,
 <b>📍 Nova na mojoj poziciji</b> ili uvozom fotografija s GPS-om. Pin se može povući na točno mjesto.</li>' : '') . '

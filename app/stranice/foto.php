@@ -18,6 +18,9 @@ if (!$dozvoljeno && str_starts_with($ime, 'dok-')) {
         header('Content-Disposition: inline; filename="' . str_replace('"', '', dok_naziv_datoteke((string) $n)) . '.pdf"');
         posalji_datoteku($dat, 0);
     }
+} elseif (!$dozvoljeno && str_starts_with($ime, 'kvar-')) {
+    $kv = red('SELECT SekcijaId FROM RevirKvarovi WHERE Foto=?', [$ime]);
+    $dozvoljeno = $kv && revir_moze_vidjeti($kv['SekcijaId'] !== null ? (int) $kv['SekcijaId'] : null);
 } elseif (!$dozvoljeno && str_starts_with($ime, 'naprava-')) {
     $n = red('SELECT SekcijaId FROM RevirNaprave WHERE Foto=?', [$ime]);
     $dozvoljeno = $n && revir_moze_vidjeti($n['SekcijaId'] !== null ? (int) $n['SekcijaId'] : null);

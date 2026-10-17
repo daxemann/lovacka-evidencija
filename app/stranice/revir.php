@@ -27,6 +27,7 @@ $cfg = [
     'istek' => sprintf('%02d:00', revir_sat_isteka()),
     'dnevnik' => ima(P_REVIR_DNEVNIK) ? url('revir/dnevnik') : null,
     'danas' => url('revir/danas'),
+    'kvarovi' => url('revir/kvarovi'),
     'odabir' => (string) ul('naprava', ''),
 ];
 ob_start(); ?>
@@ -39,6 +40,7 @@ ob_start(); ?>
             <?php foreach ($sekcije as $id => $n): ?><option value="<?= (int) $id ?>"<?= sel($id, $zadana) ?>><?= e($n) ?></option><?php endforeach; ?>
         </select>
     <?php endif; ?>
+    <a class="btn btn-sm btn-outline-warning" href="<?= e(url('revir/kvarovi')) ?>">🔧 Kvarovi<?php $brKv = (int) vrijednost("SELECT COUNT(*) FROM RevirKvarovi WHERE Status<>'rijeseno' AND " . revir_kvar_sql($sekcije)); if ($brKv): ?> <span class="badge bg-warning text-dark"><?= $brKv ?></span><?php endif; ?></a>
     <?php if ($uredive): ?><button type="button" class="btn btn-sm btn-outline-secondary" id="revir-uredi" aria-pressed="false">✏️ Uredi naprave</button><?php endif; ?>
 </div>
 <div id="revir-moje" class="revir-moje alert alert-danger py-2 px-3 mb-2 d-flex align-items-center gap-2" hidden></div>
@@ -57,6 +59,7 @@ ob_start(); ?>
         <span><i class="revir-tocka zauzeto"></i> zauzeto</span>
         <span><i class="revir-tocka moje"></i> moje</span>
         <span><i class="revir-tocka info"></i> info</span>
+        <span>🔧 kvar</span>
     </div>
     <button type="button" class="revir-lociraj" id="revir-lociraj" title="Gdje sam?" aria-label="Gdje sam?">◎</button>
     <div id="revir-panel" class="revir-panel" hidden></div>

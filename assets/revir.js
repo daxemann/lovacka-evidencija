@@ -16,6 +16,7 @@
     var privremeni = null;
 
     function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+    function nesigurna(n) { return (n.kvarovi || []).some(function (k) { return k.nesigurno; }); }
     function oznaka(n) { return (n.broj ? n.broj + ' · ' : '') + n.naziv; }
     function nadji(id) { for (var i = 0; i < st.naprave.length; i++) if (st.naprave[i].id === id) return st.naprave[i]; return null; }
     function nazivSekcije(id) { for (var i = 0; i < cfg.sekcije.length; i++) if (cfg.sekcije[i].id === id) return cfg.sekcije[i].naziv; return ''; }
@@ -56,6 +57,7 @@
         var z = n.zauzeto, kl = !z ? (n.zauzimanje ? 'slobodno' : 'info') : (z.moje ? 'moje' : 'zauzeto');
         var odabran = st.odabrana === n.id ? ' odabran' : '';
         var ime = (st.uredi || z) ? '<div class="revir-pin-ime">' + esc(z ? (z.gost ? 'gost' : z.ime.split(' ')[0]) : n.naziv) + '</div>' : '';
+        if (n.kvarovi && n.kvarovi.length) ime += '<span class="revir-pin-kvar' + (nesigurna(n) ? ' nesigurno' : '') + '" title="Prijavljen kvar">' + (nesigurna(n) ? '⚠' : '🔧') + '</span>';
         if (n.ikona) {
             return L.divIcon({
                 className: 'revir-pin-omot',
@@ -165,6 +167,7 @@
             '<div class="h5 mb-0">' + esc(oznaka(n)) + '</div></div>';
         h += '<div class="small text-muted mb-2">' + esc([n.vrsta, cfg.sekcije.length > 1 ? nazivSekcije(n.sekcija) : ''].filter(Boolean).join(' · ')) + '</div>';
         if (n.napomena) h += '<div class="small mb-2">' + esc(n.napomena) + '</div>';
+        h += kvaroviHtml(n);
         if (z) {
             h += '<div class="revir-status zauzeto mb-2">🔴 Zauzeto: <b>' + esc(z.gost ? 'gost' + (z.gost !== 'gost' ? ' ' + z.gost : '') : z.ime) + '</b>' +
                 (z.gost ? ' <span class="small">(gost od ' + esc(z.ime) + ')</span>' : '') + ' <span class="small">od ' + esc(z.od) + '</span></div>';
@@ -179,11 +182,49 @@
                     '<button type="button" class="btn btn-outline-danger" data-zauzmi-gost="' + n.id + '">Zauzmi za gosta</button></div></details>';
             } else if (cfg.clan && n.zauzimanje) h += '<div class="small text-muted mb-2">Druga sekcija – samo pregled.</div>';
         }
+        h += '<button type="button" class="btn btn-sm btn-outline-warning w-100 mb-2" data-kvar-prijavi="' + n.id + '">🔧 Prijavi kvar na napravi</button>';
         var nav = n.lat !== null ? '<a class="btn btn-sm btn-outline-secondary" target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&destination=' + n.lat + ',' + n.lon + '">🧭 Navigacija</a>' : '';
         var ur = n.mozeUrediti && st.uredi ? '<button type="button" class="btn btn-sm btn-outline-secondary" data-uredi-napravu="' + n.id + '">✏️ Uredi</button>' : '';
         if (nav || ur) h += '<div class="d-flex gap-2">' + nav + ur + '</div>';
         panel.innerHTML = h;
         panel.hidden = false;
+    }
+
+    function kvaroviHtml(n) {
+        var kv = n.kvarovi || [];
+        if (!kv.length) return '';
+        var h = '<div class="revir-kvarovi mb-2' + (nesigurna(n) ? ' nesigurno' : '') + '">';
+        if (nesigurna(n)) h += '<div class="fw-bold mb-1">⚠️ Prijavljeno kao NESIGURNO – ne sjedati dok se ne popravi!</div>';
+        kv.forEach(function (k) {
+            h += '<div class="revir-kvar">' + (k.foto ? '<a href="' + esc(k.foto) + '" target="_blank" rel="noopener"><img src="' + esc(k.foto) + '" alt="" class="revir-kvar-foto"></a>' : '') +
+                '<div>🔧 ' + esc(k.opis) + '<div class="small text-muted">' + esc(k.ime) + ', ' + esc(k.datum) +
+                (k.status === 'u_radu' ? ' · <b>u radu' + (k.preuzeo ? ' (' + esc(k.preuzeo) + ')' : '') + '</b>' : '') + '</div>';
+            var g = '';
+            if (n.mozeKvar && k.status === 'otvoreno') g += '<button type="button" class="btn btn-sm btn-outline-secondary" data-kvar="preuzmi" data-kid="' + k.id + '">🛠️ Preuzimam</button>';
+            if (n.mozeKvar || k.moje) g += '<button type="button" class="btn btn-sm btn-success" data-kvar="rijeseno" data-kid="' + k.id + '">✅ Riješeno</button>';
+            if (n.mozeKvar || (k.moje && k.status === 'otvoreno')) g += '<button type="button" class="btn btn-sm btn-outline-danger" data-kvar="obrisi" data-kid="' + k.id + '" title="Obriši prijavu">🗑</button>';
+            if (g) h += '<div class="d-flex flex-wrap gap-1 mt-1">' + g + '</div>';
+            h += '</div></div>';
+        });
+        if (cfg.kvarovi) h += '<a class="small" href="' + esc(cfg.kvarovi) + '">Svi kvarovi →</a>';
+        return h + '</div>';
+    }
+
+    function obrazacKvar(n) {
+        st.obrazac = true;
+        panel.innerHTML = '<button type="button" class="btn-close float-end" data-zatvori aria-label="Zatvori"></button>' +
+            '<div class="h6">🔧 Kvar: ' + esc(oznaka(n)) + '</div>' +
+            '<form data-kvar-obrazac class="row g-2"><input type="hidden" name="id" value="' + n.id + '">' +
+            '<div class="col-12"><label class="form-label small mb-0">Što je oštećeno? *</label>' +
+            '<textarea name="opis" class="form-control form-control-sm" rows="3" maxlength="500" required placeholder="npr. slomljena prečka na ljestvama, krov propušta, nema stolice…"></textarea></div>' +
+            '<div class="col-12"><label class="form-check small"><input type="checkbox" name="nesigurno" value="1" class="form-check-input"> ' +
+            '<b>Nesigurno</b> – ne sjedati dok se ne popravi</label></div>' +
+            '<div class="col-12"><label class="form-label small mb-0">Fotografija (neobavezno)</label><input type="file" name="foto" accept="image/*" capture="environment" class="form-control form-control-sm"></div>' +
+            '<div class="col-12 d-flex gap-2 mt-2"><button class="btn btn-warning btn-sm flex-grow-1">Pošalji prijavu</button>' +
+            '<button type="button" class="btn btn-outline-secondary btn-sm" data-kvar-odustani="' + n.id + '">Odustani</button></div>' +
+            '<div class="col-12 small text-muted">Prijavu vide svi lovci sekcije; lovočuvar dobiva obavijest.</div></form>';
+        panel.hidden = false;
+        var o = panel.querySelector('[name=opis]'); if (o) setTimeout(function () { o.focus(); }, 50);
     }
 
     function obrazac(n, lat, lon) {
@@ -290,6 +331,8 @@
         var t = e.target, el;
         if (t.closest('[data-zatvori]')) { zatvori(); return; }
         if ((el = t.closest('[data-zauzmi]'))) {
+            var nz = nadji(+el.getAttribute('data-zauzmi'));
+            if (nz && nesigurna(nz) && !window.confirm('Ova naprava je prijavljena kao NESIGURNA. Ipak zauzeti?')) return;
             el.disabled = true;
             posalji({ radnja: 'zauzmi', id: el.getAttribute('data-zauzmi') }).then(function (j) { if (j.ok) obavijest('Zauzeto – dobar lov! Ne zaboravite „Odlazim“.'); });
             return;
@@ -316,6 +359,16 @@
             posalji({ radnja: 'obrisi', zid: el.getAttribute('data-obrisi') }).then(function (j) { if (j.ok) obavijest('Zauzeće obrisano.'); });
             return;
         }
+        if ((el = t.closest('[data-kvar-prijavi]'))) { var nk = nadji(+el.getAttribute('data-kvar-prijavi')); if (nk) obrazacKvar(nk); return; }
+        if ((el = t.closest('[data-kvar-odustani]'))) { otvori(+el.getAttribute('data-kvar-odustani')); return; }
+        if ((el = t.closest('[data-kvar]'))) {
+            var r = el.getAttribute('data-kvar'), pod = { radnja: 'kvar-' + r, kid: el.getAttribute('data-kid') };
+            if (r === 'obrisi' && !window.confirm('Obrisati ovu prijavu kvara?')) return;
+            if (r === 'rijeseno') { var nap = window.prompt('Kvar je riješen. Napomena (neobavezno, npr. „zamijenjena prečka“):', ''); if (nap === null) return; pod.napomena = nap; }
+            el.disabled = true;
+            posalji(pod).then(function (j) { if (j.ok) obavijest(r === 'rijeseno' ? 'Kvar označen kao riješen.' : r === 'preuzmi' ? 'Kvar je vaš – hvala!' : 'Prijava obrisana.'); });
+            return;
+        }
         if ((el = t.closest('[data-uredi-napravu]'))) { var n = nadji(+el.getAttribute('data-uredi-napravu')); if (n) obrazac(n); return; }
         if ((el = t.closest('[data-obrisi-napravu]'))) {
             if (!window.confirm('Trajno obrisati ovu lovnu napravu? Lovački dnevnik ostaje.')) return;
@@ -330,6 +383,23 @@
         }
     });
     document.addEventListener('submit', function (e) {
+        var fk = e.target.closest('[data-kvar-obrazac]');
+        if (fk) {
+            e.preventDefault();
+            var fdk = new FormData(fk), bk = fk.querySelector('button.btn-warning'), nid = +fk.id.value;
+            fdk.append('radnja', 'kvar-prijavi');
+            if (bk) { bk.disabled = true; bk.textContent = 'Šaljem…'; }
+            var fotoK = fk.foto && fk.foto.files[0];
+            if (!fotoK) fdk.delete('foto');
+            (fotoK && window.RevirFoto ? RevirFoto.smanji(fotoK) : Promise.resolve(null)).then(function (mala) {
+                if (mala) fdk.set('foto', mala, mala.name || 'kvar.jpg');
+                return posalji(fdk);
+            }).then(function (j) {
+                if (j.ok) { obavijest('Kvar prijavljen – hvala!'); otvori(nid); }
+                else if (bk) { bk.disabled = false; bk.textContent = 'Pošalji prijavu'; }
+            }).catch(function () { if (bk) { bk.disabled = false; bk.textContent = 'Pošalji prijavu'; } });
+            return;
+        }
         var f = e.target.closest('[data-obrazac]');
         if (!f) return;
         e.preventDefault();

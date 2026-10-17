@@ -5,7 +5,7 @@
  */
 declare(strict_types=1);
 
-const VERZIJA = '1.23.0';
+const VERZIJA = '1.24.0';
 const KONTAKT_EMAIL = 'daxemann@googlemail.com';
 const PODRSKA_PAYPAL = 'darko.bakic@freenet.de'; // dobrovoljna podrška razvoju (Pomoć i kontakt)
 const PROJEKT_URL = 'https://github.com/daxemann/lovacka-evidencija';
@@ -142,7 +142,7 @@ function db(bool $novo = false): PDO
  * Dodatne tablice PHP verzije (PRAGMA user_version). .NET verzija ih ne poznaje i zanemaruje,
  * pa baza i dalje radi u oba smjera.
  */
-const SHEMA_PHP = 21;
+const SHEMA_PHP = 22;
 function nadogradi_bazu(PDO $pdo): void
 {
     $v = (int) $pdo->query('PRAGMA user_version')->fetchColumn();
@@ -557,6 +557,29 @@ SQL);
                 PRIMARY KEY ("ObavijestId", "ClanId"));
             CREATE INDEX IF NOT EXISTS "IX_ObavijestPrimatelji_ClanId" ON "ObavijestPrimatelji" ("ClanId");
             UPDATE "Uloge" SET "Prava" = "Prava" | 2097152 WHERE ("Prava" & 2097151) = 2097151 OR "Naziv" LIKE \'Predsjednik%\' OR "Naziv" = \'Admin sekcije\';');
+    }
+    if ($v < 22) {
+        // Kvarovi na lovnim napravama: prijava s karte, popis za lovočuvare / domare
+        $pdo->exec('CREATE TABLE IF NOT EXISTS "RevirKvarovi" (
+                "Id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                "NapravaId" INTEGER NULL REFERENCES "RevirNaprave" ("Id") ON DELETE SET NULL,
+                "Naprava" TEXT NOT NULL,
+                "SekcijaId" INTEGER NULL,
+                "Opis" TEXT NOT NULL,
+                "Nesigurno" INTEGER NOT NULL DEFAULT 0,
+                "Foto" TEXT NULL,
+                "Status" TEXT NOT NULL DEFAULT \'otvoreno\',
+                "PrijavioClanId" INTEGER NULL,
+                "PrijavioKorisnikId" INTEGER NULL,
+                "PrijavioIme" TEXT NOT NULL,
+                "Prijavljeno" TEXT NOT NULL,
+                "PreuzeoIme" TEXT NULL,
+                "Preuzeto" TEXT NULL,
+                "RijesioIme" TEXT NULL,
+                "Rijeseno" TEXT NULL,
+                "Napomena" TEXT NULL);
+            CREATE INDEX IF NOT EXISTS "IX_RevirKvarovi_Status" ON "RevirKvarovi" ("Status", "SekcijaId");
+            CREATE INDEX IF NOT EXISTS "IX_RevirKvarovi_NapravaId" ON "RevirKvarovi" ("NapravaId");');
     }
     $pdo->exec('PRAGMA user_version = ' . SHEMA_PHP);
     $pdo->commit();

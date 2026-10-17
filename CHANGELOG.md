@@ -1,5 +1,15 @@
 # Promjene
 
+## 1.24.0 – 2026-10
+- **🔧 Kvarovi na lovnim napravama**: na karti lovišta dodir na napravu → **Prijavi kvar** (opis, po želji fotografija s mobitela).
+  Oznaka **„Nesigurno – ne sjedati“**: naprava dobiva crveni ⚠ na karti, a prije zauzimanja program upozorava.
+- Naprave s otvorenim kvarom imaju 🔧 na karti; u prozoru naprave vidi se što je prijavljeno, tko i kada.
+- **Lovište → Kvarovi na napravama**: popis za sve lovce sekcije (sekcije i ovdje odvojene) – Otvoreni / Riješeni / Svi, nova prijava i bez karte.
+  Lovočuvar ili tko uređuje naprave: **Preuzimam** (svi vide tko radi na tome), **Riješeno** s napomenom, **Ponovno otvori**, **Obriši**.
+  Prijavitelj može svoju prijavu označiti riješenom ili je povući dok nije preuzeta.
+- Nova prijava, preuzimanje i rješavanje stižu kao obavijest 🔔 (nadzor lovišta); broj otvorenih kvarova u izborniku.
+- **PDF popis kvarova** s praznim stupcem „Popravljeno (datum, potpis)“ – za obilazak ili radnu akciju.
+
 ## 1.23.0 – 2026-10
 - **📖 Upute za korištenje** (izbornik Program): kratke upute za svaki dio programa – prvi koraci, Moje, Kalendar, upis dezinfekcije, Lovište, Imenik/Poruke/Oglasnik, česta pitanja.
   Svatko vidi samo upute za ono što smije koristiti (član ne vidi upute za upravu i Sustav). Pretraga po uputama (radi i bez č/ć/š/ž/đ).

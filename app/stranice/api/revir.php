@@ -37,6 +37,15 @@ switch ($radnja) {
         $greska = revir_obrisi((int) ($_POST['zid'] ?? 0));
         break;
 
+    case 'kvar-prijavi':
+        $greska = revir_kvar_prijavi((int) ($_POST['id'] ?? 0), (string) ($_POST['opis'] ?? ''), !empty($_POST['nesigurno']), $_FILES['foto'] ?? null);
+        break;
+    case 'kvar-preuzmi':
+    case 'kvar-rijeseno':
+    case 'kvar-obrisi':
+        $greska = revir_kvar_radnja((int) ($_POST['kid'] ?? 0), substr($radnja, 5), (string) ($_POST['napomena'] ?? ''));
+        break;
+
     case 'naprava-spremi':
         $id = (int) ($_POST['id'] ?? 0);
         $stara = $id ? revir_naprava($id) : null;

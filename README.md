@@ -78,7 +78,7 @@ Termini za udrugu ili sekciju, „dolazim / ne dolazim“, pretplata u kalendar 
 QR oznaka na stanici svake sekcije, provjera GPS-a, dolazak/odlazak, reg. oznaka, suputnici i gosti. **Mobilna stanica** za skupni lov. Pristup za lovnog inspektora, PDF i e-pošta.
 
 #### 🗺️ Lovište i čeke
-Karta lovišta s granicama, lovne naprave s fotografijom, zauzimanje čeke jednim dodirom, gost na drugoj čeki, automatsko oslobađanje u 03:00, obavijest lovočuvarima.
+Karta lovišta s granicama, lovne naprave s fotografijom, zauzimanje čeke jednim dodirom, gost na drugoj čeki, automatsko oslobađanje u 03:00, obavijest lovočuvarima. Prijava kvara na napravi s fotografijom (i „nesigurno – ne sjedati“), popis kvarova za obradu i PDF.
 
 #### 📖 Lovački dnevnik
 Tko je bio gdje i kada – po sekcijama.
