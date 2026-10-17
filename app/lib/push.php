@@ -209,8 +209,11 @@ function push_korisnici_clanova(array $clanIds): array
 /**
  * Stavlja obavijest u red; šalje se na kraju zahtjeva (nakon odgovora pregledniku), paralelno.
  * Trenutni korisnik ne dobiva obavijest o vlastitoj radnji.
+ * $dodatno: 'gumbi' => [['a' => radnja, 't' => tekst, 'url' => adresa koju poziva service worker]] (Android),
+ *           'ostaje' => true (ne nestaje sama), 'vibracija' => [ms, …], 'poKorisniku' => [korisnikId => dodatna polja].
+ * Vrste koje nisu u PUSH_VRSTE (npr. SOS, poziv na grupni lov) član ne može isključiti.
  */
-function push_posalji(array $korisnikIds, string $vrsta, string $naslov, string $tekst, string $str = '', array $par = [], ?string $oznaka = null): void
+function push_posalji(array $korisnikIds, string $vrsta, string $naslov, string $tekst, string $str = '', array $par = [], ?string $oznaka = null, array $dodatno = []): void
 {
     static $registrirano = false;
     if (!push_podrzan() || !postavka('Push.VapidJavni')) {
@@ -229,11 +232,24 @@ function push_posalji(array $korisnikIds, string $vrsta, string $naslov, string 
     if (!$pretplate) {
         return;
     }
-    $sadrzaj = json_encode([
+    $osnova = [
         't' => mb_substr($naslov, 0, 80), 'b' => mb_substr($tekst, 0, 240), 'u' => apsolutni_url($str !== '' ? $str : 'pocetna', $par),
         'g' => $oznaka ?? $vrsta, 'i' => apsolutni_url('ikona', ['v' => 192, 'x' => postavka('Udruga.Logo')]),
-    ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-    $GLOBALS['__push_red'][] = ['pretplate' => $pretplate, 'sadrzaj' => $sadrzaj, 'tema' => substr(preg_replace('/[^A-Za-z0-9_-]/', '', $oznaka ?? $vrsta), 0, 32)];
+    ] + array_filter(['r' => !empty($dodatno['ostaje']) ? 1 : null, 'v' => $dodatno['vibracija'] ?? null, 'a' => $dodatno['gumbi'] ?? null]);
+    $tema = substr(preg_replace('/[^A-Za-z0-9_-]/', '', $oznaka ?? $vrsta), 0, 32);
+    if (!empty($dodatno['poKorisniku'])) {
+        // različit sadržaj po primatelju (npr. osobni gumbi „Dolazim / Ne dolazim“)
+        $po = [];
+        foreach ($pretplate as $p) {
+            $po[(int) $p['KorisnikId']][] = $p;
+        }
+        foreach ($po as $kid => $lista) {
+            $GLOBALS['__push_red'][] = ['pretplate' => $lista, 'tema' => $tema,
+                'sadrzaj' => json_encode(array_replace($osnova, $dodatno['poKorisniku'][$kid] ?? []), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)];
+        }
+    } else {
+        $GLOBALS['__push_red'][] = ['pretplate' => $pretplate, 'tema' => $tema, 'sadrzaj' => json_encode($osnova, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)];
+    }
     if (!$registrirano) {
         $registrirano = true;
         register_shutdown_function('push_isprazni_red');

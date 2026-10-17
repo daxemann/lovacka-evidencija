@@ -30,6 +30,13 @@ if ($obavObavezna && $trenutna === 'obavijesti' && (int) ($_GET['id'] ?? 0) === 
     $obavObavezna = null;
 }
 [$uloga, $boja] = oznaka_uloge();
+// grupni lov: lovci vide stavku i prozor samo dok je lov u tijeku
+$glMoj = $k ? gl_moj_aktivni() : null;
+$glVidljivo = $k && gl_vidljivo();
+$glAktivan = $glMoj !== null || ($k && ima(P_GRUPNI_LOV) && gl_aktivni_organizator());
+$glBroj = $glVidljivo ? gl_broj_izbornik() : 0;
+$glPoziv = $glMoj && $glMoj['ja']['Odgovor'] === null && $trenutna !== 'grupni-lov' && !in_array($trenutna, ['promjena-lozinke', 'dvofaktorska', 'odjava'], true) ? $glMoj : null;
+$glUTijeku = $glMoj && (int) $glMoj['ja']['Odgovor'] === 1 && $glMoj['ja']['Otisao'] === null && $trenutna !== 'grupni-lov' ? $glMoj : null;
 ?><!doctype html>
 <html lang="hr">
 <head>
@@ -66,6 +73,7 @@ if ($obavObavezna && $trenutna === 'obavijesti' && (int) ($_GET['id'] ?? 0) === 
                     <?= $stavka('pocetna', '🏠 Početna', 0, true) ?>
                     <?= $stavka('skeniraj', '📷 Skeniraj QR stanice', 0, true) ?>
                     <?= $stavka('kalendar', '📅 Kalendar') ?>
+                    <?php if ($glVidljivo) echo $stavka('grupni-lov', $glAktivan ? '🎯 Grupni lov – u tijeku' : '🎯 Grupni lov', $glBroj); ?>
                     <?php if ($k['ClanId']) echo $grupa('moje', 'Moje', $stavka('moje-akcije', '🛠️ Moje radne akcije') . (uplatnica_za_clanove() ? $stavka('uplatnica', '💳 Moja uplatnica', 0, true) : '') . $stavka('moj-profil', '👤 Moj profil') . $stavka('push', '🔔 Push obavijesti') . $stavka('moja-prava', '🔑 Moja prava')); ?>
                     <?php $revirSek = revir_sekcije(); if ($revirSek || ima(P_SUSTAV)) echo $grupa('loviste', 'Lovište',
                         ($revirSek ? $stavka('revir', '🗺️ Karta lovišta', 0, true) . $stavka('revir/danas', '🌲 Danas u lovištu', $revirObav) . $stavka('revir/kvarovi', '🔧 Kvarovi na napravama', revir_broj_kvarova()) . (ima(P_REVIR_DNEVNIK) ? $stavka('revir/dnevnik', '📓 Lovački dnevnik') : '') : '')
@@ -144,6 +152,13 @@ if ($obavObavezna && $trenutna === 'obavijesti' && (int) ($_GET['id'] ?? 0) === 
                 <button type="button" class="btn-close ms-1" aria-label="Zatvori" data-instal-zatvori></button>
             </div>
             <?php endif; ?>
+            <?php if ($glUTijeku): ?>
+            <div class="gl-u-tijeku no-print">
+                <span class="flex-grow-1 small">🎯 <b><?= e($glUTijeku['lov']['Naziv']) ?></b> je u tijeku – organizator vas vidi samo dok je <b>karta lova</b> otvorena.</span>
+                <a class="btn btn-sm btn-success" href="<?= e(url('grupni-lov', ['id' => $glUTijeku['lov']['Id']])) ?>">🗺️ Karta lova</a>
+                <a class="btn btn-sm btn-danger" href="<?= e(url('grupni-lov', ['id' => $glUTijeku['lov']['Id'], 'sos' => 1])) ?>">🆘 SOS</a>
+            </div>
+            <?php endif; ?>
             <?php if ($novaVerzija && $trenutna !== 'sustav/azuriranje'): ?>
                 <div class="alert alert-info d-flex flex-wrap align-items-center gap-2 py-2 no-print">
                     <span class="flex-grow-1">⬆ Dostupna je nova verzija programa <b><?= e($novaVerzija['verzija']) ?></b> (instalirana <?= e(VERZIJA) ?>).</span>
@@ -161,7 +176,22 @@ if ($obavObavezna && $trenutna === 'obavijesti' && (int) ($_GET['id'] ?? 0) === 
     </main>
 </div>
 <div id="obavijest" class="lf-toast" style="display:none"></div>
-<?php if ($obavObavezna): $obavJos = (int) vrijednost('SELECT COUNT(*) FROM ObavijestPrimatelji p JOIN Obavijesti o ON o.Id=p.ObavijestId WHERE p.ClanId=? AND p.Potvrdjeno IS NULL AND o.Obavezno=1', [$k['ClanId']]); ?>
+<?php if ($glPoziv): $gl = $glPoziv['lov']; ?>
+<div class="modal-pozadina obav-pozadina" role="dialog" aria-modal="true" aria-labelledby="gl-poziv-naslov"><div class="modal-okvir gl-poziv-okvir">
+    <div class="gl-poziv-ikona mb-2">🎯</div>
+    <h2 class="h5 mb-1" id="gl-poziv-naslov"><?= e($gl['Naziv']) ?></h2>
+    <div class="text-muted mb-2">Organizator <?= e($gl['KreiraoIme']) ?><?= $gl['Mjesto'] ? ' · 📍 ' . e($gl['Mjesto']) : '' ?></div>
+    <?php if ($gl['Napomena']): ?><p class="mb-2"><?= e($gl['Napomena']) ?></p><?php endif; ?>
+    <p class="h6 mb-3">Dolazite na grupni lov?</p>
+    <form method="post" action="<?= e(url('grupni-lov')) ?>" class="d-flex gap-2"><?= csrf() ?>
+        <input type="hidden" name="id" value="<?= (int) $gl['Id'] ?>"><input type="hidden" name="povratak" value="<?= e((string) ($_SERVER['REQUEST_URI'] ?? '')) ?>">
+        <button class="btn btn-success btn-lg flex-fill" name="radnja" value="dolazim">✔ Dolazim</button>
+        <button class="btn btn-outline-secondary btn-lg flex-fill" name="radnja" value="ne-dolazim">✖ Ne dolazim</button>
+    </form>
+    <p class="small text-muted mt-3 mb-0">Tko dolazi, vidi se na karti lova dok mu je karta otvorena. Položaji se brišu kad lov završi.</p>
+</div></div>
+<?php endif; ?>
+<?php if ($obavObavezna && !$glPoziv): $obavJos = (int) vrijednost('SELECT COUNT(*) FROM ObavijestPrimatelji p JOIN Obavijesti o ON o.Id=p.ObavijestId WHERE p.ClanId=? AND p.Potvrdjeno IS NULL AND o.Obavezno=1', [$k['ClanId']]); ?>
 <div class="modal-pozadina obav-pozadina" role="dialog" aria-modal="true" aria-labelledby="obav-naslov"><div class="modal-okvir obav-okvir">
     <div class="small text-muted mb-1">📢 Obavijest udruge<?= $obavJos > 1 ? ' · 1 od ' . $obavJos : '' ?></div>
     <h2 class="h5 mb-1" id="obav-naslov"><?= e($obavObavezna['Naslov']) ?></h2>

@@ -77,6 +77,9 @@ Termini za udrugu ili sekciju, „dolazim / ne dolazim“, pretplata u kalendar 
 #### 🧴 Knjiga dezinfekcije (ASK)
 QR oznaka na stanici svake sekcije, provjera GPS-a, dolazak/odlazak, reg. oznaka, suputnici i gosti. **Mobilna stanica** za skupni lov. Pristup za lovnog inspektora, PDF i e-pošta.
 
+#### 🎯 Grupni lov – karta uživo i SOS
+Poziv svima na mobitel („dolazim / ne dolazim“), položaj sudionika uživo na karti, upozorenje o gubitku signala, **SOS** organizatoru. Kraj lova briše sve položaje.
+
 #### 🔔 Push obavijesti
 Obavijesti na mobitel i kad je aplikacija zatvorena: poruke, obavijesti udruge, radne akcije, kvarovi i zauzimanje čeka. Besplatno (Web Push), Android i iPhone (iOS 16.4+), svaki član bira što prima.
 

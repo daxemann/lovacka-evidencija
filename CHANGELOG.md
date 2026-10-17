@@ -1,5 +1,18 @@
 # Promjene
 
+## 1.27.0 – 2026-10
+- **🎯 Grupni lov – karta uživo i SOS**: pokreće ga samo tko ima novo pravo **Grupni lov – organizacija** (Sustav → Uloge i prava; zadano uprava i Lovnik), za sekcije u svom opsegu.
+- Svi lovci odabranih sekcija odmah dobivaju **push poziv** (ostaje dok se ne dodirne) i **prozor u aplikaciji**: **✔ Dolazim / ✖ Ne dolazim**.
+  Na Androidu gumbi rade izravno iz obavijesti („Ne dolazim“ i bez otvaranja aplikacije), na iPhoneu dodir otvara poziv.
+- **Karta lova**: tko dolazi, šalje svoj položaj dok je karta otvorena (zaslon ostaje upaljen); sudionici se vide na karti s granicama lovišta.
+  Statusi: uživo · zaslon ugašen · **izgubljen signal** (nema javljanja 3 min – zadnji poznati položaj, obavijest organizatoru i kad se signal vrati).
+- **🆘 SOS** (dvostruki dodir): obavijest organizatoru s položajem i telefonom, crvena traka i treptava oznaka na karti; **Preuzimam** → lovac dobiva „Pomoć stiže“.
+  Bez signala SOS čeka i šalje se sam; gumbi 112 i telefon organizatora. Traka „Grupni lov u tijeku – Karta / SOS“ na svim stranicama.
+- Organizator vidi tko dolazi / ne dolazi / nije odgovorio, telefone i navigaciju do lovca. **🏁 Lov završen** ili automatski u **23:00** – tada se brišu svi položaji
+  (ostaje samo tko je sudjelovao), sudionici dobivaju obavijest.
+- **Kad nema aktivnog lova, lovci ne vide ništa** – ni stavku u izborniku. Jedan aktivni lov po sekciji.
+- Push: obavijesti mogu imati gumbe i vibraciju; SOS i poziv na lov ne mogu se isključiti.
+
 ## 1.26.2 – 2026-10
 - **Bodove radnih akcija određuju samo postavke**: u Novoj radnoj akciji (grupni unos) osnovni bodovi i bodovi dodatne opreme više se ne mogu upisivati – prikazuju se iz
   Sustav → Vrste radnih akcija (mijenja ih samo admin). Poslužitelj uvijek računa bodove iz postavki, i kad bi netko poslao druge.

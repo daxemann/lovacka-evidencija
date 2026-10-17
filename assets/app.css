@@ -481,3 +481,31 @@ main {
 .kvar-red.otvoreno { border-left: 4px solid #ffb300; }
 .kvar-red.rijeseno { border-left: 4px solid #2e7d32; opacity: .85; }
 .kvar-foto { width: 72px; height: 72px; object-fit: cover; border-radius: .4rem; }
+
+/* ---------- Grupni lov ---------- */
+.gl-raspored { display: grid; grid-template-columns: 1fr; gap: .75rem; }
+@media (min-width: 992px) { .gl-raspored { grid-template-columns: minmax(0, 1fr) 320px; } .gl-popis { max-height: calc(100dvh - 13rem); overflow-y: auto; } }
+.gl-karta { height: calc(100dvh - 16rem); min-height: 340px; }
+.gl-pin { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font: 700 .75rem/1 system-ui, sans-serif;
+    color: #fff; border: 3px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,.6); background: #2e7d32; }
+.gl-pin.ja { background: #0d6efd; }
+.gl-pin.pozadina { background: #f0ad4e; color: #000; }
+.gl-pin.signal, .gl-pin.bez-gps { background: #6c757d; border-style: dashed; }
+.gl-pin.sos { background: #d32f2f; border-color: #ffd400; animation: gl-sos 1s ease-in-out infinite; }
+@keyframes gl-sos { 50% { transform: scale(1.35); box-shadow: 0 0 0 8px rgba(211,47,47,.35); } }
+.gl-tocka { display: inline-block; width: .8rem; height: .8rem; border-radius: 50%; background: #2e7d32; vertical-align: -1px; flex: none; }
+.gl-tocka.pozadina { background: #f0ad4e; } .gl-tocka.signal, .gl-tocka.bez-gps { background: #6c757d; } .gl-tocka.sos { background: #d32f2f; }
+.gl-tocka.dolazi, .gl-tocka.ceka { background: #fff; border: 2px solid #adb5bd; } .gl-tocka.ne, .gl-tocka.otisao { background: #dee2e6; }
+.gl-legenda span { margin-right: .6rem; white-space: nowrap; }
+.gl-red { cursor: pointer; } .gl-red.sos { background: #ffebee; } .gl-red.signal { background: #f1f3f5; }
+.gl-sos-gumb { position: absolute; left: 50%; bottom: 1.5rem; transform: translateX(-50%); z-index: 500; border: 3px solid #fff; border-radius: 999px;
+    background: #d32f2f; color: #fff; font: 800 1.15rem/1 system-ui, sans-serif; padding: .9rem 1.6rem; box-shadow: 0 .3rem 1rem rgba(0,0,0,.5); }
+.gl-sos-gumb.naoruzan { background: #8e0000; animation: gl-sos-gumb 0.7s ease-in-out infinite; font-size: .95rem; }
+@keyframes gl-sos-gumb { 50% { transform: translateX(-50%) scale(1.08); box-shadow: 0 0 0 8px rgba(211,47,47,.35); } }
+.gl-sos-gumb[hidden] { display: none; }
+.gl-sos-traka { background: #d32f2f; color: #fff; border-radius: .5rem; padding: .5rem .75rem; font-size: .95rem; }
+.gl-sos-traka a { color: #fff; text-decoration: underline; }
+.gl-u-tijeku { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; background: #fff3f3; border: 1px solid #f1b0b0; border-left: 4px solid #d32f2f; border-radius: 8px; padding: .45rem .75rem; margin: .75rem 0; }
+.gl-poziv-okvir { text-align: center; }
+.gl-poziv-okvir .gl-poziv-ikona { font-size: 2.6rem; line-height: 1; }
+@media print { .gl-u-tijeku, .gl-sos-gumb { display: none !important; } }

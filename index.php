@@ -45,7 +45,7 @@ if ($p === '' || !preg_match('#^[a-z0-9\-]+(/[a-z0-9\-]+)*$#', $p)) {
     $p = 'pocetna';
 }
 
-$javne = ['demo-vlasnik', 'prijava', 'odjava', 'postavljanje', 'pozivnica', 'samoprijava', 'kalendar-pretplata', 'ikona', 'zaboravljena-lozinka', 'nova-lozinka', 'logo', 'vrati', 'manifest', 'inspekcija', 'dez-slika', 'skeniraj', 'prijava-kod'];
+$javne = ['demo-vlasnik', 'prijava', 'odjava', 'postavljanje', 'pozivnica', 'samoprijava', 'kalendar-pretplata', 'ikona', 'zaboravljena-lozinka', 'nova-lozinka', 'logo', 'vrati', 'manifest', 'inspekcija', 'dez-slika', 'skeniraj', 'prijava-kod', 'grupni-odgovor'];
 $nemaKorisnika = !vrijednost('SELECT 1 FROM Korisnici LIMIT 1');
 if ($nemaKorisnika && !in_array($p, ['postavljanje', 'vrati', 'logo', 'manifest', 'ikona'], true)) {
     preusmjeri('postavljanje');
@@ -73,6 +73,7 @@ if (!in_array($p, $javne, true)) {
         preusmjeri('dvofaktorska');
     }
     dnevna_kopija();
+    gl_zatvori_istekle(); // grupni lov: automatski kraj u 23:00
     psi_godisnji_bodovi();
 }
 

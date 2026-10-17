@@ -5,7 +5,7 @@
  */
 declare(strict_types=1);
 
-const VERZIJA = '1.26.2';
+const VERZIJA = '1.27.0';
 const KONTAKT_EMAIL = 'daxemann@googlemail.com';
 const PODRSKA_PAYPAL = 'darko.bakic@freenet.de'; // dobrovoljna podrška razvoju (Pomoć i kontakt)
 const PROJEKT_URL = 'https://github.com/daxemann/lovacka-evidencija';
@@ -34,8 +34,9 @@ const P_OGLASNIK_MOD = 262144;
 const P_INVENTURA = 524288;
 const P_INVENTURA_UREDI = 1048576;
 const P_OBAVIJESTI = 2097152;
+const P_GRUPNI_LOV = 4194304;
 const P_OSNOVNA = 255; // prava iz .NET verzije
-const P_SVE = 4194303;
+const P_SVE = 8388607;
 
 const PRAVA_OPIS = [
     P_CLANOVI_CITAJ => ['Članovi – pregled', 'vidi popis članova i njihove podatke'],
@@ -59,6 +60,7 @@ const PRAVA_OPIS = [
     P_INVENTURA => ['Inventura – pregled', 'vidi mape inventure (svoje sekcije i cijele udruge), stanje „treba“ / „stvarno“, manjak i višak, ispisuje PDF listu za popis – bez izmjena'],
     P_INVENTURA_UREDI => ['Inventura – uređivanje', 'dodaje i briše mape i stavke, upisuje „treba“ i „stvarno“, nova inventura, preuzimanje stanja'],
     P_OBAVIJESTI => ['Obavijesti – slanje', 'šalje obavijesti članovima svojih sekcija (svima, sekciji, funkciji ili odabranima), po želji s obaveznom potvrdom „Pročitao/la sam“; vidi tko je potvrdio, bilježi usmeno obaviještene, PDF'],
+    P_GRUPNI_LOV => ['Grupni lov – organizacija', 'pokreće grupni lov za sekcije u svom opsegu (poziv svima na mobitel), vidi uživo položaj sudionika na karti, prima SOS i upozorenje o gubitku signala, završava lov'],
     P_REVIR_DNEVNIK => ['Lovište – lovački dnevnik', 'vidi lovački dnevnik (tko, kada, gdje) za sekcije u svom opsegu, ispis i PDF; bez ovog prava dnevnik se ne prikazuje'],
 ];
 
@@ -142,7 +144,7 @@ function db(bool $novo = false): PDO
  * Dodatne tablice PHP verzije (PRAGMA user_version). .NET verzija ih ne poznaje i zanemaruje,
  * pa baza i dalje radi u oba smjera.
  */
-const SHEMA_PHP = 24;
+const SHEMA_PHP = 25;
 function nadogradi_bazu(PDO $pdo): void
 {
     $v = (int) $pdo->query('PRAGMA user_version')->fetchColumn();
@@ -609,6 +611,50 @@ SQL);
                 "Redoslijed" INTEGER NOT NULL DEFAULT 0);
             CREATE INDEX IF NOT EXISTS "IX_VrstaOprema_Vrsta" ON "VrstaOprema" ("VrstaAkcijeId");
             ALTER TABLE "RadneAkcije" ADD COLUMN "Oprema" TEXT NULL;');
+    }
+    if ($v < 25) {
+        // Grupni lov: poziv lovcima (dolazim / ne dolazim), položaj sudionika uživo, SOS organizatoru.
+        // Položaji se brišu kad lov završi – ostaje samo tko je sudjelovao.
+        $pdo->exec('CREATE TABLE IF NOT EXISTS "GrupniLov" (
+                "Id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                "Naziv" TEXT NOT NULL,
+                "Mjesto" TEXT NULL,
+                "Napomena" TEXT NULL,
+                "Sekcije" TEXT NULL,
+                "Pocetak" TEXT NOT NULL,
+                "Kraj" TEXT NOT NULL,
+                "Zavrseno" TEXT NULL,
+                "ZavrsioIme" TEXT NULL,
+                "KreiraoKorisnikId" INTEGER NULL,
+                "KreiraoClanId" INTEGER NULL,
+                "KreiraoIme" TEXT NOT NULL,
+                "Kreirano" TEXT NOT NULL);
+            CREATE INDEX IF NOT EXISTS "IX_GrupniLov_Zavrseno" ON "GrupniLov" ("Zavrseno", "Kraj");
+            CREATE TABLE IF NOT EXISTS "GrupniLovSudionici" (
+                "LovId" INTEGER NOT NULL REFERENCES "GrupniLov" ("Id") ON DELETE CASCADE,
+                "KorisnikId" INTEGER NOT NULL,
+                "ClanId" INTEGER NULL,
+                "Ime" TEXT NOT NULL,
+                "SekcijaId" INTEGER NULL,
+                "Token" TEXT NOT NULL,
+                "Odgovor" INTEGER NULL,
+                "Odgovoreno" TEXT NULL,
+                "Otisao" TEXT NULL,
+                "Lat" REAL NULL,
+                "Lon" REAL NULL,
+                "Tocnost" REAL NULL,
+                "Polozaj" TEXT NULL,
+                "Skriveno" TEXT NULL,
+                "SignalJavljen" TEXT NULL,
+                "SosOd" TEXT NULL,
+                "SosLat" REAL NULL,
+                "SosLon" REAL NULL,
+                "SosPreuzeoIme" TEXT NULL,
+                "SosPreuzeto" TEXT NULL,
+                PRIMARY KEY ("LovId", "KorisnikId"));
+            CREATE INDEX IF NOT EXISTS "IX_GrupniLovSudionici_Korisnik" ON "GrupniLovSudionici" ("KorisnikId");
+            CREATE UNIQUE INDEX IF NOT EXISTS "IX_GrupniLovSudionici_Token" ON "GrupniLovSudionici" ("Token");
+            UPDATE "Uloge" SET "Prava" = "Prava" | 4194304 WHERE ("Prava" & 4194303) = 4194303 OR "Naziv" LIKE \'Lovnik%\';');
     }
     $pdo->exec('PRAGMA user_version = ' . SHEMA_PHP);
     $pdo->commit();

@@ -153,18 +153,37 @@ self.addEventListener('push', function (e) {
     var d = {};
     try { d = e.data ? e.data.json() : {}; } catch (x) { d = { b: e.data ? e.data.text() : '' }; }
     var naslov = d.t || 'Evidencija';
-    e.waitUntil(self.registration.showNotification(naslov, {
+    var opcije = {
         body: d.b || '', icon: d.i || undefined, badge: d.i || undefined, tag: d.g || undefined, renotify: !!d.g,
-        data: { url: d.u || self.registration.scope }, lang: 'hr'
-    }).then(function () {
+        data: { url: d.u || self.registration.scope, gumbi: d.a || [] }, lang: 'hr'
+    };
+    if (d.r) opcije.requireInteraction = true; // SOS, poziv na grupni lov – ostaje dok se ne dodirne
+    if (d.v) opcije.vibrate = d.v;
+    // gumbi u obavijesti (Android/Chrome; iPhone ih ne prikazuje – tamo dodir otvara stranicu)
+    if (d.a && d.a.length) opcije.actions = d.a.map(function (g) { return { action: g.a, title: g.t }; });
+    e.waitUntil(self.registration.showNotification(naslov, opcije).then(function () {
         // otvorene stranice odmah osvježe brojače (zvono, poruke)
         return self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (cl) { cl.forEach(function (c) { c.postMessage({ tip: 'push', g: d.g }); }); });
     }));
 });
 self.addEventListener('notificationclick', function (e) {
     e.notification.close();
-    var cilj = (e.notification.data && e.notification.data.url) || self.registration.scope;
-    e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (cl) {
+    var podaci = e.notification.data || {};
+    var cilj = podaci.url || self.registration.scope;
+    var gumb = e.action ? (podaci.gumbi || []).filter(function (g) { return g.a === e.action; })[0] : null;
+    if (gumb && gumb.otvori) { e.waitUntil(otvori(gumb.otvori)); return; } // npr. „Dolazim“ – stranica sama sprema odgovor i pokreće praćenje
+    if (gumb && gumb.url) {
+        // odgovor izravno iz obavijesti (npr. „Ne dolazim“) – osobni jednokratni ključ u adresi, bez otvaranja aplikacije
+        var odgovor = fetch(gumb.url, { credentials: 'same-origin', cache: 'no-store' }).then(function (r) { return r.json(); })
+            .then(function (j) { return self.registration.showNotification(j.ok ? (j.naslov || 'Spremljeno') : 'Nije spremljeno', { body: j.ok ? (j.tekst || '') : (j.greska || 'Otvorite aplikaciju i pokušajte ponovno.'), tag: podaci.gumbi ? 'gl-potvrda' : undefined, lang: 'hr' }); })
+            .catch(function () { return self.registration.showNotification('Nema veze', { body: 'Odgovor nije poslan – otvorite aplikaciju kad budete imali signal.', lang: 'hr' }); });
+        e.waitUntil(odgovor);
+        return;
+    }
+    e.waitUntil(otvori(cilj));
+});
+function otvori(cilj) {
+    return (self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (cl) {
         for (var i = 0; i < cl.length; i++) {
             var c = cl[i];
             if (c.url.indexOf(self.registration.scope) === 0 && 'focus' in c) {
@@ -173,7 +192,7 @@ self.addEventListener('notificationclick', function (e) {
         }
         return self.clients.openWindow(cilj);
     }));
-});
+}
 self.addEventListener('pushsubscriptionchange', function (e) {
     // preglednik je obnovio pretplatu – stranica je pri sljedećem otvaranju ponovno prijavi (sinkronizacija u push.js)
     e.waitUntil(Promise.resolve());

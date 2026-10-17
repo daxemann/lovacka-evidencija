@@ -54,6 +54,22 @@ $o('dezinfekcija-upis', '🧴 Dezinfekcija – upis na stanici', '
 <li>Upis odlaska nije obavezan. Ako ga ne upišete, program ga ne dopisuje sam.</li>
 </ul>');
 
+if (gl_vidljivo()) {
+    $o('grupni-lov', '🎯 Grupni lov – karta uživo i SOS', '
+<ul>
+<li>Kad organizator pokrene grupni lov, stiže <b>poziv na mobitel</b> i prozor u aplikaciji: <b>✔ Dolazim</b> ili <b>✖ Ne dolazim</b>. Na Androidu se može odgovoriti izravno iz obavijesti.</li>
+<li>Tko dolazi, otvara <b>🎯 Grupni lov</b> – karta pokazuje sudionike lova, a vaš položaj vidi organizator.</li>
+<li><b>Položaj se šalje samo dok je karta otvorena</b> (zaslon ostaje upaljen). Ugasite li zaslon, organizator vidi „zaslon ugašen“ i vaš zadnji položaj.</li>
+<li><b>🆘 SOS</b> dolje na karti – dodirnite <b>dvaput</b> (da ne ode slučajno iz džepa). Organizator odmah dobiva obavijest s vašim položajem; kad ga preuzme, javlja vam se „Pomoć stiže“. Bez signala SOS čeka i šalje se sam čim se veza vrati – u nuždi nazovite <b>112</b>.</li>
+<li>Odlazite ranije? <b>🚶 Odlazim</b> – položaj se više ne šalje.</li>
+<li>Lov završava organizator (<b>🏁 Lov završen</b>), inače sam u ' . GL_SAT_KRAJA . ':00. Tada se <b>brišu svi položaji</b>, a stavka nestaje iz izbornika.</li>'
+    . (ima(P_GRUPNI_LOV) ? '
+<li><i>Organizator:</i> <b>🎯 Grupni lov → Pokreni</b> (naziv, mjesto okupljanja, napomena, sekcije). Vidite tko dolazi, tko ne i tko nije odgovorio,
+sve sudionike na karti, <b>📡 gubitak signala</b> (nema javljanja ' . GL_SIGNAL_MIN . ' min – sivo, zadnji poznati položaj) i <b>🆘 SOS</b> s gumbom <b>Preuzimam</b> i telefonom.
+Obavijesti o SOS-u i gubitku signala stižu onome tko je pokrenuo lov. Za istu sekciju istodobno može biti samo jedan lov. Završeni lovovi: popis tko je sudjelovao (bez položaja).</li>' : '') . '
+</ul>');
+}
+
 if ($revir) {
     $o('loviste', '🗺️ Lovište – karta, čeke, dnevnik', '
 <ul>
