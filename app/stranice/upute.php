@@ -21,8 +21,9 @@ if ($k['ClanId']) {
     $o('moje', '🙋 Moje – radne akcije, profil, uplatnica', '
 <ul>
 <li><b>Moje radne akcije:</b> upišite što ste radili (vrsta, datum, opis, po želji fotografija) i dodirnite <b>Pošalji na odobrenje</b>.
-Bodovi vrijede tek kad akciju odobri uprava. Dok nije odobrena, možete je urediti ili obrisati. Gore vidite bodove u lovnoj godini (1.4.–31.3.).</li>
-<li><b>Dodatna oprema:</b> kod nekih vrsta (npr. Košnja) kvačicom označite što ste donijeli – traktor, trimer, motorna pila… Svaka oprema donosi dodatne bodove.</li>
+Bodovi vrijede tek kad akciju odobri uprava (do tada uz bodove stoji „?“). Dok nije odobrena, svoju prijavu možete urediti ili obrisati. Gore vidite bodove u lovnoj godini (1.4.–31.3.).</li>
+<li>Akcije koje je za vas upisala uprava (npr. zajednička košnja) vidite na istom popisu – njih ne možete mijenjati ni brisati.</li>
+<li><b>Dodatna oprema:</b> kod nekih vrsta (npr. Košnja) kvačicom označite što ste donijeli – traktor, trimer, motorna pila… Svaka oprema donosi dodatne bodove – koliko, određuje uprava u postavkama.</li>
 <li><b>Potraga s psom (krvni trag)</b> prijavljuje se isto u Moje radne akcije, uz odabir psa.</li>
 <li><b>Moj profil:</b> fotografija, kontakt, <b>što drugi vide u Imeniku</b> (mobitel, e-mail, adresa – vi odlučujete), <b>moja vozila</b> (reg. oznake za dezinfekciju) i <b>moji lovački psi</b> s ispitima.</li>'
     . (uplatnica_za_clanove() ? '
@@ -68,9 +69,10 @@ $o('dezinfekcija-upis', '🧴 Dezinfekcija – upis na stanici', '
 <li>Upis odlaska nije obavezan. Ako ga ne upišete, program ga ne dopisuje sam.</li>
 </ul>');
 
-if (gl_vidljivo()) {
+if (gl_vidljivo() || ($k['ClanId'] && $revir)) {
     $o('grupni-lov', '🎯 Grupni lov – karta uživo i SOS', '
 <ul>
+<li><b>Stavka 🎯 Grupni lov pojavljuje se u izborniku samo dok traje lov</b> u koji ste pozvani – inače je nema.</li>
 <li>Kad organizator pokrene grupni lov, stiže <b>poziv na mobitel</b> i prozor u aplikaciji: <b>✔ Dolazim</b> ili <b>✖ Ne dolazim</b>. Na Androidu se može odgovoriti izravno iz obavijesti.</li>
 <li>Tko dolazi, otvara <b>🎯 Grupni lov</b> – karta pokazuje sudionike lova, a vaš položaj vidi organizator.</li>
 <li><b>Položaj se šalje samo dok je karta otvorena</b> (zaslon ostaje upaljen). Ugasite li zaslon, organizator vidi „zaslon ugašen“ i vaš zadnji položaj.</li>
@@ -107,10 +109,20 @@ Svoju prijavu možete označiti riješenom ili je povući dok je nitko nije preu
 </ul>');
 }
 
+$pushVrste = ['poruke', 'obavijesti'];
+if ($k['ClanId'] || ima(P_AKCIJE_ODOBRI)) $pushVrste[] = 'akcije';
+if ($revir && (ima(P_REVIR_NADZOR) || ima(P_REVIR_UREDI))) $pushVrste[] = 'kvarovi';
+if (dom_ima_vidljivih() || ima(P_DOMOVI)) $pushVrste[] = 'domovi';
+if ($revir && ima(P_REVIR_NADZOR)) $pushVrste[] = 'loviste';
+$pushPopis = '';
+foreach ($pushVrste as $v) {
+    if (isset(PUSH_VRSTE[$v])) $pushPopis .= '<li><b>' . e(PUSH_VRSTE[$v][0]) . '</b> – ' . e(PUSH_VRSTE[$v][1]) . '</li>';
+}
 $o('push', '🔔 Push obavijesti na mobitel', '
 <ul>
-<li>Obavijest stiže na mobitel i kad je aplikacija <b>zatvorena</b> – nova poruka, obavijest udruge, radna akcija odobrena/odbijena' . (revir_sekcije() && (ima(P_REVIR_NADZOR) || ima(P_REVIR_UREDI)) ? ', kvarovi na napravama' : '') . (ima(P_REVIR_NADZOR) ? ', zauzimanje čeka' : '') . '.</li>
-<li>Uključite je u izborniku <b>Moje → Push obavijesti</b> → <b>Uključi obavijesti</b> i dopustite obavijesti kad mobitel pita. Gumb <b>Pošalji probnu</b> provjerava da sve radi.</li>
+<li>Obavijest stiže na mobitel i kad je aplikacija <b>zatvorena</b>. Za vas mogu stizati:<ul class="mb-1">' . $pushPopis . '</ul></li>
+<li><b>🎯 Poziv na grupni lov i 🆘 SOS</b> stižu uvijek i ne mogu se isključiti.</li>
+<li>Uključite je u izborniku <b>' . ($k['ClanId'] ? 'Moje' : 'Program') . ' → Push obavijesti</b> → <b>Uključi obavijesti</b> i dopustite obavijesti kad mobitel pita. Gumb <b>Pošalji probnu</b> provjerava da sve radi.</li>
 <li><b>Android:</b> radi u Chromeu, i bez dodavanja na početni zaslon. <b>iPhone:</b> samo iz aplikacije na početnom zaslonu (iOS 16.4 ili noviji) – Safari → Dijeli → Dodaj na početni zaslon.</li>
 <li>Što ne želite primati, isključite na istoj stranici. Uključuje se posebno na svakom uređaju (mobitel, računalo).</li>
 <li>Nakon <b>odjave</b> uređaj više ne prima obavijesti za vaš račun.</li>
@@ -124,7 +136,16 @@ $o('clanovi-svi', '👥 Imenik, poruke, oglasi, dokumenti', '
     . (ima(P_OBAVIJESTI) ? '
 <li><i>Slanje obavijesti:</i> svima, sekcijama, funkciji ili odabranim članovima; po želji s obaveznom potvrdom. Vidite tko je potvrdio, članove bez aplikacije označite „usmeno obaviješten“, PDF s potvrdama.</li>' : '') . '
 <li><b>Poruke:</b> poruka bilo kojem članu unutar aplikacije. Svoju poruku možete obrisati.</li>
-<li><b>Oglasnik:</b> kupujem / prodajem (oružje, optika, pribor, psi…) sa slikama i porukama prodavatelju. Oružje i streljivo samo prema zakonu.</li>
+' . (ogl_aktivan() ? '
+<li><b>🛒 Oglasnik lovaca</b> – zajednički oglasnik lovaca iz više udruga. Otvara se u novoj kartici, <b>bez posebne lozinke</b> (ulazite preko ovog programa).
+Kod prvog otvaranja prihvatite pravila. Kod oglasa birate vide li ga samo članovi udruge ili svi lovci. Najviše 3 slike, oglas traje 30 dana (može se produžiti).
+Kontakt s lovcima iz drugih udruga samo porukom ili brojem koji ste sami podijelili. Sumnjiv oglas prijavite gumbom u oglasu.</li>'
+    . (vrijednost('SELECT 1 FROM Oglasi WHERE Status IN (0,1) LIMIT 1') ? '
+<li><b>📌 Interni oglasi:</b> stari oglasi iz programa udruge – ostaju za pregled.</li>' : '')
+    . (ima(P_OGLASNIK_MOD) ? '
+<li><i>Moderacija:</i> odobravate javne oglase članova, skrivate neprimjerene oglase i obrađujete prijave (rok 48 sati, inače prijava ide administratoru Oglasnika).</li>' : '') : '
+<li><b>Oglasnik:</b> kupujem / prodajem (oružje, optika, pribor, psi…) sa slikama i porukama prodavatelju.</li>') . '
+<li>Oružje i streljivo smiju se oglašavati, ali prodaja samo prema zakonu (kupac s valjanom dozvolom); u oglas ne upisujte serijske brojeve ni brojeve dozvola.</li>
 <li><b>Statut i pravilnici:</b> dokumenti udruge za čitanje.</li>
 </ul>');
 
@@ -175,8 +196,10 @@ if (ima(P_SUSTAV)) {
 <li><b>Podaci o udruzi:</b> naziv, adresa, OIB, logo – ispisuju se na PDF-ovima.</li>
 <li><b>E-pošta i adresa:</b> slanje e-pošte (najlakše <b>Gmail čarobnjak</b>) i javna adresa programa za pozivnice i QR oznake.</li>
 <li><b>Korisnici / Samoprijava:</b> odobravanje pristupa (broj na čekanju u izborniku), poveznica za samoprijavu (npr. za WhatsApp grupu).</li>
-<li><b>Uloge i prava:</b> što koja uloga smije i za koje sekcije.</li>
-<li><b>Sekcije, vrste radnih akcija (bodovi), predlošci poruka, vrste u kalendaru, uplatnica (IBAN), oglasnik lovaca.</b></li>
+<li><b>Uloge i prava:</b> što koja uloga smije i za koje sekcije – među ostalim <b>Grupni lov – organizacija</b> (npr. Lovnik), <b>Lovački domovi – upravljanje</b> (npr. Domar) i <b>Oglasnik – moderacija</b>.</li>
+<li><b>Push obavijesti</b> ne trebaju podešavanje (ključevi nastaju sami i dio su sigurnosne kopije). Na hostingu koji blokira odlazne veze push ne radi.</li>
+<li><b>Sekcije, vrste radnih akcija</b> (osnovni bodovi i bodovi dodatne opreme – samo ovdje), <b>predlošci poruka, vrste u kalendaru, uplatnica (IBAN).</b></li>
+<li><b>Oglasnik lovaca:</b> udruga se jednim klikom prijavi u zajednički Oglasnik (zahtjev odobrava administrator Oglasnika), zatim ga uključite za članove i odredite pravila (samo interno ili i javno, vidljivost telefona, odobravanje javnih oglasa). Dok nije uključen, radi interni oglasnik udruge.</li>
 <li><b>Uvoz (Google kontakti)</b> i <b>Provjera duplikata</b> – ništa se ne sprema bez vaše potvrde.</li>
 <li><b>Sigurnosne kopije:</b> dnevna kopija ide sama; <b>kompletna kopija (ZIP)</b> povremeno spremite i izvan poslužitelja.</li>'
     . (smije_azurirati() ? '
@@ -196,6 +219,12 @@ $o('pitanja', '❓ Česta pitanja', '
 <dd>Upis dezinfekcije radi i bez signala ako ste stanicu prije otvorili s internetom. Šalje se sam kasnije.</dd>
 <dt>Ne vidim neki dio programa.</dt>
 <dd>Za njega nemate pravo – pogledajte Moje → Moja prava i javite se administratoru udruge.</dd>
+<dt>Push obavijesti ne stižu.</dt>
+<dd>Na stranici Push obavijesti dodirnite <b>Pošalji probnu</b>. Na iPhoneu obavijesti rade samo iz aplikacije na početnom zaslonu (iOS 16.4+). Provjerite i da obavijesti za preglednik / aplikaciju nisu isključene u postavkama mobitela.</dd>
+<dt>Ne vidim Grupni lov u izborniku.</dt>
+<dd>Stavka se pojavljuje samo dok traje lov u koji ste pozvani.</dd>
+<dt>Moja rezervacija doma piše „na čekanju“.</dt>
+<dd>Privatnu rezervaciju mora odobriti upravitelj doma – dobit ćete obavijest. Dok čeka, ti dani su za druge blokirani.</dd>
 <dt>Pogriješio sam u upisu.</dt>
 <dd>Radnu akciju koja još nije odobrena možete sami urediti ili obrisati. Upis dezinfekcije može poništiti samo lovočuvar, uz razlog.</dd>
 </dl>');

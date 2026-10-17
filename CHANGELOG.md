@@ -1,5 +1,10 @@
 # Promjene
 
+## 1.28.1 – 2026-10
+- **📖 Upute za korištenje** ažurirane na trenutno stanje: zajednički **Oglasnik lovaca** (ulaz bez lozinke, interno/javno, moderacija, pravila za oružje),
+  **push obavijesti** – popis vrsta prema vašim pravima (i Lovački domovi), poziv na lov i SOS se ne isključuju; **grupni lov** – upute vidi svaki član lovišta i prije lova (stavka u izborniku i dalje samo dok traje lov);
+  radne akcije koje upiše uprava i bodovi opreme iz postavki; Sustav: Oglasnik lovaca, nova prava, push. Nova česta pitanja (push ne stiže, nema Grupnog lova, rezervacija na čekanju).
+
 ## 1.28.0 – 2026-10
 - **🏡 Lovački domovi** (novo u izborniku): domovi za **cijelu udrugu** ili za **sekciju** (sekcije i ovdje odvojene – dom sekcije vide i rezerviraju samo njezini članovi).
   Naziv, fotografija, opis, kapacitet, tko ima ključ, **položaj na karti** (dodir na kartu, povlačenje pina ili **📍 Moja pozicija**) i gumb **🧭 Navigacija** za dolazak. Karta svih domova s granicama lovišta.
