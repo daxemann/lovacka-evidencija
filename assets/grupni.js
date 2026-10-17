@@ -87,7 +87,7 @@
     function redPopisa(s) {
         var desno = s.sos ? '<span class="badge bg-danger">🆘 ' + esc(s.sos.od) + '</span>' : '<span class="small text-muted">' + esc(OPIS[s.st] || s.st) + (s.vrijeme && s.st !== 'uzivo' ? ' · ' + esc(s.vrijeme) : '') + '</span>';
         var gumbi = '';
-        if (st.org && s.sos && !s.sos.preuzeo) gumbi += '<button type="button" class="btn btn-sm btn-danger mt-1" data-preuzmi="' + s.id + '">🚑 Preuzimam</button> ';
+        if (s.sos && !s.sos.preuzeo && !s.ja) gumbi += '<button type="button" class="btn btn-sm btn-danger mt-1" data-preuzmi="' + s.id + '">🚑 Idem pomoći</button> ';
         if (s.tel) gumbi += '<a class="btn btn-sm btn-outline-secondary mt-1" href="tel:' + esc(s.tel) + '">📞</a>';
         return '<div class="list-group-item px-1 gl-red ' + klasa(s) + '" data-k="' + s.id + '"><div class="d-flex align-items-center gap-2">'
             + '<i class="gl-tocka ' + klasa(s) + '"></i><span class="flex-grow-1">' + esc(s.ime) + (s.ja ? ' <b>(ja)</b>' : '') + '</span>' + desno + '</div>'
@@ -102,9 +102,10 @@
         popis.innerHTML = l.map(redPopisa).join('') || '<div class="text-muted p-2">Još nitko nije na karti.</div>';
         // SOS – crvena traka za organizatora
         var sos = st.sudionici.filter(function (s) { return s.sos; });
-        if (st.org && sos.length) {
+        sos = sos.filter(function (s) { return !s.ja; });
+        if (sos.length) {
             sosTraka.hidden = false;
-            sosTraka.innerHTML = sos.map(function (s) { return '🆘 <b>' + esc(s.ime) + '</b> od ' + esc(s.sos.od) + (s.sos.preuzeo ? ' – preuzeo ' + esc(s.sos.preuzeo) : ' – <b>nitko nije preuzeo!</b>') + ' <a href="#" data-k="' + s.id + '">pokaži</a>'; }).join('<br>');
+            sosTraka.innerHTML = sos.map(function (s) { return '🆘 <b>' + esc(s.ime) + '</b> od ' + esc(s.sos.od) + (s.sos.preuzeo ? ' – preuzeo ' + esc(s.sos.preuzeo) : ' – <b>nitko nije preuzeo!</b>') + ' <a href="#" data-k="' + s.id + '">pokaži</a>' + (s.tel ? ' · <a href="tel:' + esc(s.tel) + '">📞 ' + esc(s.tel) + '</a>' : '') + (!s.sos.preuzeo ? ' <button type="button" class="btn btn-sm btn-light ms-1" data-preuzmi="' + s.id + '">🚑 Idem pomoći</button>' : ''); }).join('<br>');
         } else sosTraka.hidden = true;
         // vlastito stanje (sudionik)
         if (st.ja && cfg.saljem) {
@@ -212,7 +213,7 @@
         var t = e.target;
         if (t.id === 'gl-sos-otkazi') { if (confirm('Sve je u redu? SOS se otkazuje i organizator dobiva obavijest.')) posalji('sos-otkazi'); return; }
         var p = t.closest && t.closest('[data-preuzmi]');
-        if (p) { posalji('sos-preuzmi', { k: p.getAttribute('data-preuzmi') }).then(function (j) { if (j.ok) poruka('Preuzeto – lovac je dobio obavijest da pomoć stiže.'); }); return; }
+        if (p) { posalji('sos-preuzmi', { k: p.getAttribute('data-preuzmi') }).then(function (j) { if (j.ok) poruka('Preuzeto – lovac i ostali dobili su obavijest da idete pomoći.'); }); return; }
         var r = t.closest && t.closest('[data-k]');
         if (r && !t.closest('a[href^="tel:"]') && !t.closest('button')) {
             e.preventDefault();

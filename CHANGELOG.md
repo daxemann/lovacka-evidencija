@@ -1,5 +1,10 @@
 # Promjene
 
+## 1.27.1 – 2026-10
+- **SOS u grupnom lovu stiže svima koji su u lovu**: organizatoru, svakome s pravom „Grupni lov – organizacija“ za tu sekciju (npr. **Lovnik na licu mjesta**) i svim sudionicima.
+  Svaki sudionik vidi crvenu SOS traku s telefonom i može dodirnuti **🚑 Idem pomoći** – lovac dobiva „Pomoć stiže“, ostali vide tko je krenuo.
+- Gubitak / povratak signala stiže svim organizatorima lova (ne samo onome tko ga je pokrenuo).
+
 ## 1.27.0 – 2026-10
 - **🎯 Grupni lov – karta uživo i SOS**: pokreće ga samo tko ima novo pravo **Grupni lov – organizacija** (Sustav → Uloge i prava; zadano uprava i Lovnik), za sekcije u svom opsegu.
 - Svi lovci odabranih sekcija odmah dobivaju **push poziv** (ostaje dok se ne dodirne) i **prozor u aplikaciji**: **✔ Dolazim / ✖ Ne dolazim**.

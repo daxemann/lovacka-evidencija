@@ -45,7 +45,7 @@ if (je_post()) {
             }
             break;
         case 'sos-preuzmi':
-            $greska = $org ? gl_sos_preuzmi($lov, (int) ($_POST['k'] ?? 0)) : 'Nemate pravo.';
+            $greska = gl_u_lovu($lov) ? gl_sos_preuzmi($lov, (int) ($_POST['k'] ?? 0)) : 'Nemate pravo.';
             break;
         case 'odlazim':
             if ($ja) {

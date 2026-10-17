@@ -224,7 +224,7 @@ function gl_polozaj(array $lov, array $s, ?float $lat, ?float $lon, ?float $tocn
     }
     // ako se javi nakon upozorenja o gubitku signala – organizator dobiva obavijest da je opet tu
     if ($s['SignalJavljen'] !== null) {
-        push_posalji([(int) $lov['KreiraoKorisnikId']], 'grupni', '📶 ' . $s['Ime'] . ' – signal se vratio', $lov['Naziv'], 'grupni-lov', ['id' => $lov['Id']], 'gl-signal-' . $s['KorisnikId']);
+        push_posalji(gl_organizatori($lov), 'grupni', '📶 ' . $s['Ime'] . ' – signal se vratio', $lov['Naziv'], 'grupni-lov', ['id' => $lov['Id']], 'gl-signal-' . $s['KorisnikId']);
     }
     $p[] = $lov['Id'];
     $p[] = $s['KorisnikId'];
@@ -245,11 +245,33 @@ function gl_provjeri_signal(array $lov): void
         AND Skriveno IS NULL AND SignalJavljen IS NULL', [$lov['Id'], $granica]);
     foreach ($izgubljeni as $s) {
         if (q('UPDATE GrupniLovSudionici SET SignalJavljen=? WHERE LovId=? AND KorisnikId=? AND SignalJavljen IS NULL', [sada(), $lov['Id'], $s['KorisnikId']])->rowCount()) {
-            push_posalji([(int) $lov['KreiraoKorisnikId']], 'grupni', '📡 ' . $s['Ime'] . ' – izgubljen signal',
+            push_posalji(gl_organizatori($lov), 'grupni', '📡 ' . $s['Ime'] . ' – izgubljen signal',
                 'Zadnji poznati položaj u ' . date('H:i', strtotime($s['Polozaj'])) . ' · ' . $lov['Naziv'], 'grupni-lov', ['id' => $lov['Id'], 'k' => $s['KorisnikId']],
                 'gl-signal-' . $s['KorisnikId'], ['vibracija' => [400, 200, 400]]);
         }
     }
+}
+
+/** Organizatori lova: tko ga je pokrenuo + svi s pravom „Grupni lov – organizacija“ za njegove sekcije (npr. Lovnik na licu mjesta). */
+function gl_organizatori(array $lov): array
+{
+    $ids = [(int) $lov['KreiraoKorisnikId']];
+    foreach (gl_sekcije_lova($lov) as $sid) {
+        $ids = array_merge($ids, push_korisnici_s_pravom(P_GRUPNI_LOV, $sid === 0 ? null : $sid));
+    }
+    return array_values(array_unique(array_filter($ids)));
+}
+/** SOS primatelji: organizatori + svi koji su trenutno u lovu. */
+function gl_primatelji_sos(array $lov): array
+{
+    $u = array_map('intval', array_column(redovi('SELECT KorisnikId FROM GrupniLovSudionici WHERE LovId=? AND Odgovor=1 AND Otisao IS NULL', [$lov['Id']]), 'KorisnikId'));
+    return array_values(array_unique(array_merge(gl_organizatori($lov), $u)));
+}
+/** Smije li trenutni korisnik preuzeti SOS: organizator ili sudionik u lovu. */
+function gl_u_lovu(array $lov): bool
+{
+    $ja = gl_sudionik((int) $lov['Id'], (int) (korisnik()['Id'] ?? 0));
+    return gl_moze_upravljati($lov) || ($ja && (int) $ja['Odgovor'] === 1 && $ja['Otisao'] === null);
 }
 
 function gl_sos(array $lov, array $s, ?float $lat, ?float $lon): ?string
@@ -263,7 +285,7 @@ function gl_sos(array $lov, array $s, ?float $lat, ?float $lon): ?string
     q('UPDATE GrupniLovSudionici SET SosOd=COALESCE(SosOd, ?), SosLat=?, SosLon=?, SosPreuzeoIme=NULL, SosPreuzeto=NULL, Odgovor=1 WHERE LovId=? AND KorisnikId=?',
         [sada(), $lat ?? $s['Lat'], $lon ?? $s['Lon'], $lov['Id'], $s['KorisnikId']]);
     $tel = $s['ClanId'] ? (string) vrijednost('SELECT MobilniTelefon FROM Clanovi WHERE Id=?', [$s['ClanId']]) : '';
-    push_posalji([(int) $lov['KreiraoKorisnikId']], 'grupni', '🆘 SOS – ' . $s['Ime'] . ' treba pomoć!',
+    push_posalji(gl_primatelji_sos($lov), 'grupni', '🆘 SOS – ' . $s['Ime'] . ' treba pomoć!',
         ($tel !== '' ? '📞 ' . $tel . ' · ' : '') . 'Dodirnite za položaj na karti. ' . $lov['Naziv'], 'grupni-lov', ['id' => $lov['Id'], 'k' => $s['KorisnikId']],
         'gl-sos-' . $s['KorisnikId'], ['ostaje' => true, 'vibracija' => [800, 200, 800, 200, 800, 200, 800]]);
     dnevnik('Grupni lov – SOS', 'GrupniLov', (int) $lov['Id'], $s['Ime']);
@@ -273,15 +295,19 @@ function gl_sos(array $lov, array $s, ?float $lat, ?float $lon): ?string
 function gl_sos_otkazi(array $lov, array $s): void
 {
     q('UPDATE GrupniLovSudionici SET SosOd=NULL, SosLat=NULL, SosLon=NULL, SosPreuzeoIme=NULL, SosPreuzeto=NULL WHERE LovId=? AND KorisnikId=?', [$lov['Id'], $s['KorisnikId']]);
-    push_posalji([(int) $lov['KreiraoKorisnikId']], 'grupni', '✅ ' . $s['Ime'] . ' – SOS otkazan', 'Sve u redu · ' . $lov['Naziv'], 'grupni-lov', ['id' => $lov['Id']], 'gl-sos-' . $s['KorisnikId']);
+    push_posalji(gl_primatelji_sos($lov), 'grupni', '✅ ' . $s['Ime'] . ' – SOS otkazan', 'Sve u redu · ' . $lov['Naziv'], 'grupni-lov', ['id' => $lov['Id']], 'gl-sos-' . $s['KorisnikId']);
 }
 
 function gl_sos_preuzmi(array $lov, int $korisnikId): ?string
 {
     $k = korisnik();
-    if (!q('UPDATE GrupniLovSudionici SET SosPreuzeoIme=?, SosPreuzeto=? WHERE LovId=? AND KorisnikId=? AND SosOd IS NOT NULL', [$k['Naziv'], sada(), $lov['Id'], $korisnikId])->rowCount()) {
+    $s = gl_sudionik((int) $lov['Id'], $korisnikId);
+    if (!$s || !q('UPDATE GrupniLovSudionici SET SosPreuzeoIme=?, SosPreuzeto=? WHERE LovId=? AND KorisnikId=? AND SosOd IS NOT NULL', [$k['Naziv'], sada(), $lov['Id'], $korisnikId])->rowCount()) {
         return 'SOS više nije aktivan.';
     }
+    // ostali vide da je netko krenuo (zamjenjuje SOS obavijest)
+    push_posalji(array_diff(gl_primatelji_sos($lov), [$korisnikId]), 'grupni', '🚑 ' . $k['Naziv'] . ' ide pomoći – ' . $s['Ime'],
+        'SOS preuzet · ' . $lov['Naziv'], 'grupni-lov', ['id' => $lov['Id'], 'k' => $korisnikId], 'gl-sos-' . $korisnikId);
     push_posalji([$korisnikId], 'grupni', '🚑 Pomoć stiže', $k['Naziv'] . ' je primio vaš SOS. Ostanite na mjestu, karta neka bude otvorena.', 'grupni-lov', ['id' => $lov['Id']], 'gl-sos-odg',
         ['ostaje' => true, 'vibracija' => [300, 100, 300]]);
     return null;
@@ -345,10 +371,9 @@ function gl_stanje(array $lov): array
     $org = gl_moze_upravljati($lov);
     $sekNazivi = array_column(redovi('SELECT Id, Naziv FROM Sekcije'), 'Naziv', 'Id');
     $tel = [];
-    if ($org) {
-        foreach (redovi('SELECT c.Id, c.MobilniTelefon FROM GrupniLovSudionici s JOIN Clanovi c ON c.Id=s.ClanId WHERE s.LovId=?', [$lov['Id']]) as $c) {
-            $tel[(int) $c['Id']] = $c['MobilniTelefon'];
-        }
+    // telefoni: organizator vidi sve, sudionici samo onoga tko je poslao SOS
+    foreach (redovi('SELECT c.Id, c.MobilniTelefon FROM GrupniLovSudionici s JOIN Clanovi c ON c.Id=s.ClanId WHERE s.LovId=?', [$lov['Id']]) as $c) {
+        $tel[(int) $c['Id']] = $c['MobilniTelefon'];
     }
     $sudionici = [];
     $broj = ['dolazi' => 0, 'ne' => 0, 'ceka' => 0, 'otisao' => 0];
@@ -367,7 +392,7 @@ function gl_stanje(array $lov): array
             'sekcija' => $s['SekcijaId'] !== null ? ($sekNazivi[(int) $s['SekcijaId']] ?? '') : '',
             'sos' => $s['SosOd'] ? ['od' => date('H:i', strtotime($s['SosOd'])), 'lat' => $s['SosLat'] !== null ? (float) $s['SosLat'] : null,
                 'lon' => $s['SosLon'] !== null ? (float) $s['SosLon'] : null, 'preuzeo' => $s['SosPreuzeoIme']] : null,
-            'tel' => $org && $s['ClanId'] ? ($tel[(int) $s['ClanId']] ?? null) : null,
+            'tel' => ($org || $s['SosOd']) && $s['ClanId'] ? ($tel[(int) $s['ClanId']] ?? null) : null,
         ];
     }
     $ja = gl_sudionik((int) $lov['Id'], (int) $k['Id']);
