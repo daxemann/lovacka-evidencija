@@ -153,6 +153,7 @@ function obrisi_clana_trajno(int $id): void
             q('DELETE FROM PorukeRazgovora WHERE PosiljateljId=?', [$kid]);
             q('DELETE FROM Korisnici WHERE Id=?', [$kid]);
         }
+        q('DELETE FROM ClanIskaznice WHERE ClanId=?', [$id]);
         q('DELETE FROM Clanovi WHERE Id=?', [$id]);
     });
     dnevnik('Trajno brisanje člana', 'Clan', null, puno_ime($c) . " (ID $id), računa: " . count($racuni));
@@ -295,6 +296,9 @@ function spoji_clanove(int $zadrzatiId, int $ukloniId, array $odDrugog): string
         q('DELETE FROM PlaniraneUloge WHERE ClanId=?', [$uid]);
         q('UPDATE LovniPsi SET ClanId=? WHERE ClanId=?', [$zid, $uid]);
         q('DELETE FROM Pozivnice WHERE ClanId=?', [$uid]);
+        // popisi sudionika grupnog lova (bez dupliciranja u istom lovu); iskaznica uklonjenog unosa prestaje vrijediti
+        q('UPDATE GrupniLovPopis SET ClanId=? WHERE ClanId=? AND LovId NOT IN (SELECT LovId FROM GrupniLovPopis WHERE ClanId=?)', [$zid, $uid, $zid]);
+        q('DELETE FROM ClanIskaznice WHERE ClanId=?', [$uid]);
         // računi
         $rz = red('SELECT * FROM Korisnici WHERE ClanId=?', [$zid]);
         $ru = red('SELECT * FROM Korisnici WHERE ClanId=?', [$uid]);

@@ -82,7 +82,18 @@ if (gl_vidljivo() || ($k['ClanId'] && $revir)) {
     . (ima(P_GRUPNI_LOV) ? '
 <li><i>Organizator:</i> <b>🎯 Grupni lov → Pokreni</b> (naziv, mjesto okupljanja, napomena, sekcije). Vidite tko dolazi, tko ne i tko nije odgovorio,
 sve sudionike na karti, <b>📡 gubitak signala</b> (nema javljanja ' . GL_SIGNAL_MIN . ' min – sivo, zadnji poznati položaj) i <b>🆘 SOS</b> s gumbom <b>🚑 Idem pomoći</b> i telefonom.
-SOS stiže organizatorima (tko je pokrenuo lov i svi s pravom Grupni lov za tu sekciju, npr. Lovnik) i svim sudionicima; gubitak signala samo organizatorima. Za istu sekciju istodobno može biti samo jedan lov. Završeni lovovi: popis tko je sudjelovao (bez položaja).</li>' : '') . '
+SOS stiže organizatorima (tko je pokrenuo lov i svi s pravom Grupni lov za tu sekciju, npr. Lovnik) i svim sudionicima; gubitak signala samo organizatorima. Za istu sekciju istodobno može biti samo jedan lov. Završeni lovovi: popis tko je sudjelovao (bez položaja).</li>
+<li><i>Organizator / Lovnik:</i> <b>📋 Popis sudionika – skeniraj iskaznice</b>: kamera ostaje otvorena, skenirate člansku iskaznicu (plastičnu ili 🪪 u aplikaciji) jednu za drugom – zvučni signal, fotografija i ime, popis se slaže sam.
+Radi i <b>bez signala</b> dok je stranica otvorena (otvorite je prije s internetom) – upisi čekaju na mobitelu i šalju se sami. Bez iskaznice ili gost: <b>✍ Ručni upis</b>. <b>📄 PDF</b> s rubrikom za potpis.
+Popis je samo popis – ne mijenja odgovore na poziv, bodove ni dezinfekciju.</li>' : '') . '
+</ul>');
+}
+if ($k['ClanId']) {
+    $o('iskaznica', '🪪 Članska iskaznica (QR)', '
+<ul>
+<li><b>Moje → 🪪 Moja iskaznica</b>: iskaznica s fotografijom i QR kodom. Kod grupnog lova lovnik je skenira i upisuje vas u popis sudionika – ništa drugo.</li>
+<li>U QR kodu nema vaših podataka (samo slučajni ključ). Stranica radi i bez signala ako ste je jednom otvorili s internetom. <b>🔍 Veliki QR</b> se lakše skenira.</li>
+<li>Plastičnu / papirnatu iskaznicu ispisuje uprava (<i>Članovi → član → 🪪 Iskaznica</i>). Vrijedi dok ste aktivan član; izgubljenu uprava zamjenjuje novom – stara tada više ne vrijedi.</li>
 </ul>');
 }
 

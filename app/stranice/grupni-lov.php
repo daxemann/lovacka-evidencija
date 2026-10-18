@@ -81,7 +81,7 @@ if (!$lov) {
         stranica('Grupni lov', '<h1 class="h3">🎯 Grupni lov</h1><div class="alert alert-secondary">Trenutno nema grupnog lova.</div>');
     }
     $prosli = array_values(array_filter(redovi('SELECT l.*, (SELECT COUNT(*) FROM GrupniLovSudionici s WHERE s.LovId=l.Id AND s.Odgovor=1) AS Dosli,
-        (SELECT COUNT(*) FROM GrupniLovSudionici s WHERE s.LovId=l.Id) AS Pozvani FROM GrupniLov l WHERE l.Zavrseno IS NOT NULL ORDER BY l.Id DESC LIMIT 60'), 'gl_moze_upravljati'));
+        (SELECT COUNT(*) FROM GrupniLovSudionici s WHERE s.LovId=l.Id) AS Pozvani, (SELECT COUNT(*) FROM GrupniLovPopis p WHERE p.LovId=l.Id) AS NaPopisu FROM GrupniLov l WHERE l.Zavrseno IS NOT NULL ORDER BY l.Id DESC LIMIT 60'), 'gl_moze_upravljati'));
     ob_start(); ?>
     <h1 class="h3">🎯 Grupni lov</h1>
     <?php if (!$organizatorSek): ?>
@@ -111,11 +111,13 @@ if (!$lov) {
     <?php if ($prosli): ?>
     <h2 class="h5">Završeni grupni lovovi</h2>
     <div class="table-responsive"><table class="table table-sm align-middle">
-        <thead><tr><th>Datum</th><th>Naziv</th><th>Organizator</th><th class="text-end">Došli / pozvani</th><th></th></tr></thead><tbody>
+        <thead><tr><th>Datum</th><th>Naziv</th><th>Organizator</th><th class="text-end">Došli / pozvani</th><th class="text-end">Na popisu</th><th></th></tr></thead><tbody>
         <?php foreach ($prosli as $p): ?>
             <tr><td><?= e(datum($p['Pocetak'])) ?></td><td><?= e($p['Naziv']) ?></td><td><?= e($p['KreiraoIme']) ?></td>
                 <td class="text-end"><?= (int) $p['Dosli'] ?> / <?= (int) $p['Pozvani'] ?></td>
-                <td class="text-end"><a class="btn btn-sm btn-outline-secondary" href="<?= e(url('grupni-lov', ['id' => $p['Id']])) ?>">Sudionici</a></td></tr>
+                <td class="text-end"><?= (int) $p['NaPopisu'] ?: '' ?></td>
+                <td class="text-end text-nowrap"><a class="btn btn-sm btn-outline-secondary" href="<?= e(url('grupni-lov', ['id' => $p['Id']])) ?>">Sudionici</a>
+                    <a class="btn btn-sm btn-outline-secondary" href="<?= e(url('grupni-popis', ['id' => $p['Id']])) ?>">📋 Popis</a></td></tr>
         <?php endforeach; ?>
     </tbody></table></div>
     <?php endif;
@@ -133,6 +135,12 @@ if (!gl_aktivan($lov)) {
     <p class="text-muted"><?= e(datum_vrijeme($lov['Pocetak'])) ?> – <?= e(date('H:i', strtotime((string) $lov['Zavrseno']))) ?> · organizator <?= e($lov['KreiraoIme']) ?> · završio: <?= e($lov['ZavrsioIme']) ?>
         <?= $lov['Mjesto'] ? '· 📍 ' . e($lov['Mjesto']) : '' ?></p>
     <p class="small text-muted">Položaji su obrisani pri završetku lova – ostaje samo tko je sudjelovao.</p>
+    <?php $naPopisu = (int) vrijednost('SELECT COUNT(*) FROM GrupniLovPopis WHERE LovId=?', [$lov['Id']]); ?>
+    <div class="d-flex flex-wrap gap-2 mb-3">
+        <a class="btn btn-outline-primary" href="<?= e(url('grupni-popis', ['id' => $lov['Id']])) ?>">📋 Popis sudionika (skenirane iskaznice: <?= $naPopisu ?>)</a>
+        <?php if ($naPopisu): ?><a class="btn btn-outline-secondary" href="<?= e(url('grupni-popis', ['id' => $lov['Id'], 'pdf' => 1])) ?>" target="_blank">📄 PDF popisa</a><?php endif; ?>
+    </div>
+    <h2 class="h6">Odgovori na poziv</h2>
     <table class="table table-sm"><thead><tr><th>Lovac</th><th>Odgovor</th><th>Napomena</th></tr></thead><tbody>
     <?php foreach ($sud as $s): ?>
         <tr><td><?= e($s['Ime']) ?></td>
@@ -206,7 +214,9 @@ ob_start(); ?>
         <p class="small text-muted mt-2 mb-0">📱 Položaj se šalje <b>samo dok je ova stranica otvorena</b> (zaslon ostaje upaljen). Ugasite li zaslon, organizator vidi vaš zadnji položaj.</p>
         <?php endif; ?>
         <?php if ($org): ?>
-        <form method="post" class="mt-3"><?= csrf() ?><input type="hidden" name="id" value="<?= (int) $lov['Id'] ?>">
+        <a class="btn btn-success w-100 mt-3" href="<?= e(url('grupni-popis', ['id' => $lov['Id']])) ?>">📋 Popis sudionika – skeniraj iskaznice
+            <span class="badge text-bg-light ms-1"><?= (int) vrijednost('SELECT COUNT(*) FROM GrupniLovPopis WHERE LovId=?', [$lov['Id']]) ?></span></a>
+        <form method="post" class="mt-2"><?= csrf() ?><input type="hidden" name="id" value="<?= (int) $lov['Id'] ?>">
             <button class="btn btn-danger w-100" name="radnja" value="zavrsi" onclick="return confirm('Lov završen? Svi sudionici dobivaju obavijest, položaji se brišu.')">🏁 Lov završen</button>
         </form>
         <?php endif; ?>

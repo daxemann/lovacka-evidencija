@@ -56,6 +56,7 @@ $ikona = url('ikona', ['v' => 192, 'x' => postavka('Udruga.Logo')]);
         <div id="sk-stanice" class="small text-muted">Popis se sprema kad aplikaciju otvorite s internetom (prijavljeni).</div>
     </div></div>
 
+    <a class="btn btn-outline-success w-100 mb-2" href="<?= e(url('moja-iskaznica')) ?>" id="sk-iskaznica" hidden>🪪 Moja iskaznica (QR za popis lova)</a>
     <div class="d-flex gap-2">
         <a class="btn btn-outline-secondary flex-grow-1" href="<?= e(url()) ?>" id="sk-aplikacija">Otvori aplikaciju</a>
         <button type="button" class="btn btn-outline-secondary" onclick="location.reload()" title="Osvježi">⟳</button>

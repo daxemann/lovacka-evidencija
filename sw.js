@@ -1,6 +1,6 @@
 /* Lovačka evidencija – service worker.
  * "Dodaj na početni zaslon" + rad bez signala:
- *  - stranice dezinfekcijskih stanica i stranica "Skeniraj" spremaju se na mobitel,
+ *  - stranice dezinfekcijskih stanica, stranica "Skeniraj" i "Moja iskaznica" spremaju se na mobitel,
  *  - bez interneta se aplikacija otvara na stranici "Skeniraj" (skener QR, upisi na čekanju, spremljene stanice),
  *  - upisi spremljeni bez interneta šalju se i kad je aplikacija zatvorena (Background Sync – Android/Chrome;
  *    iPhone to ne podržava – tamo se šalju kad se aplikacija otvori).
@@ -22,6 +22,8 @@ self.addEventListener('activate', function (e) {
 function skeniraj() { return new URL('index.php?p=skeniraj', self.registration.scope).href; }
 function jeStanica(u) { return u.searchParams.get('p') === 'dez' && !!u.searchParams.get('s'); }
 function jeSkeniraj(u) { return u.searchParams.get('p') === 'skeniraj'; }
+function iskaznica() { return new URL('index.php?p=moja-iskaznica', self.registration.scope).href; }
+function jeIskaznica(u) { return u.searchParams.get('p') === 'moja-iskaznica'; }
 function bezInterneta() {
     return new Response('<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
         + '<div style="font-family:system-ui;padding:2rem;text-align:center"><h2>Nema interneta</h2><p>Provjerite vezu i pokušajte ponovno.</p>'
@@ -105,7 +107,7 @@ self.addEventListener('message', function (e) {
         // promjena korisnika / odjava: spremljene stranice stanica sadrže ime i vozila prethodnog korisnika
         e.waitUntil(caches.open(SPREMNIK).then(function (c) {
             return c.keys().then(function (k) {
-                return Promise.all(k.filter(function (r) { return jeStanica(new URL(r.url)); }).map(function (r) { return c.delete(r); }));
+                return Promise.all(k.filter(function (r) { var u = new URL(r.url); return jeStanica(u) || jeIskaznica(u); }).map(function (r) { return c.delete(r); }));
             });
         }));
         return;
@@ -132,6 +134,12 @@ self.addEventListener('fetch', function (e) {
             // stanica: s interneta (najviše 8 s, slab signal u lovištu), inače spremljena kopija; nije spremljena → "Skeniraj" s porukom
             e.respondWith(sRokom(fetch(req), 8000).then(function (r) { spremi(url.href, r); return r; })
                 .catch(function () { return caches.match(url.href).then(function (m) { return m || izvanmrezno(); }); }));
+            return;
+        }
+        if (jeIskaznica(url)) {
+            // članska iskaznica: s interneta, bez signala spremljena kopija (lovnik je skenira i u lovištu)
+            e.respondWith(sRokom(fetch(req), 8000).then(function (r) { spremi(iskaznica(), r); return r; })
+                .catch(function () { return caches.match(iskaznica()).then(function (m) { return m || izvanmrezno(); }); }));
             return;
         }
         if (jeSkeniraj(url)) {

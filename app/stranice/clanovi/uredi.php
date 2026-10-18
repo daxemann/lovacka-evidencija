@@ -59,6 +59,12 @@ if (je_post()) {
                 poruka(e($e->getMessage()), 'danger');
             }
             $natrag('podaci');
+        case 'iskaznica-nova':
+            $treba(P_CLANOVI_UREDI);
+            isk_nova($id);
+            dnevnik('Nova članska iskaznica (stara ne vrijedi)', 'Clan', $id, puno_ime($clan));
+            poruka('Izdana je nova iskaznica – stara više ne vrijedi. Ispišite novu (🪪 Iskaznica).');
+            $natrag();
         case 'obrisi-foto':
             $treba(P_CLANOVI_UREDI);
             obrisi_sliku($clan['FotoDatoteka']);
@@ -363,6 +369,9 @@ ob_start(); ?>
     <?php if ($id): ?>
         <?php if (ima(P_AKCIJE_CITAJ)): ?><a class="btn btn-sm btn-outline-success no-print" href="<?= e(url('clanovi/uredi', ['id' => $id, 'kartica' => $kartica, 'posalji' => 'bodovi'])) ?>">Pošalji popis bodova</a><?php endif; ?>
         <?php if (ima(P_CLANARINA_CITAJ)): ?><a class="btn btn-sm btn-outline-success no-print" href="<?= e(url('clanovi/uredi', ['id' => $id, 'kartica' => $kartica, 'posalji' => 'clanarina'])) ?>">Info o članarini</a><?php endif; ?>
+        <?php if ($uredi && !$arhiviran): ?>
+        <a class="btn btn-sm btn-outline-primary no-print" href="<?= e(url('izvoz/iskaznice', ['clan' => $id])) ?>" target="_blank" title="Članska iskaznica s QR kodom (PDF)">🪪 Iskaznica</a>
+        <?php endif; ?>
         <button class="btn btn-sm btn-outline-secondary no-print" onclick="window.print()">Ispis</button>
     <?php endif; ?>
 </div>
@@ -390,6 +399,16 @@ ob_start(); ?>
                     <input type="file" accept="image/*" data-smanji="1200" class="d-none" form="obrazacFoto" name="foto" onchange="this.form.submit()"></label>
                 <?php if ($clan['FotoDatoteka']): ?><button type="submit" form="obrazacFotoBrisi" class="btn btn-sm btn-link text-danger">Ukloni</button><?php endif; ?>
             </div>
+            <?php if (!$arhiviran): ?>
+            <div class="mt-3 text-start small border rounded p-2 no-print">
+                <div class="fw-semibold mb-1">🪪 Članska iskaznica (QR)</div>
+                <a href="<?= e(url('izvoz/iskaznice', ['clan' => $id])) ?>" target="_blank">PDF – običan pisač (A4)</a><br>
+                <a href="<?= e(url('izvoz/iskaznice', ['clan' => $id, 'format' => 'kartica'])) ?>" target="_blank">PDF – pisač kartica (85,6 × 54 mm)</a>
+                <button type="submit" form="obrazacIskaznica" class="btn btn-sm btn-link text-danger p-0 d-block mt-1"
+                    data-potvrda="Izdati novu iskaznicu? Stara iskaznica (izgubljena / ukradena) odmah prestaje vrijediti – i u aplikaciji člana.">Nova iskaznica (stara prestaje vrijediti)</button>
+                <div class="form-text">QR služi samo za popis sudionika grupnog lova. Vrijedi dok je član aktivan.</div>
+            </div>
+            <?php endif; ?>
         <?php endif; ?>
         <div class="mt-3 text-start">
             <label class="form-label">Sekcija / lovna jedinica</label>
@@ -475,6 +494,7 @@ ob_start(); ?>
 <?php if ($id && $uredi): ?>
     <form method="post" id="obrazacFoto" enctype="multipart/form-data" action="<?= e(url('clanovi/uredi', ['id' => $id])) ?>"><?= csrf() ?><input type="hidden" name="radnja" value="foto"></form>
     <form method="post" id="obrazacFotoBrisi" action="<?= e(url('clanovi/uredi', ['id' => $id])) ?>"><?= csrf() ?><input type="hidden" name="radnja" value="obrisi-foto"></form>
+    <form method="post" id="obrazacIskaznica" action="<?= e(url('clanovi/uredi', ['id' => $id])) ?>"><?= csrf() ?><input type="hidden" name="radnja" value="iskaznica-nova"></form>
     <form method="post" id="obrazacPogresan" action="<?= e(url('clanovi/uredi', ['id' => $id])) ?>"><?= csrf() ?><input type="hidden" name="radnja" value="obrisi-pogresan"></form>
     <form method="post" id="obrazacVrati" action="<?= e(url('clanovi/uredi', ['id' => $id])) ?>"><?= csrf() ?><input type="hidden" name="radnja" value="vrati"></form>
     <div class="card border-warning mt-3 no-print d-none" id="arhivForma"><div class="card-body">

@@ -1,5 +1,18 @@
 # Promjene
 
+## 1.29.0 – 2026-10
+- **🪪 Članska iskaznica s QR kodom** (format bankovne kartice 85,6 × 54 mm): logo i naziv udruge, fotografija, ime i prezime, sekcija, „član od“ i QR kod – sve na jednoj strani.
+  U QR kodu nema imena ni OIB-a, samo slučajni ključ. Iskaznica **vrijedi dok je član aktivan** (arhiviran / obrisan → ne vrijedi), bez godine isteka.
+- **Ispis (PDF):** Članovi → član → **🪪 Iskaznica**; svi članovi kartice/sekcije (**🪪 Iskaznice** na popisu) ili odabrani (kvačice → 🪪 Iskaznice). **10 na A4** za običan pisač (izrezati, ispis na 100 %)
+  ili **85,6 × 54 mm po stranici** za pisač kartica / PVC kartice.
+- **Nova iskaznica** (izgubljena / ukradena): novi ključ, stara odmah prestaje vrijediti – i u aplikaciji.
+- **Moje → 🪪 Moja iskaznica**: ista iskaznica u aplikaciji, s **velikim QR-om** za skeniranje; stranica radi i **bez signala** (spremljena na mobitelu, briše se pri odjavi / promjeni korisnika).
+- **📋 Grupni lov – popis sudionika**: organizator / Lovnik skenira iskaznice (kamera ostaje otvorena, zvučni signal, fotografija i ime) i **popis se slaže sam** – bez traženja po popisu.
+  Radi **bez signala** dok je stranica otvorena: članovi sekcija lova prepoznaju se odmah, upisi čekaju na mobitelu i šalju se sami; iskaznice članova drugih sekcija provjerava poslužitelj kad bude signala.
+  Dvostruko skeniranje ne stvara dvostruki upis; nevažeća iskaznica (stara, arhiviran član) se odbija. **✍ Ručni upis** člana ili **gosta**, uklanjanje s popisa, **📄 PDF** (abecedno, rubrika za potpis).
+  Više lovnika može skenirati istodobno. Popis ostaje i nakon završetka lova (Završeni grupni lovovi → 📋 Popis).
+- Popis je **samo popis** – nije povezan s odgovorima na poziv, bodovima, dezinfekcijom ni ničim drugim.
+
 ## 1.28.1 – 2026-10
 - **📖 Upute za korištenje** ažurirane na trenutno stanje: zajednički **Oglasnik lovaca** (ulaz bez lozinke, interno/javno, moderacija, pravila za oružje),
   **push obavijesti** – popis vrsta prema vašim pravima (i Lovački domovi), poziv na lov i SOS se ne isključuju; **grupni lov** – upute vidi svaki član lovišta i prije lova (stavka u izborniku i dalje samo dok traje lov);

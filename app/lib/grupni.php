@@ -419,3 +419,181 @@ function gl_broj_izbornik(): int
     }
     return $n;
 }
+
+// ---------- Popis sudionika (lovnik skenira članske iskaznice) ----------
+// Popis služi samo kao popis – ne utječe na poziv (dolazim / ne dolazim), bodove, dezinfekciju ni ništa drugo.
+
+/** Uvjet za članove sekcija lova (0 = članovi bez sekcije). */
+function gl_uvjet_sekcija(array $lov, string $alias = 'c'): string
+{
+    $sek = gl_sekcije_lova($lov);
+    $uvjet = [];
+    $ids = array_filter($sek);
+    if ($ids) {
+        $uvjet[] = "$alias.SekcijaId IN (" . implode(',', $ids) . ')';
+    }
+    if (in_array(0, $sek, true)) {
+        $uvjet[] = "$alias.SekcijaId IS NULL";
+    }
+    return $uvjet ? '(' . implode(' OR ', $uvjet) . ')' : '1=0';
+}
+
+/**
+ * Članovi sekcija lova za skeniranje bez signala i ručni upis: [['t' => ključ, 'id', 'ime', 'sek', 'f' => adresa fotografije]].
+ * Iskaznice članova drugih sekcija prepoznaje poslužitelj (kad ima signala).
+ */
+function gl_popis_imenik(array $lov): array
+{
+    $clanovi = redovi('SELECT c.Id, c.Ime, c.Prezime, c.FotoDatoteka, s.Naziv AS SekcijaNaziv FROM Clanovi c LEFT JOIN Sekcije s ON s.Id=c.SekcijaId
+        WHERE c.Status=' . CLAN_AKTIVAN . ' AND ' . gl_uvjet_sekcija($lov));
+    $kljucevi = isk_kljucevi(array_column($clanovi, 'Id'));
+    $coll = class_exists('Collator') ? new Collator('hr_HR') : null;
+    usort($clanovi, fn($a, $b) => $coll ? $coll->compare(prezime_ime($a), prezime_ime($b)) : strcmp(kljuc(prezime_ime($a)), kljuc(prezime_ime($b))));
+    return array_map(fn($c) => [
+        't' => $kljucevi[(int) $c['Id']] ?? '', 'id' => (int) $c['Id'], 'ime' => prezime_ime($c),
+        'sek' => (string) ($c['SekcijaNaziv'] ?? ''), 'f' => $c['FotoDatoteka'] ? foto_url($c['FotoDatoteka']) : null,
+    ], $clanovi);
+}
+
+function gl_popis(array $lov): array
+{
+    return redovi('SELECT * FROM GrupniLovPopis WHERE LovId=? ORDER BY Vrijeme, Id', [$lov['Id']]);
+}
+
+/** Popis za stranicu (JSON). */
+function gl_popis_json(array $lov): array
+{
+    $foto = [];
+    foreach (redovi('SELECT p.ClanId, c.FotoDatoteka FROM GrupniLovPopis p JOIN Clanovi c ON c.Id=p.ClanId WHERE p.LovId=? AND c.FotoDatoteka IS NOT NULL', [$lov['Id']]) as $r) {
+        $foto[(int) $r['ClanId']] = foto_url($r['FotoDatoteka']);
+    }
+    return array_map(fn($p) => [
+        'id' => (int) $p['Id'], 'clan' => $p['ClanId'] !== null ? (int) $p['ClanId'] : null, 'ime' => $p['Ime'], 'sek' => (string) $p['Sekcija'],
+        'gost' => (bool) $p['Gost'], 'nacin' => $p['Nacin'], 'vrijeme' => date('H:i', strtotime($p['Vrijeme'])), 'upisao' => (string) $p['Upisao'],
+        'f' => $p['ClanId'] !== null ? ($foto[(int) $p['ClanId']] ?? null) : null,
+    ], gl_popis($lov));
+}
+
+/** Vrijeme skeniranja s mobitela (i bez signala) – ne u budućnosti i ne prije početka lova. */
+function gl_popis_vrijeme(array $lov, ?int $ms): string
+{
+    if (!$ms) {
+        return sada();
+    }
+    $t = intdiv($ms, 1000);
+    $t = min($t, time());
+    $t = max($t, strtotime($lov['Pocetak']) - 6 * 3600); // npr. skenirano na okupljanju prije pokretanja lova
+    return date('Y-m-d H:i:s', $t);
+}
+
+/**
+ * Skenirana iskaznica → upis u popis.
+ * Vraća ['ok' => bool, 'vec' => bool (već je na popisu), 'ime', 'sek', 'f', 'greska', 'trajno' (ne pokušavati ponovno)].
+ */
+function gl_popis_skeniraj(array $lov, string $tekst, ?int $ms = null, ?string $klijentId = null): array
+{
+    $k = korisnik();
+    $token = isk_token_iz_teksta($tekst);
+    if (!$token) {
+        return ['ok' => false, 'trajno' => true, 'greska' => 'Ovo nije članska iskaznica.'];
+    }
+    $c = isk_clan($token);
+    if (!$c) {
+        return ['ok' => false, 'trajno' => true, 'greska' => 'Iskaznica ne vrijedi (zamijenjena novom ili član više ne postoji).'];
+    }
+    $ime = prezime_ime($c);
+    if ((int) $c['Status'] !== CLAN_AKTIVAN) {
+        return ['ok' => false, 'trajno' => true, 'ime' => $ime, 'greska' => 'Iskaznica ne vrijedi – ' . $ime . ' nije aktivan član.'];
+    }
+    $rez = ['ok' => true, 'vec' => false, 'ime' => $ime, 'sek' => (string) ($c['SekcijaNaziv'] ?? ''), 'f' => $c['FotoDatoteka'] ? foto_url($c['FotoDatoteka']) : null];
+    if (vrijednost('SELECT 1 FROM GrupniLovPopis WHERE LovId=? AND ClanId=?', [$lov['Id'], $c['Id']])) {
+        return ['vec' => true] + $rez;
+    }
+    q('INSERT OR IGNORE INTO GrupniLovPopis (LovId, ClanId, Ime, Sekcija, Gost, Nacin, Vrijeme, Upisao, KlijentId, Kreirano) VALUES (?,?,?,?,0,?,?,?,?,?)',
+        [$lov['Id'], $c['Id'], $ime, $rez['sek'] ?: null, 'qr', gl_popis_vrijeme($lov, $ms), $k['Naziv'], $klijentId ? mb_substr($klijentId, 0, 40) : null, sada()]);
+    return $rez;
+}
+
+/** Ručni upis: član (bez iskaznice pri ruci) ili gost (ime). */
+function gl_popis_rucno(array $lov, ?int $clanId, string $gost): ?string
+{
+    $k = korisnik();
+    if ($clanId) {
+        $c = red('SELECT c.*, s.Naziv AS SekcijaNaziv FROM Clanovi c LEFT JOIN Sekcije s ON s.Id=c.SekcijaId WHERE c.Id=? AND c.Status=' . CLAN_AKTIVAN . ' AND ' . gl_uvjet_sekcija($lov), [$clanId]);
+        if (!$c) {
+            return 'Član nije pronađen među aktivnim članovima sekcija ovog lova – člana druge sekcije upišite skeniranjem iskaznice.';
+        }
+        if (vrijednost('SELECT 1 FROM GrupniLovPopis WHERE LovId=? AND ClanId=?', [$lov['Id'], $c['Id']])) {
+            return prezime_ime($c) . ' je već na popisu.';
+        }
+        umetni('GrupniLovPopis', ['LovId' => $lov['Id'], 'ClanId' => $c['Id'], 'Ime' => prezime_ime($c), 'Sekcija' => $c['SekcijaNaziv'] ?: null, 'Gost' => 0,
+            'Nacin' => 'rucno', 'Vrijeme' => sada(), 'Upisao' => $k['Naziv'], 'Kreirano' => sada()]);
+        return null;
+    }
+    $gost = mb_substr(trim(preg_replace('/\s+/', ' ', $gost)), 0, 80);
+    if (mb_strlen($gost) < 3) {
+        return 'Upišite ime i prezime gosta.';
+    }
+    umetni('GrupniLovPopis', ['LovId' => $lov['Id'], 'ClanId' => null, 'Ime' => $gost, 'Sekcija' => null, 'Gost' => 1,
+        'Nacin' => 'rucno', 'Vrijeme' => sada(), 'Upisao' => $k['Naziv'], 'Kreirano' => sada()]);
+    return null;
+}
+
+function gl_popis_ukloni(array $lov, int $id): void
+{
+    $p = red('SELECT * FROM GrupniLovPopis WHERE Id=? AND LovId=?', [$id, $lov['Id']]);
+    if ($p) {
+        q('DELETE FROM GrupniLovPopis WHERE Id=?', [$id]);
+        dnevnik('Grupni lov – uklonjen s popisa', 'GrupniLov', (int) $lov['Id'], $p['Ime']);
+    }
+}
+
+/** PDF popisa sudionika (abecedno). */
+function gl_popis_pdf(array $lov): string
+{
+    $popis = gl_popis($lov);
+    $coll = class_exists('Collator') ? new Collator('hr_HR') : null;
+    // članovi abecedno, zatim gosti
+    usort($popis, fn($a, $b) => ((int) $a['Gost'] <=> (int) $b['Gost'])
+        ?: ($coll ? $coll->compare($a['Ime'], $b['Ime']) : strcmp(kljuc($a['Ime']), kljuc($b['Ime']))));
+    $clanova = count(array_filter($popis, fn($p) => !$p['Gost']));
+    $redovi = '';
+    foreach ($popis as $i => $p) {
+        $redovi .= '<tr><td class="d">' . ($i + 1) . '.</td><td>' . e($p['Ime']) . '</td><td>' . ($p['Gost'] ? '<i>gost</i>' : e((string) $p['Sekcija'])) . '</td>'
+            . '<td class="d">' . e(date('H:i', strtotime($p['Vrijeme']))) . '</td><td>' . ($p['Nacin'] === 'qr' ? 'iskaznica' : 'ručno') . '</td><td class="potpis-polje"></td></tr>';
+    }
+    $kraj = $lov['Zavrseno'] ? date('H:i', strtotime($lov['Zavrseno'])) : '';
+    $html = '<html><head><meta charset="utf-8"><style>
+        @page { margin: 16mm 14mm 16mm 14mm; }
+        body { font-family: DejaVu Sans, sans-serif; font-size: 9pt; color: #222; }
+        .zag { border-bottom: 2px solid #3d6b2f; padding-bottom: 6px; margin-bottom: 10px; }
+        .zag .n { font-size: 13pt; font-weight: bold; color: #2f5d23; } .zag .p { color: #666; }
+        h2 { font-size: 12pt; margin: 4px 0 2px; } .info { color: #555; margin-bottom: 8px; }
+        table.t { width: 100%; border-collapse: collapse; } .t th { background: #e9efe5; text-align: left; }
+        .t th, .t td { border: 0.5pt solid #999; padding: 4px 4px; vertical-align: middle; } .t .d { text-align: right; white-space: nowrap; }
+        .t td.potpis-polje { width: 32mm; } .t tbody td { height: 6mm; }
+        .potpis { width: 100%; margin-top: 14mm; font-size: 9pt; } .potpis td { padding: 0 4px; }
+        .podnozje { position: fixed; bottom: -8mm; left: 0; right: 0; font-size: 7.5pt; color: #888; }
+    </style></head><body>
+    <div class="podnozje">' . e(udruga_naziv()) . ' · ispisano ' . date('d.m.Y. H:i') . '</div>
+    <div class="zag"><div class="n">' . e(udruga_naziv()) . '</div><div class="p">Popis sudionika grupnog lova</div></div>
+    <h2>' . e($lov['Naziv']) . '</h2>
+    <div class="info">' . e(datum($lov['Pocetak'])) . ' · ' . e(date('H:i', strtotime($lov['Pocetak']))) . ($kraj ? '–' . e($kraj) : '')
+        . ($lov['Mjesto'] ? ' · ' . e($lov['Mjesto']) : '') . ' · organizator ' . e($lov['KreiraoIme'])
+        . '<br>Ukupno <b>' . count($popis) . '</b> (članova ' . $clanova . ', gostiju ' . (count($popis) - $clanova) . ')</div>
+    <table class="t"><thead><tr><th class="d">Rb.</th><th>Prezime i ime</th><th>Sekcija</th><th class="d">Vrijeme</th><th>Upis</th><th>Potpis</th></tr></thead>
+    <tbody>' . ($redovi ?: '<tr><td colspan="6">Popis je prazan.</td></tr>') . '</tbody></table>
+    <table class="potpis"><tr><td>Lovnik / voditelj lova: ______________________________</td><td>Potpis: ____________________</td></tr></table>
+    </body></html>';
+    $opt = new Dompdf\Options();
+    $opt->set('defaultFont', 'DejaVu Sans');
+    $opt->set('isRemoteEnabled', false);
+    $opt->set('tempDir', sys_get_temp_dir());
+    $opt->set('fontCache', podaci());
+    $pdf = new Dompdf\Dompdf($opt);
+    $pdf->loadHtml($html, 'UTF-8');
+    $pdf->setPaper('A4', 'portrait');
+    $pdf->render();
+    $pdf->getCanvas()->page_text(520, 815, 'str. {PAGE_NUM}/{PAGE_COUNT}', null, 7, [0.5, 0.5, 0.5]);
+    return (string) $pdf->output();
+}

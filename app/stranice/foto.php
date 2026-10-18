@@ -31,6 +31,17 @@ if (!$dozvoljeno && str_starts_with($ime, 'dok-')) {
     $c = red('SELECT Id, SekcijaId FROM Clanovi WHERE FotoDatoteka=?', [$ime]);
     if ($c) {
         $dozvoljeno = ($k['ClanId'] === (int) $c['Id']) || (ima(P_CLANOVI_CITAJ) && u_opsegu($c));
+        if (!$dozvoljeno && ima(P_GRUPNI_LOV)) {
+            // lovnik kod skeniranja iskaznica: članovi sekcija koje organizira i oni na popisu njegovih grupnih lovova
+            $sek = gl_sekcije_organizator();
+            $dozvoljeno = $c['SekcijaId'] === null ? isset($sek[0]) : isset($sek[(int) $c['SekcijaId']]);
+            foreach ($dozvoljeno ? [] : redovi('SELECT l.* FROM GrupniLovPopis p JOIN GrupniLov l ON l.Id=p.LovId WHERE p.ClanId=? ORDER BY l.Id DESC LIMIT 20', [$c['Id']]) as $l) {
+                if (gl_moze_upravljati($l)) {
+                    $dozvoljeno = true;
+                    break;
+                }
+            }
+        }
     } else {
         $a = red('SELECT a.ClanId, c.SekcijaId FROM RadneAkcije a JOIN Clanovi c ON c.Id=a.ClanId WHERE a.FotoDatoteka=?', [$ime]);
         if ($a) {

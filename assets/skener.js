@@ -56,6 +56,12 @@
         el.appendChild(n);
     }
     stanice();
+    // članska iskaznica spremljena na mobitelu – gumb i bez signala
+    (function () {
+        var a = $('sk-iskaznica');
+        if (!a) return;
+        if (window.caches) caches.match(new URL(a.getAttribute('href'), location.href).href).then(function (m) { if (m) a.hidden = false; });
+    })();
     if (window.DEZ_RED) DEZ_RED.provjeri().then(function (j) { if (j) stanice(); });
 
     var posalji = $('sk-posalji');

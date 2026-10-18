@@ -82,6 +82,10 @@ QR oznaka na stanici svake sekcije, provjera GPS-a, dolazak/odlazak, reg. oznaka
 
 #### 🎯 Grupni lov – karta uživo i SOS
 Poziv svima na mobitel („dolazim / ne dolazim“), položaj sudionika uživo na karti, upozorenje o gubitku signala, **SOS** organizatoru. Kraj lova briše sve položaje.
+**📋 Popis sudionika:** lovnik skenira članske iskaznice (QR) i popis se slaže sam – i bez signala; ručni upis gostiju, PDF s potpisom.
+
+#### 🪪 Članska iskaznica
+Iskaznica s fotografijom i QR kodom u formatu bankovne kartice – PDF 10 na A4 ili za pisač kartica, i u aplikaciji (radi bez signala). Vrijedi dok je član aktivan; izgubljena se zamjenjuje novom.
 
 #### 🔔 Push obavijesti
 Obavijesti na mobitel i kad je aplikacija zatvorena: poruke, obavijesti udruge, radne akcije, kvarovi i zauzimanje čeka. Besplatno (Web Push), Android i iPhone (iOS 16.4+), svaki član bira što prima.

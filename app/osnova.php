@@ -5,7 +5,7 @@
  */
 declare(strict_types=1);
 
-const VERZIJA = '1.28.1';
+const VERZIJA = '1.29.0';
 const KONTAKT_EMAIL = 'daxemann@googlemail.com';
 const PODRSKA_PAYPAL = 'darko.bakic@freenet.de'; // dobrovoljna podrška razvoju (Pomoć i kontakt)
 const PROJEKT_URL = 'https://github.com/daxemann/lovacka-evidencija';
@@ -146,7 +146,7 @@ function db(bool $novo = false): PDO
  * Dodatne tablice PHP verzije (PRAGMA user_version). .NET verzija ih ne poznaje i zanemaruje,
  * pa baza i dalje radi u oba smjera.
  */
-const SHEMA_PHP = 26;
+const SHEMA_PHP = 27;
 function nadogradi_bazu(PDO $pdo): void
 {
     $v = (int) $pdo->query('PRAGMA user_version')->fetchColumn();
@@ -693,6 +693,29 @@ SQL);
             CREATE INDEX IF NOT EXISTS "IX_DomRezervacije_Dom" ON "DomRezervacije" ("DomId", "Od", "Do");
             CREATE INDEX IF NOT EXISTS "IX_DomRezervacije_Status" ON "DomRezervacije" ("Status");
             UPDATE "Uloge" SET "Prava" = "Prava" | 8388608 WHERE ("Prava" & 8388607) = 8388607 OR "Naziv" = \'Domar\' OR "Naziv" LIKE \'Predsjednik%\';');
+    }
+    if ($v < 27) {
+        // Članska iskaznica s QR kodom (stalni slučajni ključ po članu) i popis sudionika grupnog lova (lovnik skenira iskaznice).
+        // Ključ služi SAMO za popis sudionika – nije povezan s dezinfekcijom, bodovima ni ničim drugim.
+        $pdo->exec('CREATE TABLE IF NOT EXISTS "ClanIskaznice" (
+                "ClanId" INTEGER NOT NULL PRIMARY KEY REFERENCES "Clanovi" ("Id") ON DELETE CASCADE,
+                "Token" TEXT NOT NULL,
+                "Kreirano" TEXT NOT NULL);
+            CREATE UNIQUE INDEX IF NOT EXISTS "IX_ClanIskaznice_Token" ON "ClanIskaznice" ("Token");
+            CREATE TABLE IF NOT EXISTS "GrupniLovPopis" (
+                "Id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                "LovId" INTEGER NOT NULL REFERENCES "GrupniLov" ("Id") ON DELETE CASCADE,
+                "ClanId" INTEGER NULL REFERENCES "Clanovi" ("Id") ON DELETE SET NULL,
+                "Ime" TEXT NOT NULL,
+                "Sekcija" TEXT NULL,
+                "Gost" INTEGER NOT NULL DEFAULT 0,
+                "Nacin" TEXT NOT NULL,
+                "Vrijeme" TEXT NOT NULL,
+                "Upisao" TEXT NULL,
+                "KlijentId" TEXT NULL,
+                "Kreirano" TEXT NOT NULL);
+            CREATE INDEX IF NOT EXISTS "IX_GrupniLovPopis_Lov" ON "GrupniLovPopis" ("LovId", "Vrijeme");
+            CREATE UNIQUE INDEX IF NOT EXISTS "IX_GrupniLovPopis_Clan" ON "GrupniLovPopis" ("LovId", "ClanId") WHERE "ClanId" IS NOT NULL;');
     }
     $pdo->exec('PRAGMA user_version = ' . SHEMA_PHP);
     $pdo->commit();
