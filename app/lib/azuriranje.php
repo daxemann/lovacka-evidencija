@@ -318,7 +318,8 @@ function azuriraj_addon(array $izd): string
     $st = supervisor_api('GET', '/store/addons/' . $slug);
     $nova = (string) ($st['data']['version_latest'] ?? '');
     if ($nova === '' || !version_compare($nova, VERZIJA, '>')) {
-        throw new RuntimeException('Home Assistant još ne nudi novu verziju add-ona (' . ($nova ?: '?') . '). Pokušajte za nekoliko minuta.');
+        throw new RuntimeException('Novo izdanje (' . $izd['verzija'] . ') je objavljeno, ali add-on još nije pripremljen (Home Assistant nudi ' . ($nova ?: '?')
+            . '). Priprema add-ona na GitHubu može potrajati – pokušajte kasnije.');
     }
     dnevnik('Ažuriranje programa (add-on)', null, null, VERZIJA . ' → ' . $nova . " (kopija baze: $kopijaBaze)");
     // add-on se gasi tijekom ažuriranja – odgovor se ne čeka

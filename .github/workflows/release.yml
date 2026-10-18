@@ -56,3 +56,13 @@ jobs:
         run: |
           VER="${{ steps.v.outputs.ver }}"
           gh release create "v$VER" --target "$GITHUB_SHA" --title "v$VER" --notes-file notes.md --latest
+
+      - name: Add-on odmah sinkronizirati
+        # Bez ovoga add-on čeka raspored (GitHub ga pokreće tek svakih nekoliko sati).
+        # Treba tajni ključ ADDON_TOKEN (fine-grained token za daxemann/evidencija-addon, pravo Actions: Read and write).
+        if: steps.v.outputs.skip != '1'
+        env:
+          GH_TOKEN: ${{ secrets.ADDON_TOKEN }}
+        run: |
+          if [ -z "$GH_TOKEN" ]; then echo "ADDON_TOKEN nije postavljen – add-on se sinkronizira po rasporedu."; exit 0; fi
+          gh workflow run sinkronizacija.yml -R daxemann/evidencija-addon --ref main && echo "Sinkronizacija add-ona pokrenuta."
