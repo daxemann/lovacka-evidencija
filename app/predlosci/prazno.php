@@ -29,6 +29,7 @@
             <?php endforeach; ?>
             <?= $sadrzaj ?>
         </div></div>
+        <div class="program-potpis-auth"><img src="<?= e(asset('assets/logo-evidencija.svg')) ?>" alt="" width="20" height="20"> Lovačka Evidencija</div>
     </div>
 </div>
 <?php if (($_GET['p'] ?? '') === 'prijava' && !korisnik()): ?>

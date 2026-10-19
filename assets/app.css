@@ -570,3 +570,10 @@ main {
 .modul-kartica.ukljuceno { border-left-color: #2e7d32; background: #f3f8f1; }
 .modul-kartica .form-switch .form-check-input { width: 2.6em; height: 1.4em; cursor: pointer; }
 .modul-kartica .form-check-input:checked { background-color: #2e7d32; border-color: #2e7d32; }
+
+/* ---------- Logo programa (Lovačka Evidencija) – odvojeno od loga udruge ---------- */
+.program-potpis { display: flex; align-items: center; gap: .5rem; padding: 1rem 1rem 1.25rem; margin-top: .5rem; color: rgba(255,255,255,.55); font-size: .75rem; text-decoration: none; border-top: 1px solid rgba(255,255,255,.12); }
+.program-potpis:hover { color: rgba(255,255,255,.85); }
+.program-potpis img { border-radius: 5px; flex: 0 0 auto; box-shadow: 0 0 0 1px rgba(255,255,255,.35); }
+.program-potpis-auth { display: flex; align-items: center; justify-content: center; gap: .4rem; margin-top: 1.25rem; color: #8a8f87; font-size: .8rem; }
+.program-potpis-auth img { border-radius: 4px; }

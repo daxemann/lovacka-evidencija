@@ -4,8 +4,11 @@ $k = korisnik();
 $info = "\n\n---\nUdruga: " . udruga_naziv() . "\nVerzija programa: " . VERZIJA . "\nPHP: " . PHP_VERSION . "\nUređaj / preglednik: " . mb_substr((string) ($_SERVER['HTTP_USER_AGENT'] ?? ''), 0, 160);
 $mail = fn(string $vrsta, string $uvod) => 'mailto:' . KONTAKT_EMAIL . '?subject=' . rawurlencode('Lovačka evidencija – ' . $vrsta) . '&body=' . rawurlencode($uvod . $info);
 ob_start(); ?>
-<h1 class="h3 mb-1">Pomoć i kontakt</h1>
-<p class="text-muted">Lovačka evidencija – besplatni program za lovačke udruge · verzija <b><?= e(VERZIJA) ?></b></p>
+<div class="d-flex align-items-center gap-3 mb-3">
+    <img src="<?= e(asset('assets/logo-evidencija.svg')) ?>" alt="Lovačka Evidencija" width="64" height="64">
+    <div><h1 class="h3 mb-0">Pomoć i kontakt</h1>
+        <div class="text-muted">Lovačka Evidencija – besplatni program za lovačke udruge · verzija <b><?= e(VERZIJA) ?></b></div></div>
+</div>
 <div class="row g-3">
     <div class="col-md-6"><div class="card h-100"><div class="card-body">
         <h2 class="h5">✉️ Pišite autoru</h2>

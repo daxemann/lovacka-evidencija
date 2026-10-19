@@ -1,5 +1,9 @@
 # Promjene
 
+## 1.30.2 – 2026-10
+- **🦌 Logo programa Lovačka Evidencija** (odvojeno od loga udruge): dno izbornika (s verzijom, vodi na Pomoć), ispod prijave, stranica Pomoć i kontakt, banner na GitHubu.
+- Udruge **bez vlastitog loga** dobivaju logo programa kao ikonu aplikacije na početnom zaslonu i u kartici preglednika. Logo udruge ostaje gdje je bio (izbornik gore, PDF-ovi, iskaznice, ikona aplikacije).
+
 ## 1.30.1 – 2026-10
 - **← Sustav** gumb na svim stranicama Sustava (Podaci o udruzi, Korisnici, Uloge, Kopije …) i na postavkama modula otvorenim iz Sustava (vrste radnih akcija, postavke lovišta, stanice dezinfekcije).
 

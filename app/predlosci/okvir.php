@@ -98,6 +98,11 @@ $glUTijeku = $glMoj && (int) $glMoj['ja']['Odgovor'] === 1 && $glMoj['ja']['Otis
                     <?= $grupa('program', 'Program', (!$k['ClanId'] ? $stavka('push', '🔔 Push obavijesti') : '') . $stavka('upute', '📖 Upute za korištenje') . $stavka('pomoc', '❓ Pomoć i kontakt') . (je_demo() ? $stavka('demo-posta', '📧 Demo – e-pošta') : '')) ?>
                 <?php endif; ?>
             </nav>
+            <?php if ($k): ?>
+            <a class="program-potpis" href="<?= e(url('pomoc')) ?>" title="O programu">
+                <img src="<?= e(asset('assets/logo-evidencija.svg')) ?>" alt="" width="22" height="22"><span>Lovačka Evidencija · <?= e(VERZIJA) ?></span>
+            </a>
+            <?php endif; ?>
         </div>
     </div>
     <main>
