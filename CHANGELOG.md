@@ -1,5 +1,9 @@
 # Promjene
 
+## 1.29.1 – 2026-10
+- **🗑 Brisanje završenih grupnih lovova**: gumb uz svaki završeni lov, u detalju lova, i **Obriši sve završene** (s popisima sudionika).
+  Briše samo tko upravlja tim lovom; lov u tijeku se ne može obrisati. Prije brisanja program sam napravi kopiju baze.
+
 ## 1.29.0 – 2026-10
 - **🪪 Članska iskaznica s QR kodom** (format bankovne kartice 85,6 × 54 mm): logo i naziv udruge, fotografija, ime i prezime, sekcija, „član od“ i QR kod – sve na jednoj strani.
   U QR kodu nema imena ni OIB-a, samo slučajni ključ. Iskaznica **vrijedi dok je član aktivan** (arhiviran / obrisan → ne vrijedi), bez godine isteka.

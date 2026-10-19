@@ -27,9 +27,41 @@ if (je_post()) {
         poruka("🎯 Grupni lov pokrenut – poziv je poslan lovcima ($n). Odgovori i položaji pojavljuju se na karti.");
         preusmjeri('grupni-lov', ['id' => $id]);
     }
+    if ($radnja === 'obrisi-sve') {
+        $svi = gl_zavrseni_moji();
+        if (!$svi) {
+            preusmjeri('grupni-lov');
+        }
+        try {
+            napravi_kopiju('prije-brisanja-lovova');
+        } catch (Throwable) {
+        }
+        $n = 0;
+        foreach ($svi as $l) {
+            $n += gl_obrisi($l) ? 1 : 0;
+        }
+        poruka("🗑 Obrisano završenih grupnih lovova: $n (s popisima sudionika). Prije brisanja napravljena je kopija baze.");
+        preusmjeri('grupni-lov');
+    }
     $lov = gl_lov((int) ($_POST['id'] ?? 0));
     if (!$lov) {
         nije_pronadjeno('Grupni lov');
+    }
+    if ($radnja === 'obrisi') {
+        if (gl_aktivan($lov)) {
+            poruka('Lov je u tijeku – prvo ga završite.', 'warning');
+            preusmjeri('grupni-lov', ['id' => $lov['Id']]);
+        }
+        if (!gl_moze_upravljati($lov)) {
+            zabranjeno();
+        }
+        try {
+            napravi_kopiju('prije-brisanja-lova');
+        } catch (Throwable) {
+        }
+        gl_obrisi($lov);
+        poruka('🗑 Lov „' . e($lov['Naziv']) . '“ i njegov popis sudionika su obrisani.');
+        preusmjeri('grupni-lov');
     }
     if ($radnja === 'zavrsi') {
         if (!gl_moze_upravljati($lov)) {
@@ -109,7 +141,12 @@ if (!$lov) {
     </div></div>
     <?php endif; ?>
     <?php if ($prosli): ?>
-    <h2 class="h5">Završeni grupni lovovi</h2>
+    <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+        <h2 class="h5 mb-0 me-auto">Završeni grupni lovovi <span class="badge bg-secondary"><?= count($prosli) ?></span></h2>
+        <form method="post"><?= csrf() ?><input type="hidden" name="radnja" value="obrisi-sve">
+            <button class="btn btn-sm btn-outline-danger" data-potvrda="Trajno obrisati SVE završene grupne lovove (<?= count($prosli) ?>) zajedno s popisima sudionika? Ako trebate popis, prije preuzmite PDF. Kopija baze se radi automatski.">🗑 Obriši sve završene</button>
+        </form>
+    </div>
     <div class="table-responsive"><table class="table table-sm align-middle">
         <thead><tr><th>Datum</th><th>Naziv</th><th>Organizator</th><th class="text-end">Došli / pozvani</th><th class="text-end">Na popisu</th><th></th></tr></thead><tbody>
         <?php foreach ($prosli as $p): ?>
@@ -117,7 +154,10 @@ if (!$lov) {
                 <td class="text-end"><?= (int) $p['Dosli'] ?> / <?= (int) $p['Pozvani'] ?></td>
                 <td class="text-end"><?= (int) $p['NaPopisu'] ?: '' ?></td>
                 <td class="text-end text-nowrap"><a class="btn btn-sm btn-outline-secondary" href="<?= e(url('grupni-lov', ['id' => $p['Id']])) ?>">Sudionici</a>
-                    <a class="btn btn-sm btn-outline-secondary" href="<?= e(url('grupni-popis', ['id' => $p['Id']])) ?>">📋 Popis</a></td></tr>
+                    <a class="btn btn-sm btn-outline-secondary" href="<?= e(url('grupni-popis', ['id' => $p['Id']])) ?>">📋 Popis</a>
+                    <form method="post" class="d-inline"><?= csrf() ?><input type="hidden" name="radnja" value="obrisi"><input type="hidden" name="id" value="<?= (int) $p['Id'] ?>">
+                        <button class="btn btn-sm btn-outline-danger" title="Obriši lov i popis" aria-label="Obriši <?= e($p['Naziv']) ?>"
+                            data-potvrda="Trajno obrisati lov „<?= e($p['Naziv']) ?>“ (<?= e(datum($p['Pocetak'])) ?>) i njegov popis sudionika?">🗑</button></form></td></tr>
         <?php endforeach; ?>
     </tbody></table></div>
     <?php endif;
@@ -149,7 +189,11 @@ if (!gl_aktivan($lov)) {
                 <?= $s['Otisao'] ? ' otišao u ' . e(date('H:i', strtotime($s['Otisao']))) : '' ?></td></tr>
     <?php endforeach; ?>
     </tbody></table>
-    <a class="btn btn-outline-secondary" href="<?= e(url('grupni-lov')) ?>">← Grupni lov</a>
+    <div class="d-flex flex-wrap gap-2">
+        <a class="btn btn-outline-secondary" href="<?= e(url('grupni-lov')) ?>">← Grupni lov</a>
+        <form method="post" class="ms-auto"><?= csrf() ?><input type="hidden" name="radnja" value="obrisi"><input type="hidden" name="id" value="<?= (int) $lov['Id'] ?>">
+            <button class="btn btn-outline-danger" data-potvrda="Trajno obrisati ovaj lov i njegov popis sudionika? Ako trebate popis, prije preuzmite PDF.">🗑 Obriši lov</button></form>
+    </div>
     <?php stranica('Grupni lov', ob_get_clean());
 }
 

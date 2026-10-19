@@ -597,3 +597,26 @@ function gl_popis_pdf(array $lov): string
     $pdf->getCanvas()->page_text(520, 815, 'str. {PAGE_NUM}/{PAGE_COUNT}', null, 7, [0.5, 0.5, 0.5]);
     return (string) $pdf->output();
 }
+
+// ---------- Brisanje završenih lovova ----------
+/** Trajno briše završeni lov (sudionici i popis se brišu s njim). Aktivni lov se ne briše. */
+function gl_obrisi(array $lov): bool
+{
+    if (gl_aktivan($lov) || !gl_moze_upravljati($lov)) {
+        return false;
+    }
+    $n = (int) vrijednost('SELECT COUNT(*) FROM GrupniLovPopis WHERE LovId=?', [$lov['Id']]);
+    transakcija(function () use ($lov) {
+        q('DELETE FROM GrupniLovPopis WHERE LovId=?', [$lov['Id']]);
+        q('DELETE FROM GrupniLovSudionici WHERE LovId=?', [$lov['Id']]);
+        q('DELETE FROM GrupniLov WHERE Id=?', [$lov['Id']]);
+    });
+    dnevnik('Grupni lov – obrisan', 'GrupniLov', (int) $lov['Id'], $lov['Naziv'] . ' · ' . datum($lov['Pocetak']) . " · na popisu $n");
+    return true;
+}
+
+/** Svi završeni lovovi kojima trenutni korisnik upravlja. */
+function gl_zavrseni_moji(): array
+{
+    return array_values(array_filter(redovi('SELECT * FROM GrupniLov WHERE Zavrseno IS NOT NULL ORDER BY Id DESC'), 'gl_moze_upravljati'));
+}
