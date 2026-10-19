@@ -150,7 +150,9 @@ ob_start(); ?>
         <div class="card-footer small text-muted">Ako nešto nije točno, javite se tajniku ili administratoru.</div>
     </div></div>
 </div>
+<?php if (modul('psi')): ?>
 <h2 class="h5 mt-4" id="psi">🐕 Moji lovački psi</h2>
 <?= predlozak('clan-psi', ['id' => (int) $c['Id'], 'psiProfil' => true]) ?>
+<?php endif; ?>
 <?php if (!empty($_GET['psi'])): ?><script>document.getElementById('psi').scrollIntoView();</script><?php endif; ?>
 <?php stranica('Moj profil', ob_get_clean());

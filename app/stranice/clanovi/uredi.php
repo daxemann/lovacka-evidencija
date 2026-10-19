@@ -8,7 +8,7 @@ $clan = $id ? clan_ili_kraj($id) : null;
 if (!$id && !$uredi) {
     zabranjeno();
 }
-$kartice = ['podaci' => 'Podaci', 'funkcije' => 'Funkcije', 'psi' => 'Lovački psi'];
+$kartice = ['podaci' => 'Podaci', 'funkcije' => 'Funkcije'] + (modul('psi') ? ['psi' => 'Lovački psi'] : []);
 if (ima(P_CLANARINA_CITAJ)) {
     $kartice['clanarina'] = 'Članarina';
 }
@@ -369,7 +369,7 @@ ob_start(); ?>
     <?php if ($id): ?>
         <?php if (ima(P_AKCIJE_CITAJ)): ?><a class="btn btn-sm btn-outline-success no-print" href="<?= e(url('clanovi/uredi', ['id' => $id, 'kartica' => $kartica, 'posalji' => 'bodovi'])) ?>">Pošalji popis bodova</a><?php endif; ?>
         <?php if (ima(P_CLANARINA_CITAJ)): ?><a class="btn btn-sm btn-outline-success no-print" href="<?= e(url('clanovi/uredi', ['id' => $id, 'kartica' => $kartica, 'posalji' => 'clanarina'])) ?>">Info o članarini</a><?php endif; ?>
-        <?php if ($uredi && !$arhiviran): ?>
+        <?php if ($uredi && !$arhiviran && modul('iskaznice')): ?>
         <a class="btn btn-sm btn-outline-primary no-print" href="<?= e(url('izvoz/iskaznice', ['clan' => $id])) ?>" target="_blank" title="Članska iskaznica s QR kodom (PDF)">🪪 Iskaznica</a>
         <?php endif; ?>
         <button class="btn btn-sm btn-outline-secondary no-print" onclick="window.print()">Ispis</button>
@@ -399,7 +399,7 @@ ob_start(); ?>
                     <input type="file" accept="image/*" data-smanji="1200" class="d-none" form="obrazacFoto" name="foto" onchange="this.form.submit()"></label>
                 <?php if ($clan['FotoDatoteka']): ?><button type="submit" form="obrazacFotoBrisi" class="btn btn-sm btn-link text-danger">Ukloni</button><?php endif; ?>
             </div>
-            <?php if (!$arhiviran): ?>
+            <?php if (!$arhiviran && modul('iskaznice')): ?>
             <div class="mt-3 text-start small border rounded p-2 no-print">
                 <div class="fw-semibold mb-1">🪪 Članska iskaznica (QR)</div>
                 <a href="<?= e(url('izvoz/iskaznice', ['clan' => $id])) ?>" target="_blank">PDF – običan pisač (A4)</a><br>

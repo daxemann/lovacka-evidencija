@@ -177,6 +177,10 @@ function je_admin(): bool
 }
 function ima(int $pravo): bool
 {
+    // prava isključenih modula ne vrijede (Sustav → Moduli)
+    if ($pravo & moduli_iskljucena_prava()) {
+        return false;
+    }
     return ((korisnik()['Prava'] ?? 0) & $pravo) === $pravo;
 }
 function trazi(int $pravo): void

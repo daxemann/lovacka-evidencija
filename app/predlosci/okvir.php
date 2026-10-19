@@ -21,18 +21,18 @@ $grupa = function (string $id, string $naslov, string $stavke): string {
         . e($naslov) . '</summary>' . $stavke . '</details>';
 };
 $neprocitano = $k ? broj_neprocitanih((int) $k['Id']) : 0;
-$revirObav = $k ? revir_broj_obavijesti() : 0;
+$revirObav = $k && modul('revir') ? revir_broj_obavijesti() : 0;
 $novaVerzija = $k ? azuriranje_dostupno() : null;
-$obavNove = $k ? obav_broj_nepotvrdjenih() : 0;
+$obavNove = $k && modul('obavijesti') ? obav_broj_nepotvrdjenih() : 0;
 // obavezna obavijest preko cijelog zaslona dok je član ne potvrdi (ne na stranicama lozinke / 2FA i ne na samoj obavijesti)
-$obavObavezna = $k && !in_array($trenutna, ['promjena-lozinke', 'dvofaktorska', 'odjava'], true) ? obav_obavezna_na_cekanju() : null;
+$obavObavezna = $k && modul('obavijesti') && !in_array($trenutna, ['promjena-lozinke', 'dvofaktorska', 'odjava'], true) ? obav_obavezna_na_cekanju() : null;
 if ($obavObavezna && $trenutna === 'obavijesti' && (int) ($_GET['id'] ?? 0) === (int) $obavObavezna['Id']) {
     $obavObavezna = null;
 }
 [$uloga, $boja] = oznaka_uloge();
 // grupni lov: lovci vide stavku i prozor samo dok je lov u tijeku
-$glMoj = $k ? gl_moj_aktivni() : null;
-$glVidljivo = $k && gl_vidljivo();
+$glMoj = $k && modul('grupni') ? gl_moj_aktivni() : null;
+$glVidljivo = $k && modul('grupni') && gl_vidljivo();
 $glAktivan = $glMoj !== null || ($k && ima(P_GRUPNI_LOV) && gl_aktivni_organizator());
 $glBroj = $glVidljivo ? gl_broj_izbornik() : 0;
 $glPoziv = $glMoj && $glMoj['ja']['Odgovor'] === null && $trenutna !== 'grupni-lov' && !in_array($trenutna, ['promjena-lozinke', 'dvofaktorska', 'odjava'], true) ? $glMoj : null;
@@ -71,15 +71,15 @@ $glUTijeku = $glMoj && (int) $glMoj['ja']['Odgovor'] === 1 && $glMoj['ja']['Otis
             <nav class="nav flex-column">
                 <?php if ($k): ?>
                     <?= $stavka('pocetna', '🏠 Početna', 0, true) ?>
-                    <?= $stavka('skeniraj', '📷 Skeniraj QR stanice', 0, true) ?>
-                    <?= $stavka('kalendar', '📅 Kalendar') ?>
-                    <?php if (dom_ima_vidljivih() || ima(P_DOMOVI)) echo $stavka('domovi', '🏡 Lovački domovi', dom_broj_na_cekanju()); ?>
+                    <?php if (modul('dezinfekcija')) echo $stavka('skeniraj', '📷 Skeniraj QR stanice', 0, true); ?>
+                    <?php if (modul('kalendar')) echo $stavka('kalendar', '📅 Kalendar'); ?>
+                    <?php if (modul('domovi') && (dom_ima_vidljivih() || ima(P_DOMOVI))) echo $stavka('domovi', '🏡 Lovački domovi', dom_broj_na_cekanju()); ?>
                     <?php if ($glVidljivo) echo $stavka('grupni-lov', $glAktivan ? '🎯 Grupni lov – u tijeku' : '🎯 Grupni lov', $glBroj); ?>
-                    <?php if ($k['ClanId']) echo $grupa('moje', 'Moje', $stavka('moje-akcije', '🛠️ Moje radne akcije') . (uplatnica_za_clanove() ? $stavka('uplatnica', '💳 Moja uplatnica', 0, true) : '') . $stavka('moja-iskaznica', '🪪 Moja iskaznica') . $stavka('moj-profil', '👤 Moj profil') . $stavka('push', '🔔 Push obavijesti') . $stavka('moja-prava', '🔑 Moja prava')); ?>
-                    <?php $revirSek = revir_sekcije(); if ($revirSek || ima(P_SUSTAV)) echo $grupa('loviste', 'Lovište',
+                    <?php if ($k['ClanId']) echo $grupa('moje', 'Moje', (modul('akcije') ? $stavka('moje-akcije', '🛠️ Moje radne akcije') : '') . (modul('clanarina') && uplatnica_za_clanove() ? $stavka('uplatnica', '💳 Moja uplatnica', 0, true) : '') . (modul('iskaznice') ? $stavka('moja-iskaznica', '🪪 Moja iskaznica') : '') . $stavka('moj-profil', '👤 Moj profil') . $stavka('push', '🔔 Push obavijesti') . $stavka('moja-prava', '🔑 Moja prava')); ?>
+                    <?php $revirSek = modul('revir') ? revir_sekcije() : []; if (modul('revir') && ($revirSek || ima(P_SUSTAV))) echo $grupa('loviste', 'Lovište',
                         ($revirSek ? $stavka('revir', '🗺️ Karta lovišta', 0, true) . $stavka('revir/danas', '🌲 Danas u lovištu', $revirObav) . $stavka('revir/kvarovi', '🔧 Kvarovi na napravama', revir_broj_kvarova()) . (ima(P_REVIR_DNEVNIK) ? $stavka('revir/dnevnik', '📓 Lovački dnevnik') : '') : '')
                         . (ima(P_SUSTAV) || ima(P_REVIR_UREDI) ? $stavka('revir/postavke', '⚙️ Postavke lovišta') : '')); ?>
-                    <?= $grupa('clanovi', 'Članovi', $stavka('imenik', '📒 Imenik') . $stavka('vodici-pasa', '🐕 Vodiči pasa') . ($k['ClanId'] || ima(P_OBAVIJESTI) ? $stavka('obavijesti', '📢 Obavijesti', $obavNove) : '') . $stavka('poruke', '✉️ Poruke', $neprocitano) . (ogl_aktivan() ? $stavka('oglasnik-sso', '🛒 Oglasnik', 0, true) . (vrijednost('SELECT 1 FROM Oglasi WHERE Status IN (0,1) LIMIT 1') ? $stavka('oglasnik', '📌 Interni oglasi') : '') : $stavka('oglasnik', '🛒 Oglasnik')) . $stavka('dokumenti', '📜 Statut i pravilnici')) ?>
+                    <?= $grupa('clanovi', 'Članovi', $stavka('imenik', '📒 Imenik') . (modul('psi') ? $stavka('vodici-pasa', '🐕 Vodiči pasa') : '') . (modul('obavijesti') && ($k['ClanId'] || ima(P_OBAVIJESTI)) ? $stavka('obavijesti', '📢 Obavijesti', $obavNove) : '') . $stavka('poruke', '✉️ Poruke', $neprocitano) . (!modul('oglasnik') ? '' : (ogl_aktivan() ? $stavka('oglasnik-sso', '🛒 Oglasnik', 0, true) . (vrijednost('SELECT 1 FROM Oglasi WHERE Status IN (0,1) LIMIT 1') ? $stavka('oglasnik', '📌 Interni oglasi') : '') : $stavka('oglasnik', '🛒 Oglasnik'))) . (modul('dokumenti') ? $stavka('dokumenti', '📜 Statut i pravilnici') : '')) ?>
                     <?php if ($k['Prava']) echo $grupa('udruga', 'Udruga',
                         (ima(P_CLANOVI_CITAJ) ? $stavka('clanovi', '👥 Članovi') : '')
                         . (ima(P_CLANARINA_CITAJ) ? $stavka('clanarina', '💶 Članarina') : '')
@@ -93,24 +93,8 @@ $glUTijeku = $glMoj && (int) $glMoj['ja']['Odgovor'] === 1 && $glMoj['ja']['Otis
                         . (ima(P_DEZ_UREDI) ? $stavka('dezinfekcija/naknadno', '➕ Naknadni upis') : '')
                         . (ima(P_DEZ_UREDI) ? $stavka('dezinfekcija/liste', '📄 Papirnate liste') : '')
                         . (ima(P_DEZ_POSTAVKE) ? $stavka('dezinfekcija/postavke', '🔳 Stanice i QR') : '')); ?>
-                    <?php if (ima(P_SUSTAV)) echo $grupa('sustav', 'Sustav',
-                        $stavka('sustav/udruga', '🏛️ Podaci o udruzi')
-                        . $stavka('sustav/postavke', '📧 E-pošta i adresa')
-                        . $stavka('sustav/uplatnica', '🏦 Uplatnica (IBAN)')
-                        . $stavka('sustav/dokumenti', '📜 Statut i pravilnici')
-                        . $stavka('sustav/oglasnik', '🛒 Oglasnik lovaca')
-                        . $stavka('sustav/korisnici', '🧑‍💻 Korisnici', (int) vrijednost('SELECT COUNT(*) FROM Korisnici WHERE Odobren=0 AND Aktivan=1'))
-                        . $stavka('sustav/samoprijava', '📝 Samoprijava', (int) vrijednost('SELECT COUNT(*) FROM Korisnici WHERE Odobren=0 AND ClanId IS NULL'))
-                        . $stavka('sustav/uloge', '🛡️ Uloge i prava')
-                        . $stavka('sustav/sekcije', '🗂️ Sekcije')
-                        . $stavka('akcije/vrste', '🏷️ Vrste radnih akcija')
-                        . $stavka('sustav/poruke', '💬 Predlošci poruka')
-                        . $stavka('sustav/kalendar', '🗓️ Kalendar – vrste')
-                        . $stavka('sustav/uvoz', '📥 Uvoz (Google kontakti)')
-                        . $stavka('sustav/duplikati', '🔍 Provjera duplikata')
-                        . $stavka('sustav/kopije', '💾 Sigurnosne kopije')
-                        . (smije_azurirati() ? $stavka('sustav/azuriranje', '🔄 Ažuriranje programa', $novaVerzija ? 1 : 0) : '')
-                        . $stavka('sustav/dnevnik', '🧾 Dnevnik promjena')); ?>
+                    <?php if (ima(P_SUSTAV)) echo $grupa('sustav', 'Administracija', $stavka('sustav', '⚙️ Sustav',
+                        (int) vrijednost('SELECT COUNT(*) FROM Korisnici WHERE Odobren=0 AND Aktivan=1') + ($novaVerzija ? 1 : 0))); ?>
                     <?= $grupa('program', 'Program', (!$k['ClanId'] ? $stavka('push', '🔔 Push obavijesti') : '') . $stavka('upute', '📖 Upute za korištenje') . $stavka('pomoc', '❓ Pomoć i kontakt') . (je_demo() ? $stavka('demo-posta', '📧 Demo – e-pošta') : '')) ?>
                 <?php endif; ?>
             </nav>

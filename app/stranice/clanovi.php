@@ -58,7 +58,7 @@ ob_start(); ?>
 <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
     <h1 class="h3 mb-0 me-auto">Članovi</h1>
     <input id="trazi" class="form-control" style="max-width:260px" placeholder="Traži (ime, mjesto, telefon…)" autocomplete="off">
-    <?php if ($moze && $sekcija !== 'arhiva'): ?><a href="<?= e(url('izvoz/iskaznice', ['sve' => 1, 'sekcija' => $sekcija])) ?>" target="_blank" class="btn btn-outline-primary"
+    <?php if ($moze && $sekcija !== 'arhiva' && modul('iskaznice')): ?><a href="<?= e(url('izvoz/iskaznice', ['sve' => 1, 'sekcija' => $sekcija])) ?>" target="_blank" class="btn btn-outline-primary"
         title="Članske iskaznice s QR kodom za sve članove na ovoj kartici (PDF, 10 na A4)">🪪 Iskaznice</a><?php endif; ?>
     <?php if ($moze): ?><a href="<?= e(url('clanovi/uredi')) ?>" class="btn btn-primary">+ Novi član</a><?php endif; ?>
 </div>
@@ -84,7 +84,7 @@ ob_start(); ?>
         <?php if ($k['SveSekcije']): ?><option value="0">Nije raspoređeno</option><?php endif; ?>
     </select>
     <button class="btn btn-sm btn-primary" name="radnja" value="premjesti">Premjesti</button>
-    <?php if ($sekcija !== 'arhiva'): ?>
+    <?php if ($sekcija !== 'arhiva' && modul('iskaznice')): ?>
     <button class="btn btn-sm btn-outline-primary ms-2" formaction="<?= e(url('izvoz/iskaznice')) ?>" formtarget="_blank" title="10 iskaznica na A4 – izrezati">🪪 Iskaznice (PDF)</button>
     <?php endif; ?>
     <button type="button" class="btn btn-sm btn-link" onclick="document.querySelectorAll('input[name=\'odabrani[]\']').forEach(c=>c.checked=false);document.dispatchEvent(new Event('ev-oznaceno'))">Poništi odabir</button>

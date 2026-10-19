@@ -1,5 +1,14 @@
 # Promjene
 
+## 1.30.0 – 2026-10
+- **⚙️ Sustav na jednom mjestu:** u izborniku umjesto duge liste samo **⚙️ Sustav** – otvara pregled u **karticama** po skupinama
+  (Udruga · Korisnici i prava · Komunikacija · Postavke modula · Podaci). Broj na čekanju (korisnici, nova verzija) vidi se na kartici i u izborniku.
+- **🧩 Moduli** (Sustav → Moduli): udruga uključuje samo ono što koristi – Radne akcije, Članarina, Kalendar, Knjiga dezinfekcije, Lovište, Grupni lov,
+  Članske iskaznice, Lovački domovi, Obavijesti, Oglasnik, Inventura, Lovački psi, Statut i pravilnici.
+  Isključen modul nestaje iz **izbornika, početne stranice, uputa i push obavijesti** svih korisnika, njegove stranice nisu dostupne, a prava tog modula ne vrijede
+  (u Ulogama i pravima stupci se skrivaju – dodijeljena prava ostaju sačuvana). **Podaci se ne brišu** – ponovnim uključivanjem sve je opet tu.
+- Zadano je sve uključeno – postojeće instalacije rade kao i prije. Module mijenja samo administrator za sve sekcije; promjena se bilježi u dnevnik.
+
 ## 1.29.2 – 2026-10
 - **Grupni lov – karta:** u popisu desno samo **tko je u lovu** (dolazi, na karti, SOS) i tko je **📋 na popisu sudionika** (skeniran / ručno upisan).
   Ostali pozvani (bez odgovora, ne dolaze, otišli) su skriveni pod **„Ostali pozvani (N)“** – otvara se dodirom.

@@ -14,6 +14,9 @@ if (je_post()) {
                 foreach ((array) ($u['p'] ?? []) as $p) {
                     $prava |= (int) $p;
                 }
+                // prava isključenih modula nisu prikazana – ostaju kakva su bila
+                $skriveno = moduli_iskljucena_prava();
+                $prava = ($prava & ~$skriveno) | ((int) $ul['Prava'] & $skriveno);
                 $polja = ['Naziv' => mb_substr(trim((string) ($u['Naziv'] ?? $ul['Naziv'])), 0, 60) ?: $ul['Naziv'], 'Opis' => trim((string) ($u['Opis'] ?? '')) ?: null];
                 if (!$ul['Sustavna']) {
                     $polja += ['Prava' => $prava & P_SVE, 'SveSekcije' => isset($u['SveSekcije']) ? 1 : 0];
@@ -77,6 +80,7 @@ $kratko = [P_CLANOVI_CITAJ => 'Članovi<br>pregled', P_CLANOVI_UREDI => 'Članov
     P_KALENDAR => 'Kalendar<br>uređ.', P_IMENIK_SVI => 'Imenik<br>svi kontakti',
     P_DEZ_PREGLED => 'Dezinf.<br>pregled', P_DEZ_UREDI => 'Dezinf.<br>naknadno', P_DEZ_POSTAVKE => 'Dezinf.<br>stanice/QR', P_DEZ_MOBILNA => 'Dezinf.<br>mobilna', P_DEZ_ZA_DRUGE => 'Dezinf.<br>upis za druge',
     P_REVIR_UREDI => 'Lovište<br>naprave', P_REVIR_NADZOR => 'Lovište<br>nadzor', P_REVIR_DNEVNIK => 'Lovački<br>dnevnik', P_INVENTURA => 'Inventura<br>pregled', P_INVENTURA_UREDI => 'Inventura<br>uređ.', P_OBAVIJESTI => 'Obavijesti<br>slanje', P_GRUPNI_LOV => 'Grupni lov<br>organizacija', P_DOMOVI => 'Lovački<br>domovi'];
+$kratko = array_filter($kratko, fn($p) => !($p & moduli_iskljucena_prava()), ARRAY_FILTER_USE_KEY); // isključeni moduli – stupci skriveni
 ob_start(); ?>
 <h1 class="h3 mb-1">Uloge i prava</h1>
 <p class="text-muted">Uloge se dodjeljuju na kartici člana (Članovi → član → Pristup i uloge). Sekcije su odvojene: uloga vrijedi samo za odabranu sekciju, osim ako je označeno „Smije sve sekcije“ (npr. Glavni admin, Blagajnik). Ne zaboravite „Spremi“ nakon promjene. Obični član bez uloge vidi samo svoje podatke.</p>

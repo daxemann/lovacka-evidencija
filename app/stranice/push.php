@@ -6,9 +6,11 @@ $kid = (int) $k['Id'];
 // vrste koje ovaj korisnik uopće može dobiti
 $revir = (bool) revir_sekcije();
 $vrste = array_filter(PUSH_VRSTE, fn($v, $kljuc) => match ($kljuc) {
-    'akcije' => $k['ClanId'] !== null || ima(P_AKCIJE_ODOBRI),
-    'kvarovi' => $revir && (ima(P_REVIR_NADZOR) || ima(P_REVIR_UREDI)),
-    'loviste' => $revir && ima(P_REVIR_NADZOR),
+    'akcije' => modul('akcije') && ($k['ClanId'] !== null || ima(P_AKCIJE_ODOBRI)),
+    'kvarovi' => modul('revir') && $revir && (ima(P_REVIR_NADZOR) || ima(P_REVIR_UREDI)),
+    'loviste' => modul('revir') && $revir && ima(P_REVIR_NADZOR),
+    'domovi' => modul('domovi'),
+    'obavijesti' => modul('obavijesti'),
     default => true,
 }, ARRAY_FILTER_USE_BOTH);
 

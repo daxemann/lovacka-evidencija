@@ -2,7 +2,7 @@
 /** Početna stranica člana (mobitel): termini, radne akcije, oglasnik, članarina u jednoj liniji. */
 $k = korisnik();
 $cid = $k['ClanId'];
-$termini = dogadjaji(danas(), null, null, 3);
+$termini = modul('kalendar') ? dogadjaji(danas(), null, null, 3) : [];
 $mojiOdg = [];
 if ($cid && $termini) {
     foreach (redovi('SELECT DogadjajId, Dolazi FROM DogadjajOdgovori WHERE ClanId=?', [$cid]) as $o) {
@@ -19,6 +19,7 @@ if ($cid) {
 ob_start(); ?>
 <h1 class="h4 mb-3">Pozdrav, <?= e(explode(' ', (string) $k['Naziv'])[0]) ?></h1>
 
+<?php if (modul('kalendar')): ?>
 <div class="card mb-3"><div class="card-header d-flex align-items-center"><b class="me-auto">📅 Nadolazeći termini</b><a class="small" href="<?= e(url('kalendar')) ?>">kalendar →</a></div>
     <div class="list-group list-group-flush">
     <?php foreach ($termini as $d): $v = vrsta_dogadjaja($d['Vrsta']); ?>
@@ -31,8 +32,9 @@ ob_start(); ?>
     <?php endforeach; ?>
     <?php if (!$termini): ?><div class="list-group-item small text-muted">Nema najavljenih termina.</div><?php endif; ?>
     </div></div>
+<?php endif; ?>
 
-<?php if ($cid): ?>
+<?php if ($cid && modul('akcije')): ?>
 <div class="card mb-3"><div class="card-header d-flex align-items-center"><b class="me-auto">🪓 Moje radne akcije</b><a class="small" href="<?= e(url('moje-akcije')) ?>">sve →</a></div>
     <div class="card-body pb-2">
         <div class="d-flex align-items-center gap-3 mb-2">
@@ -46,7 +48,8 @@ ob_start(); ?>
     </div></div>
 <?php endif; ?>
 
-<?php if (ogl_aktivan()): ?>
+<?php if (!modul('oglasnik')): ?>
+<?php elseif (ogl_aktivan()): ?>
 <div class="card mb-3"><div class="card-body d-flex align-items-center gap-3">
     <div class="fs-2">🛒</div>
     <div class="flex-grow-1"><b>Oglasnik lovaca</b><div class="small text-muted">oglasi vaše udruge i lovaca iz drugih udruga</div></div>
@@ -67,10 +70,11 @@ ob_start(); ?>
 
 <div class="d-flex flex-wrap gap-2 mb-3">
     <a class="btn btn-outline-secondary btn-sm" href="<?= e(url('imenik')) ?>">📇 Imenik</a>
-    <a class="btn btn-outline-secondary btn-sm" href="<?= e(url('vodici-pasa')) ?>">🐕 Vodiči pasa</a>
+    <?php if (modul('psi')): ?><a class="btn btn-outline-secondary btn-sm" href="<?= e(url('vodici-pasa')) ?>">🐕 Vodiči pasa</a><?php endif; ?>
+    <?php if (modul('iskaznice') && $cid): ?><a class="btn btn-outline-secondary btn-sm" href="<?= e(url('moja-iskaznica')) ?>">🪪 Moja iskaznica</a><?php endif; ?>
     <a class="btn btn-outline-secondary btn-sm" href="<?= e(url('poruke')) ?>">💬 Poruke</a>
     <?php if ($cid): ?><a class="btn btn-outline-secondary btn-sm" href="<?= e(url('moj-profil')) ?>">👤 Moj profil</a><?php endif; ?>
 </div>
 
-<?php if ($cid) echo predlozak('moja-clanarina', ['clanId' => $cid]); ?>
+<?php if ($cid && modul('clanarina')) echo predlozak('moja-clanarina', ['clanId' => $cid]); ?>
 <?php stranica('Početna', ob_get_clean());

@@ -1,7 +1,7 @@
 <?php
 /** Upute za korištenje – kratka pomoć po dijelovima programa; svatko vidi samo ono što smije koristiti. */
 $k = korisnik();
-$revir = (bool) revir_sekcije();
+$revir = modul('revir') && revir_sekcije();
 $odjeljci = [];
 $o = function (string $id, string $naslov, string $html) use (&$odjeljci) {
     $odjeljci[] = '<details class="card mb-2 upute-odjeljak" id="' . e($id) . '"><summary class="card-header fw-semibold" style="cursor:pointer">' . e($naslov) . '</summary>'
@@ -32,7 +32,7 @@ Bodovi vrijede tek kad akciju odobri uprava (do tada uz bodove stoji „?“). D
 </ul>');
 }
 
-$o('kalendar', '📅 Kalendar', '
+if (modul('kalendar')) $o('kalendar', '📅 Kalendar', '
 <ul>
 <li>Termini udruge ili vaše sekcije (lovovi, radne akcije, sastanci…). Dodirom na termin vidite detalje i navigaciju do mjesta.</li>
 <li><b>✔ Dolazim / Ne dolazim</b> – nije obavezno, ali pomaže organizatoru. Kod lova sa psima kvačicom označite psa kojeg dovodite.</li>
@@ -41,7 +41,7 @@ $o('kalendar', '📅 Kalendar', '
 <li><i>Uređivanje:</i> novi termin za cijelu udrugu ili odabrane sekcije (ostali ga ne vide). Nakon radne akcije jednim klikom upišete akciju svima koji su potvrdili dolazak.</li>' : '') . '
 </ul>');
 
-if (dom_ima_vidljivih() || ima(P_DOMOVI)) {
+if (modul('domovi') && (dom_ima_vidljivih() || ima(P_DOMOVI))) {
     $o('domovi', '🏡 Lovački domovi – rezervacija', '
 <ul>
 <li><b>🏡 Lovački domovi</b> pokazuje domove cijele udruge i vaše sekcije – fotografija, kapacitet, tko ima ključ i <b>🧭 Navigacija</b> do doma.</li>
@@ -55,7 +55,7 @@ if (dom_ima_vidljivih() || ima(P_DOMOVI)) {
 </ul>');
 }
 
-$o('dezinfekcija-upis', '🧴 Dezinfekcija – upis na stanici', '
+if (modul('dezinfekcija')) $o('dezinfekcija-upis', '🧴 Dezinfekcija – upis na stanici', '
 <ol>
 <li>Na dezinfekcijskoj stanici skenirajte <b>QR oznaku</b> – najbolje u programu: <b>📷 Skeniraj QR stanice</b> (na iPhoneu obavezno ovako, ne kamerom mobitela).</li>
 <li>Dopustite <b>lokaciju</b>. Upis je moguć samo na samoj stanici (zadano unutar 100 m).</li>
@@ -69,7 +69,7 @@ $o('dezinfekcija-upis', '🧴 Dezinfekcija – upis na stanici', '
 <li>Upis odlaska nije obavezan. Ako ga ne upišete, program ga ne dopisuje sam.</li>
 </ul>');
 
-if (gl_vidljivo() || ($k['ClanId'] && $revir)) {
+if (modul('grupni') && (gl_vidljivo() || ($k['ClanId'] && $revir))) {
     $o('grupni-lov', '🎯 Grupni lov – karta uživo i SOS', '
 <ul>
 <li><b>Stavka 🎯 Grupni lov pojavljuje se u izborniku samo dok traje lov</b> u koji ste pozvani – inače je nema.</li>
@@ -88,7 +88,7 @@ Radi i <b>bez signala</b> dok je stranica otvorena (otvorite je prije s internet
 Popis je samo popis – ne mijenja odgovore na poziv, bodove ni dezinfekciju.</li>' : '') . '
 </ul>');
 }
-if ($k['ClanId']) {
+if ($k['ClanId'] && modul('iskaznice')) {
     $o('iskaznica', '🪪 Članska iskaznica (QR)', '
 <ul>
 <li><b>Moje → 🪪 Moja iskaznica</b>: iskaznica s fotografijom i QR kodom. Kod grupnog lova lovnik je skenira i upisuje vas u popis sudionika – ništa drugo.</li>
@@ -121,9 +121,9 @@ Svoju prijavu možete označiti riješenom ili je povući dok je nitko nije preu
 }
 
 $pushVrste = ['poruke', 'obavijesti'];
-if ($k['ClanId'] || ima(P_AKCIJE_ODOBRI)) $pushVrste[] = 'akcije';
+if (modul('akcije') && ($k['ClanId'] || ima(P_AKCIJE_ODOBRI))) $pushVrste[] = 'akcije';
 if ($revir && (ima(P_REVIR_NADZOR) || ima(P_REVIR_UREDI))) $pushVrste[] = 'kvarovi';
-if (dom_ima_vidljivih() || ima(P_DOMOVI)) $pushVrste[] = 'domovi';
+if (modul('domovi') && (dom_ima_vidljivih() || ima(P_DOMOVI))) $pushVrste[] = 'domovi';
 if ($revir && ima(P_REVIR_NADZOR)) $pushVrste[] = 'loviste';
 $pushPopis = '';
 foreach ($pushVrste as $v) {
@@ -204,6 +204,8 @@ if ($dez !== '') {
 if (ima(P_SUSTAV)) {
     $o('sustav', '⚙️ Sustav – za administratore', '
 <ul>
+<li>Sve postavke su na jednom mjestu: <b>⚙️ Sustav</b> u izborniku otvara pregled u karticama.</li>
+<li><b>🧩 Moduli:</b> uključite samo ono što udruga koristi (radne akcije, članarina, kalendar, dezinfekcija, lovište, grupni lov, iskaznice, domovi, obavijesti, oglasnik, inventura, psi, dokumenti). Isključeno nestaje iz izbornika svih korisnika, podaci ostaju sačuvani.</li>
 <li><b>Podaci o udruzi:</b> naziv, adresa, OIB, logo – ispisuju se na PDF-ovima.</li>
 <li><b>E-pošta i adresa:</b> slanje e-pošte (najlakše <b>Gmail čarobnjak</b>) i javna adresa programa za pozivnice i QR oznake.</li>
 <li><b>Korisnici / Samoprijava:</b> odobravanje pristupa (broj na čekanju u izborniku), poveznica za samoprijavu (npr. za WhatsApp grupu).</li>

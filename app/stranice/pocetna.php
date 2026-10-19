@@ -4,7 +4,7 @@ if (!$k['Prava'] || ($_GET['pogled'] ?? '') === 'clan') {
     require __DIR__ . '/moja-pocetna.php';
     exit;
 }
-$termini = dogadjaji(danas(), null, null, 4);
+$termini = modul('kalendar') ? dogadjaji(danas(), null, null, 4) : [];
 $op = opseg_sql('c');
 $clanovi = redovi("SELECT c.* FROM Clanovi c WHERE c.Status=0 AND $op");
 $aktivni = count($clanovi);

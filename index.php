@@ -74,9 +74,12 @@ if (!in_array($p, $javne, true)) {
     }
     dnevna_kopija();
     gl_zatvori_istekle(); // grupni lov: automatski kraj u 23:00
-    psi_godisnji_bodovi();
+    if (modul('psi') && modul('akcije')) {
+        psi_godisnji_bodovi();
+    }
 }
 
+provjeri_modul($p); // isključeni dijelovi programa (Sustav → Moduli)
 if (je_demo()) {
     demo_cuvar($p);
 }
