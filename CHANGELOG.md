@@ -1,5 +1,8 @@
 # Promjene
 
+## 1.30.1 – 2026-10
+- **← Sustav** gumb na svim stranicama Sustava (Podaci o udruzi, Korisnici, Uloge, Kopije …) i na postavkama modula otvorenim iz Sustava (vrste radnih akcija, postavke lovišta, stanice dezinfekcije).
+
 ## 1.30.0 – 2026-10
 - **⚙️ Sustav na jednom mjestu:** u izborniku umjesto duge liste samo **⚙️ Sustav** – otvara pregled u **karticama** po skupinama
   (Udruga · Korisnici i prava · Komunikacija · Postavke modula · Podaci). Broj na čekanju (korisnici, nova verzija) vidi se na kartici i u izborniku.

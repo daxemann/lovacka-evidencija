@@ -156,6 +156,10 @@ $glUTijeku = $glMoj && (int) $glMoj['ja']['Odgovor'] === 1 && $glMoj['ja']['Otis
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Zatvori" onclick="this.parentElement.remove()"></button>
                 </div>
             <?php endforeach; ?>
+            <?php // stranice iz ⚙️ Sustav (i postavke modula s kartica Sustava): gumb natrag na pregled
+            if ($k && ima(P_SUSTAV) && (str_starts_with($trenutna, 'sustav/') || in_array($trenutna, ['akcije/vrste', 'revir/postavke', 'dezinfekcija/postavke'], true))): ?>
+                <a class="btn btn-sm btn-outline-secondary mb-3 no-print" href="<?= e(url('sustav')) ?>">← Sustav</a>
+            <?php endif; ?>
             <?= $sadrzaj ?>
         </article>
     </main>

@@ -28,10 +28,7 @@ if (je_post()) {
     preusmjeri('sustav/moduli');
 }
 ob_start(); ?>
-<div class="d-flex align-items-center gap-2 mb-2">
-    <a class="btn btn-sm btn-outline-secondary" href="<?= e(url('sustav')) ?>">← Sustav</a>
-    <h1 class="h3 mb-0">🧩 Moduli</h1>
-</div>
+<h1 class="h3 mb-2">🧩 Moduli</h1>
 <p class="text-muted">Uključite samo ono što vaša udruga stvarno koristi – lovci i lovočuvari tada vide jednostavniji izbornik.
     Isključeni modul nestaje iz izbornika, početne stranice i uputa, a njegove stranice i prava ne vrijede.
     <b>Podaci se ne brišu</b> – kad modul ponovno uključite, sve je opet tu.</p>
