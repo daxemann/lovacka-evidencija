@@ -16,7 +16,10 @@ function pop_smije_uredjivati(): bool
 /** Je li udruga spojena na Oglasnik (ključ postoji)? Odobrenje provjerava Oglasnik pri ulasku. */
 function pop_dostupno(): bool
 {
-    return !je_demo() && ogl_podrzano() && ogl_javni_kljuc() !== null;
+    if (je_demo()) {
+        return function_exists('demo_popusti'); // demo: primjeri trgovina iz proširenja, bez Oglasnika
+    }
+    return ogl_podrzano() && ogl_javni_kljuc() !== null;
 }
 
 /** Iskaznica aktivnog člana za token (null ako korisnik nije aktivan član). */

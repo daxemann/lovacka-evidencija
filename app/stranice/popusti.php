@@ -3,6 +3,9 @@
  * 🏷️ Popusti u trgovinama – otvara zajedničke Popuste na poslužitelju Oglasnika lovaca
  * (jednokratni potpisani token s iskaznicom člana; trgovine vide lovci svih udruga).
  */
+if (je_demo() && function_exists('demo_popusti')) {
+    demo_popusti(); // demo verzija: primjeri trgovina lokalno (pravi Popusti su na Oglasniku lovaca)
+}
 if (!pop_dostupno()) {
     stranica('Popusti u trgovinama', '<h1 class="h3">🏷️ Popusti u trgovinama</h1><div class="alert alert-secondary">'
         . 'Popusti rade preko zajedničkog <b>Oglasnika lovaca</b> – udruga mora biti registrirana i odobrena.'

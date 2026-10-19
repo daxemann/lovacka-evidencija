@@ -1,5 +1,8 @@
 # Promjene
 
+## 1.34.1 – 2026-10
+- Popusti u trgovinama u demo verziji (primjeri trgovina, bez Oglasnika lovaca).
+
 ## 1.34.0 – 2026-10
 - **🏷️ Popusti u trgovinama – zajednički za sve udruge** (kao Oglasnik lovaca): trgovine su na poslužitelju Oglasnika, pa lovci **svih udruga** vide iste popuste.
   Dodir na 🏷️ Popusti otvara Oglasnik bez lozinke (isti ključ udruge), s **vašom članskom iskaznicom** (ime, sekcija, fotografija) – na blagajni pokažete zaslon sa satom koji teče.
