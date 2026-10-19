@@ -1,5 +1,10 @@
 # Promjene
 
+## 1.34.2 – 2026-10
+- **Sigurnija nadogradnja baze:** kad nakon ažuriranja više članova istovremeno otvori aplikaciju, nadogradnju baze sada radi samo jedan – ostali kratko pričekaju.
+  Prije se moglo dogoditi da netko dobije stranicu „Došlo je do greške“ (*duplicate column*).
+- Ako nadogradnja baze ne uspije, sve se vraća na staro (baza ostaje ispravna na prethodnoj verziji), a u `podaci/greske.log` piše s koje na koju verziju i zašto.
+
 ## 1.34.1 – 2026-10
 - Popusti u trgovinama u demo verziji (primjeri trgovina, bez Oglasnika lovaca).
 

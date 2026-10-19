@@ -5,7 +5,7 @@
  */
 declare(strict_types=1);
 
-const VERZIJA = '1.34.1';
+const VERZIJA = '1.34.2';
 const KONTAKT_EMAIL = 'daxemann@googlemail.com';
 const PODRSKA_PAYPAL = 'darko.bakic@freenet.de'; // dobrovoljna podrška razvoju (Pomoć i kontakt)
 const PROJEKT_URL = 'https://github.com/daxemann/lovacka-evidencija';
@@ -151,11 +151,33 @@ function db(bool $novo = false): PDO
 const SHEMA_PHP = 31;
 function nadogradi_bazu(PDO $pdo): void
 {
-    $v = (int) $pdo->query('PRAGMA user_version')->fetchColumn();
-    if ($v >= SHEMA_PHP) {
+    if ((int) $pdo->query('PRAGMA user_version')->fetchColumn() >= SHEMA_PHP) {
         return;
     }
-    $pdo->beginTransaction();
+    // Odmah zaključati bazu za pisanje (BEGIN IMMEDIATE) i verziju pročitati ponovno unutar zaključavanja:
+    // ako nakon ažuriranja dva korisnika istovremeno otvore aplikaciju, drugi čeka (busy_timeout) i zatim
+    // vidi da je baza već nadograđena – inače bi ponovio ALTER TABLE i dobio „duplicate column“.
+    $pdo->exec('BEGIN IMMEDIATE');
+    try {
+        $v = (int) $pdo->query('PRAGMA user_version')->fetchColumn();
+        if ($v < SHEMA_PHP) {
+            nadogradi_bazu_koraci($pdo, $v);
+            $pdo->exec('PRAGMA user_version = ' . SHEMA_PHP);
+        }
+        $pdo->exec('COMMIT');
+    } catch (Throwable $e) {
+        // sve ili ništa: baza ostaje na staroj verziji, sljedeći poziv pokušava ponovno
+        try {
+            $pdo->exec('ROLLBACK');
+        } catch (Throwable) {
+        }
+        throw new RuntimeException('Nadogradnja baze (verzija ' . ($v ?? '?') . ' → ' . SHEMA_PHP . ') nije uspjela: ' . $e->getMessage(), 0, $e);
+    }
+}
+
+/** Koraci nadogradnje od verzije $v do SHEMA_PHP. Poziva se samo iz nadogradi_bazu(), unutar transakcije. */
+function nadogradi_bazu_koraci(PDO $pdo, int $v): void
+{
     if ($v < 1) {
         $pdo->exec(<<<'SQL'
 CREATE TABLE IF NOT EXISTS "Dogadjaji" (
@@ -757,8 +779,6 @@ SQL);
         // pravo „Popusti u trgovinama – uređivanje“: dobivaju ga uloge koje već imaju sva prava (Glavni admin)
         $pdo->exec('UPDATE "Uloge" SET "Prava" = "Prava" | 16777216 WHERE ("Prava" & 16777215) = 16777215;');
     }
-    $pdo->exec('PRAGMA user_version = ' . SHEMA_PHP);
-    $pdo->commit();
 }
 
 function q(string $sql, array $p = []): PDOStatement
