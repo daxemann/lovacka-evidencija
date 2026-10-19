@@ -24,7 +24,7 @@ if ($k['ClanId']) {
 Bodovi vrijede tek kad akciju odobri uprava (do tada uz bodove stoji „?“). Dok nije odobrena, svoju prijavu možete urediti ili obrisati. Gore vidite bodove u lovnoj godini (1.4.–31.3.).</li>
 <li>Akcije koje je za vas upisala uprava (npr. zajednička košnja) vidite na istom popisu – njih ne možete mijenjati ni brisati.</li>
 <li><b>Dodatna oprema:</b> kod nekih vrsta (npr. Košnja) kvačicom označite što ste donijeli – traktor, trimer, motorna pila… Svaka oprema donosi dodatne bodove – koliko, određuje uprava u postavkama.</li>
-<li><b>Potraga s psom (krvni trag)</b> prijavljuje se isto u Moje radne akcije, uz odabir psa.</li>
+<li><b>Rad psa</b> (potraga – krvni trag, pogon, sitna divljač, ptičarenje, izgon iz šikare, jazbina, donošenje) prijavljuje se u Moje radne akcije uz odabir psa – nude se samo radovi koje vaš pas radi (Moj profil → Što pas radi). Bodove određuje uprava.</li>
 <li><b>Moj profil:</b> fotografija, kontakt, <b>što drugi vide u Imeniku</b> (mobitel, e-mail, adresa – vi odlučujete), <b>moja vozila</b> (reg. oznake za dezinfekciju) i <b>moji lovački psi</b> s ispitima.</li>'
     . (uplatnica_za_clanove() ? '
 <li><b>Moja uplatnica:</b> uplatnica za članarinu s 2D kodom. Kod skenirajte u mobilnom bankarstvu ili ga pokažite na šalteru; može se i ispisati (PDF). Vidite samo svoju.</li>' : '') . '

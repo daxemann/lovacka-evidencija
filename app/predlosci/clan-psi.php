@@ -20,9 +20,15 @@ $polja = function (?array $p) { ob_start(); ?>
     <div class="col-6 col-sm-2"><label class="form-label small">Boja</label><input name="Boja" class="form-control form-control-sm" maxlength="60" list="boje" value="<?= e($p['Boja'] ?? '') ?>"></div>
     <div class="col-6 col-sm-2"><label class="form-label small">Dlaka</label><input name="Dlaka" class="form-control form-control-sm" maxlength="40" list="dlake" value="<?= e($p['Dlaka'] ?? '') ?>"></div>
     <div class="col-12"><label class="form-label small">Napomena</label><input name="Napomena" class="form-control form-control-sm" maxlength="200" value="<?= e($p['Napomena'] ?? '') ?>"></div>
+    <div class="col-12"><div class="small fw-semibold mb-1">Što pas radi <span class="fw-normal text-muted">(za bodove i popis Vodiči pasa)</span></div>
+        <div class="d-flex flex-wrap gap-3">
+        <?php $rp = $p ? radovi_psa($p) : []; foreach (RADOVI_PSA as $rk => [$ri, $rn]): $rid = 'rad' . (int) ($p['Id'] ?? 0) . $rk; ?>
+            <div class="form-check"><input class="form-check-input<?= $rk === 'potraga' ? ' potraga-kv' : '' ?>" type="checkbox" name="Radovi[]" value="<?= e($rk) ?>" id="<?= e($rid) ?>"<?= chk(in_array($rk, $rp, true)) ?><?= $rk === 'potraga' && !$p ? ' data-auto-potraga="1"' : '' ?>>
+                <label class="form-check-label small" for="<?= e($rid) ?>"><?= $ri ?> <?= e($rn) ?></label></div>
+        <?php endforeach; ?>
+        </div></div>
     <div class="col-12 d-flex flex-wrap gap-3">
         <div class="form-check"><input class="form-check-input" type="checkbox" name="Bodovanje" value="1" id="bod<?= (int) ($p['Id'] ?? 0) ?>"<?= chk($p ? $p['Bodovanje'] : 1) ?>><label class="form-check-label small" for="bod<?= (int) ($p['Id'] ?? 0) ?>">godišnji bodovi za psa (1.1.)</label></div>
-        <div class="form-check"><input class="form-check-input potraga-kv" type="checkbox" name="Potraga" value="1" id="pot<?= (int) ($p['Id'] ?? 0) ?>"<?= chk($p ? $p['Potraga'] : 0) ?><?= $p ? '' : ' data-auto-potraga="1"' ?>><label class="form-check-label small" for="pot<?= (int) ($p['Id'] ?? 0) ?>">🩸 radi potragu (krvni trag)</label></div>
         <div class="form-check"><input class="form-check-input" type="checkbox" name="UPopisu" value="1" id="pop<?= (int) ($p['Id'] ?? 0) ?>"<?= chk($p ? ($p['UPopisu'] ?? 1) : 1) ?>><label class="form-check-label small" for="pop<?= (int) ($p['Id'] ?? 0) ?>">prikaži u popisu „Vodiči pasa“ (lovci mogu pronaći psa i javiti se)</label></div>
         <?php if ($p): ?><div class="form-check"><input class="form-check-input" type="checkbox" name="Aktivan" value="1" id="akt<?= (int) $p['Id'] ?>"<?= chk($p['Aktivan']) ?>><label class="form-check-label small" for="akt<?= (int) $p['Id'] ?>">pas je aktivan (isključite kad ugine / proda se)</label></div><?php endif; ?>
     </div>
@@ -37,7 +43,7 @@ $polja = function (?array $p) { ob_start(); ?>
     <div class="d-flex flex-wrap gap-2 small">
         <span class="badge text-bg-light border fw-normal">Posjedovanje psa (svake godine 1.1.): <b><?= broj($bl['godisnje']['bodovi']) ?></b></span>
         <span class="badge text-bg-light border fw-normal">Pas na zajedničkom lovu (po lovu): <b><?= broj($bl['lov']['bodovi']) ?></b></span>
-        <span class="badge text-bg-light border fw-normal">Potraga s psom – krvni trag (prijavi član): <b><?= broj($bl['potraga']['bodovi']) ?></b></span>
+        <?php foreach (RADOVI_PSA as [$ri, $rn, $rv]): ?><span class="badge text-bg-light border fw-normal"><?= $ri ?> <?= e($rn) ?> (prijavi član): <b><?= broj($bl[$rv]['bodovi']) ?></b></span><?php endforeach; ?>
     </div>
     <div class="small text-muted mt-1">Sve se upisuje kao radna akcija <b>na čekanju</b> i odobrava kao i ostali bodovi. Lov: član pri „Dolazim“ u kalendaru označi psa (vrsta termina „lov sa psima“).</div>
 </div></div>
@@ -49,7 +55,7 @@ $polja = function (?array $p) { ob_start(); ?>
             <h2 class="h5 mb-0">🐕 <?= e($p['Ime']) ?></h2>
             <span class="text-muted"><?= e(implode(' · ', array_filter([$p['Pasmina'], $p['Spol'], $p['Boja'] ?? null, $p['Dlaka'] ? 'dlaka ' . $p['Dlaka'] : null, $p['DatumRodjenja'] ? 'oštenje ' . datum($p['DatumRodjenja']) : null,
                 $p['RodnaKnjiga'] ? 'RK ' . $p['RodnaKnjiga'] : null, $p['Cip'] ? 'čip ' . $p['Cip'] : null]))) ?></span>
-            <?php if ($p['Potraga']): ?><span class="badge bg-danger-subtle text-danger-emphasis border">🩸 potraga</span><?php endif; ?>
+            <?= radovi_psa_oznake($p) ?>
             <?php if (!$p['Aktivan']): ?><span class="badge bg-secondary">neaktivan</span><?php endif; ?>
             <span class="ms-auto small">
                 <?php if (isset($p['Bodovano'][$god])): ?><span class="badge bg-success-subtle text-success-emphasis border">bodovi <?= $god ?>. upisani</span>

@@ -5,7 +5,7 @@
  */
 declare(strict_types=1);
 
-const VERZIJA = '1.30.2';
+const VERZIJA = '1.31.0';
 const KONTAKT_EMAIL = 'daxemann@googlemail.com';
 const PODRSKA_PAYPAL = 'darko.bakic@freenet.de'; // dobrovoljna podrška razvoju (Pomoć i kontakt)
 const PROJEKT_URL = 'https://github.com/daxemann/lovacka-evidencija';
@@ -146,7 +146,7 @@ function db(bool $novo = false): PDO
  * Dodatne tablice PHP verzije (PRAGMA user_version). .NET verzija ih ne poznaje i zanemaruje,
  * pa baza i dalje radi u oba smjera.
  */
-const SHEMA_PHP = 27;
+const SHEMA_PHP = 28;
 function nadogradi_bazu(PDO $pdo): void
 {
     $v = (int) $pdo->query('PRAGMA user_version')->fetchColumn();
@@ -716,6 +716,10 @@ SQL);
                 "Kreirano" TEXT NOT NULL);
             CREATE INDEX IF NOT EXISTS "IX_GrupniLovPopis_Lov" ON "GrupniLovPopis" ("LovId", "Vrijeme");
             CREATE UNIQUE INDEX IF NOT EXISTS "IX_GrupniLovPopis_Clan" ON "GrupniLovPopis" ("LovId", "ClanId") WHERE "ClanId" IS NOT NULL;');
+    }
+    if ($v < 28) {
+        // Što pas radi (više vrsta rada: potraga, pogon, sitna divljač, ptičarenje, izgon, jazbina, donošenje) – za bodove i Vodiče pasa
+        $pdo->exec('ALTER TABLE "LovniPsi" ADD COLUMN "Radovi" TEXT NULL; UPDATE "LovniPsi" SET "Radovi" = \'potraga\' WHERE "Potraga" = 1;');
     }
     $pdo->exec('PRAGMA user_version = ' . SHEMA_PHP);
     $pdo->commit();

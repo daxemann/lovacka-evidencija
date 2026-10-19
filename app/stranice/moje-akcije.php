@@ -5,10 +5,19 @@ if (!$k['ClanId']) {
     preusmjeri();
 }
 $cid = $k['ClanId'];
-vrsta_akcije_psi('potraga'); // stvara vrstu „Potraga s psom“ ako je nema
-$vrste = redovi('SELECT * FROM VrsteAkcija WHERE Aktivna=1 ORDER BY Naziv');
 $uredjuje = ul_int('uredi');
 $mojiPsi = aktivni_psi((int) $cid);
+// rad psa (potraga, pogon, sitna divljač …): vrsta se nudi samo ako član ima psa koji taj rad radi
+$vrsteRada = modul('psi') ? vrste_rada_psa() : [];
+$mojiRadovi = [];
+foreach ($mojiPsi as $p) {
+    $mojiRadovi = array_merge($mojiRadovi, radovi_psa($p));
+}
+$vrste = array_values(array_filter(redovi('SELECT * FROM VrsteAkcija WHERE Aktivna=1 ORDER BY Naziv'),
+    fn($v) => !isset($vrsteRada[(int) $v['Id']]) || in_array($vrsteRada[(int) $v['Id']], $mojiRadovi, true)));
+if (!modul('psi')) {
+    $mojiPsi = [];
+}
 // član mijenja / briše samo prijave koje je sam upisao (grupni unos uprave ne)
 $moja = fn(int $id) => red('SELECT * FROM RadneAkcije WHERE Id=? AND ClanId=? AND Status=0 AND (UnioKorisnikId IS NULL OR UnioKorisnikId=?)', [$id, $cid, $k['Id']]);
 
@@ -46,8 +55,8 @@ if (je_post()) {
         'PasId' => isset($mojiPsi[(int) ($_POST['pas'] ?? 0)]) ? (int) $_POST['pas'] : null,
         'Oprema' => $vrsta > 0 ? oprema_json(oprema_odabir($vrsta, (array) ($_POST['oprema'] ?? []))) : null,
     ];
-    if ($vrsta === vrsta_akcije_psi('potraga') && ($polja['PasId'] === null || empty($mojiPsi[$polja['PasId']]['Potraga']))) {
-        poruka('Za potragu odaberite psa koji radi potragu (kvačica „🩸 radi potragu“ u Moj profil → Moji lovački psi).', 'danger');
+    if (isset($vrsteRada[$vrsta]) && ($polja['PasId'] === null || !in_array($vrsteRada[$vrsta], radovi_psa($mojiPsi[$polja['PasId']]), true))) {
+        poruka(e('Odaberite psa koji radi „' . RADOVI_PSA[$vrsteRada[$vrsta]][1] . '“ (Moj profil → Moji lovački psi → Što pas radi).'), 'danger');
         $_SESSION['moja_akcija'] = $_POST;
         preusmjeri('moje-akcije', ['uredi' => $_POST['aid'] ?? null]);
     }
@@ -107,19 +116,22 @@ ob_start(); ?>
                 <div class="col-6 col-md-3"><label class="form-label small">Vrsta</label>
                     <select name="vrsta" class="form-select" required onchange="document.getElementById('naziv').style.display=this.value==='-1'?'':'none'">
                         <option value="">— odaberi —</option>
-                        <?php foreach ($vrste as $vr): ?><option value="<?= (int) $vr['Id'] ?>"<?= sel($v['vrsta'], $vr['Id']) ?>><?= e($vr['Naziv']) ?></option><?php endforeach; ?>
+                        <?php foreach ($vrste as $vr): $vrr = $vrsteRada[(int) $vr['Id']] ?? ''; ?><option value="<?= (int) $vr['Id'] ?>"<?= $vrr ? ' data-rad="' . e($vrr) . '"' : '' ?><?= sel($v['vrsta'], $vr['Id']) ?>><?= $vrr ? RADOVI_PSA[$vrr][0] . ' ' : '' ?><?= e($vr['Naziv']) ?></option><?php endforeach; ?>
                         <option value="-1"<?= sel($v['vrsta'], -1) ?>>Vlastita akcija (upiši sam)…</option>
                     </select></div>
                 <div class="col-12 col-md-6" id="naziv" style="<?= (string) $v['vrsta'] === '-1' ? '' : 'display:none' ?>"><label class="form-label small">Naziv akcije</label>
                     <input name="naziv" class="form-control" maxlength="100" placeholder="npr. popravak puta do čeke" value="<?= e($v['naziv']) ?>"></div>
                 <div class="col-4 col-md-2"><label class="form-label small">Sati</label><input name="sati" type="number" step="0.5" min="0" inputmode="decimal" class="form-control" value="<?= e($v['sati']) ?>"></div>
                 <?php if ($mojiPsi): ?><div class="col-8 col-md-3"><label class="form-label small">🐕 Pas (ako je sudjelovao)</label>
-                    <select name="pas" class="form-select"><option value="">— bez psa —</option><?php foreach ($mojiPsi as $pid => $p): ?><option value="<?= $pid ?>" data-potraga="<?= (int) $p['Potraga'] ?>"<?= sel((string) $pid, $v['pas']) ?>><?= e(opis_psa($p)) ?><?= $p['Potraga'] ? ' 🩸' : '' ?></option><?php endforeach; ?></select>
-                    <div class="form-text d-none" id="potragaInfo">Za potragu samo psi s kvačicom „🩸 radi potragu“ (<a href="<?= e(url('moj-profil', ['psi' => 1])) ?>">Moj profil</a>).</div></div>
+                    <select name="pas" class="form-select"><option value="">— bez psa —</option><?php foreach ($mojiPsi as $pid => $p): ?><option value="<?= $pid ?>" data-radovi="<?= e(implode(',', radovi_psa($p))) ?>"<?= sel((string) $pid, $v['pas']) ?>><?= e(opis_psa($p)) ?> <?= implode('', array_map(fn($r) => RADOVI_PSA[$r][0], radovi_psa($p))) ?></option><?php endforeach; ?></select>
+                    <div class="form-text d-none" id="potragaInfo">Za rad psa samo psi koji taj rad rade (<a href="<?= e(url('moj-profil', ['psi' => 1])) ?>">Moj profil → Što pas radi</a>).</div></div>
                     <script>(function () {
-                        var vr = document.querySelector('[name=vrsta]'), ps = document.querySelector('[name=pas]'), pot = '<?= (int) vrsta_akcije_psi('potraga') ?>';
-                        function f() { var je = vr.value === pot; document.getElementById('potragaInfo').classList.toggle('d-none', !je);
-                            ps.querySelectorAll('option[data-potraga]').forEach(function (o) { o.disabled = je && o.dataset.potraga !== '1'; if (o.disabled && o.selected) ps.value = ''; }); }
+                        var vr = document.querySelector('[name=vrsta]'), ps = document.querySelector('[name=pas]');
+                        function f() { var o = vr.options[vr.selectedIndex], rad = o ? o.getAttribute('data-rad') : null;
+                            document.getElementById('potragaInfo').classList.toggle('d-none', !rad);
+                            var prvi = null;
+                            ps.querySelectorAll('option[data-radovi]').forEach(function (op) { var ok = !rad || op.dataset.radovi.split(',').indexOf(rad) >= 0; op.disabled = !ok; if (!ok && op.selected) ps.value = ''; if (ok && !prvi) prvi = op; });
+                            if (rad && !ps.value && prvi) ps.value = prvi.value; }
                         vr.addEventListener('change', f); f(); })();</script><?php endif; ?>
                 <div class="col-12" id="opremaClan" hidden>
                     <div class="border rounded p-2 bg-light">

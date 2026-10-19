@@ -1,5 +1,12 @@
 # Promjene
 
+## 1.31.0 – 2026-10
+- **🐕 Što pas radi** (umjesto samo „radi krvni trag“): kod svakog psa kvačice – 🩸 potraga (krvni trag), 📯 pogon (gonič), 🐇 lov na sitnu divljač,
+  🪶 traženje i markiranje (ptičar), 🌿 pretraživanje i izgon iz šikare, 🦡 rad u jazbini, 🦆 donošenje (aport). Postojeći psi za potragu zadržavaju kvačicu.
+- **Bodovi za rad psa:** svaki rad je vlastita vrsta radne akcije („Rad psa: …“) – bodove određuje admin u Sustav → Vrste radnih akcija.
+  Član prijavljuje u **Moje radne akcije** uz odabir psa; nude se samo radovi koje njegov pas radi, a pas se bira sam. Odobravanje kao i ostali bodovi.
+- **Vodiči pasa:** filtar po radu (npr. samo goniči ili samo psi za jazbinu), oznake radova uz svakog psa.
+
 ## 1.30.2 – 2026-10
 - **🦌 Logo programa Lovačka Evidencija** (odvojeno od loga udruge): dno izbornika (s verzijom, vodi na Pomoć), ispod prijave, stranica Pomoć i kontakt, banner na GitHubu.
 - Udruge **bez vlastitog loga** dobivaju logo programa kao ikonu aplikacije na početnom zaslonu i u kartici preglednika. Logo udruge ostaje gdje je bio (izbornik gore, PDF-ovi, iskaznice, ikona aplikacije).

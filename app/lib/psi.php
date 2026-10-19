@@ -10,7 +10,51 @@ const VRSTE_PSI = [
     'godisnje' => ['Lovački pas', 0],               // posjedovanje psa – automatski 1.1.
     'lov' => ['Pas na lovu', 0],                    // prijavljen pas na zajedničkom lovu – automatski nakon lova
     'potraga' => ['Potraga s psom (krvni trag)', 1], // član sam prijavljuje (Moje radne akcije)
+    // rad psa – član sam prijavljuje (Moje radne akcije), samo za psa koji taj rad radi
+    'rad-pogon' => ['Rad psa: pogon (goniči)', 1],
+    'rad-sitna' => ['Rad psa: lov na sitnu divljač', 1],
+    'rad-ptic' => ['Rad psa: traženje i markiranje (ptičarenje)', 1],
+    'rad-izgon' => ['Rad psa: pretraživanje i izgon iz šikare', 1],
+    'rad-jazbina' => ['Rad psa: rad u jazbini', 1],
+    'rad-donosenje' => ['Rad psa: donošenje (aport)', 1],
 ];
+
+/** Što pas radi: ključ => [ikona, naziv, vrsta radne akcije (VRSTE_PSI)] */
+const RADOVI_PSA = [
+    'potraga' => ['🩸', 'potraga (krvni trag)', 'potraga'],
+    'pogon' => ['📯', 'pogon (gonič)', 'rad-pogon'],
+    'sitna' => ['🐇', 'lov na sitnu divljač', 'rad-sitna'],
+    'ptic' => ['🪶', 'traženje i markiranje (ptičar)', 'rad-ptic'],
+    'izgon' => ['🌿', 'pretraživanje i izgon iz šikare', 'rad-izgon'],
+    'jazbina' => ['🦡', 'rad u jazbini', 'rad-jazbina'],
+    'donosenje' => ['🦆', 'donošenje (aport)', 'rad-donosenje'],
+];
+/** Radovi psa kao niz ključeva. */
+function radovi_psa(array $p): array
+{
+    $r = array_values(array_intersect(explode(',', (string) ($p['Radovi'] ?? '')), array_keys(RADOVI_PSA)));
+    if (!$r && !empty($p['Potraga'])) {
+        $r = ['potraga'];
+    }
+    return $r;
+}
+/** Oznake radova (HTML). */
+function radovi_psa_oznake(array $p): string
+{
+    return implode(' ', array_map(fn($r) => '<span class="badge bg-success-subtle text-success-emphasis border fw-normal">' . RADOVI_PSA[$r][0] . ' ' . e(RADOVI_PSA[$r][1]) . '</span>', radovi_psa($p)));
+}
+/** [vrstaAkcijeId => ključ rada] za sve radove psa. */
+function vrste_rada_psa(): array
+{
+    static $m = null;
+    if ($m === null) {
+        $m = [];
+        foreach (RADOVI_PSA as $kl => $r) {
+            $m[vrsta_akcije_psi($r[2])] = $kl;
+        }
+    }
+    return $m;
+}
 function vrsta_akcije_psi(string $kljuc = 'godisnje'): int
 {
     [$naziv, $aktivna] = VRSTE_PSI[$kljuc];
@@ -187,7 +231,10 @@ function psi_obradi(int $id, string $radnja, string $ime): void
             'Spol' => in_array(ul_str('Spol'), ['pas', 'kuja'], true) ? ul_str('Spol') : null, 'DatumRodjenja' => u_datum(ul_str('DatumRodjenja')),
             'Cip' => mb_substr(ul_str('Cip'), 0, 40) ?: null,
             'RodnaKnjiga' => mb_substr(ul_str('RodnaKnjiga'), 0, 40) ?: null, 'Boja' => mb_substr(ul_str('Boja'), 0, 60) ?: null, 'Dlaka' => mb_substr(ul_str('Dlaka'), 0, 40) ?: null,
-            'Napomena' => mb_substr(ul_str('Napomena'), 0, 200) ?: null, 'Bodovanje' => isset($_POST['Bodovanje']) ? 1 : 0, 'UPopisu' => isset($_POST['UPopisu']) ? 1 : 0, 'Potraga' => isset($_POST['Potraga']) ? 1 : 0];
+            'Napomena' => mb_substr(ul_str('Napomena'), 0, 200) ?: null, 'Bodovanje' => isset($_POST['Bodovanje']) ? 1 : 0, 'UPopisu' => isset($_POST['UPopisu']) ? 1 : 0];
+        $radovi = array_values(array_intersect(array_keys(RADOVI_PSA), (array) ($_POST['Radovi'] ?? [])));
+        $pod['Radovi'] = $radovi ? implode(',', $radovi) : null;
+        $pod['Potraga'] = in_array('potraga', $radovi, true) ? 1 : 0;
         if ($pod['Ime'] === '') {
             return;
         }

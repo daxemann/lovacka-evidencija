@@ -6,13 +6,18 @@
  */
 $k = korisnik();
 $tr = trim((string) ($_GET['q'] ?? ''));
-$samoPotraga = !empty($_GET['potraga']);
+$rad = (string) ($_GET['rad'] ?? (!empty($_GET['potraga']) ? 'potraga' : ''));
+$rad = isset(RADOVI_PSA[$rad]) ? $rad : '';
+$samoPotraga = $rad === 'potraga';
 $sek = ul_int('sekcija');
 $psi = redovi('SELECT p.*, c.Id AS ClanId, c.Ime AS CIme, c.Prezime, c.Nadimak, c.FotoDatoteka, c.SekcijaId, c.MobilniTelefon, c.Email,
         s.Naziv AS Sekcija, v.Mobitel AS VMob, v.Email AS VMail,
         (SELECT ko.Id FROM Korisnici ko WHERE ko.ClanId=c.Id AND ko.Aktivan=1 AND ko.Odobren=1 LIMIT 1) AS KorisnikId
     FROM LovniPsi p JOIN Clanovi c ON c.Id=p.ClanId LEFT JOIN Sekcije s ON s.Id=c.SekcijaId LEFT JOIN ClanVidljivost v ON v.ClanId=c.Id
-    WHERE p.Aktivan=1 AND p.UPopisu=1 AND c.Status=0' . ($samoPotraga ? ' AND p.Potraga=1' : '') . ($sek ? ' AND c.SekcijaId=' . (int) $sek : ''));
+    WHERE p.Aktivan=1 AND p.UPopisu=1 AND c.Status=0' . ($sek ? ' AND c.SekcijaId=' . (int) $sek : ''));
+if ($rad !== '') {
+    $psi = array_filter($psi, fn($p) => in_array($rad, radovi_psa($p), true));
+}
 if ($tr !== '') {
     $kl = kljuc($tr);
     $psi = array_filter($psi, fn($p) => str_contains(kljuc($p['CIme'] . ' ' . $p['Prezime'] . ' ' . $p['Nadimak'] . ' ' . $p['Ime'] . ' ' . $p['Pasmina']), $kl));
@@ -44,8 +49,8 @@ ob_start(); ?>
     <input name="q" class="form-control" style="max-width:260px" placeholder="Ime, pas ili pasmina" value="<?= e($tr) ?>">
     <?php $sv = sekcije(true); if ($sv): ?><select name="sekcija" class="form-select" style="width:auto" data-auto><option value="">Sve sekcije</option>
         <?php foreach ($sv as $s): ?><option value="<?= (int) $s['Id'] ?>"<?= sel($s['Id'], $sek) ?>><?= e($s['Naziv']) ?></option><?php endforeach; ?></select><?php endif; ?>
-    <div class="form-check"><input class="form-check-input" type="checkbox" name="potraga" value="1" id="fPotraga"<?= chk($samoPotraga) ?> data-auto>
-        <label class="form-check-label" for="fPotraga">🩸 samo psi za potragu (krvni trag)</label></div>
+    <select name="rad" class="form-select" style="width:auto" data-auto aria-label="Što pas radi"><option value="">Svi psi</option>
+        <?php foreach (RADOVI_PSA as $rk => [$ri, $rn]): ?><option value="<?= e($rk) ?>"<?= sel($rk, $rad) ?>><?= $ri ?> <?= e($rn) ?></option><?php endforeach; ?></select>
     <button class="btn btn-outline-primary">Traži</button>
 </form>
 <div class="small text-muted mb-2"><?= count($vodici) ?> vodiča · <?= $brojPasa ?> <?= $brojPasa === 1 ? 'pas' : 'pasa' ?></div>
@@ -64,7 +69,7 @@ ob_start(); ?>
                     <div class="mt-1">
                         <b>🐕 <?= e($p['Ime']) ?></b>
                         <span class="small text-muted"><?= e(implode(' · ', array_filter([$p['Pasmina'], $p['Spol'], $p['DatumRodjenja'] ? substr($p['DatumRodjenja'], 0, 4) . '.' : null]))) ?></span>
-                        <?php if ($p['Potraga']): ?><span class="badge bg-danger-subtle text-danger-emphasis border">🩸 potraga</span><?php endif; ?>
+                        <?= radovi_psa_oznake($p) ?>
                         <?php if (!empty($ispiti[(int) $p['Id']])): ?><div class="small text-muted">ispiti: <?= e(implode('; ', array_slice($ispiti[(int) $p['Id']], 0, 3))) ?></div><?php endif; ?>
                     </div>
                 <?php endforeach; ?>
@@ -80,6 +85,6 @@ ob_start(); ?>
         <?php endif; ?>
     </div>
 <?php endforeach; ?>
-<?php if (!$vodici): ?><div class="list-group-item text-muted">Nema pasa<?= $samoPotraga ? ' za potragu' : '' ?><?= $tr !== '' ? ' za „' . e($tr) . '“' : '' ?>. Psa upisuje svaki član u <a href="<?= e(url('moj-profil', ['psi' => 1])) ?>">Moj profil</a>.</div><?php endif; ?>
+<?php if (!$vodici): ?><div class="list-group-item text-muted">Nema pasa<?= $rad !== '' ? ' za „' . e(RADOVI_PSA[$rad][1]) . '“' : '' ?><?= $tr !== '' ? ' za „' . e($tr) . '“' : '' ?>. Psa upisuje svaki član u <a href="<?= e(url('moj-profil', ['psi' => 1])) ?>">Moj profil</a>.</div><?php endif; ?>
 </div>
 <?php stranica('Vodiči pasa', ob_get_clean());
