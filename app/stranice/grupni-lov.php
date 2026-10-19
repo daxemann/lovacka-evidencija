@@ -246,23 +246,27 @@ ob_start(); ?>
     </div>
     <div class="gl-popis">
         <div class="d-flex flex-wrap gap-2 small mb-2" id="gl-brojevi"></div>
+        <?php if ($org): ?>
+        <div class="d-grid gap-2 mb-2">
+            <a class="btn btn-success" href="<?= e(url('grupni-popis', ['id' => $lov['Id']])) ?>">📋 Popis sudionika – skeniraj iskaznice
+                <span class="badge text-bg-light ms-1"><?= (int) vrijednost('SELECT COUNT(*) FROM GrupniLovPopis WHERE LovId=?', [$lov['Id']]) ?></span></a>
+            <form method="post"><?= csrf() ?><input type="hidden" name="id" value="<?= (int) $lov['Id'] ?>">
+                <button class="btn btn-outline-danger w-100" name="radnja" value="zavrsi" onclick="return confirm('Lov završen? Svi sudionici dobivaju obavijest, položaji se brišu.')">🏁 Lov završen</button>
+            </form>
+        </div>
+        <?php endif; ?>
+        <?php if ($saljem): ?>
+        <div class="d-grid mb-2">
+            <button type="button" class="btn btn-outline-secondary btn-sm" id="gl-odlazim">🚶 Odlazim – prestani slati položaj</button>
+        </div>
+        <?php endif; ?>
         <div id="gl-sudionici" class="list-group list-group-flush small"></div>
         <div class="gl-legenda small text-muted mt-2">
             <span><i class="gl-tocka uzivo"></i> uživo</span> <span><i class="gl-tocka pozadina"></i> zaslon ugašen</span>
-            <span><i class="gl-tocka signal"></i> nema signala (zadnji položaj)</span> <span><i class="gl-tocka sos"></i> SOS</span>
+            <span><i class="gl-tocka signal"></i> nema signala (zadnji položaj)</span> <span><i class="gl-tocka sos"></i> SOS</span> <span>📋 na popisu</span>
         </div>
         <?php if ($saljem): ?>
-        <div class="mt-3 d-grid gap-2">
-            <button type="button" class="btn btn-outline-secondary btn-sm" id="gl-odlazim">🚶 Odlazim – prestani slati položaj</button>
-        </div>
         <p class="small text-muted mt-2 mb-0">📱 Položaj se šalje <b>samo dok je ova stranica otvorena</b> (zaslon ostaje upaljen). Ugasite li zaslon, organizator vidi vaš zadnji položaj.</p>
-        <?php endif; ?>
-        <?php if ($org): ?>
-        <a class="btn btn-success w-100 mt-3" href="<?= e(url('grupni-popis', ['id' => $lov['Id']])) ?>">📋 Popis sudionika – skeniraj iskaznice
-            <span class="badge text-bg-light ms-1"><?= (int) vrijednost('SELECT COUNT(*) FROM GrupniLovPopis WHERE LovId=?', [$lov['Id']]) ?></span></a>
-        <form method="post" class="mt-2"><?= csrf() ?><input type="hidden" name="id" value="<?= (int) $lov['Id'] ?>">
-            <button class="btn btn-danger w-100" name="radnja" value="zavrsi" onclick="return confirm('Lov završen? Svi sudionici dobivaju obavijest, položaji se brišu.')">🏁 Lov završen</button>
-        </form>
         <?php endif; ?>
     </div>
 </div>

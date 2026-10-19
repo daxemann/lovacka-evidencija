@@ -377,6 +377,7 @@ function gl_stanje(array $lov): array
     }
     $sudionici = [];
     $broj = ['dolazi' => 0, 'ne' => 0, 'ceka' => 0, 'otisao' => 0];
+    $naPopisu = array_flip(array_map('intval', array_column(redovi('SELECT ClanId FROM GrupniLovPopis WHERE LovId=? AND ClanId IS NOT NULL', [$lov['Id']]), 'ClanId')));
     foreach (redovi('SELECT * FROM GrupniLovSudionici WHERE LovId=? ORDER BY Ime', [$lov['Id']]) as $s) {
         $st = gl_status($s);
         $broj[match ($st) { 'ne' => 'ne', 'ceka' => 'ceka', 'otisao' => 'otisao', default => 'dolazi' }]++;
@@ -393,6 +394,7 @@ function gl_stanje(array $lov): array
             'sos' => $s['SosOd'] ? ['od' => date('H:i', strtotime($s['SosOd'])), 'lat' => $s['SosLat'] !== null ? (float) $s['SosLat'] : null,
                 'lon' => $s['SosLon'] !== null ? (float) $s['SosLon'] : null, 'preuzeo' => $s['SosPreuzeoIme']] : null,
             'tel' => ($org || $s['SosOd']) && $s['ClanId'] ? ($tel[(int) $s['ClanId']] ?? null) : null,
+            'popis' => $s['ClanId'] !== null && isset($naPopisu[(int) $s['ClanId']]),
         ];
     }
     $ja = gl_sudionik((int) $lov['Id'], (int) $k['Id']);
@@ -400,7 +402,7 @@ function gl_stanje(array $lov): array
     return [
         'id' => (int) $lov['Id'], 'naziv' => $lov['Naziv'], 'aktivan' => gl_aktivan($lov), 'org' => $org,
         'kraj' => date('H:i', strtotime($lov['Kraj'])), 'organizator' => $lov['KreiraoIme'], 'orgTel' => $orgTel ?: null,
-        'broj' => $broj, 'sudionici' => $sudionici, 'vrijeme' => date('H:i:s'),
+        'broj' => $broj, 'naPopisu' => $org ? (int) vrijednost('SELECT COUNT(*) FROM GrupniLovPopis WHERE LovId=?', [$lov['Id']]) : null, 'sudionici' => $sudionici, 'vrijeme' => date('H:i:s'),
         'ja' => $ja ? ['odgovor' => $ja['Odgovor'] === null ? null : (int) $ja['Odgovor'], 'otisao' => $ja['Otisao'] !== null, 'sos' => $ja['SosOd'] !== null,
             'preuzeo' => $ja['SosPreuzeoIme']] : null,
     ];

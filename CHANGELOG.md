@@ -1,5 +1,11 @@
 # Promjene
 
+## 1.29.2 – 2026-10
+- **Grupni lov – karta:** u popisu desno samo **tko je u lovu** (dolazi, na karti, SOS) i tko je **📋 na popisu sudionika** (skeniran / ručno upisan).
+  Ostali pozvani (bez odgovora, ne dolaze, otišli) su skriveni pod **„Ostali pozvani (N)“** – otvara se dodirom.
+- Gumbi **📋 Popis sudionika**, **🏁 Lov završen** i **🚶 Odlazim** sada su **iznad** popisa (ne treba listati do dna kod 60 lovaca); 📞 u istom retku kao ime.
+- Brojač **📋 na popisu** uz dolazi / ne dolazi / bez odgovora.
+
 ## 1.29.1 – 2026-10
 - **🗑 Brisanje završenih grupnih lovova**: gumb uz svaki završeni lov, u detalju lova, i **Obriši sve završene** (s popisima sudionika).
   Briše samo tko upravlja tim lovom; lov u tijeku se ne može obrisati. Prije brisanja program sam napravi kopiju baze.

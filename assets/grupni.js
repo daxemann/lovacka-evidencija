@@ -88,18 +88,27 @@
         var desno = s.sos ? '<span class="badge bg-danger">🆘 ' + esc(s.sos.od) + '</span>' : '<span class="small text-muted">' + esc(OPIS[s.st] || s.st) + (s.vrijeme && s.st !== 'uzivo' ? ' · ' + esc(s.vrijeme) : '') + '</span>';
         var gumbi = '';
         if (s.sos && !s.sos.preuzeo && !s.ja) gumbi += '<button type="button" class="btn btn-sm btn-danger mt-1" data-preuzmi="' + s.id + '">🚑 Idem pomoći</button> ';
-        if (s.tel) gumbi += '<a class="btn btn-sm btn-outline-secondary mt-1" href="tel:' + esc(s.tel) + '">📞</a>';
-        return '<div class="list-group-item px-1 gl-red ' + klasa(s) + '" data-k="' + s.id + '"><div class="d-flex align-items-center gap-2">'
-            + '<i class="gl-tocka ' + klasa(s) + '"></i><span class="flex-grow-1">' + esc(s.ime) + (s.ja ? ' <b>(ja)</b>' : '') + '</span>' + desno + '</div>'
+        var tel = s.tel ? '<a class="btn btn-sm btn-outline-secondary py-0 px-2" href="tel:' + esc(s.tel) + '" aria-label="Nazovi ' + esc(s.ime) + '">📞</a>' : '';
+        return '<div class="list-group-item px-1 py-1 gl-red ' + klasa(s) + '" data-k="' + s.id + '"><div class="d-flex align-items-center gap-2">'
+            + '<i class="gl-tocka ' + klasa(s) + '"></i><span class="flex-grow-1">' + esc(s.ime) + (s.ja ? ' <b>(ja)</b>' : '') + (s.popis ? ' <span title="na popisu sudionika">📋</span>' : '') + '</span>' + desno + tel + '</div>'
             + (s.sos && s.sos.preuzeo ? '<div class="small text-success">Preuzeo: ' + esc(s.sos.preuzeo) + '</div>' : '') + (gumbi ? '<div>' + gumbi + '</div>' : '') + '</div>';
     }
     var REDOSLIJED = { sos: 0, signal: 1, pozadina: 2, 'bez-gps': 3, uzivo: 4, dolazi: 5, ceka: 6, otisao: 7, ne: 8 };
     function prikazi() {
         var b = st.broj;
         brojevi.innerHTML = '<span class="badge bg-success">✔ dolazi ' + b.dolazi + '</span>' + (st.org ? '<span class="badge bg-secondary">✖ ne dolazi ' + b.ne + '</span><span class="badge bg-light text-dark border">? bez odgovora ' + b.ceka + '</span>' : '')
-            + (b.otisao ? '<span class="badge bg-light text-dark border">otišli ' + b.otisao + '</span>' : '') + '<span class="text-muted ms-auto">osvježeno ' + esc(st.vrijeme.slice(0, 5)) + '</span>';
+            + (b.otisao ? '<span class="badge bg-light text-dark border">otišli ' + b.otisao + '</span>' : '')
+            + (st.naPopisu != null ? '<span class="badge bg-success-subtle text-success-emphasis border">📋 na popisu ' + st.naPopisu + '</span>' : '')
+            + '<span class="text-muted ms-auto">osvježeno ' + esc(st.vrijeme.slice(0, 5)) + '</span>';
         var l = st.sudionici.slice().sort(function (a, c) { return (REDOSLIJED[klasa(a)] - REDOSLIJED[klasa(c)]) || a.ime.localeCompare(c.ime, 'hr'); });
-        popis.innerHTML = l.map(redPopisa).join('') || '<div class="text-muted p-2">Još nitko nije na karti.</div>';
+        // u popisu samo tko je u lovu (dolazi / na karti / skeniran); ostali pozvani skriveni pod „Ostali pozvani“
+        var uLovu = l.filter(function (s) { return s.sos || s.popis || ['ceka', 'ne', 'otisao'].indexOf(s.st) === -1; });
+        var ostali = l.filter(function (s) { return uLovu.indexOf(s) === -1; });
+        var otvoreno = popis.querySelector('details.gl-ostali');
+        otvoreno = otvoreno && otvoreno.open;
+        popis.innerHTML = (uLovu.map(redPopisa).join('') || '<div class="text-muted p-2">Još nitko nije prijavljen u lov.</div>')
+            + (ostali.length ? '<details class="gl-ostali mt-2"' + (otvoreno ? ' open' : '') + '><summary class="small text-muted px-1">Ostali pozvani (' + ostali.length + ') – bez odgovora, ne dolaze, otišli</summary>'
+                + ostali.map(redPopisa).join('') + '</details>' : '');
         // SOS – crvena traka za organizatora
         var sos = st.sudionici.filter(function (s) { return s.sos; });
         sos = sos.filter(function (s) { return !s.ja; });
