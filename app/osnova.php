@@ -5,7 +5,7 @@
  */
 declare(strict_types=1);
 
-const VERZIJA = '1.31.0';
+const VERZIJA = '1.32.0';
 const KONTAKT_EMAIL = 'daxemann@googlemail.com';
 const PODRSKA_PAYPAL = 'darko.bakic@freenet.de'; // dobrovoljna podrška razvoju (Pomoć i kontakt)
 const PROJEKT_URL = 'https://github.com/daxemann/lovacka-evidencija';
@@ -146,7 +146,7 @@ function db(bool $novo = false): PDO
  * Dodatne tablice PHP verzije (PRAGMA user_version). .NET verzija ih ne poznaje i zanemaruje,
  * pa baza i dalje radi u oba smjera.
  */
-const SHEMA_PHP = 28;
+const SHEMA_PHP = 29;
 function nadogradi_bazu(PDO $pdo): void
 {
     $v = (int) $pdo->query('PRAGMA user_version')->fetchColumn();
@@ -720,6 +720,16 @@ SQL);
     if ($v < 28) {
         // Što pas radi (više vrsta rada: potraga, pogon, sitna divljač, ptičarenje, izgon, jazbina, donošenje) – za bodove i Vodiče pasa
         $pdo->exec('ALTER TABLE "LovniPsi" ADD COLUMN "Radovi" TEXT NULL; UPDATE "LovniPsi" SET "Radovi" = \'potraga\' WHERE "Potraga" = 1;');
+    }
+    if ($v < 29) {
+        // rođendanske čestitke e-poštom – tko je i kada poslao (jednom po članu i godini, vidljivo svima koji vide rođendane)
+        $pdo->exec('CREATE TABLE IF NOT EXISTS "RodjendanCestitke" (
+                "ClanId" INTEGER NOT NULL REFERENCES "Clanovi" ("Id") ON DELETE CASCADE,
+                "Godina" INTEGER NOT NULL,
+                "KorisnikId" INTEGER NULL,
+                "Poslao" TEXT NULL,
+                "Vrijeme" TEXT NOT NULL,
+                PRIMARY KEY ("ClanId", "Godina"));');
     }
     $pdo->exec('PRAGMA user_version = ' . SHEMA_PHP);
     $pdo->commit();

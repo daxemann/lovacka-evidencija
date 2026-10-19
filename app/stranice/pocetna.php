@@ -50,6 +50,8 @@ foreach ($clanovi as $c) {
     }
 }
 usort($rodj, fn($a, $b) => $a[1] <=> $b[1]);
+$cestitke = poslane_cestitke(array_map(fn($r) => [(int) $r[0]['Id'], (int) $r[1]->format('Y')], $rodj));
+$mozeMail = posta_dostupna();
 usort($isk, fn($a, $b) => strcmp($a['IskaznicaVrijediDo'], $b['IskaznicaVrijediDo']));
 ob_start(); ?>
 <div class="d-flex flex-wrap align-items-center gap-2 mb-4">
@@ -108,7 +110,14 @@ ob_start(); ?>
             <?php foreach ($rodj as [$c, $d, $god]): ?>
                 <li class="list-group-item d-flex align-items-center gap-2"><?= avatar($c) ?>
                     <a href="<?= e(url('clanovi/uredi', ['id' => $c['Id']])) ?>"><?= e(puno_ime($c)) ?></a>
-                    <span class="ms-auto text-muted"><?= $d->format('d.m.') ?> (<?= $god ?>. g.)</span></li>
+                    <span class="ms-auto text-muted text-nowrap"><?= $d->format('d.m.') ?> (<?= $god ?>. g.)</span>
+                    <?php if ($x = $cestitke[(int) $c['Id']] ?? null): ?>
+                        <span class="badge text-bg-success" title="<?= e(trim(($x['Poslao'] ?? '') . ' · ' . date('d.m.Y H:i', strtotime($x['Vrijeme'])), ' ·')) ?>">✓ Poslano</span>
+                    <?php elseif ($c['Email'] && $mozeMail): ?>
+                        <form method="post" action="<?= e(url('rodjendan-mail')) ?>" class="m-0"><?= csrf() ?>
+                            <input type="hidden" name="clan" value="<?= (int) $c['Id'] ?>"><input type="hidden" name="godina" value="<?= $d->format('Y') ?>">
+                            <button class="btn btn-sm btn-outline-primary py-0" title="Pošalji rođendansku čestitku e-poštom" data-potvrda="<?= e('Poslati rođendansku čestitku – ' . puno_ime($c) . ' (' . $c['Email'] . ')?') ?>">✉️</button></form>
+                    <?php endif; ?></li>
             <?php endforeach; ?>
         </ul></div></div>
     <div class="col-lg-6"><div class="card h-100"><div class="card-header">Lovačka iskaznica ističe (60 dana) ili je istekla</div>

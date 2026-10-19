@@ -11,6 +11,8 @@ const PREDLOSCI_ZADANO = [
     'Predlozak.Rata' => "Pozdrav {ime},\n\nmali podsjetnik: {rata} članarine za {godina}. ({iznos_rate} €) dospjela je {dospijece}. Prema evidenciji je otvoreno još {preostalo} €.\n\nAko si već platio, zanemari poruku – uplata možda još nije upisana.\n\nHvala!\n\n{potpis}",
     'Predlozak.Pozivnica' => "Pozdrav {ime},\n\nudruga ima novu evidenciju članova. Preko ove poveznice možeš sam postaviti svoju lozinku (poveznica vrijedi 7 dana i samo je za tebe):\n\n{link}\n\nNakon toga administrator još odobri pristup, a ti onda možeš vidjeti svoje podatke i upisivati radne akcije.\n\n{potpis}",
     'Predlozak.Odobreno' => "Pozdrav {ime},\n\ntvoj pristup evidenciji je odobren. Prijava: {link}\nKorisničko ime: {korisnik}\n\n{potpis}",
+    'Predlozak.Rodjendan.Naslov' => 'Sretan rođendan, {ime}!',
+    'Predlozak.Rodjendan' => "Dragi {ime},\n\nu ime udruge od srca ti čestitamo {godine}. rođendan! Želimo ti puno zdravlja, sreće i lijepih trenutaka u lovištu.\n\nLovu blagoslov!\n\n{potpis}",
     'Predlozak.Potpis' => '{udruga}',
 ];
 const OZNAKE_PREDLOZAKA = [
@@ -18,7 +20,7 @@ const OZNAKE_PREDLOZAKA = [
     '{bodovi}' => 'zbroj bodova', '{godina}' => 'godina članarine', '{iznos}' => 'iznos članarine', '{uplaceno}' => 'uplaćeno',
     '{preostalo}' => 'preostalo', '{link}' => 'poveznica (pozivnica / prijava)', '{korisnik}' => 'korisničko ime',
     '{potpis}' => 'potpis udruge', '{udruga}' => 'naziv udruge', '{rata}' => 'dospjela rata (npr. „2. rata“)', '{iznos_rate}' => 'iznos rate',
-    '{dospijece}' => 'datum dospijeća rate',
+    '{dospijece}' => 'datum dospijeća rate', '{godine}' => 'koliko godina puni (rođendan)',
 ];
 
 function predlosci_poruka(): array
@@ -100,6 +102,28 @@ function poruka_rata(array $c, int $godina): ?array
         '{preostalo}' => novac(array_sum(array_column($d, 'Preostalo'))), '{rata}' => count($rate) > 1 ? $r['RedniBroj'] . '. rata' : 'uplata',
         '{iznos_rate}' => novac($r['Iznos']), '{dospijece}' => datum($r['Dospijece'])];
     return [zamijeni_oznake($p['Predlozak.Rata.Naslov'], $z), zamijeni_oznake($p['Predlozak.Rata'], $z)];
+}
+
+/** Rođendanska čestitka: [naslov, tekst]. */
+function poruka_rodjendan(array $c, int $godine): array
+{
+    $p = predlosci_poruka();
+    $z = osnovne_oznake($c, $p) + ['{godine}' => (string) $godine];
+    return [zamijeni_oznake($p['Predlozak.Rodjendan.Naslov'], $z), zamijeni_oznake($p['Predlozak.Rodjendan'], $z)];
+}
+
+/** Već poslane rođendanske čestitke: [clanId => redak] za zadane parove [clanId, godina]. */
+function poslane_cestitke(array $parovi): array
+{
+    if (!$parovi) {
+        return [];
+    }
+    $uv = implode(' OR ', array_fill(0, count($parovi), '(ClanId=? AND Godina=?)'));
+    $r = [];
+    foreach (redovi("SELECT * FROM RodjendanCestitke WHERE $uv", array_merge(...$parovi)) as $x) {
+        $r[(int) $x['ClanId']] = $x;
+    }
+    return $r;
 }
 
 function poruka_pozivnica(array $c, string $link): string

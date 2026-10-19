@@ -25,7 +25,7 @@ $polje = fn(string $kl, int $redaka = 0) => $redaka
     : '<input name="' . str_replace('.', '_', $kl) . '" class="form-control mb-2" value="' . e($p[$kl]) . '">';
 ob_start(); ?>
 <h1 class="h3 mb-1">Predlošci poruka članovima</h1>
-<p class="text-muted">Tekstovi za „Pošalji popis bodova“, „Info o članarini“, podsjetnik za ratu, pozivnicu i obavijest o odobrenju. Prije slanja se tekst uvijek još može izmijeniti.</p>
+<p class="text-muted">Tekstovi za „Pošalji popis bodova“, „Info o članarini“, podsjetnik za ratu, pozivnicu, obavijest o odobrenju i rođendansku čestitku. Prije slanja se tekst uvijek još može izmijeniti.</p>
 <div class="row g-4">
 <div class="col-lg-8">
 <form method="post" action="<?= e(url('sustav/poruke')) ?>"><?= csrf() ?>
@@ -41,6 +41,7 @@ ob_start(); ?>
     <h2 class="h6">Podsjetnik – dospjela rata</h2><?= $polje('Predlozak.Rata.Naslov') ?><?= $polje('Predlozak.Rata', 8) ?>
     <h2 class="h6">Pozivnica (poveznica za postavljanje lozinke)</h2><?= $polje('Predlozak.Pozivnica', 8) ?>
     <h2 class="h6">Pristup odobren</h2><?= $polje('Predlozak.Odobreno', 5) ?>
+    <h2 class="h6">Rođendanska čestitka (gumb ✉️ na početnoj)</h2><?= $polje('Predlozak.Rodjendan.Naslov') ?><?= $polje('Predlozak.Rodjendan', 7) ?>
     <h2 class="h6">Potpis</h2><?= $polje('Predlozak.Potpis', 2) ?>
     <div class="d-flex gap-2"><button class="btn btn-primary">Spremi</button>
         <button class="btn btn-outline-secondary" name="radnja" value="zadano" data-potvrda="Vratiti sve zadane tekstove?">Vrati zadane tekstove</button></div>
