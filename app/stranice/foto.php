@@ -7,7 +7,7 @@ if ($ime === '' || !is_file($dat)) {
     exit;
 }
 $k = korisnik();
-$dozvoljeno = str_starts_with($ime, 'oglas-') || str_starts_with($ime, 'vrsta-') || $ime === basename((string) postavka('Udruga.Logo'));
+$dozvoljeno = str_starts_with($ime, 'oglas-') || str_starts_with($ime, 'vrsta-') || str_starts_with($ime, 'trgovina-') || $ime === basename((string) postavka('Udruga.Logo'));
 if (!$dozvoljeno && str_starts_with($ime, 'dok-')) {
     $dozvoljeno = dok_smije_datoteku($ime);
     if ($dozvoljeno && str_ends_with($ime, '.pdf')) {

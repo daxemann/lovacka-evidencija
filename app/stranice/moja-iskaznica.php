@@ -13,25 +13,10 @@ if ((int) $c['Status'] !== CLAN_AKTIVAN) {
     stranica('Moja iskaznica', '<h1 class="h3">🪪 Moja iskaznica</h1><div class="alert alert-secondary">Iskaznica vrijedi samo za aktivne članove.</div>');
 }
 $qr = qr_svg(isk_qr_tekst(isk_kljuc((int) $c['Id'])));
-$foto = isk_foto_data($c['FotoDatoteka'], 300); // u stranici (radi i bez signala)
-$logo = isk_logo_data();
 ob_start(); ?>
 <div class="isk-ekran">
     <h1 class="h4 mb-3">🪪 Moja iskaznica</h1>
-    <div class="isk-kartica mb-3" id="isk-kartica">
-        <div class="isk-kartica-traka"><?php if ($logo): ?><img src="<?= e($logo) ?>" alt=""><?php endif; ?><span><?= e(udruga_naziv()) ?></span></div>
-        <div class="isk-kartica-tijelo">
-            <?php if ($foto): ?><img class="isk-k-foto" src="<?= e($foto) ?>" alt=""><?php else: ?><div class="isk-k-foto"><?= e(inicijali($c)) ?></div><?php endif; ?>
-            <div>
-                <div class="isk-k-vrsta">ČLANSKA ISKAZNICA</div>
-                <div class="isk-k-ime"><?= e($c['Ime']) ?></div>
-                <div class="isk-k-prezime"><?= e($c['Prezime']) ?></div>
-                <?php if ($c['SekcijaNaziv']): ?><div class="isk-k-sek"><?= e($c['SekcijaNaziv']) ?></div><?php endif; ?>
-            </div>
-            <div class="isk-k-qr"><?= $qr ?></div>
-        </div>
-        <div class="isk-kartica-dno">Ne zamjenjuje lovačku iskaznicu ni oružni list.</div>
-    </div>
+    <?= isk_kartica_html($c, $qr) ?>
 
     <button type="button" class="btn btn-success btn-lg w-100 mb-2" id="isk-veliki-gumb">🔍 Veliki QR za skeniranje</button>
     <div class="isk-qr-veliki mb-3" id="isk-veliki" hidden><?= $qr ?>

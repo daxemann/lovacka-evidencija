@@ -5,7 +5,7 @@
  */
 declare(strict_types=1);
 
-const VERZIJA = '1.32.0';
+const VERZIJA = '1.33.0';
 const KONTAKT_EMAIL = 'daxemann@googlemail.com';
 const PODRSKA_PAYPAL = 'darko.bakic@freenet.de'; // dobrovoljna podrška razvoju (Pomoć i kontakt)
 const PROJEKT_URL = 'https://github.com/daxemann/lovacka-evidencija';
@@ -146,7 +146,7 @@ function db(bool $novo = false): PDO
  * Dodatne tablice PHP verzije (PRAGMA user_version). .NET verzija ih ne poznaje i zanemaruje,
  * pa baza i dalje radi u oba smjera.
  */
-const SHEMA_PHP = 29;
+const SHEMA_PHP = 30;
 function nadogradi_bazu(PDO $pdo): void
 {
     $v = (int) $pdo->query('PRAGMA user_version')->fetchColumn();
@@ -730,6 +730,26 @@ SQL);
                 "Poslao" TEXT NULL,
                 "Vrijeme" TEXT NOT NULL,
                 PRIMARY KEY ("ClanId", "Godina"));');
+    }
+    if ($v < 30) {
+        // Popusti u trgovinama: trgovine koje daju popust članovima (član pokazuje iskaznicu na blagajni ili se javlja prodavaču)
+        $pdo->exec('CREATE TABLE IF NOT EXISTS "Popusti" (
+                "Id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                "Naziv" TEXT NOT NULL,
+                "Popust" TEXT NOT NULL,
+                "Uvjeti" TEXT NULL,
+                "Nacin" TEXT NOT NULL DEFAULT \'blagajna\',
+                "KontaktOsoba" TEXT NULL,
+                "Telefon" TEXT NULL,
+                "Email" TEXT NULL,
+                "Web" TEXT NULL,
+                "Adresa" TEXT NULL,
+                "Logo" TEXT NULL,
+                "VrijediDo" TEXT NULL,
+                "Aktivno" INTEGER NOT NULL DEFAULT 1,
+                "Redoslijed" INTEGER NOT NULL DEFAULT 0,
+                "Kreirano" TEXT NOT NULL,
+                "Azurirano" TEXT NULL);');
     }
     $pdo->exec('PRAGMA user_version = ' . SHEMA_PHP);
     $pdo->commit();

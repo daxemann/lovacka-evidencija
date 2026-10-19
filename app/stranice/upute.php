@@ -97,6 +97,18 @@ if ($k['ClanId'] && modul('iskaznice')) {
 </ul>');
 }
 
+if ($k['ClanId'] && modul('popusti')) {
+    $o('popusti', '🏷️ Popusti u trgovinama', '
+<ul>
+<li><b>Moje → 🏷️ Popusti u trgovinama</b> (i na početnoj): trgovine koje članovima udruge daju popust.</li>
+<li>Dodirnite trgovinu – na zaslonu se otvara <b>vaša članska iskaznica</b> i piše što učiniti: <b>pokazati zaslon na blagajni</b> prije plaćanja ili <b>javiti se prodavaču</b> (gumbi za poziv, WhatsApp, Viber, e-poštu).</li>
+<li>Ispod iskaznice je zelena traka <b>✓ Aktivni član</b> s datumom i satom koji teče – prodavač tako vidi da to nije stara snimka zaslona.</li>
+<li>Popust vrijedi samo dok ste aktivan član.</li>'
+    . (pop_smije_uredjivati() ? '
+<li><i>Administrator:</i> trgovine dodajete jednu po jednu – <b>+ Nova trgovina</b> (naziv, popust, uvjeti, način, kontakt, logo, „vrijedi do“). Isključene i istekle članovi ne vide. Modul se uključuje u Sustav → Moduli.</li>' : '') . '
+</ul>');
+}
+
 if ($revir) {
     $o('loviste', '🗺️ Lovište – karta, čeke, dnevnik', '
 <ul>

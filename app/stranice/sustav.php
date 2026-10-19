@@ -29,6 +29,7 @@ $skupine = [
         ['sustav/uplatnica', '🏦', 'Uplatnica (IBAN)', 'Primatelj, model, poziv na broj.', 0, 'clanarina'],
         ['sustav/kalendar', '🗓️', 'Kalendar – vrste', 'Vrste termina i boje.', 0, 'kalendar'],
         ['revir/postavke', '🗺️', 'Postavke lovišta', 'Granice lovišta, vrste naprava.', 0, 'revir'],
+        ['popusti', '🏷️', 'Popusti u trgovinama', 'Trgovine s popustom za članove.', 0, 'popusti'],
         ['dezinfekcija/postavke', '🔳', 'Dezinfekcija – stanice i QR', 'Stanice, QR oznake, inspekcija.', 0, 'dezinfekcija'],
     ]],
     ['Podaci', [

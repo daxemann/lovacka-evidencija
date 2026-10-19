@@ -292,3 +292,20 @@ function isk_pdf(array $clanovi, string $format = 'a4'): string
     $pdf->render();
     return (string) $pdf->output();
 }
+
+// ---------- Iskaznica na zaslonu (Moja iskaznica, Popusti u trgovinama) ----------
+/** HTML kartice iskaznice za zaslon mobitela. $c = član s poljem SekcijaNaziv. */
+function isk_kartica_html(array $c, ?string $qr = null): string
+{
+    $qr ??= qr_svg(isk_qr_tekst(isk_kljuc((int) $c['Id'])));
+    $foto = isk_foto_data($c['FotoDatoteka'], 300); // u stranici (radi i bez signala)
+    $logo = isk_logo_data();
+    return '<div class="isk-kartica mb-3" id="isk-kartica">'
+        . '<div class="isk-kartica-traka">' . ($logo ? '<img src="' . e($logo) . '" alt="">' : '') . '<span>' . e(udruga_naziv()) . '</span></div>'
+        . '<div class="isk-kartica-tijelo">'
+        . ($foto ? '<img class="isk-k-foto" src="' . e($foto) . '" alt="">' : '<div class="isk-k-foto">' . e(inicijali($c)) . '</div>')
+        . '<div><div class="isk-k-vrsta">ČLANSKA ISKAZNICA</div><div class="isk-k-ime">' . e($c['Ime']) . '</div><div class="isk-k-prezime">' . e($c['Prezime']) . '</div>'
+        . ($c['SekcijaNaziv'] ? '<div class="isk-k-sek">' . e($c['SekcijaNaziv']) . '</div>' : '') . '</div>'
+        . '<div class="isk-k-qr">' . $qr . '</div>'
+        . '</div><div class="isk-kartica-dno">Ne zamjenjuje lovačku iskaznicu ni oružni list.</div></div>';
+}

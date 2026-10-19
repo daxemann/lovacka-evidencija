@@ -1,5 +1,13 @@
 # Promjene
 
+## 1.33.0 – 2026-10
+- **🏷️ Popusti u trgovinama** (novi modul): trgovine koje članovima udruge daju popust – administrator ih dodaje jednu po jednu (**+ Nova trgovina**:
+  naziv, popust, uvjeti, način, kontakt osoba, telefon, e-mail, web, adresa, logo, „vrijedi do“).
+- Član otvori **Moje → 🏷️ Popusti u trgovinama** (ili karticu na početnoj), dodirne trgovinu i na zaslonu dobije **svoju člansku iskaznicu** s uputom:
+  **🛒 pokazati na blagajni** ili **📞 javiti se prodavaču** (poziv, WhatsApp, Viber, e-pošta). Adresa vodi u navigaciju.
+- Ispod iskaznice traka **✓ Aktivni član** s datumom i **satom koji teče** – prodavač vidi da to nije snimka zaslona. Popust vrijedi samo za aktivne članove.
+- Isključene ili istekle trgovine članovi ne vide (administrator ih vidi sivo). Redoslijed strelicama. Uključuje se u **Sustav → Moduli**; postavke i u Sustav → Postavke modula.
+
 ## 1.32.0 – 2026-10
 - **✉️ Rođendanska čestitka e-poštom:** na početnoj uz svaki rođendan (sljedećih 14 dana) gumb ✉️ – jednim klikom (uz potvrdu) šalje čestitku članu.
   Kad je pošalje admin, lovočuvar ili bilo tko ovlašten, **svi** koji vide rođendane umjesto gumba vide **✓ Poslano** (tko i kada – zadržite miš / dodir), pa nitko ne šalje dvaput.
