@@ -48,10 +48,10 @@ ob_start(); ?>
     </div></div>
 <?php endif; ?>
 
-<?php if ($cid && modul('popusti') && ($brPop = pop_broj_vazecih())): ?>
+<?php if ($cid && modul('popusti') && pop_dostupno()): ?>
 <a class="card mb-3 text-decoration-none pop-pocetna" href="<?= e(url('popusti')) ?>"><div class="card-body d-flex align-items-center gap-3">
     <div class="fs-2">🏷️</div>
-    <div class="flex-grow-1 text-body"><b>Popusti u trgovinama</b><div class="small text-muted"><?= $brPop ?> <?= $brPop === 1 ? 'trgovina' : ($brPop % 10 >= 2 && $brPop % 10 <= 4 && ($brPop % 100 < 10 || $brPop % 100 >= 20) ? 'trgovine' : 'trgovina') ?> · pokažite iskaznicu na blagajni</div></div>
+    <div class="flex-grow-1 text-body"><b>Popusti u trgovinama</b><div class="small text-muted">trgovine za lovce svih udruga · pokažite iskaznicu na blagajni</div></div>
     <span class="btn btn-primary">Otvori</span>
 </div></a>
 <?php endif; ?>

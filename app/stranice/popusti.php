@@ -1,60 +1,40 @@
 <?php
-/** 🏷️ Popusti u trgovinama: popis trgovina s popustom za članove. Dodir na trgovinu → iskaznica na zaslonu. */
-$uredi = pop_smije_uredjivati();
-
-if (je_post()) {
-    if (!$uredi) {
-        zabranjeno();
-    }
-    if (($_POST['radnja'] ?? '') === 'poredak') {
-        $sve = array_map('intval', array_column(pop_trgovine(true), 'Id'));
-        $i = array_search((int) ($_POST['id'] ?? 0), $sve, true);
-        $j = $i === false ? false : (($_POST['smjer'] ?? '') === 'gore' ? $i - 1 : $i + 1);
-        if ($i !== false && isset($sve[$j])) {
-            [$sve[$i], $sve[$j]] = [$sve[$j], $sve[$i]];
-        }
-        transakcija(function () use ($sve) {
-            foreach ($sve as $r => $tid) {
-                q('UPDATE Popusti SET Redoslijed=? WHERE Id=?', [$r, $tid]);
-            }
-        });
-    }
-    preusmjeri('popusti');
+/**
+ * 🏷️ Popusti u trgovinama – otvara zajedničke Popuste na poslužitelju Oglasnika lovaca
+ * (jednokratni potpisani token s iskaznicom člana; trgovine vide lovci svih udruga).
+ */
+if (!pop_dostupno()) {
+    stranica('Popusti u trgovinama', '<h1 class="h3">🏷️ Popusti u trgovinama</h1><div class="alert alert-secondary">'
+        . 'Popusti rade preko zajedničkog <b>Oglasnika lovaca</b> – udruga mora biti registrirana i odobrena.'
+        . (ima(P_SUSTAV) ? ' Registracija: <a href="' . e(url('sustav/oglasnik')) . '">Sustav → Oglasnik lovaca</a> (sam Oglasnik ne mora biti uključen).' : ' Javite se administratoru udruge.')
+        . '</div>');
 }
-
-$trgovine = pop_trgovine($uredi);
-ob_start(); ?>
-<div class="d-flex flex-wrap align-items-center gap-2 mb-2">
-    <h1 class="h3 mb-0 me-auto">🏷️ Popusti u trgovinama</h1>
-    <?php if ($uredi): ?><a class="btn btn-success" href="<?= e(url('popusti/uredi')) ?>">+ Nova trgovina</a><?php endif; ?>
-</div>
-<p class="text-muted small mb-3">Ove trgovine daju popust članovima <?= e(udruga_naziv()) ?>. Dodirnite trgovinu – otvara se vaša članska iskaznica koju pokažete na blagajni.</p>
-
-<?php if (!$trgovine): ?>
-    <div class="alert alert-secondary"><?= $uredi ? 'Još nema trgovina. Dodajte prvu: <b>+ Nova trgovina</b>.' : 'Trenutno nema trgovina s popustom.' ?></div>
-<?php endif; ?>
-
-<div class="list-group mb-3">
-<?php foreach ($trgovine as $i => $t): $vrijedi = pop_vrijedi($t); $n = pop_nacin($t['Nacin']); ?>
-    <div class="list-group-item d-flex align-items-center gap-3 pop-red<?= $vrijedi ? '' : ' opacity-50' ?>">
-        <a class="d-flex align-items-center gap-3 flex-grow-1 text-decoration-none text-body overflow-hidden" href="<?= e(url('popusti/trgovina', ['id' => $t['Id']])) ?>">
-            <?= pop_logo_html($t) ?>
-            <span class="flex-grow-1 overflow-hidden">
-                <span class="fw-semibold d-block text-truncate"><?= e($t['Naziv']) ?></span>
-                <span class="small text-muted d-block text-truncate"><?= $t['Adresa'] ? '📍 ' . e($t['Adresa']) : $n[0] . ' ' . e($n[1]) ?></span>
-                <?php if (!$vrijedi): ?><span class="badge bg-secondary"><?= (int) $t['Aktivno'] ? 'isteklo ' . e(datum($t['VrijediDo'])) : 'isključeno' ?> – članovi ne vide</span><?php endif; ?>
-            </span>
-            <span class="badge pop-popust"><?= e($t['Popust']) ?></span>
-        </a>
-        <?php if ($uredi): ?>
-        <form method="post" class="d-flex flex-column gap-1"><?= csrf() ?><input type="hidden" name="radnja" value="poredak"><input type="hidden" name="id" value="<?= (int) $t['Id'] ?>">
-            <button class="btn btn-sm btn-outline-secondary py-0" name="smjer" value="gore"<?= $i === 0 ? ' disabled' : '' ?> title="Gore" aria-label="Gore">▲</button>
-            <button class="btn btn-sm btn-outline-secondary py-0" name="smjer" value="dolje"<?= $i === count($trgovine) - 1 ? ' disabled' : '' ?> title="Dolje" aria-label="Dolje">▼</button>
-        </form>
-        <a class="btn btn-sm btn-outline-primary" href="<?= e(url('popusti/uredi', ['id' => $t['Id']])) ?>" title="Uredi" aria-label="Uredi">✏️</a>
-        <?php endif; ?>
-    </div>
-<?php endforeach; ?>
-</div>
-<?php if ($uredi && $trgovine): ?><p class="small text-muted">Sivo = članovi ne vide (isključeno ili isteklo). Redoslijed mijenjate strelicama.</p><?php endif; ?>
-<?php stranica('Popusti u trgovinama', ob_get_clean());
+$k = korisnik();
+$clan = $k['ClanId'] ? red('SELECT Email, MobilniTelefon FROM Clanovi WHERE Id=?', [$k['ClanId']]) : null;
+$sada = time();
+$podaci = [
+    'v' => 1,
+    'iss' => ogl_kod(),
+    'aud' => 'oglasnik',
+    'iat' => $sada,
+    'exp' => $sada + 120,
+    'jti' => bin2hex(random_bytes(16)),
+    'sub' => (string) $k['Id'],
+    'name' => $k['Naziv'],
+    'email' => $clan['Email'] ?? null,
+    'phone' => $clan['MobilniTelefon'] ?? null,
+    'role' => ima(P_SUSTAV) ? 'admin' : (ima(P_OGLASNIK_MOD) ? 'moderator' : 'member'),
+    'club' => ['name' => udruga_naziv(), 'url' => ogl_baza(), 'contact' => ogl_kontakt()],
+    'policy' => ogl_politika(),
+    'perms' => ['popusti' => pop_smije_uredjivati()],
+    'scope' => 'popusti',
+];
+if ($iskaznica = pop_iskaznica($k)) {
+    $podaci['card'] = $iskaznica;
+}
+$token = ogl_potpisi($podaci);
+if (!$token) {
+    stranica('Popusti u trgovinama', '<div class="alert alert-danger mt-3">Ključ za Oglasnik nije moguće pročitati. Administrator treba u <b>Sustav → Oglasnik lovaca</b> napraviti novi ključ.</div>');
+}
+$povratak = ogl_povratak('popusti', ['retry' => isset($_GET['retry']) ? '1' : null]);
+pop_otvori(ogl_adresa() . '/sso?' . http_build_query(['from' => $povratak]), ['token' => $token[0] . '.' . $token[1], 'r' => '/popusti']);

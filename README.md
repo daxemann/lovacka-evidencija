@@ -88,7 +88,7 @@ Poziv svima na mobitel („dolazim / ne dolazim“), položaj sudionika uživo n
 Iskaznica s fotografijom i QR kodom u formatu bankovne kartice – PDF 10 na A4 ili za pisač kartica, i u aplikaciji (radi bez signala). Vrijedi dok je član aktivan; izgubljena se zamjenjuje novom.
 
 #### 🏷️ Popusti u trgovinama
-Trgovine koje članovima daju popust. Član dodirne trgovinu i pokaže svoju iskaznicu na blagajni (ili se javi prodavaču) – sa satom koji teče, da nije snimka zaslona.
+Zajednički popusti za lovce **svih udruga** (preko Oglasnika lovaca). Udruge upisuju trgovine, član dodirne trgovinu i pokaže svoju iskaznicu na blagajni – sa satom koji teče, da nije snimka zaslona.
 
 #### 🔔 Push obavijesti
 Obavijesti na mobitel i kad je aplikacija zatvorena: poruke, obavijesti udruge, radne akcije, kvarovi i zauzimanje čeka. Besplatno (Web Push), Android i iPhone (iOS 16.4+), svaki član bira što prima.

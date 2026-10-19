@@ -36,7 +36,7 @@ function moduli(): array
             P_INVENTURA | P_INVENTURA_UREDI, ['inventura', 'izvoz/inventura-pdf']],
         'psi' => ['🐕', 'Lovački psi', 'Psi članova, vodiči pasa, bodovi za pse.',
             0, ['vodici-pasa']],
-        'popusti' => ['🏷️', 'Popusti u trgovinama', 'Trgovine s popustom za članove – član otvori trgovinu i pokaže iskaznicu na blagajni.',
+        'popusti' => ['🏷️', 'Popusti u trgovinama', 'Zajednički popusti svih udruga (preko Oglasnika lovaca) – član pokaže iskaznicu na blagajni.',
             P_POPUSTI, ['popusti', 'popusti/']],
         'dokumenti' => ['📜', 'Statut i pravilnici', 'Dokumenti udruge za članove.',
             0, ['dokumenti', 'sustav/dokumenti']],

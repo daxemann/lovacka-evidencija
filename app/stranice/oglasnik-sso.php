@@ -25,6 +25,7 @@ $token = ogl_potpisi([
     'role' => $uloga,
     'club' => ['name' => udruga_naziv(), 'url' => ogl_baza(), 'contact' => ogl_kontakt()],
     'policy' => ogl_politika(),
+    'perms' => ['popusti' => modul('popusti') && pop_smije_uredjivati()],
 ]);
 if (!$token) {
     stranica('Oglasnik', '<div class="alert alert-danger mt-3">Ključ za Oglasnik nije moguće pročitati. Administrator treba u <b>Sustav → Oglasnik</b> napraviti novi ključ.</div>');

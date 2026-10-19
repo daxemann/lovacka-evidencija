@@ -1,5 +1,12 @@
 # Promjene
 
+## 1.34.0 – 2026-10
+- **🏷️ Popusti u trgovinama – zajednički za sve udruge** (kao Oglasnik lovaca): trgovine su na poslužitelju Oglasnika, pa lovci **svih udruga** vide iste popuste.
+  Dodir na 🏷️ Popusti otvara Oglasnik bez lozinke (isti ključ udruge), s **vašom članskom iskaznicom** (ime, sekcija, fotografija) – na blagajni pokažete zaslon sa satom koji teče.
+- Trgovine upisuje udruga: tko ima pravo **„Popusti u trgovinama – uređivanje“** dobiva **+ Nova trgovina** i bira **tko vidi** – sve udruge ili samo naša. Svoje trgovine uređuje i briše samo udruga; administrator Oglasnika može skriti neprimjerene.
+- Radi i kad je Oglasnik u udruzi isključen – udruga samo mora biti **registrirana i odobrena** (Sustav → Oglasnik lovaca). Iskaznica se u Oglasniku čuva samo u sesiji (12 sati), nikad u bazi.
+- Lokalni popis trgovina iz 1.33 više se ne koristi.
+
 ## 1.33.1 – 2026-10
 - **🏷️ Popusti – novo pravo „Popusti u trgovinama – uređivanje“** (Sustav → Uloge i prava, stupac *Popusti trgovine*): trgovine dodaje i uređuje samo tko ima to pravo.
   Ostali članovi / lovci vide samo **važeće ponude** (uključene i neistekle). Glavni admin pravo dobiva automatski; ostalim ulogama ga dodijelite po potrebi.

@@ -578,15 +578,5 @@ main {
 .program-potpis-auth { display: flex; align-items: center; justify-content: center; gap: .4rem; margin-top: 1.25rem; color: #8a8f87; font-size: .8rem; }
 .program-potpis-auth img { border-radius: 4px; }
 
-/* ---------- Popusti u trgovinama ---------- */
-.pop-logo { width: 48px; height: 48px; flex: 0 0 48px; object-fit: contain; border-radius: 10px; background: #fff; border: 1px solid #e3e3e3; }
-.pop-logo-veliki { width: 64px; height: 64px; flex-basis: 64px; }
-.pop-logo-slovo { display: inline-flex; align-items: center; justify-content: center; background: #e9efe5; color: #2f5d23; font-weight: 700; font-size: 1.3rem; border-color: #d3dfcc; }
-.pop-logo-veliki.pop-logo-slovo { font-size: 1.7rem; }
-.pop-popust { background: #c9a227; color: #1f2a12; font-weight: 700; white-space: nowrap; }
+/* ---------- Popusti u trgovinama (kartica na početnoj) ---------- */
 .pop-pocetna:hover { box-shadow: 0 2px 10px rgba(0,0,0,.08); }
-.pop-uputa { font-size: .95rem; }
-.pop-vazi { display: flex; align-items: center; gap: .5rem; padding: .55rem .8rem; border-radius: 10px; background: #2f5d23; color: #fff; font-variant-numeric: tabular-nums; }
-.pop-vazi-tocka { width: .7rem; height: .7rem; border-radius: 50%; background: #7ee07a; animation: pop-puls 1.2s ease-in-out infinite; flex: 0 0 auto; }
-@keyframes pop-puls { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .35; transform: scale(.7); } }
-@media (prefers-reduced-motion: reduce) { .pop-vazi-tocka { animation: none; } }

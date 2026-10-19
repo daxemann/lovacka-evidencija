@@ -97,15 +97,14 @@ if ($k['ClanId'] && modul('iskaznice')) {
 </ul>');
 }
 
-if ($k['ClanId'] && modul('popusti')) {
+if (modul('popusti') && pop_dostupno() && ($k['ClanId'] || ima(P_POPUSTI))) {
     $o('popusti', '🏷️ Popusti u trgovinama', '
 <ul>
-<li><b>Moje → 🏷️ Popusti u trgovinama</b> (i na početnoj): trgovine koje članovima udruge daju popust.</li>
-<li>Dodirnite trgovinu – na zaslonu se otvara <b>vaša članska iskaznica</b> i piše što učiniti: <b>pokazati zaslon na blagajni</b> prije plaćanja ili <b>javiti se prodavaču</b> (gumbi za poziv, WhatsApp, Viber, e-poštu).</li>
-<li>Ispod iskaznice je zelena traka <b>✓ Aktivni član</b> s datumom i satom koji teče – prodavač tako vidi da to nije stara snimka zaslona.</li>
-<li>Popust vrijedi samo dok ste aktivan član.</li>'
+<li><b>Moje → 🏷️ Popusti u trgovinama</b> (i na početnoj): trgovine koje daju popust lovcima – zajedničke za <b>sve udruge</b> (otvara se Oglasnik lovaca, bez lozinke).</li>
+<li>Dodirnite trgovinu – na zaslonu je <b>vaša članska iskaznica</b> i piše što učiniti: <b>pokazati zaslon na blagajni</b> ili <b>javiti se prodavaču</b> (poziv, WhatsApp, Viber, e-pošta).</li>
+<li>Ispod iskaznice je zelena traka <b>✓ Aktivni član</b> sa satom koji teče – prodavač vidi da to nije snimka zaslona. Iskaznica vrijedi 12 sati od otvaranja iz aplikacije; poslije opet otvorite Popuste iz aplikacije.</li>'
     . (pop_smije_uredjivati() ? '
-<li><i>Pravo „Popusti u trgovinama – uređivanje“:</i> trgovine dodajete jednu po jednu – <b>+ Nova trgovina</b> (naziv, popust, uvjeti, način, kontakt, logo, „vrijedi do“). Isključene i istekle članovi ne vide (vi ih vidite sivo). Pravo dodjeljuje administrator u Sustav → Uloge i prava; modul se uključuje u Sustav → Moduli.</li>' : '') . '
+<li><i>Pravo „Popusti u trgovinama – uređivanje“:</i> u Popustima <b>+ Nova trgovina</b> – naziv, popust, uvjeti, način, kontakt, logo, „vrijedi do“ i <b>tko vidi</b>: sve udruge ili samo naša. Trgovine vaše udruge uređujete i brišete samo vi; administrator Oglasnika može skriti neprimjerene.</li>' : '') . '
 </ul>');
 }
 
