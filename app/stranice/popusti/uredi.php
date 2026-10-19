@@ -1,5 +1,5 @@
 <?php
-/** Nova / uređivanje trgovine s popustom (samo administrator – pravo Sustav). */
+/** Nova / uređivanje trgovine s popustom (pravo „Popusti u trgovinama – uređivanje“). */
 if (!pop_smije_uredjivati()) {
     zabranjeno();
 }

@@ -2,7 +2,8 @@
 /**
  * Popusti u trgovinama: trgovine (lovački dućani, oružari, veterinari…) koje članovima udruge daju popust.
  * Član otvori trgovinu u aplikaciji i dobije svoju člansku iskaznicu na zaslonu – pokaže je na blagajni
- * ili se javi prodavaču. Trgovine upisuje administrator (pravo Sustav), jednu po jednu.
+ * ili se javi prodavaču. Trgovine upisuje tko ima pravo „Popusti u trgovinama – uređivanje“;
+ * ostali članovi vide samo važeće ponude (uključene i neistekle).
  */
 declare(strict_types=1);
 
@@ -22,7 +23,7 @@ function pop_nacin(?string $n): array
 
 function pop_smije_uredjivati(): bool
 {
-    return ima(P_SUSTAV);
+    return ima(P_POPUSTI);
 }
 
 /** Je li ponuda trenutno važeća (uključena i nije istekla). */

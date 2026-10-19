@@ -37,7 +37,7 @@ function moduli(): array
         'psi' => ['🐕', 'Lovački psi', 'Psi članova, vodiči pasa, bodovi za pse.',
             0, ['vodici-pasa']],
         'popusti' => ['🏷️', 'Popusti u trgovinama', 'Trgovine s popustom za članove – član otvori trgovinu i pokaže iskaznicu na blagajni.',
-            0, ['popusti', 'popusti/']],
+            P_POPUSTI, ['popusti', 'popusti/']],
         'dokumenti' => ['📜', 'Statut i pravilnici', 'Dokumenti udruge za članove.',
             0, ['dokumenti', 'sustav/dokumenti']],
     ];

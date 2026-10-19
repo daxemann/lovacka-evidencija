@@ -105,7 +105,7 @@ if ($k['ClanId'] && modul('popusti')) {
 <li>Ispod iskaznice je zelena traka <b>✓ Aktivni član</b> s datumom i satom koji teče – prodavač tako vidi da to nije stara snimka zaslona.</li>
 <li>Popust vrijedi samo dok ste aktivan član.</li>'
     . (pop_smije_uredjivati() ? '
-<li><i>Administrator:</i> trgovine dodajete jednu po jednu – <b>+ Nova trgovina</b> (naziv, popust, uvjeti, način, kontakt, logo, „vrijedi do“). Isključene i istekle članovi ne vide. Modul se uključuje u Sustav → Moduli.</li>' : '') . '
+<li><i>Pravo „Popusti u trgovinama – uređivanje“:</i> trgovine dodajete jednu po jednu – <b>+ Nova trgovina</b> (naziv, popust, uvjeti, način, kontakt, logo, „vrijedi do“). Isključene i istekle članovi ne vide (vi ih vidite sivo). Pravo dodjeljuje administrator u Sustav → Uloge i prava; modul se uključuje u Sustav → Moduli.</li>' : '') . '
 </ul>');
 }
 

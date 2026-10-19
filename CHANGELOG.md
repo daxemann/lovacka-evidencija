@@ -1,5 +1,9 @@
 # Promjene
 
+## 1.33.1 – 2026-10
+- **🏷️ Popusti – novo pravo „Popusti u trgovinama – uređivanje“** (Sustav → Uloge i prava, stupac *Popusti trgovine*): trgovine dodaje i uređuje samo tko ima to pravo.
+  Ostali članovi / lovci vide samo **važeće ponude** (uključene i neistekle). Glavni admin pravo dobiva automatski; ostalim ulogama ga dodijelite po potrebi.
+
 ## 1.33.0 – 2026-10
 - **🏷️ Popusti u trgovinama** (novi modul): trgovine koje članovima udruge daju popust – administrator ih dodaje jednu po jednu (**+ Nova trgovina**:
   naziv, popust, uvjeti, način, kontakt osoba, telefon, e-mail, web, adresa, logo, „vrijedi do“).

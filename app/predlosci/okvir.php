@@ -86,7 +86,8 @@ $glUTijeku = $glMoj && (int) $glMoj['ja']['Odgovor'] === 1 && $glMoj['ja']['Otis
                         . (ima(P_AKCIJE_ODOBRI) ? $stavka('akcije/nova', '➕ Nova radna akcija', 0, true) : '')
                         . (ima(P_AKCIJE_CITAJ) ? $stavka('akcije', '🔨 Radne akcije', broj_akcija_na_cekanju(), true) : '')
                         . (ima(P_IZVJESTAJI) ? $stavka('izvjestaji/akcije', '📊 Izvještaj radnih akcija') : '')
-                        . (ima(P_INVENTURA) || ima(P_INVENTURA_UREDI) ? $stavka('inventura', '📦 Inventura') : '')); ?>
+                        . (ima(P_INVENTURA) || ima(P_INVENTURA_UREDI) ? $stavka('inventura', '📦 Inventura') : '')
+                        . (!$k['ClanId'] && ima(P_POPUSTI) ? $stavka('popusti', '🏷️ Popusti u trgovinama', 0, true) : '')); ?>
                     <?php if (ima(P_DEZ_PREGLED) || ima(P_DEZ_UREDI) || ima(P_DEZ_POSTAVKE) || ima(P_DEZ_MOBILNA)) echo $grupa('dezinfekcija', 'Dezinfekcija',
                         (ima(P_DEZ_PREGLED) ? $stavka('dezinfekcija', '🧴 Knjiga dezinfekcije', 0, true) : '')
                         . (ima(P_DEZ_MOBILNA) ? $stavka('dezinfekcija/mobilna', '📱 Mobilna stanica', (int) vrijednost("SELECT COUNT(*) FROM DezAktivacije WHERE Zatvoreno IS NULL AND Od<=? AND Do>=?", [sada(), sada()])) : '')

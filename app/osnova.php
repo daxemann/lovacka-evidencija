@@ -5,7 +5,7 @@
  */
 declare(strict_types=1);
 
-const VERZIJA = '1.33.0';
+const VERZIJA = '1.33.1';
 const KONTAKT_EMAIL = 'daxemann@googlemail.com';
 const PODRSKA_PAYPAL = 'darko.bakic@freenet.de'; // dobrovoljna podrška razvoju (Pomoć i kontakt)
 const PROJEKT_URL = 'https://github.com/daxemann/lovacka-evidencija';
@@ -36,8 +36,9 @@ const P_INVENTURA_UREDI = 1048576;
 const P_OBAVIJESTI = 2097152;
 const P_GRUPNI_LOV = 4194304;
 const P_DOMOVI = 8388608;
+const P_POPUSTI = 16777216;
 const P_OSNOVNA = 255; // prava iz .NET verzije
-const P_SVE = 16777215;
+const P_SVE = 33554431;
 
 const PRAVA_OPIS = [
     P_CLANOVI_CITAJ => ['Članovi – pregled', 'vidi popis članova i njihove podatke'],
@@ -63,6 +64,7 @@ const PRAVA_OPIS = [
     P_OBAVIJESTI => ['Obavijesti – slanje', 'šalje obavijesti članovima svojih sekcija (svima, sekciji, funkciji ili odabranima), po želji s obaveznom potvrdom „Pročitao/la sam“; vidi tko je potvrdio, bilježi usmeno obaviještene, PDF'],
     P_GRUPNI_LOV => ['Grupni lov – organizacija', 'pokreće grupni lov za sekcije u svom opsegu (poziv svima na mobitel), vidi uživo položaj sudionika na karti, prima SOS i upozorenje o gubitku signala, završava lov'],
     P_DOMOVI => ['Lovački domovi – upravljanje', 'dodaje i uređuje lovačke domove (položaj, fotografija) za sekcije u svom opsegu, odobrava i odbija privatne rezervacije, upisuje događaje udruge (imaju prednost), otkazuje rezervacije'],
+    P_POPUSTI => ['Popusti u trgovinama – uređivanje', 'dodaje, mijenja i briše trgovine s popustom za članove (popust, uvjeti, kontakt, logo, rok); članovi bez ovog prava vide samo važeće ponude'],
     P_REVIR_DNEVNIK => ['Lovište – lovački dnevnik', 'vidi lovački dnevnik (tko, kada, gdje) za sekcije u svom opsegu, ispis i PDF; bez ovog prava dnevnik se ne prikazuje'],
 ];
 
@@ -146,7 +148,7 @@ function db(bool $novo = false): PDO
  * Dodatne tablice PHP verzije (PRAGMA user_version). .NET verzija ih ne poznaje i zanemaruje,
  * pa baza i dalje radi u oba smjera.
  */
-const SHEMA_PHP = 30;
+const SHEMA_PHP = 31;
 function nadogradi_bazu(PDO $pdo): void
 {
     $v = (int) $pdo->query('PRAGMA user_version')->fetchColumn();
@@ -750,6 +752,10 @@ SQL);
                 "Redoslijed" INTEGER NOT NULL DEFAULT 0,
                 "Kreirano" TEXT NOT NULL,
                 "Azurirano" TEXT NULL);');
+    }
+    if ($v < 31) {
+        // pravo „Popusti u trgovinama – uređivanje“: dobivaju ga uloge koje već imaju sva prava (Glavni admin)
+        $pdo->exec('UPDATE "Uloge" SET "Prava" = "Prava" | 16777216 WHERE ("Prava" & 16777215) = 16777215;');
     }
     $pdo->exec('PRAGMA user_version = ' . SHEMA_PHP);
     $pdo->commit();
