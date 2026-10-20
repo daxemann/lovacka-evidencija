@@ -227,9 +227,8 @@ index=glava("Lovačka evidencija – besplatni program za lovačke udruge",
 open(W+"/index.html","w").write(index)
 
 MAIL='<img class="mail" src="static/img/kontakt.png" alt="E-mail adresa (slika)" width="256" height="22">'
-imp=glava("Impresum – Lovačka evidencija","Impresum / Impressum web stranice Lovačka evidencija.","impresum.html")+f'''
+imp=glava("Impresum – Lovačka evidencija","Impresum web stranice Lovačka evidencija.","impresum.html")+f'''
 <div class="pravno">
-<div class="jezici"><a href="#hr">Hrvatski</a><a href="#de">Deutsch</a></div>
 <section id="hr" lang="hr">
 <h1>Impresum</h1>
 <p>Podaci prema Zakonu o elektroničkoj trgovini.</p>
@@ -243,26 +242,12 @@ imp=glava("Impresum – Lovačka evidencija","Impresum / Impressum web stranice 
 <h2>Odgovornost za sadržaj i poveznice</h2>
 <p>Sadržaj je izrađen pažljivo, ali bez jamstva za potpunost i točnost. Za sadržaj vanjskih stranica na koje vode poveznice (npr. GitHub) odgovorni su isključivo njihovi vlasnici.</p>
 </section>
-<hr>
-<section id="de" lang="de">
-<h1>Impressum</h1>
-<h2>Verantwortlich</h2>
-<p>Darko Bakić<br>Privatperson – nichtkommerzielles Projekt, kein Gewerbe.</p>
-<h2>Kontakt</h2>
-<p>E-Mail: {MAIL}</p>
-<h2>Über das Projekt</h2>
-<p>Lovačka evidencija ist ein kostenloses Programm für kroatische Jagdvereine. Diese Seite stellt das Programm nur vor; es wird nichts verkauft und es werden keine Zahlungen angenommen. Die Demoversion enthält ausschließlich erfundene Daten.</p>
-<p>Vereine, die das Programm nutzen, sind für ihre Installation und die Daten ihrer Mitglieder selbst verantwortlich.</p>
-<h2>Haftung für Inhalte und Links</h2>
-<p>Die Inhalte wurden mit Sorgfalt erstellt, eine Gewähr für Vollständigkeit und Richtigkeit wird nicht übernommen. Für Inhalte verlinkter externer Seiten (z. B. GitHub) sind ausschließlich deren Betreiber verantwortlich.</p>
-</section>
 </div>
 '''+PODNOZJE+'</body>\n</html>\n'
 open(W+"/impresum.html","w").write(imp)
 
-priv=glava("Zaštita podataka – Lovačka evidencija","Izjava o zaštiti osobnih podataka / Datenschutzerklärung web stranice Lovačka evidencija.","privatnost.html")+f'''
+priv=glava("Zaštita podataka – Lovačka evidencija","Izjava o zaštiti osobnih podataka web stranice Lovačka evidencija.","privatnost.html")+f'''
 <div class="pravno">
-<div class="jezici"><a href="#hr">Hrvatski</a><a href="#de">Deutsch</a></div>
 <section id="hr" lang="hr">
 <h1>Zaštita osobnih podataka</h1>
 <p>Stanje: listopad 2026.</p>
@@ -284,29 +269,6 @@ priv=glava("Zaštita podataka – Lovačka evidencija","Izjava o zaštiti osobni
 <p>Imate pravo na pristup, ispravak, brisanje, ograničenje obrade, prigovor i prenosivost podataka (čl. 15.–21. GDPR-a). Javite se e-poštom. Možete podnijeti i pritužbu nadzornom tijelu, u Hrvatskoj Agenciji za zaštitu osobnih podataka (AZOP), www.azop.hr.</p>
 <h2>9. Vaša udruga i vaši podaci</h2>
 <p>Kad udruga koristi Lovačku evidenciju na svom poslužitelju, voditelj obrade podataka članova je ta udruga – ne autor programa. Autor nema pristup tim podacima.</p>
-</section>
-<hr>
-<section id="de" lang="de">
-<h1>Datenschutzerklärung</h1>
-<p>Stand: Oktober 2026.</p>
-<h2>1. Verantwortlicher</h2>
-<p>Darko Bakić (Privatperson), E-Mail: {MAIL}</p>
-<h2>2. Kurzfassung</h2>
-<p>Diese Seite nutzt keine Analyse, kein Tracking, keine Werbung und keine Social-Media-Plugins. Schriften und Bilder werden von diesem Server geladen, nicht von Google oder anderen Diensten. Eine Registrierung ist nicht nötig.</p>
-<h2>3. Seitenaufruf – Server-Logs</h2>
-<p>Die Seite liegt beim kostenlosen Webhoster InfinityFree (Anbieter iFastNet Ltd.). Bei jedem Aufruf verarbeitet der Server technisch Ihre IP-Adresse, Uhrzeit, die aufgerufene Seite und Browser-Angaben, um die Seite auszuliefern und vor Missbrauch zu schützen. Rechtsgrundlage: berechtigtes Interesse (Art. 6 Abs. 1 lit. f DSGVO). Der Hoster kann Daten auch außerhalb der EU/des EWR verarbeiten; Einzelheiten in seiner Datenschutzerklärung.</p>
-<h2>4. Cookie „__test“</h2>
-<p>Der Hoster setzt ein technisches Cookie <code>__test</code>, das prüft, ob ein echter Browser und kein automatisierter Bot zugreift. Es ist für den Betrieb notwendig und dient nicht dem Tracking.</p>
-<h2>5. Demoversion</h2>
-<p>Die Demo enthält nur einen erfundenen Verein und erfundene Personen. Beim Login in die Demo wird ein Sitzungs-Cookie gesetzt (für die Anmeldung notwendig). Alle Eingaben werden jede Nacht gelöscht. Bitte keine echten personenbezogenen Daten eingeben. E-Mails aus der Demo werden nicht versendet.</p>
-<h2>6. Kontakt per E-Mail</h2>
-<p>Wenn Sie mir schreiben, nutze ich Adresse und Nachricht nur zur Antwort und zur Hilfe bei der Einrichtung. Ich gebe sie nicht weiter und lösche sie, wenn sie nicht mehr gebraucht werden. Rechtsgrundlage: Art. 6 Abs. 1 lit. b und f DSGVO.</p>
-<h2>7. Externe Links</h2>
-<p>Der Link zu GitHub führt zu einem anderen Anbieter (GitHub Inc.). Dort gelten dessen Datenschutzbestimmungen.</p>
-<h2>8. Ihre Rechte</h2>
-<p>Sie haben das Recht auf Auskunft, Berichtigung, Löschung, Einschränkung, Widerspruch und Datenübertragbarkeit (Art. 15–21 DSGVO). Melden Sie sich per E-Mail. Sie können sich außerdem bei einer Datenschutz-Aufsichtsbehörde beschweren, z. B. beim Landesbeauftragten für Datenschutz Baden-Württemberg oder bei der kroatischen AZOP.</p>
-<h2>9. Vereine und ihre Daten</h2>
-<p>Nutzt ein Verein die Lovačka evidencija auf seinem eigenen Server, ist dieser Verein Verantwortlicher für die Mitgliederdaten – nicht der Autor des Programms. Der Autor hat keinen Zugriff auf diese Daten.</p>
 </section>
 </div>
 '''+PODNOZJE+'</body>\n</html>\n'
