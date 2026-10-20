@@ -25,6 +25,10 @@ return [
     // false = isključeno (samo u nuždi, npr. izgubljen mobitel bez rezervnih kodova).
     'dvofaktorska' => true,
 
+    // Tražilice (Google, Bing): zadano isključeno – udruga se ne pojavljuje u rezultatima pretrage.
+    // true samo za javnu demo/predstavljanje.
+    // 'dopusti_trazilice' => false,
+
     // Samo za traženje grešaka – na stvarnom poslužitelju ostavite false.
     'prikazi_greske' => false,
 ];

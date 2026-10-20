@@ -5,7 +5,7 @@
  */
 declare(strict_types=1);
 
-const VERZIJA = '1.35.0';
+const VERZIJA = '1.35.1';
 const KONTAKT_EMAIL = 'daxemann@googlemail.com';
 const PODRSKA_PAYPAL = 'darko.bakic@freenet.de'; // dobrovoljna podrška razvoju (Pomoć i kontakt)
 const PROJEKT_URL = 'https://github.com/daxemann/lovacka-evidencija';
@@ -108,6 +108,11 @@ function podaci(string $pod = ''): string
     return $pod === '' ? $mapa : $mapa . '/' . ltrim($pod, '/');
 }
 
+/** Smiju li tražilice (Google, Bing) prikazivati ovu instalaciju? Samo demo; prave udruge ne – ne žele biti pronađene. */
+function dopusti_trazilice(): bool
+{
+    return (bool) cfg('dopusti_trazilice', je_demo());
+}
 /** Posebna instalacija (proširenje u app/lib, nije dio programa na GitHubu). Bez proširenja uvijek false. */
 function je_demo(): bool
 {

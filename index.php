@@ -34,6 +34,9 @@ set_exception_handler(function (Throwable $e) {
         . '<p><a href="' . e(url()) . '">Početna</a></p>' . $detalji . '</div>';
 });
 
+if (!dopusti_trazilice()) {
+    header('X-Robots-Tag: noindex, nofollow, noarchive'); // i za PDF-ove, slike i kalendar, ne samo HTML
+}
 pokreni_sesiju();
 provjeri_csrf();
 if (je_demo()) {

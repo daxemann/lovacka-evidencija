@@ -1,5 +1,9 @@
 # Promjene
 
+## 1.35.1 – 2026-10
+- **Tražilice isključene:** Google, Bing i ostale tražilice više ne prikazuju vašu evidenciju u rezultatima pretrage (ni stranicu za prijavu, ni PDF-ove, slike ili kalendar).
+  Samo javna demo verzija ostaje vidljiva. Iznimka po želji: `'dopusti_trazilice' => true` u `config.php`.
+
 ## 1.35.0 – 2026-10
 - **🔒 Šifrirane sigurnosne kopije:** novo u *Sustav → Sigurnosne kopije* – **lozinka kopije**. Svaka kopija koja se preuzima (kompletna i kopija baze) šifrirana je njome (AES-256 ZIP, otvara se i 7-Zipom).
   Bez lozinke datoteka je neupotrebljiva – i kad netko dođe do nje. Na poslužitelju se lozinka ne čuva. **Zaboravljena lozinka = kopija se ne može otvoriti.**
