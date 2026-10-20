@@ -1,0 +1,16 @@
+<svg role="img" aria-label="Lovačka Evidencija" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <rect width="100" height="100" rx="22" fill="#2f5d23"/>
+  <g id="pola" fill="none" stroke="#e9c46a" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M55 37 C59 28 62 20 69 11"/>
+    <path d="M58.5 28.5 L68 26"/>
+    <path d="M61.5 21 L57 12"/>
+    <path d="M66 15 L77 15"/>
+  </g>
+  <use href="#pola" transform="translate(100 0) scale(-1 1)"/>
+  <path d="M58 40 Q71 33 77 37 Q69 45 59 44 Z" fill="#f4efe1"/>
+  <path d="M42 40 Q29 33 23 37 Q31 45 41 44 Z" fill="#f4efe1"/>
+  <path d="M43 38 L57 38 L59 46 L54.5 70 Q50 76 45.5 70 L41 46 Z" fill="#f4efe1"/>
+  <path d="M46.5 69 Q50 73 53.5 69 L52.5 66 Q50 67 47.5 66 Z" fill="#2f5d23"/>
+  <circle cx="45.6" cy="49" r="1.6" fill="#2f5d23"/><circle cx="54.4" cy="49" r="1.6" fill="#2f5d23"/>
+  <path d="M30 84 H70" stroke="#e9c46a" stroke-width="3" stroke-linecap="round"/>
+</svg>

@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="hr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lovačka evidencija – besplatni program za lovačke udruge</title>
+<meta name="description" content="Besplatna aplikacija za lovačke udruge i društva: evidencija članova, članarina s HUB-3 uplatnicama, knjiga dezinfekcije, čeke i lovački dnevnik. Od lovca za lovce.">
+<link rel="canonical" href="https://evidencija.freedev.app/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Lovačka evidencija – besplatni program za lovačke udruge">
+<meta property="og:description" content="Besplatna aplikacija za lovačke udruge i društva: evidencija članova, članarina s HUB-3 uplatnicama, knjiga dezinfekcije, čeke i lovački dnevnik. Od lovca za lovce.">
+<meta property="og:url" content="https://evidencija.freedev.app/">
+<meta property="og:image" content="https://evidencija.freedev.app/static/img/d-pocetna.jpg">
+<meta property="og:locale" content="hr_HR">
+<meta name="theme-color" content="#1B3416">
+<link rel="icon" type="image/png" href="static/img/favicon.png">
+<link rel="apple-touch-icon" href="static/img/ikona-180.png">
+<link rel="preload" href="static/fonts/archivo-latin-800-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="static/stil.css">
+<script type="application/ld+json">{"@context": "https://schema.org", "@graph": [{"@type": "SoftwareApplication", "name": "Lovačka evidencija", "applicationCategory": "BusinessApplication", "operatingSystem": "Web, Android, iOS", "inLanguage": "hr", "description": "Besplatna aplikacija za lovačke udruge: evidencija članova, članarina s HUB-3 uplatnicama, knjiga dezinfekcije, lovište i čeke, lovački dnevnik.", "offers": {"@type": "Offer", "price": "0", "priceCurrency": "EUR"}, "url": "https://evidencija.freedev.app/", "screenshot": "https://evidencija.freedev.app/static/img/d-pocetna.jpg"}, {"@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "Je li stvarno besplatno? Gdje je kvaka?", "acceptedAnswer": {"@type": "Answer", "text": "Nema kvake. Privatni, nekomercijalni projekt. Softver je i ostat će besplatan – bez pretplate, bez naplate po članu, bez plaćenih dodataka. I pomoć pri postavljanju je besplatna."}}, {"@type": "Question", "name": "Tko vidi podatke naše udruge?", "acceptedAnswer": {"@type": "Answer", "text": "Samo vi. Aplikacija radi na vašem serveru, podaci se nikamo ne šalju. Autor nema pristup. Vaša evidencija se ne pojavljuje ni na Googleu."}}, {"@type": "Question", "name": "Nismo informatičari. Možemo li to sami?", "acceptedAnswer": {"@type": "Answer", "text": "Ako znate učitati datoteke preko FTP-a – da. A ako ne: javite se, pomoći ću vam osobno."}}, {"@type": "Question", "name": "Treba li aplikacija iz Google Playa ili App Storea?", "acceptedAnswer": {"@type": "Answer", "text": "Ne. Na mobitelu u pregledniku odaberite „Dodaj na početni zaslon“ – radi na Androidu i iPhoneu."}}, {"@type": "Question", "name": "Što ako stariji članovi nemaju pametni telefon?", "acceptedAnswer": {"@type": "Answer", "text": "Nema problema. Uprava upisuje za njih, a za knjigu dezinfekcije postoje papirnate liste za ispis koje se kasnije unesu u aplikaciju."}}]}]}</script>
+</head>
+<body>
+<header>
+<nav aria-label="Glavni izbornik">
+<a class="logo" href="./"><img src="static/img/logo.svg" alt="" width="40" height="40"><span>Lovačka evidencija</span></a>
+<div class="izbornik">
+<a href="./#iznutra">Kako izgleda</a>
+<a href="./#mogucnosti">Mogućnosti</a>
+<a href="./#pomoc">Pomoć pri instalaciji</a>
+<a href="./#pitanja">Pitanja</a>
+<a class="gumb zlatni" href="https://evidencija.freedev.app/evidencija/">Isprobaj demo</a>
+</div>
+</nav>
+</header>
+<main>
+
+<section class="tamna hero" id="vrh">
+<div class="okvir red sredina">
+<div style="flex:1 1 420px;min-width:0">
+<span class="znacka">Od lovca za lovce · besplatno</span>
+<h1>Cijela lovačka udruga u jednoj aplikaciji.</h1>
+<p class="tekst">Članovi, članarina s HUB-3 uplatnicama, knjiga dezinfekcije, čeke i lovački dnevnik – na računalu za upravu, na mobitelu za svakog lovca. Bez pretplate, bez naplate po članu. Pri postavljanju vam osobno pomažem.</p>
+<div class="gumbi">
+<a class="gumb zlatni" href="https://evidencija.freedev.app/evidencija/">Isprobajte demo – odmah</a>
+<a class="gumb obrub" href="#pomoc">Besplatna pomoć pri instalaciji</a>
+</div>
+<p class="napomena">Demo bez registracije: izmišljena udruga, prijava jednim klikom.</p>
+</div>
+<div class="prikaz" aria-label="Prikaz aplikacije">
+<div class="preglednik"><div class="tockice"><i></i><i></i><i></i></div>
+<div class="zaslon racunalo" data-izmjena="racunalo">
+<img src="static/img/d-pocetna.jpg" alt="Početna uprave" width="1600" height="1000" class="vidljiv" loading="eager" decoding="async">
+<img src="static/img/d-clanarina.jpg" alt="Članarina" width="1600" height="1000" loading="lazy" decoding="async">
+<img src="static/img/d-revir.jpg" alt="Karta lovišta" width="1600" height="1000" loading="lazy" decoding="async">
+<img src="static/img/d-dezinfekcija.jpg" alt="Knjiga dezinfekcije" width="1600" height="1000" loading="lazy" decoding="async">
+<img src="static/img/d-kalendar.jpg" alt="Kalendar" width="1600" height="1000" loading="lazy" decoding="async">
+</div></div>
+<div class="mobitel lebdi"><div class="zaslon" data-izmjena="mobitel">
+<img src="static/img/m-pocetna.jpg" alt="Početna člana" width="780" height="1688" class="vidljiv" loading="eager" decoding="async">
+<img src="static/img/m-uplatnica.jpg" alt="Uplatnica" width="780" height="1688" loading="lazy" decoding="async">
+<img src="static/img/m-revir.jpg" alt="Karta lovišta" width="780" height="1688" loading="lazy" decoding="async">
+<img src="static/img/l-dezinfekcija_mobilna.jpg" alt="Mobilna stanica" width="780" height="1688" loading="lazy" decoding="async">
+<img src="static/img/m-kalendar.jpg" alt="Kalendar" width="780" height="1688" loading="lazy" decoding="async">
+</div></div>
+<div class="oznaka" id="oznaka" aria-live="off">Početna uprave · Početna člana</div>
+</div>
+</div>
+</section>
+
+<section class="sekcija">
+<div class="okvir red">
+<div class="stup kartica"><div class="crta"></div><h2>Besplatno. Zauvijek.</h2><p>Nema pretplate, nema licence po članu, nema skrivenih troškova. Privatni, nekomercijalni projekt – iz lovačkog drugarstva.</p></div>
+<div class="stup kartica"><div class="crta"></div><h2>Vaši podaci ostaju vaši</h2><p>Aplikacija radi na vašem webhostingu. Nitko drugi – ni autor – nema pristup podacima udruge. Kopije su šifrirane, ažuriranja potpisana.</p></div>
+<div class="stup kartica"><div class="crta"></div><h2>Radi i u šumi</h2><p>Na mobitelu se otvara kao aplikacija, bez Google Playa i App Storea. Upis radi i bez signala – šalje se kad se vrati internet.</p></div>
+</div>
+</section>
+
+<section class="sekcija svijetla" id="iznutra">
+<div class="okvir">
+<p class="nadnaslov">Pogledajte iznutra</p>
+<h2 class="veliki" style="margin-bottom:36px">Ovako izgleda kod uprave.</h2>
+<div class="red" style="gap:32px;align-items:flex-start">
+<div class="tabovi" role="tablist" aria-label="Dijelovi aplikacije" aria-orientation="vertical">
+<button type="button" class="tab" role="tab" id="tab-0" aria-controls="iznutra-prikaz" aria-selected="true"><b>Početna uprave</b><span>Na prvi pogled: članovi, otvorene članarine, radne akcije na čekanju.</span><i class="traka"></i></button>
+<button type="button" class="tab" role="tab" id="tab-1" aria-controls="iznutra-prikaz" aria-selected="false"><b>Članovi</b><span>Svi podaci, fotografije i funkcije – po sekcijama, s pretragom.</span><i class="traka"></i></button>
+<button type="button" class="tab" role="tab" id="tab-2" aria-controls="iznutra-prikaz" aria-selected="false"><b>Članarina u ratama</b><span>Tko je platio, tko kasni – HUB-3 uplatnice jednim klikom.</span><i class="traka"></i></button>
+<button type="button" class="tab" role="tab" id="tab-3" aria-controls="iznutra-prikaz" aria-selected="false"><b>Knjiga dezinfekcije</b><span>Svi upisi sa stanica, PDF za lovnog inspektora.</span><i class="traka"></i></button>
+<button type="button" class="tab" role="tab" id="tab-4" aria-controls="iznutra-prikaz" aria-selected="false"><b>Karta lovišta</b><span>Granice, čeke i tko trenutno sjedi gdje.</span><i class="traka"></i></button>
+<button type="button" class="tab" role="tab" id="tab-5" aria-controls="iznutra-prikaz" aria-selected="false"><b>Lovački dnevnik</b><span>Tko je bio u lovištu, kada i koliko dugo.</span><i class="traka"></i></button>
+<button type="button" class="tab" role="tab" id="tab-6" aria-controls="iznutra-prikaz" aria-selected="false"><b>Kalendar</b><span>Termini udruge i sekcija, tko dolazi.</span><i class="traka"></i></button>
+<button type="button" class="tab" role="tab" id="tab-7" aria-controls="iznutra-prikaz" aria-selected="false"><b>Lovački domovi</b><span>Rezervacije po danima, bez dvostrukih termina.</span><i class="traka"></i></button>
+</div>
+<div class="velikiprikaz"><div class="preglednik"><div class="zaslon" id="iznutra-prikaz" role="tabpanel" data-izmjena="iznutra">
+<img src="static/img/d-pocetna.jpg" alt="Početna uprave" width="1600" height="1000" class="vidljiv" decoding="async">
+<img src="static/img/d-clanovi.jpg" alt="Članovi" width="1600" height="1000" decoding="async">
+<img src="static/img/d-clanarina.jpg" alt="Članarina u ratama" width="1600" height="1000" decoding="async">
+<img src="static/img/d-dezinfekcija.jpg" alt="Knjiga dezinfekcije" width="1600" height="1000" decoding="async">
+<img src="static/img/d-revir.jpg" alt="Karta lovišta" width="1600" height="1000" decoding="async">
+<img src="static/img/d-revir_dnevnik.jpg" alt="Lovački dnevnik" width="1600" height="1000" decoding="async">
+<img src="static/img/d-kalendar.jpg" alt="Kalendar" width="1600" height="1000" decoding="async">
+<img src="static/img/d-domovi.jpg" alt="Lovački domovi" width="1600" height="1000" decoding="async">
+</div></div></div>
+</div>
+</div>
+</section>
+
+<section class="sekcija">
+<div class="okvir red sredina">
+<div style="flex:1 1 420px;min-width:0">
+<p class="nadnaslov">Za svakog lovca</p>
+<h2 class="veliki">Na mobitelu jednostavno – i za one koji ne vole tehniku.</h2>
+<p class="uvod" style="margin-bottom:20px">Lovac otvori aplikaciju i odmah vidi što ga zanima: sljedeće termine, svoje bodove, svoju uplatnicu i kartu lovišta. Zauzimanje čeke ili prijava radne akcije – jednim dodirom.</p>
+<ul class="popis">
+<li>Članska iskaznica s QR kodom – uvijek u džepu</li>
+<li>Uplatnica s kodom za mobilno bankarstvo</li>
+<li>Knjiga dezinfekcije: skeniraj QR na stanici i gotovo</li>
+<li>Upis radi i bez signala u lovištu</li>
+</ul>
+</div>
+<div class="dva">
+<div class="mobitel lebdi"><img src="static/img/m-revir.jpg" alt="Karta lovišta na mobitelu" width="780" height="1688" loading="lazy"></div>
+<div class="mobitel lebdi2"><img src="static/img/m-moja-iskaznica.jpg" alt="Članska iskaznica s QR kodom" width="780" height="1688" loading="lazy"></div>
+</div>
+</div>
+</section>
+
+<section class="sekcija svijetla" id="mogucnosti">
+<div class="okvir">
+<p class="nadnaslov">Što sve može</p>
+<h2 class="veliki">Sve što udruga vodi na papiru i u tablicama – na jednom mjestu.</h2>
+<p class="uvod">Svaka udruga uključuje samo module koje treba. Lovci vide jednostavan izbornik, uprava ima sve.</p>
+<div class="mreza">
+<div><h3>Članovi</h3><p>Osobni i lovački podaci, fotografija, funkcije, iskaznica i ispit, arhiva bivših članova, uvoz iz Google kontakata.</p></div>
+<div><h3>Sekcije strogo odvojene</h3><p>Svaka lovna jedinica vidi samo sebe. Uprava vidi sve.</p></div>
+<div><h3>Članarina i HUB-3 uplatnice</h3><p>Jednokratno ili 1–12 rata. Član vidi samo svoju uplatnicu – ispis ili kod na mobitelu za banku.</p></div>
+<div><h3>Radne akcije i bodovi</h3><p>Članovi prijavljuju sami s fotografijom, uprava odobrava. Izvještaji po lovnoj godini.</p></div>
+<div><h3>Knjiga dezinfekcije (ASK)</h3><p>QR oznaka na stanici, provjera GPS-a, dolazak/odlazak, mobilna stanica za skupni lov. Pristup za lovnog inspektora.</p></div>
+<div><h3>Lovište i čeke</h3><p>Karta lovišta, zauzimanje čeke jednim dodirom, automatsko oslobađanje u 03:00, prijava kvara s fotografijom.</p></div>
+<div><h3>Lovački dnevnik</h3><p>Tko je bio gdje i kada – po sekcijama, s filtrom po vrsti posjeta.</p></div>
+<div><h3>Grupni lov – karta uživo i SOS</h3><p>Poziv svima na mobitel, položaj sudionika na karti, SOS organizatoru. Popis sudionika skeniranjem iskaznica.</p></div>
+<div><h3>Članska iskaznica s QR kodom</h3><p>U formatu bankovne kartice za ispis i u aplikaciji – radi i bez signala.</p></div>
+<div><h3>Kalendar i lovački domovi</h3><p>Termini s „dolazim / ne dolazim“, rezervacija domova po danima bez dvostrukih rezervacija.</p></div>
+<div><h3>Push obavijesti</h3><p>Na mobitel i kad je aplikacija zatvorena – Android i iPhone. Obavijesti s potvrdom čitanja.</p></div>
+<div><h3>Psi, inventura, oglasnik</h3><p>Bodovi za pse, popis opreme, statut i pravilnici, oglasnik za članove, poruke preko WhatsAppa ili Vibera.</p></div>
+</div>
+</div>
+</section>
+
+<section class="tamna">
+<div class="autor">
+<div class="krug"><img src="static/img/logo.svg" alt="" width="72" height="72"></div>
+<div style="flex:1 1 520px;min-width:0">
+<p class="nadnaslov">Od lovca za lovce</p>
+<blockquote>„Evidencija se u lovačkim društvima često vodi na papiru, u bilježnicama i raznim tablicama. Želio sam napraviti alat koji je jednostavan, pregledan i radi na mobitelu – i za članove i za upravu.“</blockquote>
+<p style="margin:0 0 20px">Iza aplikacije ne stoji firma, nego lovac i član lovačke udruge. Aplikaciju razvija u slobodno vrijeme i dijeli je besplatno – iz lovačkog drugarstva.</p>
+<a href="https://evidencija.freedev.app/evidencija/index.php?p=demo-autor">Tko stoji iza aplikacije i zašto je besplatna →</a>
+</div>
+</div>
+</section>
+
+<section class="sekcija" id="pomoc">
+<div class="okvir">
+<p class="nadnaslov">Vlastita evidencija za vašu udrugu</p>
+<h2 class="veliki">Postavljanje? Pomažem osobno – besplatno.</h2>
+<p class="uvod">Ne morate biti informatičar. Javite se – zajedno ćemo postaviti evidenciju na vaš webhosting, preko telefona ili poruka, korak po korak. Ili sami u tri koraka:</p>
+<ol class="koraci">
+<li><div class="broj">1</div><h3>Preuzmite</h3><p>Zadnju verziju s GitHuba – ili samo jednu datoteku <code>instaliraj.php</code>.</p></li>
+<li><div class="broj">2</div><h3>Učitajte</h3><p>Preko FTP-a na bilo koji PHP webhosting. MySQL baza nije potrebna.</p></li>
+<li><div class="broj">3</div><h3>Pokrenite</h3><p>Upišite naziv udruge, sekcije i administratora. Nove verzije jednim klikom.</p></li>
+</ol>
+<div class="gumbi">
+<a class="gumb zeleni" href="https://evidencija.freedev.app/evidencija/index.php?p=demo-autor">Javite se za pomoć</a>
+<a href="https://github.com/daxemann/lovacka-evidencija" style="font-weight:600;padding:14px 8px">Upute i preuzimanje na GitHubu →</a>
+</div>
+</div>
+</section>
+
+<section class="svijetla" id="demo">
+<div class="demo">
+<h2>Isprobajte sami – za dvije minute.</h2>
+<p class="uvod" style="margin:0 auto 28px;font-size:19px">Demo udruga s izmišljenim članovima. Odaberite ulogu i kliknite se kroz sve. Ništa ne možete pokvariti – svake noći sve se vraća na početno stanje.</p>
+<div class="uloge">
+<div><b>Glavni administrator</b><span>sve: članovi, članarina, lovište, postavke</span></div>
+<div><b>Tajnik</b><span>članovi, članarina, akcije, izvještaji</span></div>
+<div><b>Lovočuvar</b><span>lovište, dnevnik, dezinfekcija svoje sekcije</span></div>
+<div><b>Član</b><span>što vidi običan lovac na mobitelu</span></div>
+</div>
+<a class="gumb zeleni" href="https://evidencija.freedev.app/evidencija/">Otvori demo</a>
+<p style="color:var(--siva);font-size:15px;margin:16px 0 0">Radi na računalu i mobitelu. Bez registracije, bez e-pošte.</p>
+</div>
+</section>
+
+<section class="sekcija" id="pitanja">
+<div class="okvir" style="max-width:860px">
+<h2 class="veliki" style="margin-bottom:28px">Česta pitanja</h2>
+<details><summary>Je li stvarno besplatno? Gdje je kvaka?</summary><p>Nema kvake. Privatni, nekomercijalni projekt. Softver je i ostat će besplatan – bez pretplate, bez naplate po članu, bez plaćenih dodataka. I pomoć pri postavljanju je besplatna.</p></details>
+<details><summary>Tko vidi podatke naše udruge?</summary><p>Samo vi. Aplikacija radi na vašem serveru, podaci se nikamo ne šalju. Autor nema pristup. Vaša evidencija se ne pojavljuje ni na Googleu.</p></details>
+<details><summary>Nismo informatičari. Možemo li to sami?</summary><p>Ako znate učitati datoteke preko FTP-a – da. A ako ne: javite se, pomoći ću vam osobno.</p></details>
+<details><summary>Treba li aplikacija iz Google Playa ili App Storea?</summary><p>Ne. Na mobitelu u pregledniku odaberite „Dodaj na početni zaslon“ – radi na Androidu i iPhoneu.</p></details>
+<details><summary>Što ako stariji članovi nemaju pametni telefon?</summary><p>Nema problema. Uprava upisuje za njih, a za knjigu dezinfekcije postoje papirnate liste za ispis koje se kasnije unesu u aplikaciju.</p></details>
+</div>
+</section>
+</main>
+<footer>
+<div class="okvir">
+<div class="lijevo"><img src="static/img/logo.svg" alt="" width="28" height="28"><span>Lovačka evidencija · od lovca za lovce · privatni, nekomercijalni projekt</span></div>
+<div class="veze">
+<a href="https://evidencija.freedev.app/evidencija/index.php?p=demo-autor">Kontakt</a>
+<a href="impresum.html">Impresum</a>
+<a href="privatnost.html">Zaštita podataka</a>
+<a href="https://github.com/daxemann/lovacka-evidencija">GitHub</a>
+</div>
+</div>
+</footer>
+<script src="static/web.js" defer></script>
+</body>
+</html>
