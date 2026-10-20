@@ -15,7 +15,7 @@ const AZURIRANJE_PROVJERA_SATI = 6;
  * ni kad netko preuzme GitHub račun, jer privatni ključ nije na GitHubu.
  * Ovo je JAVNI ključ (smije biti javan). Drugi repozitorij → vlastiti ključ u config.php ('azuriranje_kljuc').
  */
-const AZURIRANJE_JAVNI_KLJUC = '';
+const AZURIRANJE_JAVNI_KLJUC = '30L4L4seHv1px3mN/8YgiNdkqQgd3JEOMljvTksiHC4=';
 const AZURIRANJE_POTPIS_UZORAK = '/<!--\s*potpis-evidencije:\s*([A-Za-z0-9+\/=]{80,100})\s*-->/';
 
 function azuriranje_javni_kljuc(): string
