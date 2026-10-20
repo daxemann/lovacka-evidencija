@@ -36,7 +36,8 @@ Na mobitelu: u pregledniku *Dodaj na početni zaslon* – izgleda kao aplikacija
 
 ## 6. Sigurnosne kopije
 - automatski jednom dnevno kopija baze u `podaci/kopije` (zadnjih 30)
-- **redovito** (npr. jednom mjesečno) *Sustav → Sigurnosne kopije → Preuzmi kompletnu kopiju (ZIP)* i spremite na sigurno mjesto – ZIP sadrži osobne podatke, čuvajte ga povjerljivo
+- postavite **lozinku kopije** (*Sustav → Sigurnosne kopije*) i zapišite je izvan poslužitelja – svaka preuzeta kopija šifrirana je njome (AES-256); zaboravljena lozinka = kopija se ne može otvoriti
+- **redovito** (npr. jednom mjesečno) *Sustav → Sigurnosne kopije → Preuzmi kompletnu kopiju* i spremite na sigurno mjesto
 
 ## 7. Nadogradnja na novu verziju
 **Najlakše:** kad izađe nova verzija, glavni admin vidi traku „Dostupna je nova verzija“ → *Sustav → Ažuriranje programa* → **Ažuriraj**.

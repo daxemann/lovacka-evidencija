@@ -8,3 +8,7 @@
 /izdanje/
 .DS_Store
 Thumbs.db
+
+# alat za potpis – izlaz builda
+alati/EvidencijaPotpis/bin/
+alati/EvidencijaPotpis/obj/

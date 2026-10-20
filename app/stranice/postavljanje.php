@@ -74,10 +74,11 @@ ob_start(); ?>
     </form>
     <hr class="my-4">
     <h2 class="h6 text-uppercase text-muted">… ili preseljenje postojeće evidencije</h2>
-    <p class="small text-muted">Na starom poslužitelju: Sustav → Sigurnosne kopije → <b>Preuzmi kompletnu kopiju (ZIP)</b>. Ovdje je učitajte – vraćaju se svi članovi, fotografije, korisnici i postavke (radi i s kopijom iz Windows / Home Assistant verzije). Prijava zatim s dosadašnjim korisničkim imenom i lozinkom.</p>
+    <p class="small text-muted">Na starom poslužitelju: Sustav → Sigurnosne kopije → <b>Preuzmi kompletnu kopiju</b>. Ovdje je učitajte i upišite lozinku kopije – vraćaju se svi članovi, fotografije, korisnici i postavke (radi i s kopijom iz Windows / Home Assistant verzije). Prijava zatim s dosadašnjim korisničkim imenom i lozinkom.</p>
     <form method="post" action="<?= e(url('vrati')) ?>" enctype="multipart/form-data">
         <?= csrf() ?>
-        <input type="file" name="kopija" accept=".zip" class="form-control mb-2" required>
+        <input type="file" name="kopija" accept=".zip,.evk" class="form-control mb-2" required>
+        <input type="password" name="lozinka_kopije" class="form-control mb-2" placeholder="Lozinka kopije" autocomplete="off">
         <button type="submit" class="btn btn-outline-primary w-100">Vrati iz kompletne kopije</button>
     </form>
 <?php endif; ?>

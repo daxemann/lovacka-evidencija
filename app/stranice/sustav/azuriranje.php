@@ -39,11 +39,14 @@ ob_start(); ?>
     <div class="card-body">
         <ol class="small mb-3">
             <li>automatska <b>sigurnosna kopija baze</b> (Sustav → Sigurnosne kopije)<?= $addon ? '' : ' i kopija trenutnog programa' ?></li>
-            <li><?= $addon ? 'Home Assistant preuzima i instalira novu verziju add-ona (1–3 minute, program se ponovno pokreće)' : 'preuzimanje nove verzije s GitHuba i zamjena programskih datoteka' ?></li>
+            <li><?= $addon ? 'Home Assistant preuzima i instalira novu verziju add-ona (1–3 minute, program se ponovno pokreće)' : 'preuzimanje nove verzije s GitHuba, <b>provjera potpisa autora</b> i zamjena programskih datoteka' ?></li>
             <li>podaci (članovi, fotografije, postavke, <code>config.php</code>) ostaju; baza se sama proširuje</li>
         </ol>
         <?php if ($prepreke): ?>
             <div class="alert alert-warning small mb-0"><?= implode('<br>', array_map('e', $prepreke)) ?></div>
+        <?php elseif (!$addon && empty($izd['potpis'])): ?>
+            <div class="alert alert-info small mb-0">🔏 Izdanje <?= e($izd['verzija']) ?> autor još nije potpisao. Ažuriranje će biti moguće čim ga potpiše (obično isti dan) – kliknite „Provjeri sada“ kasnije.
+                Nepotpisana izdanja se ne instaliraju, da nitko ne može podmetnuti lažni program.</div>
         <?php else: ?>
             <form method="post" action="<?= e(url('sustav/azuriranje')) ?>"><?= csrf() ?><input type="hidden" name="radnja" value="azuriraj"><input type="hidden" name="verzija" value="<?= e($izd['verzija']) ?>">
                 <button class="btn btn-success" data-potvrda="Ažurirati program na verziju <?= e($izd['verzija']) ?>? Prije toga se radi sigurnosna kopija.">⬆ Ažuriraj na <?= e($izd['verzija']) ?></button></form>

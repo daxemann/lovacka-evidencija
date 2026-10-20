@@ -9,7 +9,7 @@ if (!$f || $f['error'] !== UPLOAD_ERR_OK) {
     preusmjeri('postavljanje');
 }
 try {
-    vrati_kompletnu_kopiju($f['tmp_name']);
+    vrati_kompletnu_kopiju($f['tmp_name'], (string) ($_POST['lozinka_kopije'] ?? ''));
 } catch (Throwable $e) {
     poruka('Vraćanje nije uspjelo: ' . e($e->getMessage()), 'danger');
     preusmjeri('postavljanje');

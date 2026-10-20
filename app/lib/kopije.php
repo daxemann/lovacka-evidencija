@@ -4,6 +4,176 @@ declare(strict_types=1);
 
 const BROJ_DNEVNIH_KOPIJA = 30;
 
+// ---------- Lozinka kopije (šifriranje svake kopije koja napušta poslužitelj) ----------
+// Na poslužitelju se čuva samo provjera (hash), nikad sama lozinka. Zaboravljena lozinka = kopija se ne može otvoriti.
+
+const KOPIJA_LOZINKA_MIN = 10;
+const KOPIJA_EVK_ZAGLAVLJE = "EVKOPIJA1\n";   // vlastiti format kad PHP nema AES-ZIP
+const KOPIJA_EVK_ITERACIJE = 200000;
+const KOPIJA_EVK_KOMAD = 1048576;             // 1 MB po komadu – malo memorije i za velike kopije
+
+function kopija_lozinka_postavljena(): bool
+{
+    return (string) postavka('Kopije.Provjera', '') !== '';
+}
+function kopija_provjeri_lozinku(string $lozinka): bool
+{
+    $h = (string) postavka('Kopije.Provjera', '');
+    return $h !== '' && $lozinka !== '' && password_verify($lozinka, $h);
+}
+/** Prazno = u redu, inače poruka o grešci. */
+function kopija_lozinka_greska(string $l, string $l2): string
+{
+    if (mb_strlen($l) < KOPIJA_LOZINKA_MIN) {
+        return 'Lozinka kopije mora imati najmanje ' . KOPIJA_LOZINKA_MIN . ' znakova.';
+    }
+    if ($l !== $l2) {
+        return 'Lozinke se ne podudaraju.';
+    }
+    return '';
+}
+function kopija_postavi_lozinku(string $lozinka): void
+{
+    spremi_postavku('Kopije.Provjera', password_hash($lozinka, PASSWORD_DEFAULT));
+}
+/** Podržava li PHP na ovom poslužitelju AES-256 ZIP (otvara se i 7-Zipom)? */
+function kopija_aes_zip(): bool
+{
+    return class_exists('ZipArchive') && method_exists('ZipArchive', 'isEncryptionMethodSupported')
+        && ZipArchive::isEncryptionMethodSupported(ZipArchive::EM_AES_256);
+}
+
+/**
+ * Šifrira gotov ZIP lozinkom kopije. Vraća ['put' => …, 'nastavak' => 'zip'|'evk'].
+ * Prednost ima AES-256 ZIP (otvara se i 7-Zipom); bez njega vlastiti format .evk (AES-256-GCM po komadima).
+ */
+function kopija_sifriraj(string $zipPut, string $lozinka): array
+{
+    if ($lozinka === '') {
+        throw new RuntimeException('Nedostaje lozinka kopije.');
+    }
+    if (kopija_aes_zip()) {
+        $z = new ZipArchive();
+        if ($z->open($zipPut) !== true) {
+            throw new RuntimeException('ZIP se ne može otvoriti za šifriranje.');
+        }
+        for ($i = 0; $i < $z->numFiles; $i++) {
+            if (!$z->setEncryptionIndex($i, ZipArchive::EM_AES_256, $lozinka)) {
+                $z->close();
+                throw new RuntimeException('Šifriranje ZIP-a nije uspjelo.');
+            }
+        }
+        if (!$z->close()) {
+            throw new RuntimeException('Šifriranje ZIP-a nije uspjelo.');
+        }
+        return ['put' => $zipPut, 'nastavak' => 'zip'];
+    }
+    $cilj = tempnam(sys_get_temp_dir(), 'evk');
+    kopija_evk_sifriraj($zipPut, $cilj, $lozinka);
+    @unlink($zipPut);
+    return ['put' => $cilj, 'nastavak' => 'evk'];
+}
+
+function kopija_evk_kljuc(string $lozinka, string $sol, int $iter): string
+{
+    return hash_pbkdf2('sha256', $lozinka, $sol, $iter, 32, true);
+}
+/** Format .evk: zaglavlje | sol(16) | iteracije(4) | prefiks nonce(8) | komadi [duljina(4) | šifrat | tag(16)]. */
+function kopija_evk_sifriraj(string $izvor, string $cilj, string $lozinka): void
+{
+    $sol = random_bytes(16);
+    $prefiks = random_bytes(8);
+    $kljuc = kopija_evk_kljuc($lozinka, $sol, KOPIJA_EVK_ITERACIJE);
+    $ul = fopen($izvor, 'rb');
+    $iz = fopen($cilj, 'wb');
+    if (!$ul || !$iz) {
+        throw new RuntimeException('Privremena datoteka se ne može otvoriti.');
+    }
+    fwrite($iz, KOPIJA_EVK_ZAGLAVLJE . $sol . pack('N', KOPIJA_EVK_ITERACIJE) . $prefiks);
+    $n = 0;
+    $komad = (string) fread($ul, KOPIJA_EVK_KOMAD);
+    do {
+        $sljedeci = feof($ul) ? '' : (string) fread($ul, KOPIJA_EVK_KOMAD);
+        $zadnji = $sljedeci === '' ? "\x01" : "\x00";
+        $c = openssl_encrypt($komad, 'aes-256-gcm', $kljuc, OPENSSL_RAW_DATA, $prefiks . pack('N', $n), $tag, pack('N', $n) . $zadnji, 16);
+        if ($c === false) {
+            throw new RuntimeException('Šifriranje nije uspjelo.');
+        }
+        fwrite($iz, pack('N', strlen($c)) . $c . $tag);
+        $komad = $sljedeci;
+        $n++;
+    } while ($zadnji === "\x00");
+    fclose($ul);
+    fclose($iz);
+}
+/** Dešifrira .evk u privremeni ZIP. Kriva lozinka ili oštećena datoteka → iznimka. */
+function kopija_evk_desifriraj(string $izvor, string $lozinka): string
+{
+    $ul = fopen($izvor, 'rb');
+    if (!$ul || fread($ul, strlen(KOPIJA_EVK_ZAGLAVLJE)) !== KOPIJA_EVK_ZAGLAVLJE) {
+        throw new RuntimeException('Datoteka nije šifrirana kopija evidencije.');
+    }
+    $sol = (string) fread($ul, 16);
+    $iter = unpack('N', (string) fread($ul, 4))[1] ?? 0;
+    $prefiks = (string) fread($ul, 8);
+    if (strlen($sol) !== 16 || strlen($prefiks) !== 8 || $iter < 10000 || $iter > 10000000) {
+        throw new RuntimeException('Šifrirana kopija je oštećena.');
+    }
+    $kljuc = kopija_evk_kljuc($lozinka, $sol, $iter);
+    $cilj = tempnam(sys_get_temp_dir(), 'evzip');
+    $iz = fopen($cilj, 'wb');
+    $n = 0;
+    $kraj = false;
+    while (!$kraj) {
+        $d = fread($ul, 4);
+        if ($d === false || strlen($d) !== 4) {
+            break; // datoteka prekinuta prije zadnjeg komada
+        }
+        $len = unpack('N', $d)[1];
+        if ($len > KOPIJA_EVK_KOMAD + 16) {
+            break;
+        }
+        $c = $len ? (string) fread($ul, $len) : '';
+        $tag = (string) fread($ul, 16);
+        $kraj = feof($ul) || fread($ul, 1) === '' ;
+        if (!$kraj) {
+            fseek($ul, -1, SEEK_CUR);
+        }
+        $p = openssl_decrypt($c, 'aes-256-gcm', $kljuc, OPENSSL_RAW_DATA, $prefiks . pack('N', $n), $tag, pack('N', $n) . ($kraj ? "\x01" : "\x00"));
+        if ($p === false) {
+            fclose($ul);
+            fclose($iz);
+            @unlink($cilj);
+            throw new RuntimeException($n === 0 ? 'Pogrešna lozinka kopije (ili oštećena datoteka).' : 'Šifrirana kopija je oštećena.');
+        }
+        fwrite($iz, $p);
+        $n++;
+    }
+    fclose($ul);
+    fclose($iz);
+    if (!$kraj) {
+        @unlink($cilj);
+        throw new RuntimeException('Šifrirana kopija je nepotpuna (prekinuto preuzimanje?).');
+    }
+    return $cilj;
+}
+
+/** Kopija baze (.db iz podaci/kopije) zapakirana i šifrirana za preuzimanje. */
+function kopija_baze_za_preuzimanje(string $dbPut, string $lozinka): array
+{
+    if (!class_exists('ZipArchive')) {
+        throw new RuntimeException('Na poslužitelju nedostaje PHP proširenje „zip“.');
+    }
+    $zipPut = tempnam(sys_get_temp_dir(), 'evzip');
+    $z = new ZipArchive();
+    if ($z->open($zipPut, ZipArchive::OVERWRITE) !== true) {
+        throw new RuntimeException('ZIP se ne može napraviti.');
+    }
+    $z->addFile($dbPut, basename($dbPut));
+    $z->close();
+    return kopija_sifriraj($zipPut, $lozinka);
+}
+
 /** Kopija baze u podaci/kopije (VACUUM INTO). Vraća ime datoteke. */
 function napravi_kopiju(string $oznaka = 'rucno'): string
 {
@@ -53,11 +223,14 @@ function popis_kopija(): array
 }
 
 /**
- * Kompletna kopija (ZIP): evidencija.db + foto/ + kljucevi/ – isti oblik kao u Windows / Home Assistant verziji,
- * pa se može vratiti u bilo koju verziju. Vraća put do privremene ZIP datoteke.
+ * Kompletna kopija (ZIP): evidencija.db + foto/ + kljucevi/ – isti oblik kao u Windows / Home Assistant verziji.
+ * Uvijek šifrirana lozinkom kopije (sadrži i ključ aplikacije). Vraća ['put' => …, 'nastavak' => 'zip'|'evk'].
  */
-function napravi_kompletnu_kopiju(): string
+function napravi_kompletnu_kopiju(string $lozinka): array
 {
+    if ($lozinka === '') {
+        throw new RuntimeException('Nedostaje lozinka kopije.');
+    }
     if (!class_exists('ZipArchive')) {
         throw new RuntimeException('Na poslužitelju nedostaje PHP proširenje „zip“.');
     }
@@ -89,28 +262,68 @@ function napravi_kompletnu_kopiju(): string
         $z->addFromString('PDF-za-inspekciju/' . $ime, $sadrzaj);
     }
     $z->addFromString('PROCITAJ.txt', "Kompletna kopija – Lovačka evidencija\n" . udruga_naziv() . "\nNapravljeno: " . date('d.m.Y. H:i') . "\n\n"
-        . "POVJERLJIVO: sadrži osobne podatke članova.\nVraćanje: prvo pokretanje → „Vrati iz kompletne kopije“ ili Sustav → Sigurnosne kopije.\n\n"
+        . "POVJERLJIVO: sadrži osobne podatke članova. Kopija je šifrirana lozinkom kopije (AES-256).\nVraćanje: prvo pokretanje → „Vrati iz kompletne kopije“ ili Sustav → Sigurnosne kopije – upisati lozinku kopije.\nBez programa: ZIP otvoriti 7-Zipom i upisati istu lozinku.\n\n"
         . "Mapa PDF-za-inspekciju: cijela knjiga dezinfekcije po mjesecima (stalne i mobilne stanice) i izjava udruge kao gotovi PDF-ovi\n"
         . "na dan izrade kopije – ako program ne radi, otvorite ih i pokažite ili ispišite za inspekciju.\n");
     $z->close();
     @unlink($tmpDb);
-    return $zipPut;
+    return kopija_sifriraj($zipPut, $lozinka);
 }
 
-/** Vraća kompletnu kopiju (ZIP iz PHP, Windows ili Home Assistant verzije). Trenutni podaci se zamjenjuju. */
-function vrati_kompletnu_kopiju(string $zipPut): void
+/**
+ * Vraća kompletnu kopiju (ZIP iz PHP, Windows ili Home Assistant verzije, šifrirani ZIP ili .evk). Trenutni podaci se zamjenjuju.
+ * Starije nešifrirane kopije i dalje se mogu vratiti.
+ */
+function vrati_kompletnu_kopiju(string $put, string $lozinka = ''): void
 {
     if (!class_exists('ZipArchive')) {
         throw new RuntimeException('Na poslužitelju nedostaje PHP proširenje „zip“.');
     }
+    $privremeni = null;
+    $f = @fopen($put, 'rb');
+    $pocetak = $f ? (string) fread($f, strlen(KOPIJA_EVK_ZAGLAVLJE)) : '';
+    if ($f) {
+        fclose($f);
+    }
+    if ($pocetak === KOPIJA_EVK_ZAGLAVLJE) {
+        if ($lozinka === '') {
+            throw new RuntimeException('Kopija je šifrirana – upišite lozinku kopije.');
+        }
+        $privremeni = kopija_evk_desifriraj($put, $lozinka);
+        $put = $privremeni;
+    }
+    try {
+        vrati_kompletnu_kopiju_zip($put, $lozinka);
+    } finally {
+        if ($privremeni) {
+            @unlink($privremeni);
+        }
+    }
+}
+
+function vrati_kompletnu_kopiju_zip(string $zipPut, string $lozinka): void
+{
     $z = new ZipArchive();
     if ($z->open($zipPut) !== true) {
         throw new RuntimeException('Datoteka nije ispravan ZIP.');
     }
-    $db = $z->getFromName('evidencija.db');
-    if ($db === false) {
+    $idx = $z->locateName('evidencija.db');
+    if ($idx === false) {
         $z->close();
         throw new RuntimeException('U ZIP-u nema datoteke evidencija.db – to nije kompletna kopija.');
+    }
+    $sifrirano = (int) ($z->statIndex($idx)['encryption_method'] ?? 0) !== 0;
+    if ($sifrirano) {
+        if ($lozinka === '') {
+            $z->close();
+            throw new RuntimeException('Kopija je šifrirana – upišite lozinku kopije.');
+        }
+        $z->setPassword($lozinka);
+    }
+    $db = $z->getFromIndex($idx);
+    if ($db === false) {
+        $z->close();
+        throw new RuntimeException($sifrirano ? 'Pogrešna lozinka kopije.' : 'evidencija.db se ne može pročitati.');
     }
     if (substr($db, 0, 15) !== 'SQLite format 3') {
         $z->close();

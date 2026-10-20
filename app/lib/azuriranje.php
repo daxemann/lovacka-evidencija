@@ -9,6 +9,62 @@ declare(strict_types=1);
 const AZURIRANJE_REPO = 'daxemann/lovacka-evidencija';
 const AZURIRANJE_PROVJERA_SATI = 6;
 
+/*
+ * Potpis izdanja (Ed25519): autor potpisuje svako izdanje na svom računalu (alat EvidencijaPotpis).
+ * Potpis stoji u bilješkama izdanja kao <!-- potpis-evidencije: … -->. Bez valjanog potpisa nema ažuriranja –
+ * ni kad netko preuzme GitHub račun, jer privatni ključ nije na GitHubu.
+ * Ovo je JAVNI ključ (smije biti javan). Drugi repozitorij → vlastiti ključ u config.php ('azuriranje_kljuc').
+ */
+const AZURIRANJE_JAVNI_KLJUC = '';
+const AZURIRANJE_POTPIS_UZORAK = '/<!--\s*potpis-evidencije:\s*([A-Za-z0-9+\/=]{80,100})\s*-->/';
+
+function azuriranje_javni_kljuc(): string
+{
+    $k = trim((string) cfg('azuriranje_kljuc', AZURIRANJE_JAVNI_KLJUC));
+    $b = $k !== '' ? base64_decode($k, true) : false;
+    return $b !== false && strlen($b) === 32 ? $b : '';
+}
+/** Popis datoteka izdanja (sha256 + putanja, sortirano) – to se potpisuje. Isti algoritam kao u alatu za potpis. */
+function azuriranje_manifest(ZipArchive $zip, string $prefiks, string $verzija): string
+{
+    $red = [];
+    for ($i = 0; $i < $zip->numFiles; $i++) {
+        $ime = (string) $zip->getNameIndex($i);
+        if (str_ends_with($ime, '/')) {
+            continue;
+        }
+        if (!str_starts_with($ime, $prefiks)) {
+            throw new RuntimeException('ZIP sadrži datoteku izvan programa (' . $ime . '). Ništa nije promijenjeno.');
+        }
+        $sadrzaj = $zip->getFromIndex($i);
+        if ($sadrzaj === false) {
+            throw new RuntimeException('Oštećen ZIP. Ništa nije promijenjeno.');
+        }
+        $red[substr($ime, strlen($prefiks))] = hash('sha256', $sadrzaj);
+    }
+    ksort($red, SORT_STRING);
+    $m = "lovacka-evidencija\n" . $verzija . "\n";
+    foreach ($red as $rel => $h) {
+        $m .= $h . ' ' . $rel . "\n";
+    }
+    return $m;
+}
+/** Baca iznimku ako potpis izdanja nije valjan. */
+function azuriranje_provjeri_potpis(ZipArchive $zip, string $prefiks, array $izd): void
+{
+    $kljuc = azuriranje_javni_kljuc();
+    if ($kljuc === '' || !function_exists('sodium_crypto_sign_verify_detached')) {
+        throw new RuntimeException('Provjera potpisa nije moguća (nema javnog ključa ili PHP proširenja sodium). Ništa nije promijenjeno.');
+    }
+    $potpis = base64_decode((string) ($izd['potpis'] ?? ''), true);
+    if ($potpis === false || strlen($potpis) !== SODIUM_CRYPTO_SIGN_BYTES) {
+        throw new RuntimeException('Izdanje ' . $izd['verzija'] . ' nije potpisano. Ništa nije promijenjeno.');
+    }
+    if (!sodium_crypto_sign_verify_detached($potpis, azuriranje_manifest($zip, $prefiks, (string) $izd['verzija']), $kljuc)) {
+        throw new RuntimeException('POTPIS NIJE VALJAN – preuzeti program nije onaj koji je autor potpisao. Ažuriranje je odbijeno, ništa nije promijenjeno. Javite autoru.');
+    }
+}
+
 function azuriranje_repo(): string
 {
     $r = (string) cfg('azuriranje_repo', AZURIRANJE_REPO);
@@ -69,11 +125,13 @@ function azuriranje_izdanje(bool $odmah = false): ?array
     $d = azuriranje_http('https://api.github.com/repos/' . azuriranje_repo() . '/releases/latest', $odmah ? 15 : 4);
     $j = $d ? json_decode($d, true) : null;
     if (is_array($j) && !empty($j['tag_name']) && empty($j['draft']) && empty($j['prerelease'])) {
+        $tijelo = (string) ($j['body'] ?? '');
         $izd = [
             'verzija' => ltrim((string) $j['tag_name'], 'vV'),
             'tag' => (string) $j['tag_name'],
             'naziv' => (string) ($j['name'] ?? $j['tag_name']),
-            'biljeske' => mb_substr((string) ($j['body'] ?? ''), 0, 20000),
+            'potpis' => preg_match(AZURIRANJE_POTPIS_UZORAK, $tijelo, $pm) ? $pm[1] : '',
+            'biljeske' => mb_substr(trim((string) preg_replace(AZURIRANJE_POTPIS_UZORAK, '', $tijelo)), 0, 20000),
             'url' => (string) ($j['html_url'] ?? ''),
             'zip' => (string) ($j['zipball_url'] ?? ''),
             'objavljeno' => (string) ($j['published_at'] ?? ''),
@@ -134,7 +192,7 @@ function azuriranje_biljeske_html(string $md): string
 /** Putanje koje se pri ažuriranju nikad ne prepisuju. */
 function azuriranje_preskoci(string $rel): bool
 {
-    return $rel === 'config.php' || str_starts_with($rel, 'podaci/') || str_starts_with($rel, '.git/') || str_starts_with($rel, '.github/');
+    return $rel === 'config.php' || str_starts_with($rel, 'podaci/') || str_starts_with($rel, '.git/') || str_starts_with($rel, '.github/') || str_starts_with($rel, 'alati/');
 }
 
 /** Kopija trenutnih programskih datoteka (bez podataka) – za vraćanje ako ažuriranje ne uspije. */
@@ -201,6 +259,11 @@ function azuriranje_preduvjeti(): array
     if (!class_exists('ZipArchive')) {
         $g[] = 'PHP proširenje zip (ZipArchive) nije instalirano.';
     }
+    if (!function_exists('sodium_crypto_sign_verify_detached')) {
+        $g[] = 'PHP proširenje sodium nije instalirano – potpis izdanja ne može se provjeriti.';
+    } elseif (azuriranje_javni_kljuc() === '') {
+        $g[] = 'Javni ključ za provjeru potpisa nije postavljen.';
+    }
     if (!function_exists('curl_init') && !ini_get('allow_url_fopen')) {
         $g[] = 'Ni cURL ni allow_url_fopen nisu dostupni – program ne može preuzeti novu verziju.';
     }
@@ -252,6 +315,12 @@ function azuriraj_program(array $izd): string
         }
         if ($m[1] !== $izd['verzija']) {
             throw new RuntimeException('Verzija u ZIP-u (' . $m[1] . ') ne odgovara izdanju ' . $izd['verzija'] . '. Ništa nije promijenjeno.');
+        }
+        try {
+            azuriranje_provjeri_potpis($zip, $prefiks, $izd);
+        } catch (Throwable $e) {
+            dnevnik('Ažuriranje odbijeno (potpis)', null, null, $izd['verzija'] . ': ' . $e->getMessage());
+            throw $e;
         }
         try {
             $n = azuriranje_raspakiraj($zip, $prefiks);

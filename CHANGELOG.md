@@ -1,5 +1,13 @@
 # Promjene
 
+## 1.35.0 – 2026-10
+- **🔒 Šifrirane sigurnosne kopije:** novo u *Sustav → Sigurnosne kopije* – **lozinka kopije**. Svaka kopija koja se preuzima (kompletna i kopija baze) šifrirana je njome (AES-256 ZIP, otvara se i 7-Zipom).
+  Bez lozinke datoteka je neupotrebljiva – i kad netko dođe do nje. Na poslužitelju se lozinka ne čuva. **Zaboravljena lozinka = kopija se ne može otvoriti.**
+- Vraćanje kopije (i pri prvom pokretanju) traži lozinku kopije; starije nešifrirane kopije i dalje se mogu vratiti.
+- Postavljanje i promjena lozinke kopije traži potvrdu vašom lozinkom za prijavu; sve se bilježi u dnevnik.
+- **🔏 Potpisana ažuriranja:** program se ažurira samo na izdanje koje je autor potpisao (Ed25519). Lažni program se odbija – i kad bi netko preuzeo GitHub račun.
+  Nepotpisano izdanje se prikazuje, ali se ne instalira dok ga autor ne potpiše.
+
 ## 1.34.2 – 2026-10
 - **Sigurnija nadogradnja baze:** kad nakon ažuriranja više članova istovremeno otvori aplikaciju, nadogradnju baze sada radi samo jedan – ostali kratko pričekaju.
   Prije se moglo dogoditi da netko dobije stranicu „Došlo je do greške“ (*duplicate column*).
