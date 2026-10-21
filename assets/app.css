@@ -606,3 +606,6 @@ main {
 .lov-gumb-sken:hover, .lov-gumb-sken:active { background: #74490c; }
 .di-smjer .btn { font-weight: 600; }
 .gost-qr svg { width: 180px; height: 180px; display: block; margin: 0 auto; }
+.lov-gumb-aktivno { border-color: #c0392b; box-shadow: 0 0 0 2px rgba(192,57,43,.25); }
+.pocetna-matrica .sticky-start { position: sticky; left: 0; background: var(--bs-body-bg, #fff); z-index: 1; min-width: 220px; }
+.pocetna-matrica th { vertical-align: bottom; }

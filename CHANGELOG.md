@@ -1,5 +1,12 @@
 # Promjene
 
+## 1.45.0 – 2026-10
+- **⚙️ Sustav → 🏠 Početna stranica:** administrator za svaku ulogu (i za članove bez uloge) kvačicama bira što se vidi na početnoj, a strelicama redoslijed.
+  Tko ima više uloga, vidi blokove svih svojih uloga. **👁 pregled** – početna kako je vidi odabrana uloga.
+- Blokovi: Skeniraj iskaznice, Skeniraj QR, Karta lovišta, Danas u lovištu (gumb ili **popis odmah na početnoj**), Skupni lov, Mobilna stanica, Kvarovi,
+  Uprava, Termini, Moje radne akcije, Moja članarina, Brojke, Rođendani, Iskaznice ističu, Prečaci.
+- Blok se i dalje pokazuje samo s pravom na te podatke i kad je modul uključen. Zadane postavke su kao dosad (*Vrati zadano*).
+
 ## 1.44.0 – 2026-10
 - **Kalendar:** vrsta termina „Zajednički lov“ sada se zove **„Skupni lov“** (postojeći termini preimenovani).
 - **Lovni gost uz termin lova:** nakon *✔ Dolazim* kvačica **„Vodim lovnog gosta“** (jedan po članu): ime, prezime, broj lovačke iskaznice i oružni list (mogu se dopuniti na lovu), e-pošta.
