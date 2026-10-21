@@ -1,5 +1,10 @@
 # Promjene
 
+## 1.36.1 – 2026-10
+- **Ispravak – Imenik:** lovci bez posebnih prava sada vide fotografije drugih članova (prije prazna slika / „slika nije pronađena“).
+  Fotografije ostaju vidljive samo prijavljenima, i samo za aktivne članove.
+- Upute: Popusti više nisu na početnoj (samo u izborniku).
+
 ## 1.36.0 – 2026-10
 - **Nova početna za lovce:** na vrhu veliki gumbi za ono što je u lovu važno – **📷 Skeniraj QR (dezinfekcija)**, **🗺️ Karta lovišta** i **🌲 Danas u lovištu**.
 - S početne su maknuti *Popusti u trgovinama* i *Oglasnik lovaca* (i dalje su u izborniku lijevo).

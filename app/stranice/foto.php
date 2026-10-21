@@ -28,9 +28,10 @@ if (!$dozvoljeno && str_starts_with($ime, 'dok-')) {
     $dm = red('SELECT SekcijaId FROM LovackiDomovi WHERE Foto=?', [$ime]);
     $dozvoljeno = $dm && (dom_vidi($dm) || dom_upravlja($dm));
 } elseif (!$dozvoljeno) {
-    $c = red('SELECT Id, SekcijaId FROM Clanovi WHERE FotoDatoteka=?', [$ime]);
+    $c = red('SELECT Id, SekcijaId, Status FROM Clanovi WHERE FotoDatoteka=?', [$ime]);
     if ($c) {
-        $dozvoljeno = ($k['ClanId'] === (int) $c['Id']) || (ima(P_CLANOVI_CITAJ) && u_opsegu($c));
+        // fotografija aktivnog člana vidi se u Imeniku cijele udruge – svim prijavljenima
+        $dozvoljeno = ($k && (int) $c['Status'] === 0) || ($k['ClanId'] === (int) $c['Id']) || (ima(P_CLANOVI_CITAJ) && u_opsegu($c));
         if (!$dozvoljeno && ima(P_GRUPNI_LOV)) {
             // lovnik kod skeniranja iskaznica: članovi sekcija koje organizira i oni na popisu njegovih grupnih lovova
             $sek = gl_sekcije_organizator();
