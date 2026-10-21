@@ -1,5 +1,8 @@
 # Promjene
 
+## 1.46.3 – 2026-10
+- **Sigurnosno upozorenje (PHP2Shell):** administratori na početnoj vide upozorenje ako poslužitelj radi na ranjivoj verziji PHP-a (CVE-2026-109618, CVE-2026-109619) – s objašnjenjem da PHP mora ažurirati hosting i tablicom što privremeno ne radi kad hosting blokira učitavanje datoteka (403). Upozorenje nestaje samo nakon ažuriranja PHP-a.
+
 ## 1.46.2 – 2026-10
 - **Lovište strogo po sekcijama:** Karta lovišta, Danas u lovištu, Kvarovi i Lovački dnevnik sada gledaju samo uloge koje daju pravo za lovište (nadzor, uređivanje, dnevnik) i njihove sekcije.
   Prije je bilo koja uloga „za sve sekcije“ (npr. Blagajnik) otvarala lovište svih sekcija – lovočuvar Bukovice vidio je i tko sjedi u Bušetini.
