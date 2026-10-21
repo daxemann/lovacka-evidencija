@@ -1,6 +1,6 @@
 <?php
 /**
- * Odgovor na poziv za grupni lov izravno iz push obavijesti (gumb „Ne dolazim“) – bez otvaranja aplikacije.
+ * Odgovor na poziv za skupni lov izravno iz push obavijesti (gumb „Ne dolazim“) – bez otvaranja aplikacije.
  * Javna stranica: vrijedi osobni jednokratni ključ iz obavijesti. Vraća JSON za service worker.
  */
 $x = gl_po_tokenu((string) ($_GET['t'] ?? ''));
@@ -14,6 +14,6 @@ $greska = gl_odgovori($lov, $x['ja'], $o);
 if ($greska) {
     json(['ok' => false, 'greska' => $greska]);
 }
-dnevnik('Grupni lov – odgovor iz obavijesti', 'GrupniLov', (int) $lov['Id'], $x['ja']['Ime'] . ': ' . ($o ? 'dolazi' : 'ne dolazi'), ['Id' => $x['ja']['KorisnikId'], 'KorisnickoIme' => $x['ja']['Ime']]);
+dnevnik('Skupni lov – odgovor iz obavijesti', 'GrupniLov', (int) $lov['Id'], $x['ja']['Ime'] . ': ' . ($o ? 'dolazi' : 'ne dolazi'), ['Id' => $x['ja']['KorisnikId'], 'KorisnickoIme' => $x['ja']['Ime']]);
 json(['ok' => true, 'naslov' => $o ? '✔ Dolazite – ' . $lov['Naziv'] : '✖ Ne dolazite – ' . $lov['Naziv'],
-    'tekst' => $o ? 'Otvorite aplikaciju da se vaš položaj vidi na karti.' : 'Organizator vidi vaš odgovor. Predomislili ste se? Otvorite aplikaciju → Grupni lov.']);
+    'tekst' => $o ? 'Otvorite aplikaciju da se vaš položaj vidi na karti.' : 'Organizator vidi vaš odgovor. Predomislili ste se? Otvorite aplikaciju → Skupni lov.']);

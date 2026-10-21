@@ -1,5 +1,9 @@
 # Promjene
 
+## 1.37.1 – 2026-10
+- **„Grupni lov“ je sada „Skupni lov“** – u izborniku, pozivima, push obavijestima, pravima, modulima, popisu sudionika, PDF-u i uputama.
+  Podaci i poveznice ostaju isti.
+
 ## 1.37.0 – 2026-10
 - **Ista početna za sve:** lovnik, lovočuvar, tajnik, blagajnik i ostali s pravima gore imaju iste velike gumbe kao lovci (📷 Skeniraj QR, 🗺️ Karta lovišta, 🌲 Danas u lovištu),
   ispod je odjeljak **🗂️ Uprava** (termini, brojke, rođendani, iskaznice), a na dnu traka Imenik · Iskaznica · Poruke · Moj profil.

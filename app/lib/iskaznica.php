@@ -3,7 +3,7 @@
  * Članska iskaznica s QR kodom (format bankovne kartice 85,6 × 54 mm).
  *
  * Svaki član ima stalni slučajni ključ – u QR kodu nema imena, OIB-a ni drugih podataka.
- * Ključ služi SAMO za popis sudionika grupnog lova (lovnik skenira iskaznice) – nije povezan
+ * Ključ služi SAMO za popis sudionika skupnog lova (lovnik skenira iskaznice) – nije povezan
  * s dezinfekcijom, bodovima ni ničim drugim.
  * Iskaznica vrijedi dok je član aktivan: arhiviran ili obrisan član → iskaznica ne vrijedi.
  * Izgubljena iskaznica → „Nova iskaznica“ (novi ključ), stara odmah prestaje vrijediti.

@@ -1,21 +1,21 @@
 <?php
-/** Grupni lov – JSON za kartu: stanje, položaj, zaslon ugašen, SOS, odlazim; organizator: SOS preuzet. */
+/** Skupni lov – JSON za kartu: stanje, položaj, zaslon ugašen, SOS, odlazim; organizator: SOS preuzet. */
 $k = korisnik();
 gl_zatvori_istekle();
 $lov = gl_lov((int) ul('id', 0));
 if (!$lov) {
-    json(['ok' => false, 'greska' => 'Grupni lov ne postoji.']);
+    json(['ok' => false, 'greska' => 'Skupni lov ne postoji.']);
 }
 $org = gl_moze_upravljati($lov);
 $ja = gl_sudionik((int) $lov['Id'], (int) $k['Id']);
 if (!$org && !$ja) {
-    json(['ok' => false, 'greska' => 'Niste pozvani u ovaj grupni lov.']);
+    json(['ok' => false, 'greska' => 'Niste pozvani u ovaj skupni lov.']);
 }
 session_write_close(); // dugotrajno praćenje – sesija se ne zaključava
 // lovac koji ne dolazi / nije odgovorio / otišao ne vidi kartu ni položaje drugih – smije samo odgovoriti
 $uLovu = $org || ($ja && (int) $ja['Odgovor'] === 1 && $ja['Otisao'] === null);
 if (!$uLovu && !in_array((string) ($_POST['radnja'] ?? ''), ['dolazim', 'ne-dolazim'], true)) {
-    json(['ok' => false, 'greska' => gl_aktivan($lov) ? 'Niste u ovom lovu.' : 'Grupni lov je završen.', 'stanje' => null]);
+    json(['ok' => false, 'greska' => gl_aktivan($lov) ? 'Niste u ovom lovu.' : 'Skupni lov je završen.', 'stanje' => null]);
 }
 $u_br = fn(string $kljuc) => isset($_POST[$kljuc]) && is_numeric($_POST[$kljuc]) ? (float) $_POST[$kljuc] : null;
 
@@ -23,7 +23,7 @@ $greska = null;
 if (je_post()) {
     $radnja = (string) ($_POST['radnja'] ?? '');
     if (!gl_aktivan($lov) && $radnja !== '') {
-        json(['ok' => false, 'greska' => 'Grupni lov je završen.', 'stanje' => gl_stanje($lov)]);
+        json(['ok' => false, 'greska' => 'Skupni lov je završen.', 'stanje' => gl_stanje($lov)]);
     }
     switch ($radnja) {
         case 'polozaj':

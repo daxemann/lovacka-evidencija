@@ -165,7 +165,7 @@ self.addEventListener('push', function (e) {
         body: d.b || '', icon: d.i || undefined, badge: d.i || undefined, tag: d.g || undefined, renotify: !!d.g,
         data: { url: d.u || self.registration.scope, gumbi: d.a || [] }, lang: 'hr'
     };
-    if (d.r) opcije.requireInteraction = true; // SOS, poziv na grupni lov – ostaje dok se ne dodirne
+    if (d.r) opcije.requireInteraction = true; // SOS, poziv na skupni lov – ostaje dok se ne dodirne
     if (d.v) opcije.vibrate = d.v;
     // gumbi u obavijesti (Android/Chrome; iPhone ih ne prikazuje – tamo dodir otvara stranicu)
     if (d.a && d.a.length) opcije.actions = d.a.map(function (g) { return { action: g.a, title: g.t }; });

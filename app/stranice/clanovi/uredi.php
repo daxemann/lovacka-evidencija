@@ -406,7 +406,7 @@ ob_start(); ?>
                 <a href="<?= e(url('izvoz/iskaznice', ['clan' => $id, 'format' => 'kartica'])) ?>" target="_blank">PDF – pisač kartica (85,6 × 54 mm)</a>
                 <button type="submit" form="obrazacIskaznica" class="btn btn-sm btn-link text-danger p-0 d-block mt-1"
                     data-potvrda="Izdati novu iskaznicu? Stara iskaznica (izgubljena / ukradena) odmah prestaje vrijediti – i u aplikaciji člana.">Nova iskaznica (stara prestaje vrijediti)</button>
-                <div class="form-text">QR služi samo za popis sudionika grupnog lova. Vrijedi dok je član aktivan.</div>
+                <div class="form-text">QR služi samo za popis sudionika skupnog lova. Vrijedi dok je član aktivan.</div>
             </div>
             <?php endif; ?>
         <?php endif; ?>

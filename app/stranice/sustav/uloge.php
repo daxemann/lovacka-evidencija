@@ -79,7 +79,7 @@ $kratko = [P_CLANOVI_CITAJ => 'Članovi<br>pregled', P_CLANOVI_UREDI => 'Članov
     P_AKCIJE_CITAJ => 'Akcije<br>pregled', P_AKCIJE_ODOBRI => 'Akcije<br>unos/odobr.', P_IZVJESTAJI => 'Izvještaji<br>poruke', P_SUSTAV => 'Sustav',
     P_KALENDAR => 'Kalendar<br>uređ.', P_IMENIK_SVI => 'Imenik<br>svi kontakti',
     P_DEZ_PREGLED => 'Dezinf.<br>pregled', P_DEZ_UREDI => 'Dezinf.<br>naknadno', P_DEZ_POSTAVKE => 'Dezinf.<br>stanice/QR', P_DEZ_MOBILNA => 'Dezinf.<br>mobilna', P_DEZ_ZA_DRUGE => 'Dezinf.<br>upis za druge',
-    P_REVIR_UREDI => 'Lovište<br>naprave', P_REVIR_NADZOR => 'Lovište<br>nadzor', P_REVIR_DNEVNIK => 'Lovački<br>dnevnik', P_INVENTURA => 'Inventura<br>pregled', P_INVENTURA_UREDI => 'Inventura<br>uređ.', P_OBAVIJESTI => 'Obavijesti<br>slanje', P_GRUPNI_LOV => 'Grupni lov<br>organizacija', P_DOMOVI => 'Lovački<br>domovi', P_POPUSTI => 'Popusti<br>trgovine'];
+    P_REVIR_UREDI => 'Lovište<br>naprave', P_REVIR_NADZOR => 'Lovište<br>nadzor', P_REVIR_DNEVNIK => 'Lovački<br>dnevnik', P_INVENTURA => 'Inventura<br>pregled', P_INVENTURA_UREDI => 'Inventura<br>uređ.', P_OBAVIJESTI => 'Obavijesti<br>slanje', P_GRUPNI_LOV => 'Skupni lov<br>organizacija', P_DOMOVI => 'Lovački<br>domovi', P_POPUSTI => 'Popusti<br>trgovine'];
 $kratko = array_filter($kratko, fn($p) => !($p & moduli_iskljucena_prava()), ARRAY_FILTER_USE_KEY); // isključeni moduli – stupci skriveni
 ob_start(); ?>
 <h1 class="h3 mb-1">Uloge i prava</h1>

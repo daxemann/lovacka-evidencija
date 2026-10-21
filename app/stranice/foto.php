@@ -33,7 +33,7 @@ if (!$dozvoljeno && str_starts_with($ime, 'dok-')) {
         // fotografija aktivnog člana vidi se u Imeniku cijele udruge – svim prijavljenima
         $dozvoljeno = ($k && (int) $c['Status'] === 0) || ($k['ClanId'] === (int) $c['Id']) || (ima(P_CLANOVI_CITAJ) && u_opsegu($c));
         if (!$dozvoljeno && ima(P_GRUPNI_LOV)) {
-            // lovnik kod skeniranja iskaznica: članovi sekcija koje organizira i oni na popisu njegovih grupnih lovova
+            // lovnik kod skeniranja iskaznica: članovi sekcija koje organizira i oni na popisu njegovih skupnih lovova
             $sek = gl_sekcije_organizator();
             $dozvoljeno = $c['SekcijaId'] === null ? isset($sek[0]) : isset($sek[(int) $c['SekcijaId']]);
             foreach ($dozvoljeno ? [] : redovi('SELECT l.* FROM GrupniLovPopis p JOIN GrupniLov l ON l.Id=p.LovId WHERE p.ClanId=? ORDER BY l.Id DESC LIMIT 20', [$c['Id']]) as $l) {

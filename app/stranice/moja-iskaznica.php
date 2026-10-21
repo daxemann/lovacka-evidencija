@@ -1,6 +1,6 @@
 <?php
 /**
- * Moja iskaznica: članska iskaznica u aplikaciji (QR za popis sudionika grupnog lova).
+ * Moja iskaznica: članska iskaznica u aplikaciji (QR za popis sudionika skupnog lova).
  * Stranica se sprema na mobitel (service worker) – otvara se i bez signala u lovištu.
  */
 header('Cache-Control: no-cache');
@@ -22,7 +22,7 @@ ob_start(); ?>
     <div class="isk-qr-veliki mb-3" id="isk-veliki" hidden><?= $qr ?>
         <div class="text-center small text-muted mt-2"><?= e(prezime_ime($c)) ?> – pojačajte svjetlinu zaslona</div></div>
 
-    <p class="small text-muted">Kod grupnog lova lovnik skenira ovaj QR kod (ili vašu plastičnu iskaznicu) i upisuje vas u popis sudionika.
+    <p class="small text-muted">Kod skupnog lova lovnik skenira ovaj QR kod (ili vašu plastičnu iskaznicu) i upisuje vas u popis sudionika.
         QR služi samo za taj popis – u njemu nema vaših podataka. Stranica radi i bez signala ako ste je jednom otvorili s internetom.</p>
     <a class="btn btn-outline-secondary btn-sm" href="<?= e(url('izvoz/iskaznice', ['clan' => $c['Id']])) ?>" target="_blank">📄 PDF za ispis</a>
 </div>

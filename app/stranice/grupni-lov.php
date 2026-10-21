@@ -1,5 +1,5 @@
 <?php
-/** Grupni lov: pokretanje (organizator), poziv „Dolazim / Ne dolazim“, karta s položajem sudionika uživo, SOS, kraj lova. */
+/** Skupni lov: pokretanje (organizator), poziv „Dolazim / Ne dolazim“, karta s položajem sudionika uživo, SOS, kraj lova. */
 $k = korisnik();
 gl_zatvori_istekle();
 
@@ -24,7 +24,7 @@ if (je_post()) {
             preusmjeri('grupni-lov');
         }
         $n = (int) vrijednost('SELECT COUNT(*) FROM GrupniLovSudionici WHERE LovId=?', [$id]);
-        poruka("🎯 Grupni lov pokrenut – poziv je poslan lovcima ($n). Odgovori i položaji pojavljuju se na karti.");
+        poruka("🎯 Skupni lov pokrenut – poziv je poslan lovcima ($n). Odgovori i položaji pojavljuju se na karti.");
         preusmjeri('grupni-lov', ['id' => $id]);
     }
     if ($radnja === 'obrisi-sve') {
@@ -40,12 +40,12 @@ if (je_post()) {
         foreach ($svi as $l) {
             $n += gl_obrisi($l) ? 1 : 0;
         }
-        poruka("🗑 Obrisano završenih grupnih lovova: $n (s popisima sudionika). Prije brisanja napravljena je kopija baze.");
+        poruka("🗑 Obrisano završenih skupnih lovova: $n (s popisima sudionika). Prije brisanja napravljena je kopija baze.");
         preusmjeri('grupni-lov');
     }
     $lov = gl_lov((int) ($_POST['id'] ?? 0));
     if (!$lov) {
-        nije_pronadjeno('Grupni lov');
+        nije_pronadjeno('Skupni lov');
     }
     if ($radnja === 'obrisi') {
         if (gl_aktivan($lov)) {
@@ -94,11 +94,11 @@ $lov = null;
 if (ul('id', '') !== '') {
     $lov = gl_lov((int) ul('id', 0));
     if (!$lov || (!gl_moze_upravljati($lov) && !gl_sudionik((int) $lov['Id'], (int) $k['Id']))) {
-        nije_pronadjeno('Grupni lov');
+        nije_pronadjeno('Skupni lov');
     }
     // završen lov: lovci više ništa ne vide, organizator vidi popis sudionika
     if (!gl_aktivan($lov) && !gl_moze_upravljati($lov)) {
-        stranica('Grupni lov', '<h1 class="h3">🎯 Grupni lov</h1><div class="alert alert-secondary">Lov „' . e($lov['Naziv']) . '“ je završen. Lovu čast!</div>');
+        stranica('Skupni lov', '<h1 class="h3">🎯 Skupni lov</h1><div class="alert alert-secondary">Lov „' . e($lov['Naziv']) . '“ je završen. Lovu čast!</div>');
     }
 } elseif ($moj) {
     $lov = $moj['lov'];
@@ -110,24 +110,24 @@ $organizatorSek = gl_sekcije_organizator();
 // ---------- nema aktivnog lova ----------
 if (!$lov) {
     if (!ima(P_GRUPNI_LOV)) {
-        stranica('Grupni lov', '<h1 class="h3">🎯 Grupni lov</h1><div class="alert alert-secondary">Trenutno nema grupnog lova.</div>');
+        stranica('Skupni lov', '<h1 class="h3">🎯 Skupni lov</h1><div class="alert alert-secondary">Trenutno nema skupnog lova.</div>');
     }
     $prosli = array_values(array_filter(redovi('SELECT l.*, (SELECT COUNT(*) FROM GrupniLovSudionici s WHERE s.LovId=l.Id AND s.Odgovor=1) AS Dosli,
         (SELECT COUNT(*) FROM GrupniLovSudionici s WHERE s.LovId=l.Id) AS Pozvani, (SELECT COUNT(*) FROM GrupniLovPopis p WHERE p.LovId=l.Id) AS NaPopisu FROM GrupniLov l WHERE l.Zavrseno IS NOT NULL ORDER BY l.Id DESC LIMIT 60'), 'gl_moze_upravljati'));
     ob_start(); ?>
-    <h1 class="h3">🎯 Grupni lov</h1>
+    <h1 class="h3">🎯 Skupni lov</h1>
     <?php if (!$organizatorSek): ?>
-        <div class="alert alert-warning">Vaša uloga nema sekciju – grupni lov ne možete pokrenuti.</div>
+        <div class="alert alert-warning">Vaša uloga nema sekciju – skupni lov ne možete pokrenuti.</div>
     <?php elseif (!gl_kraj_danas()): ?>
-        <div class="alert alert-secondary">Nakon <?= GL_SAT_KRAJA ?>:00 grupni lov se više ne može pokrenuti – lov završava sam u <?= GL_SAT_KRAJA ?>:00.</div>
+        <div class="alert alert-secondary">Nakon <?= GL_SAT_KRAJA ?>:00 skupni lov se više ne može pokrenuti – lov završava sam u <?= GL_SAT_KRAJA ?>:00.</div>
     <?php else: ?>
     <div class="card mb-4"><div class="card-body">
-        <h2 class="h5">Pokreni grupni lov</h2>
+        <h2 class="h5">Pokreni skupni lov</h2>
         <p class="small text-muted">Svi lovci odabranih sekcija odmah dobivaju poziv na mobitel (<b>Dolazim / Ne dolazim</b>) i prozor u aplikaciji.
             Tko dolazi, vidi se uživo na karti dok mu je karta otvorena. Lov završavate gumbom <b>🏁 Lov završen</b>, inače završava sam u <?= GL_SAT_KRAJA ?>:00 – tada se brišu svi položaji.</p>
         <form method="post"><?= csrf() ?><input type="hidden" name="radnja" value="pokreni">
             <div class="row g-2">
-                <div class="col-md-6"><label class="form-label">Naziv</label><input class="form-control" name="naziv" maxlength="80" value="Grupni lov" required></div>
+                <div class="col-md-6"><label class="form-label">Naziv</label><input class="form-control" name="naziv" maxlength="80" value="Skupni lov" required></div>
                 <div class="col-md-6"><label class="form-label">Mjesto okupljanja</label><input class="form-control" name="mjesto" maxlength="120" placeholder="npr. Lovački dom"></div>
                 <div class="col-12"><label class="form-label">Napomena</label><input class="form-control" name="napomena" maxlength="500" placeholder="npr. okupljanje 7:30, prsluk obavezan"></div>
                 <div class="col-12"><label class="form-label d-block">Sekcije</label>
@@ -136,15 +136,15 @@ if (!$lov) {
                     <?php endforeach; ?>
                 </div>
             </div>
-            <button class="btn btn-success btn-lg mt-3" onclick="return confirm('Pokrenuti grupni lov i poslati poziv svim lovcima odabranih sekcija?')">🎯 Pokreni i pošalji poziv</button>
+            <button class="btn btn-success btn-lg mt-3" onclick="return confirm('Pokrenuti skupni lov i poslati poziv svim lovcima odabranih sekcija?')">🎯 Pokreni i pošalji poziv</button>
         </form>
     </div></div>
     <?php endif; ?>
     <?php if ($prosli): ?>
     <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
-        <h2 class="h5 mb-0 me-auto">Završeni grupni lovovi <span class="badge bg-secondary"><?= count($prosli) ?></span></h2>
+        <h2 class="h5 mb-0 me-auto">Završeni skupni lovovi <span class="badge bg-secondary"><?= count($prosli) ?></span></h2>
         <form method="post"><?= csrf() ?><input type="hidden" name="radnja" value="obrisi-sve">
-            <button class="btn btn-sm btn-outline-danger" data-potvrda="Trajno obrisati SVE završene grupne lovove (<?= count($prosli) ?>) zajedno s popisima sudionika? Ako trebate popis, prije preuzmite PDF. Kopija baze se radi automatski.">🗑 Obriši sve završene</button>
+            <button class="btn btn-sm btn-outline-danger" data-potvrda="Trajno obrisati SVE završene skupne lovove (<?= count($prosli) ?>) zajedno s popisima sudionika? Ako trebate popis, prije preuzmite PDF. Kopija baze se radi automatski.">🗑 Obriši sve završene</button>
         </form>
     </div>
     <div class="table-responsive"><table class="table table-sm align-middle">
@@ -161,7 +161,7 @@ if (!$lov) {
         <?php endforeach; ?>
     </tbody></table></div>
     <?php endif;
-    stranica('Grupni lov', ob_get_clean());
+    stranica('Skupni lov', ob_get_clean());
 }
 
 $org = gl_moze_upravljati($lov);
@@ -190,11 +190,11 @@ if (!gl_aktivan($lov)) {
     <?php endforeach; ?>
     </tbody></table>
     <div class="d-flex flex-wrap gap-2">
-        <a class="btn btn-outline-secondary" href="<?= e(url('grupni-lov')) ?>">← Grupni lov</a>
+        <a class="btn btn-outline-secondary" href="<?= e(url('grupni-lov')) ?>">← Skupni lov</a>
         <form method="post" class="ms-auto"><?= csrf() ?><input type="hidden" name="radnja" value="obrisi"><input type="hidden" name="id" value="<?= (int) $lov['Id'] ?>">
             <button class="btn btn-outline-danger" data-potvrda="Trajno obrisati ovaj lov i njegov popis sudionika? Ako trebate popis, prije preuzmite PDF.">🗑 Obriši lov</button></form>
     </div>
-    <?php stranica('Grupni lov', ob_get_clean());
+    <?php stranica('Skupni lov', ob_get_clean());
 }
 
 // ---------- aktivan lov ----------
@@ -209,7 +209,7 @@ if (!$org && (!$ja || $ja['Odgovor'] === null || (int) $ja['Odgovor'] === 0 || $
     <?= $naslov ?>
     <div class="card"><div class="card-body text-center py-4">
         <?php if ($ja && $ja['Otisao'] !== null): ?><p class="mb-3">Otišli ste iz lova u <?= e(date('H:i', strtotime($ja['Otisao']))) ?> – položaj se više ne šalje.</p>
-        <?php elseif ($ja && $ja['Odgovor'] !== null): ?><p class="mb-3">Odgovorili ste: <b>✖ ne dolazim</b>.</p><?php else: ?><p class="h5 mb-3">Dolazite na grupni lov?</p><?php endif; ?>
+        <?php elseif ($ja && $ja['Odgovor'] !== null): ?><p class="mb-3">Odgovorili ste: <b>✖ ne dolazim</b>.</p><?php else: ?><p class="h5 mb-3">Dolazite na skupni lov?</p><?php endif; ?>
         <form method="post" class="d-flex flex-wrap justify-content-center gap-2"><?= csrf() ?><input type="hidden" name="id" value="<?= (int) $lov['Id'] ?>">
             <button class="btn btn-success btn-lg px-4" name="radnja" value="dolazim"><?= $ja && $ja['Otisao'] !== null ? '↩ Vraćam se u lov' : '✔ Dolazim' ?></button>
             <?php if (!$ja || $ja['Odgovor'] === null): ?><button class="btn btn-outline-secondary btn-lg px-4" name="radnja" value="ne-dolazim">✖ Ne dolazim</button><?php endif; ?>
@@ -217,7 +217,7 @@ if (!$org && (!$ja || $ja['Odgovor'] === null || (int) $ja['Odgovor'] === 0 || $
         <p class="small text-muted mt-3 mb-0">Tko dolazi, šalje svoj položaj na kartu lova dok mu je karta otvorena – organizator ga vidi, a u nuždi ima <b>🆘 SOS</b>.
             Položaji se brišu kad lov završi.</p>
     </div></div>
-    <?php stranica('Grupni lov', ob_get_clean());
+    <?php stranica('Skupni lov', ob_get_clean());
 }
 
 $saljem = $ja && (int) $ja['Odgovor'] === 1 && $ja['Otisao'] === null;
@@ -273,4 +273,4 @@ ob_start(); ?>
 <script id="gl-cfg" type="application/json"><?= json_encode($cfg, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP) ?></script>
 <script src="<?= e(asset('assets/leaflet/leaflet.js')) ?>"></script>
 <script src="<?= e(asset('assets/grupni.js')) ?>"></script>
-<?php stranica('Grupni lov', ob_get_clean());
+<?php stranica('Skupni lov', ob_get_clean());

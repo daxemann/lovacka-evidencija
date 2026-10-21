@@ -482,7 +482,7 @@ main {
 .kvar-red.rijeseno { border-left: 4px solid #2e7d32; opacity: .85; }
 .kvar-foto { width: 72px; height: 72px; object-fit: cover; border-radius: .4rem; }
 
-/* ---------- Grupni lov ---------- */
+/* ---------- Skupni lov ---------- */
 .gl-raspored { display: grid; grid-template-columns: 1fr; gap: .75rem; }
 @media (min-width: 992px) { .gl-raspored { grid-template-columns: minmax(0, 1fr) 320px; } .gl-popis { max-height: calc(100dvh - 13rem); overflow-y: auto; } }
 .gl-karta { height: calc(100dvh - 16rem); min-height: 340px; }
@@ -534,7 +534,7 @@ main {
 .dom-red.otkazano, .dom-red.odbijeno { border-left: 4px solid #adb5bd; opacity: .7; }
 @media (max-width: 640px) { .dom-kal .kal-dan { min-height: 3.8rem; } .dom-oznaka { font-size: .58rem; -webkit-line-clamp: 2; } .dom-legenda { display: none; } }
 
-/* ---------- Popis sudionika grupnog lova (skeniranje iskaznica) i članska iskaznica ---------- */
+/* ---------- Popis sudionika skupnog lova (skeniranje iskaznica) i članska iskaznica ---------- */
 .gp-raspored { display: grid; grid-template-columns: 1fr; gap: 1rem; }
 @media (min-width: 992px) { .gp-raspored { grid-template-columns: minmax(0, 420px) minmax(0, 1fr); } }
 .gp-raspored .skener-kamera { aspect-ratio: 4 / 3; }

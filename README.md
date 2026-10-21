@@ -80,7 +80,7 @@ Domovi udruge i sekcija na karti s navigacijom. Rezervacija po danima (privatno 
 #### 🧴 Knjiga dezinfekcije (ASK)
 QR oznaka na stanici svake sekcije, provjera GPS-a, dolazak/odlazak, reg. oznaka, suputnici i gosti. **Mobilna stanica** za skupni lov. Pristup za lovnog inspektora, PDF i e-pošta.
 
-#### 🎯 Grupni lov – karta uživo i SOS
+#### 🎯 Skupni lov – karta uživo i SOS
 Poziv svima na mobitel („dolazim / ne dolazim“), položaj sudionika uživo na karti, upozorenje o gubitku signala, **SOS** organizatoru. Kraj lova briše sve položaje.
 **📋 Popis sudionika:** lovnik skenira članske iskaznice (QR) i popis se slaže sam – i bez signala; ručni upis gostiju, PDF s potpisom.
 

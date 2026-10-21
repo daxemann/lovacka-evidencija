@@ -212,7 +212,7 @@ function push_korisnici_clanova(array $clanIds): array
  * Trenutni korisnik ne dobiva obavijest o vlastitoj radnji.
  * $dodatno: 'gumbi' => [['a' => radnja, 't' => tekst, 'url' => adresa koju poziva service worker]] (Android),
  *           'ostaje' => true (ne nestaje sama), 'vibracija' => [ms, …], 'poKorisniku' => [korisnikId => dodatna polja].
- * Vrste koje nisu u PUSH_VRSTE (npr. SOS, poziv na grupni lov) član ne može isključiti.
+ * Vrste koje nisu u PUSH_VRSTE (npr. SOS, poziv na skupni lov) član ne može isključiti.
  */
 function push_posalji(array $korisnikIds, string $vrsta, string $naslov, string $tekst, string $str = '', array $par = [], ?string $oznaka = null, array $dodatno = []): void
 {

@@ -70,19 +70,19 @@ if (modul('dezinfekcija')) $o('dezinfekcija-upis', '🧴 Dezinfekcija – upis n
 </ul>');
 
 if (modul('grupni') && (gl_vidljivo() || ($k['ClanId'] && $revir))) {
-    $o('grupni-lov', '🎯 Grupni lov – karta uživo i SOS', '
+    $o('grupni-lov', '🎯 Skupni lov – karta uživo i SOS', '
 <ul>
-<li><b>Stavka 🎯 Grupni lov pojavljuje se u izborniku samo dok traje lov</b> u koji ste pozvani – inače je nema.</li>
-<li>Kad organizator pokrene grupni lov, stiže <b>poziv na mobitel</b> i prozor u aplikaciji: <b>✔ Dolazim</b> ili <b>✖ Ne dolazim</b>. Na Androidu se može odgovoriti izravno iz obavijesti.</li>
-<li>Tko dolazi, otvara <b>🎯 Grupni lov</b> – karta pokazuje sudionike lova, a vaš položaj vidi organizator.</li>
+<li><b>Stavka 🎯 Skupni lov pojavljuje se u izborniku samo dok traje lov</b> u koji ste pozvani – inače je nema.</li>
+<li>Kad organizator pokrene skupni lov, stiže <b>poziv na mobitel</b> i prozor u aplikaciji: <b>✔ Dolazim</b> ili <b>✖ Ne dolazim</b>. Na Androidu se može odgovoriti izravno iz obavijesti.</li>
+<li>Tko dolazi, otvara <b>🎯 Skupni lov</b> – karta pokazuje sudionike lova, a vaš položaj vidi organizator.</li>
 <li><b>Položaj se šalje samo dok je karta otvorena</b> (zaslon ostaje upaljen). Ugasite li zaslon, organizator vidi „zaslon ugašen“ i vaš zadnji položaj.</li>
 <li><b>🆘 SOS</b> dolje na karti – dodirnite <b>dvaput</b> (da ne ode slučajno iz džepa). Obavijest s vašim položajem odmah dobivaju organizator, Lovnik i <b>svi koji su u lovu</b>; tko krene (<b>🚑 Idem pomoći</b>), vama javlja „Pomoć stiže“, a ostalima tko je krenuo. Bez signala SOS čeka i šalje se sam čim se veza vrati – u nuždi nazovite <b>112</b>.</li>
 <li>Odlazite ranije? <b>🚶 Odlazim</b> – položaj se više ne šalje.</li>
 <li>Lov završava organizator (<b>🏁 Lov završen</b>), inače sam u ' . GL_SAT_KRAJA . ':00. Tada se <b>brišu svi položaji</b>, a stavka nestaje iz izbornika.</li>'
     . (ima(P_GRUPNI_LOV) ? '
-<li><i>Organizator:</i> <b>🎯 Grupni lov → Pokreni</b> (naziv, mjesto okupljanja, napomena, sekcije). Vidite tko dolazi, tko ne i tko nije odgovorio,
+<li><i>Organizator:</i> <b>🎯 Skupni lov → Pokreni</b> (naziv, mjesto okupljanja, napomena, sekcije). Vidite tko dolazi, tko ne i tko nije odgovorio,
 sve sudionike na karti, <b>📡 gubitak signala</b> (nema javljanja ' . GL_SIGNAL_MIN . ' min – sivo, zadnji poznati položaj) i <b>🆘 SOS</b> s gumbom <b>🚑 Idem pomoći</b> i telefonom.
-SOS stiže organizatorima (tko je pokrenuo lov i svi s pravom Grupni lov za tu sekciju, npr. Lovnik) i svim sudionicima; gubitak signala samo organizatorima. Za istu sekciju istodobno može biti samo jedan lov. Završeni lovovi: popis tko je sudjelovao (bez položaja).</li>
+SOS stiže organizatorima (tko je pokrenuo lov i svi s pravom Skupni lov za tu sekciju, npr. Lovnik) i svim sudionicima; gubitak signala samo organizatorima. Za istu sekciju istodobno može biti samo jedan lov. Završeni lovovi: popis tko je sudjelovao (bez položaja).</li>
 <li><i>Organizator / Lovnik:</i> <b>📋 Popis sudionika – skeniraj iskaznice</b>: kamera ostaje otvorena, skenirate člansku iskaznicu (plastičnu ili 🪪 u aplikaciji) jednu za drugom – zvučni signal, fotografija i ime, popis se slaže sam.
 Radi i <b>bez signala</b> dok je stranica otvorena (otvorite je prije s internetom) – upisi čekaju na mobitelu i šalju se sami. Bez iskaznice ili gost: <b>✍ Ručni upis</b>. <b>📄 PDF</b> s rubrikom za potpis.
 Popis je samo popis – ne mijenja odgovore na poziv, bodove ni dezinfekciju.</li>' : '') . '
@@ -91,7 +91,7 @@ Popis je samo popis – ne mijenja odgovore na poziv, bodove ni dezinfekciju.</l
 if ($k['ClanId'] && modul('iskaznice')) {
     $o('iskaznica', '🪪 Članska iskaznica (QR)', '
 <ul>
-<li><b>Moje → 🪪 Moja iskaznica</b>: iskaznica s fotografijom i QR kodom. Kod grupnog lova lovnik je skenira i upisuje vas u popis sudionika – ništa drugo.</li>
+<li><b>Moje → 🪪 Moja iskaznica</b>: iskaznica s fotografijom i QR kodom. Kod skupnog lova lovnik je skenira i upisuje vas u popis sudionika – ništa drugo.</li>
 <li>U QR kodu nema vaših podataka (samo slučajni ključ). Stranica radi i bez signala ako ste je jednom otvorili s internetom. <b>🔍 Veliki QR</b> se lakše skenira.</li>
 <li>Plastičnu / papirnatu iskaznicu ispisuje uprava (<i>Članovi → član → 🪪 Iskaznica</i>). Vrijedi dok ste aktivan član; izgubljenu uprava zamjenjuje novom – stara tada više ne vrijedi.</li>
 </ul>');
@@ -143,7 +143,7 @@ foreach ($pushVrste as $v) {
 $o('push', '🔔 Push obavijesti na mobitel', '
 <ul>
 <li>Obavijest stiže na mobitel i kad je aplikacija <b>zatvorena</b>. Za vas mogu stizati:<ul class="mb-1">' . $pushPopis . '</ul></li>
-<li><b>🎯 Poziv na grupni lov i 🆘 SOS</b> stižu uvijek i ne mogu se isključiti.</li>
+<li><b>🎯 Poziv na skupni lov i 🆘 SOS</b> stižu uvijek i ne mogu se isključiti.</li>
 <li>Uključite je u izborniku <b>' . ($k['ClanId'] ? 'Moje' : 'Program') . ' → Push obavijesti</b> → <b>Uključi obavijesti</b> i dopustite obavijesti kad mobitel pita. Gumb <b>Pošalji probnu</b> provjerava da sve radi.</li>
 <li><b>Android:</b> radi u Chromeu, i bez dodavanja na početni zaslon. <b>iPhone:</b> samo iz aplikacije na početnom zaslonu (iOS 16.4 ili noviji) – Safari → Dijeli → Dodaj na početni zaslon.</li>
 <li>Što ne želite primati, isključite na istoj stranici. Uključuje se posebno na svakom uređaju (mobitel, računalo).</li>
@@ -216,11 +216,11 @@ if (ima(P_SUSTAV)) {
     $o('sustav', '⚙️ Sustav – za administratore', '
 <ul>
 <li>Sve postavke su na jednom mjestu: <b>⚙️ Sustav</b> u izborniku otvara pregled u karticama.</li>
-<li><b>🧩 Moduli:</b> uključite samo ono što udruga koristi (radne akcije, članarina, kalendar, dezinfekcija, lovište, grupni lov, iskaznice, domovi, obavijesti, oglasnik, inventura, psi, dokumenti). Isključeno nestaje iz izbornika svih korisnika, podaci ostaju sačuvani.</li>
+<li><b>🧩 Moduli:</b> uključite samo ono što udruga koristi (radne akcije, članarina, kalendar, dezinfekcija, lovište, skupni lov, iskaznice, domovi, obavijesti, oglasnik, inventura, psi, dokumenti). Isključeno nestaje iz izbornika svih korisnika, podaci ostaju sačuvani.</li>
 <li><b>Podaci o udruzi:</b> naziv, adresa, OIB, logo – ispisuju se na PDF-ovima.</li>
 <li><b>E-pošta i adresa:</b> slanje e-pošte (najlakše <b>Gmail čarobnjak</b>) i javna adresa programa za pozivnice i QR oznake.</li>
 <li><b>Korisnici / Samoprijava:</b> odobravanje pristupa (broj na čekanju u izborniku), poveznica za samoprijavu (npr. za WhatsApp grupu).</li>
-<li><b>Uloge i prava:</b> što koja uloga smije i za koje sekcije – među ostalim <b>Grupni lov – organizacija</b> (npr. Lovnik), <b>Lovački domovi – upravljanje</b> (npr. Domar) i <b>Oglasnik – moderacija</b>.</li>
+<li><b>Uloge i prava:</b> što koja uloga smije i za koje sekcije – među ostalim <b>Skupni lov – organizacija</b> (npr. Lovnik), <b>Lovački domovi – upravljanje</b> (npr. Domar) i <b>Oglasnik – moderacija</b>.</li>
 <li><b>Push obavijesti</b> ne trebaju podešavanje (ključevi nastaju sami i dio su sigurnosne kopije). Na hostingu koji blokira odlazne veze push ne radi.</li>
 <li><b>Sekcije, vrste radnih akcija</b> (osnovni bodovi i bodovi dodatne opreme – samo ovdje), <b>predlošci poruka, vrste u kalendaru, uplatnica (IBAN).</b></li>
 <li><b>Oglasnik lovaca:</b> udruga se jednim klikom prijavi u zajednički Oglasnik (zahtjev odobrava administrator Oglasnika), zatim ga uključite za članove i odredite pravila (samo interno ili i javno, vidljivost telefona, odobravanje javnih oglasa). Dok nije uključen, radi interni oglasnik udruge.</li>
@@ -245,7 +245,7 @@ $o('pitanja', '❓ Česta pitanja', '
 <dd>Za njega nemate pravo – pogledajte Moje → Moja prava i javite se administratoru udruge.</dd>
 <dt>Push obavijesti ne stižu.</dt>
 <dd>Na stranici Push obavijesti dodirnite <b>Pošalji probnu</b>. Na iPhoneu obavijesti rade samo iz aplikacije na početnom zaslonu (iOS 16.4+). Provjerite i da obavijesti za preglednik / aplikaciju nisu isključene u postavkama mobitela.</dd>
-<dt>Ne vidim Grupni lov u izborniku.</dt>
+<dt>Ne vidim Skupni lov u izborniku.</dt>
 <dd>Stavka se pojavljuje samo dok traje lov u koji ste pozvani.</dd>
 <dt>Moja rezervacija doma piše „na čekanju“.</dt>
 <dd>Privatnu rezervaciju mora odobriti upravitelj doma – dobit ćete obavijest. Dok čeka, ti dani su za druge blokirani.</dd>

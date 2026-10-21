@@ -30,7 +30,7 @@ if ($obavObavezna && $trenutna === 'obavijesti' && (int) ($_GET['id'] ?? 0) === 
     $obavObavezna = null;
 }
 [$uloga, $boja] = oznaka_uloge();
-// grupni lov: lovci vide stavku i prozor samo dok je lov u tijeku
+// skupni lov: lovci vide stavku i prozor samo dok je lov u tijeku
 $glMoj = $k && modul('grupni') ? gl_moj_aktivni() : null;
 $glVidljivo = $k && modul('grupni') && gl_vidljivo();
 $glAktivan = $glMoj !== null || ($k && ima(P_GRUPNI_LOV) && gl_aktivni_organizator());
@@ -75,7 +75,7 @@ $glUTijeku = $glMoj && (int) $glMoj['ja']['Odgovor'] === 1 && $glMoj['ja']['Otis
                     <?php if (modul('dezinfekcija')) echo $stavka('skeniraj', '📷 Skeniraj QR stanice', 0, true); ?>
                     <?php if (modul('kalendar')) echo $stavka('kalendar', '📅 Kalendar'); ?>
                     <?php if (modul('domovi') && (dom_ima_vidljivih() || ima(P_DOMOVI))) echo $stavka('domovi', '🏡 Lovački domovi', dom_broj_na_cekanju()); ?>
-                    <?php if ($glVidljivo) echo $stavka('grupni-lov', $glAktivan ? '🎯 Grupni lov – u tijeku' : '🎯 Grupni lov', $glBroj); ?>
+                    <?php if ($glVidljivo) echo $stavka('grupni-lov', $glAktivan ? '🎯 Skupni lov – u tijeku' : '🎯 Skupni lov', $glBroj); ?>
                     <?php if ($k['ClanId']) echo $grupa('moje', 'Moje', (modul('akcije') ? $stavka('moje-akcije', '🛠️ Moje radne akcije') : '') . (modul('clanarina') && uplatnica_za_clanove() ? $stavka('uplatnica', '💳 Moja uplatnica', 0, true) : '') . (modul('iskaznice') ? $stavka('moja-iskaznica', '🪪 Moja iskaznica') : '') . (modul('popusti') && pop_dostupno() ? $stavka('popusti', '🏷️ Popusti u trgovinama', 0, true) : '') . $stavka('moj-profil', '👤 Moj profil') . $stavka('push', '🔔 Push obavijesti') . $stavka('moja-prava', '🔑 Moja prava')); ?>
                     <?php $revirSek = modul('revir') ? revir_sekcije() : []; if (modul('revir') && ($revirSek || ima(P_SUSTAV))) echo $grupa('loviste', 'Lovište',
                         ($revirSek ? $stavka('revir', '🗺️ Karta lovišta', 0, true) . $stavka('revir/danas', '🌲 Danas u lovištu', $revirObav) . $stavka('revir/kvarovi', '🔧 Kvarovi na napravama', revir_broj_kvarova()) . (ima(P_REVIR_DNEVNIK) ? $stavka('revir/dnevnik', '📓 Lovački dnevnik') : '') : '')
@@ -182,7 +182,7 @@ $glUTijeku = $glMoj && (int) $glMoj['ja']['Odgovor'] === 1 && $glMoj['ja']['Otis
     <h2 class="h5 mb-1" id="gl-poziv-naslov"><?= e($gl['Naziv']) ?></h2>
     <div class="text-muted mb-2">Organizator <?= e($gl['KreiraoIme']) ?><?= $gl['Mjesto'] ? ' · 📍 ' . e($gl['Mjesto']) : '' ?></div>
     <?php if ($gl['Napomena']): ?><p class="mb-2"><?= e($gl['Napomena']) ?></p><?php endif; ?>
-    <p class="h6 mb-3">Dolazite na grupni lov?</p>
+    <p class="h6 mb-3">Dolazite na skupni lov?</p>
     <form method="post" action="<?= e(url('grupni-lov')) ?>" class="d-flex gap-2"><?= csrf() ?>
         <input type="hidden" name="id" value="<?= (int) $gl['Id'] ?>"><input type="hidden" name="povratak" value="<?= e((string) ($_SERVER['REQUEST_URI'] ?? '')) ?>">
         <button class="btn btn-success btn-lg flex-fill" name="radnja" value="dolazim">✔ Dolazim</button>

@@ -1,12 +1,12 @@
 <?php
 /**
- * Grupni lov – popis sudionika: lovnik skenira članske iskaznice (QR) i popis se slaže sam.
+ * Skupni lov – popis sudionika: lovnik skenira članske iskaznice (QR) i popis se slaže sam.
  * Skeniranje radi i bez signala dok je stranica otvorena (upisi čekaju na mobitelu i šalju se kad bude signala).
  * Popis je samo popis – ne utječe na poziv, bodove, dezinfekciju ni ništa drugo.
  */
 $lov = gl_lov((int) ul('id', 0));
 if (!$lov) {
-    nije_pronadjeno('Grupni lov');
+    nije_pronadjeno('Skupni lov');
 }
 if (!gl_moze_upravljati($lov)) {
     zabranjeno();
@@ -29,7 +29,7 @@ $cfg = [
 ];
 ob_start(); ?>
 <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
-    <a class="btn btn-sm btn-outline-secondary" href="<?= e(url('grupni-lov', ['id' => $lov['Id']])) ?>">← <?= $aktivan ? 'Karta lova' : 'Grupni lov' ?></a>
+    <a class="btn btn-sm btn-outline-secondary" href="<?= e(url('grupni-lov', ['id' => $lov['Id']])) ?>">← <?= $aktivan ? 'Karta lova' : 'Skupni lov' ?></a>
     <h1 class="h4 mb-0 me-auto">📋 Popis sudionika</h1>
     <span id="gp-mreza" class="badge rounded-pill text-bg-secondary">…</span>
 </div>

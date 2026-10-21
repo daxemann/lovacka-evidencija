@@ -1,6 +1,6 @@
 <?php
 /**
- * Grupni lov – popis sudionika (JSON), samo organizator / lovnik s pravom za lov.
+ * Skupni lov – popis sudionika (JSON), samo organizator / lovnik s pravom za lov.
  *  GET  ?id=L[&imenik=1]                      – popis (i članovi sekcija lova za skeniranje bez signala)
  *  POST ?id=L  JSON {stavke:[{k,q,v}]}        – skenirane iskaznice (k = id na mobitelu, q = sadržaj QR-a, v = vrijeme ms)
  *  POST ?id=L  radnja=rucno (clan | gost)     – ručni upis
@@ -8,10 +8,10 @@
  */
 $lov = gl_lov((int) ul('id', 0));
 if (!$lov) {
-    json(['ok' => false, 'greska' => 'Grupni lov ne postoji.']);
+    json(['ok' => false, 'greska' => 'Skupni lov ne postoji.']);
 }
 if (!gl_moze_upravljati($lov)) {
-    json(['ok' => false, 'greska' => 'Popis sudionika vodi organizator lova (pravo „Grupni lov – organizacija“).']);
+    json(['ok' => false, 'greska' => 'Popis sudionika vodi organizator lova (pravo „Skupni lov – organizacija“).']);
 }
 session_write_close();
 

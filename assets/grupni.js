@@ -1,4 +1,4 @@
-/* Lovačka evidencija – grupni lov: karta sudionika uživo, slanje vlastitog položaja, SOS. */
+/* Lovačka evidencija – skupni lov: karta sudionika uživo, slanje vlastitog položaja, SOS. */
 (function () {
     'use strict';
     var cfgEl = document.getElementById('gl-cfg');

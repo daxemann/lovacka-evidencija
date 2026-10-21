@@ -14,7 +14,7 @@ const GL_SIGNAL_MIN = 3;      // bez javljanja toliko minuta = izgubljen signal
 const GL_INTERVAL_S = 20;     // koliko često mobitel šalje položaj (sekunde)
 
 // ---------- Opseg ----------
-/** Sekcije za koje trenutni korisnik smije pokrenuti grupni lov: [id => naziv]; 0 = udruga bez sekcija. */
+/** Sekcije za koje trenutni korisnik smije pokrenuti skupni lov: [id => naziv]; 0 = udruga bez sekcija. */
 function gl_sekcije_organizator(): array
 {
     $k = korisnik();
@@ -104,7 +104,7 @@ function gl_aktivni_organizator(): array
     return array_values(array_filter(redovi('SELECT * FROM GrupniLov WHERE Zavrseno IS NULL AND Kraj>? ORDER BY Id DESC', [sada()]), 'gl_moze_upravljati'));
 }
 
-/** Smije li korisnik uopće vidjeti stavku „Grupni lov“ (organizator ili pozvan u aktivni lov). */
+/** Smije li korisnik uopće vidjeti stavku „Skupni lov“ (organizator ili pozvan u aktivni lov). */
 function gl_vidljivo(): bool
 {
     return ima(P_GRUPNI_LOV) || gl_moj_aktivni() !== null;
@@ -129,14 +129,14 @@ function gl_pokreni(string $naziv, string $mjesto, string $napomena, array $sekc
     }
     $kraj = gl_kraj_danas();
     if (!$kraj) {
-        return [null, 'Grupni lov ne može se pokrenuti nakon ' . GL_SAT_KRAJA . ':00.'];
+        return [null, 'Skupni lov ne može se pokrenuti nakon ' . GL_SAT_KRAJA . ':00.'];
     }
     foreach (redovi('SELECT * FROM GrupniLov WHERE Zavrseno IS NULL AND Kraj>?', [sada()]) as $l) {
         if (array_intersect($sekcije, gl_sekcije_lova($l))) {
-            return [null, 'Za odabranu sekciju već je u tijeku grupni lov „' . $l['Naziv'] . '“ – prvo ga završite.'];
+            return [null, 'Za odabranu sekciju već je u tijeku skupni lov „' . $l['Naziv'] . '“ – prvo ga završite.'];
         }
     }
-    $naziv = mb_substr(trim($naziv), 0, 80) ?: 'Grupni lov';
+    $naziv = mb_substr(trim($naziv), 0, 80) ?: 'Skupni lov';
     $uvjet = [];
     $bez = in_array(0, $sekcije, true);
     $ids = array_filter($sekcije);
@@ -168,7 +168,7 @@ function gl_pokreni(string $naziv, string $mjesto, string $napomena, array $sekc
         }
         return $id;
     });
-    dnevnik('Grupni lov – pokrenut', 'GrupniLov', $id, $naziv . ' · pozvano ' . count($lovci));
+    dnevnik('Skupni lov – pokrenut', 'GrupniLov', $id, $naziv . ' · pozvano ' . count($lovci));
     gl_posalji_poziv($id);
     return [$id, null];
 }
@@ -195,7 +195,7 @@ function gl_posalji_poziv(int $lovId): void
 function gl_odgovori(array $lov, array $s, int $odgovor): ?string
 {
     if (!gl_aktivan($lov)) {
-        return 'Ovaj grupni lov je završen.';
+        return 'Ovaj skupni lov je završen.';
     }
     $odgovor = $odgovor ? 1 : 0;
     q('UPDATE GrupniLovSudionici SET Odgovor=?, Odgovoreno=?, Otisao=NULL' . ($odgovor ? '' : ', Lat=NULL, Lon=NULL, Tocnost=NULL, Polozaj=NULL, Skriveno=NULL, SignalJavljen=NULL') . ' WHERE LovId=? AND KorisnikId=?',
@@ -252,7 +252,7 @@ function gl_provjeri_signal(array $lov): void
     }
 }
 
-/** Organizatori lova: tko ga je pokrenuo + svi s pravom „Grupni lov – organizacija“ za njegove sekcije (npr. Lovnik na licu mjesta). */
+/** Organizatori lova: tko ga je pokrenuo + svi s pravom „Skupni lov – organizacija“ za njegove sekcije (npr. Lovnik na licu mjesta). */
 function gl_organizatori(array $lov): array
 {
     $ids = [(int) $lov['KreiraoKorisnikId']];
@@ -277,7 +277,7 @@ function gl_u_lovu(array $lov): bool
 function gl_sos(array $lov, array $s, ?float $lat, ?float $lon): ?string
 {
     if (!gl_aktivan($lov)) {
-        return 'Grupni lov je završen. U nuždi nazovite 112.';
+        return 'Skupni lov je završen. U nuždi nazovite 112.';
     }
     if ($lat !== null && $lon !== null) {
         gl_polozaj($lov, $s, $lat, $lon, null);
@@ -288,7 +288,7 @@ function gl_sos(array $lov, array $s, ?float $lat, ?float $lon): ?string
     push_posalji(gl_primatelji_sos($lov), 'grupni', '🆘 SOS – ' . $s['Ime'] . ' treba pomoć!',
         ($tel !== '' ? '📞 ' . $tel . ' · ' : '') . 'Dodirnite za položaj na karti. ' . $lov['Naziv'], 'grupni-lov', ['id' => $lov['Id'], 'k' => $s['KorisnikId']],
         'gl-sos-' . $s['KorisnikId'], ['ostaje' => true, 'vibracija' => [800, 200, 800, 200, 800, 200, 800]]);
-    dnevnik('Grupni lov – SOS', 'GrupniLov', (int) $lov['Id'], $s['Ime']);
+    dnevnik('Skupni lov – SOS', 'GrupniLov', (int) $lov['Id'], $s['Ime']);
     return null;
 }
 
@@ -328,7 +328,7 @@ function gl_zavrsi(array $lov, string $tko): void
     q('UPDATE GrupniLovSudionici SET Lat=NULL, Lon=NULL, Tocnost=NULL, SosLat=NULL, SosLon=NULL, Skriveno=NULL WHERE LovId=?', [$lov['Id']]);
     $ids = array_map('intval', array_column(redovi('SELECT KorisnikId FROM GrupniLovSudionici WHERE LovId=? AND (Odgovor=1 OR Odgovor IS NULL)', [$lov['Id']]), 'KorisnikId'));
     push_posalji($ids, 'grupni', '🏁 ' . $lov['Naziv'] . ' – lov završen', 'Lov završen. Položaj se više ne šalje. Lovu čast!', 'pocetna', [], 'gl-' . $lov['Id']);
-    dnevnik('Grupni lov – završen', 'GrupniLov', (int) $lov['Id'], $lov['Naziv'] . ' · ' . $tko, str_starts_with($tko, 'automatski') ? ['Id' => null, 'KorisnickoIme' => 'sustav'] : null);
+    dnevnik('Skupni lov – završen', 'GrupniLov', (int) $lov['Id'], $lov['Naziv'] . ' · ' . $tko, str_starts_with($tko, 'automatski') ? ['Id' => null, 'KorisnickoIme' => 'sustav'] : null);
 }
 
 /** Lovovi kojima je prošlo vrijeme (23:00) – završavaju se pri prvom sljedećem zahtjevu. */
@@ -546,7 +546,7 @@ function gl_popis_ukloni(array $lov, int $id): void
     $p = red('SELECT * FROM GrupniLovPopis WHERE Id=? AND LovId=?', [$id, $lov['Id']]);
     if ($p) {
         q('DELETE FROM GrupniLovPopis WHERE Id=?', [$id]);
-        dnevnik('Grupni lov – uklonjen s popisa', 'GrupniLov', (int) $lov['Id'], $p['Ime']);
+        dnevnik('Skupni lov – uklonjen s popisa', 'GrupniLov', (int) $lov['Id'], $p['Ime']);
     }
 }
 
@@ -578,7 +578,7 @@ function gl_popis_pdf(array $lov): string
         .podnozje { position: fixed; bottom: -8mm; left: 0; right: 0; font-size: 7.5pt; color: #888; }
     </style></head><body>
     <div class="podnozje">' . e(udruga_naziv()) . ' · ispisano ' . date('d.m.Y. H:i') . '</div>
-    <div class="zag"><div class="n">' . e(udruga_naziv()) . '</div><div class="p">Popis sudionika grupnog lova</div></div>
+    <div class="zag"><div class="n">' . e(udruga_naziv()) . '</div><div class="p">Popis sudionika skupnog lova</div></div>
     <h2>' . e($lov['Naziv']) . '</h2>
     <div class="info">' . e(datum($lov['Pocetak'])) . ' · ' . e(date('H:i', strtotime($lov['Pocetak']))) . ($kraj ? '–' . e($kraj) : '')
         . ($lov['Mjesto'] ? ' · ' . e($lov['Mjesto']) : '') . ' · organizator ' . e($lov['KreiraoIme'])
@@ -613,7 +613,7 @@ function gl_obrisi(array $lov): bool
         q('DELETE FROM GrupniLovSudionici WHERE LovId=?', [$lov['Id']]);
         q('DELETE FROM GrupniLov WHERE Id=?', [$lov['Id']]);
     });
-    dnevnik('Grupni lov – obrisan', 'GrupniLov', (int) $lov['Id'], $lov['Naziv'] . ' · ' . datum($lov['Pocetak']) . " · na popisu $n");
+    dnevnik('Skupni lov – obrisan', 'GrupniLov', (int) $lov['Id'], $lov['Naziv'] . ' · ' . datum($lov['Pocetak']) . " · na popisu $n");
     return true;
 }
 

@@ -5,7 +5,7 @@
  */
 declare(strict_types=1);
 
-const VERZIJA = '1.37.0';
+const VERZIJA = '1.37.1';
 const KONTAKT_EMAIL = 'daxemann@googlemail.com';
 const PODRSKA_PAYPAL = 'darko.bakic@freenet.de'; // dobrovoljna podrška razvoju (Pomoć i kontakt)
 const PROJEKT_URL = 'https://github.com/daxemann/lovacka-evidencija';
@@ -62,7 +62,7 @@ const PRAVA_OPIS = [
     P_INVENTURA => ['Inventura – pregled', 'vidi mape inventure (svoje sekcije i cijele udruge), stanje „treba“ / „stvarno“, manjak i višak, ispisuje PDF listu za popis – bez izmjena'],
     P_INVENTURA_UREDI => ['Inventura – uređivanje', 'dodaje i briše mape i stavke, upisuje „treba“ i „stvarno“, nova inventura, preuzimanje stanja'],
     P_OBAVIJESTI => ['Obavijesti – slanje', 'šalje obavijesti članovima svojih sekcija (svima, sekciji, funkciji ili odabranima), po želji s obaveznom potvrdom „Pročitao/la sam“; vidi tko je potvrdio, bilježi usmeno obaviještene, PDF'],
-    P_GRUPNI_LOV => ['Grupni lov – organizacija', 'pokreće grupni lov za sekcije u svom opsegu (poziv svima na mobitel), vidi uživo položaj sudionika na karti, prima SOS i upozorenje o gubitku signala, završava lov'],
+    P_GRUPNI_LOV => ['Skupni lov – organizacija', 'pokreće skupni lov za sekcije u svom opsegu (poziv svima na mobitel), vidi uživo položaj sudionika na karti, prima SOS i upozorenje o gubitku signala, završava lov'],
     P_DOMOVI => ['Lovački domovi – upravljanje', 'dodaje i uređuje lovačke domove (položaj, fotografija) za sekcije u svom opsegu, odobrava i odbija privatne rezervacije, upisuje događaje udruge (imaju prednost), otkazuje rezervacije'],
     P_POPUSTI => ['Popusti u trgovinama – uređivanje', 'dodaje, mijenja i briše trgovine s popustom za članove (popust, uvjeti, kontakt, logo, rok); članovi bez ovog prava vide samo važeće ponude'],
     P_REVIR_DNEVNIK => ['Lovište – lovački dnevnik', 'vidi lovački dnevnik (tko, kada, gdje) za sekcije u svom opsegu, ispis i PDF; bez ovog prava dnevnik se ne prikazuje'],
@@ -644,7 +644,7 @@ SQL);
             ALTER TABLE "RadneAkcije" ADD COLUMN "Oprema" TEXT NULL;');
     }
     if ($v < 25) {
-        // Grupni lov: poziv lovcima (dolazim / ne dolazim), položaj sudionika uživo, SOS organizatoru.
+        // Skupni lov: poziv lovcima (dolazim / ne dolazim), položaj sudionika uživo, SOS organizatoru.
         // Položaji se brišu kad lov završi – ostaje samo tko je sudjelovao.
         $pdo->exec('CREATE TABLE IF NOT EXISTS "GrupniLov" (
                 "Id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
@@ -724,7 +724,7 @@ SQL);
             UPDATE "Uloge" SET "Prava" = "Prava" | 8388608 WHERE ("Prava" & 8388607) = 8388607 OR "Naziv" = \'Domar\' OR "Naziv" LIKE \'Predsjednik%\';');
     }
     if ($v < 27) {
-        // Članska iskaznica s QR kodom (stalni slučajni ključ po članu) i popis sudionika grupnog lova (lovnik skenira iskaznice).
+        // Članska iskaznica s QR kodom (stalni slučajni ključ po članu) i popis sudionika skupnog lova (lovnik skenira iskaznice).
         // Ključ služi SAMO za popis sudionika – nije povezan s dezinfekcijom, bodovima ni ničim drugim.
         $pdo->exec('CREATE TABLE IF NOT EXISTS "ClanIskaznice" (
                 "ClanId" INTEGER NOT NULL PRIMARY KEY REFERENCES "Clanovi" ("Id") ON DELETE CASCADE,

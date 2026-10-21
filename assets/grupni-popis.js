@@ -1,4 +1,4 @@
-/* Lovačka evidencija – popis sudionika grupnog lova: skeniranje članskih iskaznica (QR).
+/* Lovačka evidencija – popis sudionika skupnog lova: skeniranje članskih iskaznica (QR).
  * Kamera ostaje otvorena, iskaznice se skeniraju jedna za drugom. Bez signala: ime se prepoznaje iz popisa članova
  * sekcija lova (učitan s internetom), upis čeka na mobitelu (localStorage) i šalje se sam kad bude signala. */
 (function () {
