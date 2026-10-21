@@ -100,7 +100,7 @@ if ($k['ClanId'] && modul('iskaznice')) {
 if (modul('popusti') && pop_dostupno() && ($k['ClanId'] || ima(P_POPUSTI))) {
     $o('popusti', '🏷️ Popusti u trgovinama', '
 <ul>
-<li><b>Moje → 🏷️ Popusti u trgovinama</b> (i na početnoj): trgovine koje daju popust lovcima – zajedničke za <b>sve udruge</b> (otvara se Oglasnik lovaca, bez lozinke).</li>
+<li><b>Moje → 🏷️ Popusti u trgovinama</b>: trgovine koje daju popust lovcima – zajedničke za <b>sve udruge</b> (otvara se Oglasnik lovaca, bez lozinke).</li>
 <li>Dodirnite trgovinu – na zaslonu je <b>vaša članska iskaznica</b> i piše što učiniti: <b>pokazati zaslon na blagajni</b> ili <b>javiti se prodavaču</b> (poziv, WhatsApp, Viber, e-pošta).</li>
 <li>Ispod iskaznice je zelena traka <b>✓ Aktivni član</b> sa satom koji teče – prodavač vidi da to nije snimka zaslona. Iskaznica vrijedi 12 sati od otvaranja iz aplikacije; poslije opet otvorite Popuste iz aplikacije.</li>'
     . (pop_smije_uredjivati() ? '
