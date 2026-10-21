@@ -1,5 +1,13 @@
 # Promjene
 
+## 1.40.0 – 2026-10
+- **✍ Osobni potpis:** *Moj profil → ✍ Moj potpis* – svaki funkcionar potpiše se prstom (ili fotografija potpisa) i sam ga može obrisati; nitko drugi ga ne postavlja.
+  Potpis se automatski stavlja na PDF-ove gdje je osoba potpisnik:
+  - **popis sudionika skupnog lova** – voditelj lova, kad je lov završen,
+  - **knjiga dezinfekcije i izjava za inspekciju** – odgovorna osoba sekcije i predsjednik (prepoznaju se po imenu i prezimenu člana).
+- Dosadašnji potpisi iz *Dezinfekcija → Postavke* automatski se prenose u profil osobe; tamo se sada vidi samo stanje (✓ ili ⚠ što nedostaje).
+- *Moj profil* prikazuje i **moje oružne listove** (upisuje udruga).
+
 ## 1.39.0 – 2026-10
 - **Oružni listovi kod člana:** Članovi → član → kartica *Podaci* → **Oružni listovi** – neograničeno upisa (broj + oružje, opis nije obavezan).
 - **Popis sudionika skupnog lova (PDF):** maknuti stupci *Sekcija* i *Vrijeme*; novi stupci **Broj lovačke iskaznice** i **Oružni list** (svi brojevi člana). Gost je označen uz ime.

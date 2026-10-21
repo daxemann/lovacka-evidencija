@@ -350,3 +350,62 @@ function oruzni_listovi_brojevi(array $clanIds): array
     return array_map(fn($b) => implode(', ', $b), $o);
 }
 
+// ---------- Osobni potpis (Moj profil → ✍ Moj potpis) ----------
+// Svaki funkcionar sam sprema svoj potpis; program ga stavlja na PDF-ove gdje je ta osoba potpisnik
+// (popis skupnog lova – voditelj lova, knjiga dezinfekcije – odgovorna osoba sekcije i predsjednik). Nitko drugi ga ne može postaviti.
+function potpis_korisnika(int $korisnikId): ?string
+{
+    $f = postavka('Potpis.K' . $korisnikId);
+    return $f && is_file(podaci('foto/' . basename($f))) ? basename($f) : null;
+}
+function potpis_datauri(int $korisnikId): ?string
+{
+    $f = potpis_korisnika($korisnikId);
+    return $f ? 'data:image/png;base64,' . base64_encode((string) file_get_contents(podaci('foto/' . $f))) : null;
+}
+/** Sprema potpis (crtež data:image/png ili učitana slika) za korisnika. */
+function potpis_spremi(int $korisnikId, string $crtez, array $datoteka): void
+{
+    if (str_starts_with($crtez, 'data:image/png;base64,')) {
+        $tmp = tempnam(sys_get_temp_dir(), 'pot');
+        file_put_contents($tmp, (string) base64_decode(substr($crtez, 22), true));
+        try {
+            $ime = spremi_sliku(['tmp_name' => $tmp, 'error' => UPLOAD_ERR_OK, 'name' => 'potpis.png'], 'potpis-', 900, true);
+        } finally {
+            @unlink($tmp);
+        }
+    } else {
+        $ime = spremi_sliku($datoteka, 'potpis-', 900, true);
+    }
+    obrisi_sliku(postavka('Potpis.K' . $korisnikId));
+    spremi_postavku('Potpis.K' . $korisnikId, $ime);
+    spremi_postavku('Potpis.Datum.K' . $korisnikId, sada());
+}
+function potpis_obrisi(int $korisnikId): void
+{
+    obrisi_sliku(postavka('Potpis.K' . $korisnikId));
+    spremi_postavku('Potpis.K' . $korisnikId, null);
+    spremi_postavku('Potpis.Datum.K' . $korisnikId, null);
+}
+/** Korisnik (s potpisom ili bez) čiji povezani član ima točno ovo ime i prezime – samo ako je jednoznačan. */
+function korisnik_po_imenu(?string $ime): ?int
+{
+    if (!$ime) {
+        return null;
+    }
+    $kl = kljuc($ime);
+    $nadjeni = [];
+    foreach (redovi('SELECT k.Id, c.Ime, c.Prezime FROM Korisnici k JOIN Clanovi c ON c.Id=k.ClanId WHERE k.Aktivan=1') as $r) {
+        if (kljuc(puno_ime($r)) === $kl || kljuc(prezime_ime($r)) === $kl) {
+            $nadjeni[(int) $r['Id']] = true;
+        }
+    }
+    return count($nadjeni) === 1 ? (int) array_key_first($nadjeni) : null;
+}
+/** Osobni potpis osobe po imenu (za mjesta gdje je potpisnik upisan imenom, npr. odgovorna osoba sekcije). */
+function potpis_po_imenu(?string $ime): ?string
+{
+    $kid = korisnik_po_imenu($ime);
+    return $kid ? potpis_datauri($kid) : null;
+}
+

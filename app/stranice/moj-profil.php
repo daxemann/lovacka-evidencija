@@ -39,6 +39,20 @@ if (je_post()) {
     } elseif (str_starts_with($radnja, 'pas-')) {
         psi_obradi((int) $c['Id'], $radnja, puno_ime($c));
         preusmjeri('moj-profil', ['psi' => 1]);
+    } elseif ($radnja === 'potpis' && ($k['Prava'] || potpis_korisnika((int) $k['Id']))) {
+        try {
+            potpis_spremi((int) $k['Id'], (string) ($_POST['potpis_crtez'] ?? ''), $_FILES['potpis_slika'] ?? []);
+            dnevnik('Spremljen osobni potpis', 'Korisnik', (int) $k['Id'], $k['Naziv']);
+            poruka('Potpis je spremljen – od sada je automatski na PDF-ovima gdje ste potpisnik.');
+        } catch (Throwable $e) {
+            poruka('Potpis nije spremljen: ' . e($e->getMessage()), 'danger');
+        }
+        preusmjeri('moj-profil', ['potpis' => 1]);
+    } elseif ($radnja === 'potpis-obrisi') {
+        potpis_obrisi((int) $k['Id']);
+        dnevnik('Obrisan osobni potpis', 'Korisnik', (int) $k['Id'], $k['Naziv']);
+        poruka('Potpis je obrisan.');
+        preusmjeri('moj-profil', ['potpis' => 1]);
     } elseif ($radnja === 'obrisi-foto') {
         obrisi_sliku($c['FotoDatoteka']);
         azuriraj('Clanovi', (int) $c['Id'], ['FotoDatoteka' => null, 'Azurirano' => sada()]);
@@ -150,6 +164,33 @@ ob_start(); ?>
         <div class="card-footer small text-muted">Ako nešto nije točno, javite se tajniku ili administratoru.</div>
     </div></div>
 </div>
+<?php if ($oruzje = oruzni_listovi((int) $c['Id'])): ?>
+<div class="card mt-3" style="max-width:640px"><div class="card-header">Moji oružni listovi <span class="small text-muted">(upisuje udruga)</span></div>
+    <ul class="list-group list-group-flush small"><?php foreach ($oruzje as $o): ?><li class="list-group-item d-flex gap-2"><b><?= e($o['Broj']) ?></b><span class="text-muted"><?= e((string) $o['Oruzje']) ?></span></li><?php endforeach; ?></ul></div>
+<?php endif; ?>
+<?php if (modul('dezinfekcija')) dez_prenesi_stare_potpise(); if ($k['Prava'] || potpis_korisnika((int) $k['Id'])): $mojPotpis = potpis_datauri((int) $k['Id']); ?>
+<h2 class="h5 mt-4" id="potpis">✍ Moj potpis</h2>
+<div class="card card-body" style="max-width:640px">
+    <p class="small text-muted mb-2">Potpis se automatski stavlja na PDF-ove gdje ste potpisnik: popis sudionika skupnog lova (voditelj lova), knjiga dezinfekcije (odgovorna osoba sekcije / predsjednik).
+        Samo vi ga možete spremiti ili obrisati. Skenirani potpis nije kvalificirani elektronički potpis – PDF nosi napomenu da je elektronički generiran iz evidencije.</p>
+    <?php if ($mojPotpis): ?>
+        <div class="d-flex flex-wrap align-items-center gap-2 mb-2"><img src="<?= e($mojPotpis) ?>" alt="potpis" class="dez-potpis-slika">
+            <span class="small text-muted">spremljen <?= e(datum_vrijeme((string) postavka('Potpis.Datum.K' . $k['Id']))) ?></span>
+            <form method="post" action="<?= e(url('moj-profil')) ?>" class="ms-auto"><?= csrf() ?><input type="hidden" name="radnja" value="potpis-obrisi">
+                <button class="btn btn-sm btn-outline-danger" data-potvrda="Obrisati vaš potpis?">Obriši</button></form></div>
+    <?php endif; ?>
+    <details<?= $mojPotpis ? '' : ' open' ?>><summary class="small"><?= $mojPotpis ? 'Novi potpis' : 'Potpišite se prstom ili mišem' ?></summary>
+    <form method="post" action="<?= e(url('moj-profil')) ?>" enctype="multipart/form-data" class="potpis-obrazac mt-2"><?= csrf() ?>
+        <input type="hidden" name="radnja" value="potpis"><input type="hidden" name="potpis_crtez">
+        <canvas class="dez-potpis-platno" width="600" height="200"></canvas>
+        <div class="d-flex flex-wrap gap-2 mt-2"><button type="button" class="btn btn-sm btn-outline-secondary" data-ocisti>Očisti</button>
+            <button class="btn btn-sm btn-primary">Spremi potpis</button></div>
+        <div class="small text-muted mt-2">ili fotografija potpisa (na bijelom papiru): <input type="file" name="potpis_slika" accept="image/*" class="form-control form-control-sm mt-1" onchange="if(this.files.length)this.form.submit()"></div>
+    </form></details>
+</div>
+<script src="<?= e(asset('assets/potpis.js')) ?>"></script>
+<?php if (!empty($_GET['potpis'])): ?><script>document.getElementById('potpis').scrollIntoView();</script><?php endif; ?>
+<?php endif; ?>
 <?php if (modul('psi')): ?>
 <h2 class="h5 mt-4" id="psi">🐕 Moji lovački psi</h2>
 <?= predlozak('clan-psi', ['id' => (int) $c['Id'], 'psiProfil' => true]) ?>

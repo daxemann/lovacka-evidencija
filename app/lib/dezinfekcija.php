@@ -732,7 +732,14 @@ function dez_potpis_datauri_kl(string $kl): ?string
 {
     $p = postavka('Dez.Potpis.' . $kl);
     $ime = dez_odgovorna_kl($kl);
-    if (!$p || !$ime) {
+    if (!$ime) {
+        return null;
+    }
+    // osobni potpis iz „Moj profil“ (jednoznačno po imenu i prezimenu člana) ima prednost
+    if ($os = potpis_po_imenu($ime)) {
+        return $os;
+    }
+    if (!$p) {
         return null;
     }
     // potpis predsjednika vrijedi samo za osobu koja se potpisala (predsjednik se može promijeniti u funkcijama)
@@ -991,3 +998,34 @@ function dez_skenirani_json(array $a): array
     }
     return $out;
 }
+
+/**
+ * Jednokratni prijenos starih potpisa (Dezinfekcija → Postavke) u osobni potpis osobe (Moj profil):
+ * ako je osoba jednoznačno pronađena po imenu i još nema svoj potpis. Stari se zatim briše.
+ */
+function dez_prenesi_stare_potpise(): int
+{
+    $n = 0;
+    foreach (redovi("SELECT Kljuc FROM Postavke WHERE Kljuc LIKE 'Dez.Potpis.%' AND Vrijednost IS NOT NULL AND Vrijednost<>''") as $r) {
+        $kl = substr($r['Kljuc'], strlen('Dez.Potpis.'));
+        $ime = postavka('Dez.PotpisIme.' . $kl) ?: dez_odgovorna_kl($kl);
+        $kid = korisnik_po_imenu($ime);
+        $f = podaci('foto/' . basename((string) postavka('Dez.Potpis.' . $kl)));
+        if (!$kid || !is_file($f)) {
+            continue;
+        }
+        if (!potpis_korisnika($kid)) {
+            $novo = 'potpis-' . bin2hex(random_bytes(8)) . '.png';
+            copy($f, podaci('foto/' . $novo));
+            spremi_postavku('Potpis.K' . $kid, $novo);
+            spremi_postavku('Potpis.Datum.K' . $kid, sada());
+            dnevnik('Potpis prenesen u osobni profil', 'Korisnik', $kid, (string) $ime);
+            $n++;
+        }
+        obrisi_sliku(postavka('Dez.Potpis.' . $kl));
+        spremi_postavku('Dez.Potpis.' . $kl, null);
+        spremi_postavku('Dez.PotpisIme.' . $kl, null);
+    }
+    return $n;
+}
+

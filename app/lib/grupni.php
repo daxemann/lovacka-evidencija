@@ -570,6 +570,10 @@ function gl_popis_pdf(array $lov): string
             . '<td>' . ($p['Nacin'] === 'qr' ? 'iskaznica' : 'ručno') . '</td><td class="potpis-polje"></td></tr>';
     }
     $kraj = $lov['Zavrseno'] ? date('H:i', strtotime($lov['Zavrseno'])) : '';
+    // osobni potpis voditelja lova (Moj profil) – tek kad je lov završen
+    $pot = !gl_aktivan($lov) && $lov['KreiraoKorisnikId'] ? potpis_datauri((int) $lov['KreiraoKorisnikId']) : null;
+    $potpis = $pot ? '<img src="' . $pot . '" style="height:14mm;vertical-align:middle"><br><span style="font-size:7pt;color:#777">elektronički generirano iz evidencije</span>'
+        : '____________________';
     $html = '<html><head><meta charset="utf-8"><style>
         @page { margin: 16mm 14mm 16mm 14mm; }
         body { font-family: DejaVu Sans, sans-serif; font-size: 9pt; color: #222; }
@@ -590,7 +594,7 @@ function gl_popis_pdf(array $lov): string
         . '<br>Ukupno <b>' . count($popis) . '</b> (članova ' . $clanova . ', gostiju ' . (count($popis) - $clanova) . ')</div>
     <table class="t"><thead><tr><th class="d">Rb.</th><th>Prezime i ime</th><th>Broj lovačke iskaznice</th><th>Oružni list</th><th>Upis</th><th>Potpis</th></tr></thead>
     <tbody>' . ($redovi ?: '<tr><td colspan="6">Popis je prazan.</td></tr>') . '</tbody></table>
-    <table class="potpis"><tr><td>Lovnik / voditelj lova: <b>' . e((string) $lov['KreiraoIme']) . '</b></td><td>Potpis: ____________________</td></tr></table>
+    <table class="potpis"><tr><td>Lovnik / voditelj lova: <b>' . e((string) $lov['KreiraoIme']) . '</b></td><td>Potpis: ' . $potpis . '</td></tr></table>
     </body></html>';
     $opt = new Dompdf\Options();
     $opt->set('defaultFont', 'DejaVu Sans');
