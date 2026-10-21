@@ -57,7 +57,14 @@ function revir_sekcije(): array
     foreach (redovi('SELECT Id, Naziv FROM Sekcije WHERE Aktivna=1 ORDER BY Redoslijed, Naziv') as $s) {
         $sve[(int) $s['Id']] = $s['Naziv'];
     }
-    if ($k['SveSekcije']) {
+    // lovište je strogo po sekcijama: šire vidi samo onaj čija uloga daje pravo za lovište (nadzor / uređivanje / dnevnik) u tim sekcijama
+    $op = ['sve' => false, 's' => []];
+    foreach ([P_REVIR_NADZOR, P_REVIR_UREDI, P_REVIR_DNEVNIK] as $pr) {
+        $o = opseg_prava($pr);
+        $op['sve'] = $op['sve'] || $o['sve'];
+        $op['s'] = array_merge($op['s'], $o['s']);
+    }
+    if ($op['sve']) {
         return $sve ?: [0 => udruga_kratko()];
     }
     $r = [];
@@ -67,7 +74,7 @@ function revir_sekcije(): array
     } elseif ($moja !== false && isset($sve[$moja])) {
         $r[$moja] = $sve[$moja];
     }
-    foreach ($k['Sekcije'] as $id) {
+    foreach (array_unique($op['s']) as $id) {
         if (isset($sve[$id])) {
             $r[$id] = $sve[$id];
         }
@@ -85,11 +92,11 @@ function revir_moze_vidjeti(?int $sid): bool
 }
 function revir_moze_urediti(?int $sid): bool
 {
-    return ima(P_REVIR_UREDI) && (moze_sekciju($sid) || (korisnik()['SveSekcije'] ?? false));
+    return ima(P_REVIR_UREDI) && moze_sekciju_pravo(P_REVIR_UREDI, $sid);
 }
 function revir_moze_nadzor(?int $sid): bool
 {
-    return ima(P_REVIR_NADZOR) && (moze_sekciju($sid) || (korisnik()['SveSekcije'] ?? false));
+    return ima(P_REVIR_NADZOR) && moze_sekciju_pravo(P_REVIR_NADZOR, $sid);
 }
 /** Zauzimati se smije samo u vlastitoj sekciji (član). */
 function revir_moze_zauzeti(?int $sid): bool
@@ -104,10 +111,11 @@ function revir_nadzor_sql(string $stupac = 'SekcijaId'): string
     if (!$k || !ima(P_REVIR_NADZOR)) {
         return '1=0';
     }
-    if ($k['SveSekcije']) {
+    $o = opseg_prava(P_REVIR_NADZOR);
+    if ($o['sve']) {
         return '1=1';
     }
-    return $k['Sekcije'] ? $stupac . ' IN (' . implode(',', array_map('intval', $k['Sekcije'])) . ')' : '1=0';
+    return $o['s'] ? $stupac . ' IN (' . implode(',', array_map('intval', $o['s'])) . ')' : '1=0';
 }
 
 // ---------- Vrste naprava (svaka udruga uređuje svoje, s vlastitom ikonom) ----------

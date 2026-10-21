@@ -189,6 +189,41 @@ function trazi(int $pravo): void
         zabranjeno();
     }
 }
+/**
+ * Opseg jednog prava: u kojim sekcijama korisnik ima baš to pravo (samo uloge koje ga daju).
+ * Npr. Blagajnik „za sve sekcije“ ne proširuje lovište ni lovački dnevnik na sve sekcije. @return array{sve: bool, s: int[]}
+ */
+function opseg_prava(int $pravo): array
+{
+    static $pam = [];
+    $k = korisnik();
+    if (!$k) {
+        return ['sve' => false, 's' => []];
+    }
+    $kl = $k['Id'] . ':' . $pravo;
+    if (isset($pam[$kl])) {
+        return $pam[$kl];
+    }
+    if (($k['Prava'] & $pravo) === 0 || (moduli_iskljucena_prava() & $pravo) === $pravo) {
+        return $pam[$kl] = ['sve' => false, 's' => []];
+    }
+    $sve = false;
+    $sek = [];
+    foreach (redovi('SELECT ku.SekcijaId FROM KorisnikUloge ku JOIN Uloge u ON u.Id=ku.UlogaId WHERE ku.KorisnikId=? AND (u.Prava & ?) <> 0', [$k['Id'], $pravo]) as $r) {
+        if ($r['SekcijaId'] === null) {
+            $sve = true;
+        } else {
+            $sek[(int) $r['SekcijaId']] = true;
+        }
+    }
+    return $pam[$kl] = ['sve' => $sve, 's' => array_keys($sek)];
+}
+function moze_sekciju_pravo(int $pravo, ?int $sekcijaId): bool
+{
+    $o = opseg_prava($pravo);
+    return $o['sve'] || ($sekcijaId !== null && in_array($sekcijaId, $o['s'], true));
+}
+
 function moze_sekciju(?int $sekcijaId): bool
 {
     $k = korisnik();

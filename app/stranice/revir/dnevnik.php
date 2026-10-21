@@ -11,14 +11,15 @@ if (!isset($_GET['Razdoblje'])) {
 
 // Opseg (samo uz pravo „Lovački dnevnik“): uloga za sve sekcije vidi sve; ostali svoje sekcije (+ svoje upise).
 $sekcijeOpseg = [];
-if ($k['SveSekcije']) {
+$opD = opseg_prava(P_REVIR_DNEVNIK); // samo uloge koje daju pravo „Lovački dnevnik“ (ne npr. blagajnik za sve sekcije)
+if ($opD['sve']) {
     $uvjet = '1=1';
     foreach (redovi('SELECT Id, Naziv FROM Sekcije WHERE Aktivna=1 ORDER BY Redoslijed, Naziv') as $s) {
         $sekcijeOpseg[(int) $s['Id']] = $s['Naziv'];
     }
-} elseif ($k['Sekcije']) {
-    $uvjet = '(d.SekcijaId IN (' . implode(',', array_map('intval', $k['Sekcije'])) . ')' . ($k['ClanId'] ? ' OR d.ClanId=' . (int) $k['ClanId'] : '') . ')';
-    foreach ($k['Sekcije'] as $sid) {
+} elseif ($opD['s']) {
+    $uvjet = '(d.SekcijaId IN (' . implode(',', array_map('intval', $opD['s'])) . ')' . ($k['ClanId'] ? ' OR d.ClanId=' . (int) $k['ClanId'] : '') . ')';
+    foreach ($opD['s'] as $sid) {
         $sekcijeOpseg[$sid] = naziv_sekcije($sid);
     }
 } else {
