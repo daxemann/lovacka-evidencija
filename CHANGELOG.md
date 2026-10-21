@@ -1,5 +1,13 @@
 # Promjene
 
+## 1.42.0 – 2026-10
+- **Skupni lov – potpis članova na popisu:**
+  - član koji ima spremljen potpis (*Moj profil* ili spremljen ranije) – potpis je **automatski** na PDF-u,
+  - član bez potpisa – nakon skeniranja iskaznice odmah se otvori polje: **potpiše se prstom** na mobitelu voditelja lova,
+  - kvačica *„spremi moj potpis za sljedeći put“* (zadano uključeno) – idući put ne treba ponovno; član bez korisničkog računa ima ga spremljenog kod sebe u evidenciji.
+- Potpisivanje se može odgoditi („kasnije“) – na popisu ostaje gumb ✍ kod svakog bez potpisa.
+- Članovi → član: vidi se spremljeni potpis i može se obrisati.
+
 ## 1.41.0 – 2026-10
 - **Skupni lov – ručni upis gosta:** uz ime sada obavezno **broj lovačke iskaznice** i **oružni list**, a gost se **potpiše prstom** na mobitelu voditelja lova.
   Sve troje je na PDF-u popisa (potpis u stupcu *Potpis*). Bez potpisa gost se može dodati samo uz potvrdu.

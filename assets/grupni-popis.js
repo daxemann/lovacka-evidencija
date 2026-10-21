@@ -47,6 +47,7 @@
             h += '<div class="list-group-item d-flex align-items-center gap-2">' + slika(p.f, p.ime)
                 + '<div class="flex-grow-1 lh-sm"><div class="fw-semibold">' + esc(p.ime) + (p.gost ? ' <span class="badge text-bg-info">gost</span>' : '') + '</div>'
                 + '<div class="text-muted">' + esc([p.sek, p.gost && p.isk ? 'LI ' + p.isk : '', p.gost && p.ol ? 'OL ' + p.ol : '', p.nacin === 'rucno' ? '✍ ručno' : '', p.gost ? (p.pot ? 'potpisan' : 'bez potpisa') : ''].filter(Boolean).join(' · ')) + '</div></div>'
+                + (!p.pot ? '<button type="button" class="btn btn-sm btn-outline-primary py-0 px-1 me-1" data-potpis="' + p.id + '" title="Potpis">✍</button>' : '')
                 + '<span class="text-muted">' + esc(p.vrijeme) + '</span>'
                 + '<button type="button" class="btn btn-sm btn-link text-danger p-0 ms-1" data-ukloni="' + p.id + '" title="Ukloni s popisa" aria-label="Ukloni ' + esc(p.ime) + '">✕</button></div>';
         });
@@ -153,6 +154,7 @@
         sinkroniziraj().then(function (j) {
             // iskaznica koju mobitel nije poznavao (druga sekcija) – ime i provjera s poslužitelja
             var r = j && (j.rezultati || []).filter(function (x) { return x.k === stavka.k; })[0];
+            if (r && r.ok && r.pot === false && r.pid) otvoriPotpis(r.pid, r.ime);
             if (c || !r) return;
             if (r.ok) zadnji(r.vec ? 'vec' : 'ok', r.ime, r.vec ? 'već je na popisu' : '✔ upisan' + (r.sek ? ' · ' + r.sek : ''), r.f);
             else zadnji('greska', r.ime || 'Iskaznica ne vrijedi', r.greska || '');
@@ -238,26 +240,56 @@
         if (!c) { alert('Odaberite člana s popisa (počnite upisivati prezime).'); return; }
         posalji({ radnja: 'rucno', clan: c.id }).then(function (j) { if (j.ok) $('gp-clan').value = ''; });
     });
-    // potpis gosta prstom (samo za PDF popisa)
-    var gc = $('gp-gost-potpis'), gx = gc.getContext('2d'), gCrta = false, gIma = false;
-    gx.lineWidth = 3; gx.lineCap = 'round'; gx.lineJoin = 'round'; gx.strokeStyle = '#0b2a6b';
-    function gT(e) { var r = gc.getBoundingClientRect(), t = e.touches ? e.touches[0] : e; return [(t.clientX - r.left) * gc.width / r.width, (t.clientY - r.top) * gc.height / r.height]; }
-    function gP(e) { e.preventDefault(); gCrta = true; var p = gT(e); gx.beginPath(); gx.moveTo(p[0], p[1]); }
-    function gM(e) { if (!gCrta) return; e.preventDefault(); var p = gT(e); gx.lineTo(p[0], p[1]); gx.stroke(); gIma = true; }
-    gc.addEventListener('mousedown', gP); gc.addEventListener('mousemove', gM); window.addEventListener('mouseup', function () { gCrta = false; });
-    gc.addEventListener('touchstart', gP, { passive: false }); gc.addEventListener('touchmove', gM, { passive: false }); gc.addEventListener('touchend', function () { gCrta = false; });
-    function gOcisti() { gx.clearRect(0, 0, gc.width, gc.height); gIma = false; }
+    // potpis prstom u polju (gost pri ručnom upisu, član bez spremljenog potpisa nakon skeniranja)
+    function potpisPolje(c) {
+        var x = c.getContext('2d'), crta = false, o = { ima: false };
+        x.lineWidth = 3; x.lineCap = 'round'; x.lineJoin = 'round'; x.strokeStyle = '#0b2a6b';
+        function T(e) { var r = c.getBoundingClientRect(), t = e.touches ? e.touches[0] : e; return [(t.clientX - r.left) * c.width / r.width, (t.clientY - r.top) * c.height / r.height]; }
+        function P(e) { e.preventDefault(); crta = true; var p = T(e); x.beginPath(); x.moveTo(p[0], p[1]); }
+        function M(e) { if (!crta) return; e.preventDefault(); var p = T(e); x.lineTo(p[0], p[1]); x.stroke(); o.ima = true; }
+        c.addEventListener('mousedown', P); c.addEventListener('mousemove', M); window.addEventListener('mouseup', function () { crta = false; });
+        c.addEventListener('touchstart', P, { passive: false }); c.addEventListener('touchmove', M, { passive: false }); c.addEventListener('touchend', function () { crta = false; });
+        o.ocisti = function () { x.clearRect(0, 0, c.width, c.height); o.ima = false; };
+        o.png = function () { return c.toDataURL('image/png'); };
+        return o;
+    }
+    var gp = potpisPolje($('gp-gost-potpis')), gc = { toDataURL: gp.png };
+    function gOcisti() { gp.ocisti(); }
     $('gp-gost-ocisti').addEventListener('click', gOcisti);
+
+    // ---------- potpis člana bez spremljenog potpisa ----------
+    var cp = potpisPolje($('gp-potpis-platno')), potpisPid = null, potpisRed = [];
+    function otvoriPotpis(pid, ime) {
+        if (potpisPid === pid) return;
+        if (potpisPid !== null) { if (potpisRed.indexOf(pid) < 0) potpisRed.push(pid); return; }
+        potpisPid = pid; cp.ocisti();
+        $('gp-potpis-naslov').textContent = '✍ ' + ime + ' – potpis (nema spremljen potpis)';
+        $('gp-potpis').hidden = false;
+    }
+    function zatvoriPotpis() {
+        $('gp-potpis').hidden = true; potpisPid = null;
+        var sl = potpisRed.shift();
+        if (sl != null) { var p = popis.filter(function (x) { return x.id === sl; })[0]; if (p && !p.pot) otvoriPotpis(p.id, p.ime); }
+    }
+    $('gp-potpis-ocisti').addEventListener('click', cp.ocisti);
+    $('gp-potpis-kasnije').addEventListener('click', zatvoriPotpis);
+    $('gp-potpis-spremi-btn').addEventListener('click', function () {
+        if (!cp.ima) { alert('Najprije se potpišite u polju.'); return; }
+        var pid = potpisPid;
+        posalji({ radnja: 'potpis', pid: pid, potpis: cp.png(), spremi: $('gp-potpis-spremi').checked ? 1 : '' }).then(function (j) { if (j.ok) zatvoriPotpis(); });
+    });
     $('gp-gost-dodaj').addEventListener('click', function () {
         var v = $('gp-gost').value.trim(), isk = $('gp-gost-isk').value.trim(), ol = $('gp-gost-ol').value.trim();
         if (v.length < 3) { alert('Upišite ime i prezime gosta.'); return; }
         if (!isk || !ol) { alert('Upišite broj lovačke iskaznice i oružni list gosta.'); return; }
-        if (!gIma && !confirm('Gost se nije potpisao. Dodati ga bez potpisa?')) return;
-        posalji({ radnja: 'rucno', gost: v, gost_iskaznica: isk, gost_oruzni: ol, gost_potpis: gIma ? gc.toDataURL('image/png') : '' }).then(function (j) {
+        if (!gp.ima && !confirm('Gost se nije potpisao. Dodati ga bez potpisa?')) return;
+        posalji({ radnja: 'rucno', gost: v, gost_iskaznica: isk, gost_oruzni: ol, gost_potpis: gp.ima ? gp.png() : '' }).then(function (j) {
             if (j.ok) { $('gp-gost').value = ''; $('gp-gost-isk').value = ''; $('gp-gost-ol').value = ''; gOcisti(); }
         });
     });
     $('gp-popis').addEventListener('click', function (e) {
+        var bp = e.target.closest('[data-potpis]');
+        if (bp) { var pp = popis.filter(function (x) { return String(x.id) === bp.dataset.potpis; })[0]; if (pp) { potpisPid = null; otvoriPotpis(pp.id, pp.ime); } return; }
         var b = e.target.closest('[data-ukloni]');
         if (!b) return;
         var p = popis.filter(function (x) { return String(x.id) === b.dataset.ukloni; })[0];

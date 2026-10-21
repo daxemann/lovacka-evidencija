@@ -409,3 +409,42 @@ function potpis_po_imenu(?string $ime): ?string
     return $kid ? potpis_datauri($kid) : null;
 }
 
+// ---------- Potpis člana (i bez korisničkog računa) ----------
+/** Korisnički račun člana (za osobni potpis). */
+function korisnik_clana(int $clanId): ?int
+{
+    $id = vrijednost('SELECT Id FROM Korisnici WHERE ClanId=? AND Aktivan=1 ORDER BY Id LIMIT 1', [$clanId]);
+    return $id ? (int) $id : null;
+}
+/** Spremljeni potpis člana (datoteka): osobni potpis računa, inače potpis spremljen pri skupnom lovu (član bez računa). */
+function potpis_clana(int $clanId): ?string
+{
+    if (($kid = korisnik_clana($clanId)) && ($f = potpis_korisnika($kid))) {
+        return $f;
+    }
+    $f = postavka('Potpis.C' . $clanId);
+    return $f && is_file(podaci('foto/' . basename($f))) ? basename($f) : null;
+}
+/** Sprema kopiju datoteke potpisa kao trajni potpis člana (račun → Moj profil; bez računa → kod člana). */
+function potpis_clana_spremi_kopiju(int $clanId, string $datoteka): void
+{
+    $izvor = podaci('foto/' . basename($datoteka));
+    if (!is_file($izvor)) {
+        return;
+    }
+    $novo = 'potpis-' . bin2hex(random_bytes(8)) . '.png';
+    copy($izvor, podaci('foto/' . $novo));
+    $kl = ($kid = korisnik_clana($clanId)) ? 'K' . $kid : 'C' . $clanId;
+    obrisi_sliku(postavka('Potpis.' . $kl));
+    spremi_postavku('Potpis.' . $kl, $novo);
+    spremi_postavku('Potpis.Datum.' . $kl, sada());
+}
+function potpis_clana_obrisi(int $clanId): void
+{
+    foreach (array_filter(['C' . $clanId, ($kid = korisnik_clana($clanId)) ? 'K' . $kid : null]) as $kl) {
+        obrisi_sliku(postavka('Potpis.' . $kl));
+        spremi_postavku('Potpis.' . $kl, null);
+        spremi_postavku('Potpis.Datum.' . $kl, null);
+    }
+}
+

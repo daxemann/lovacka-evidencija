@@ -45,6 +45,15 @@ ob_start(); ?>
             <button type="button" class="btn btn-light btn-sm skener-zatvori" id="gp-stop">✕ Gotovo</button>
         </div>
         <div id="gp-zadnji" class="gp-zadnji mb-2" hidden></div>
+        <div id="gp-potpis" class="card border-primary mb-2" hidden><div class="card-body p-2">
+            <div class="small fw-semibold mb-1" id="gp-potpis-naslov">Potpis</div>
+            <canvas id="gp-potpis-platno" class="dez-potpis-platno mb-1" width="600" height="160"></canvas>
+            <label class="form-check small mb-2"><input type="checkbox" class="form-check-input" id="gp-potpis-spremi" checked>
+                <span class="form-check-label">spremi moj potpis za sljedeći put (vidljiv u <i>Moj profil</i>, mogu ga obrisati)</span></label>
+            <div class="d-flex gap-2"><button type="button" class="btn btn-sm btn-outline-secondary" id="gp-potpis-ocisti">Očisti</button>
+                <button type="button" class="btn btn-sm btn-link text-muted" id="gp-potpis-kasnije">kasnije</button>
+                <button type="button" class="btn btn-sm btn-primary ms-auto" id="gp-potpis-spremi-btn">✔ Potpisano</button></div>
+        </div></div>
         <div id="gp-poruka" class="small text-center text-muted mb-3">Kamera ostaje otvorena – skenirajte iskaznice jednu za drugom.</div>
         <div id="gp-red" class="alert alert-warning small py-2" hidden></div>
         <div id="gp-greske" class="small mb-2"></div>

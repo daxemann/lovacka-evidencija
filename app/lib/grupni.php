@@ -454,6 +454,7 @@ function gl_popis_imenik(array $lov): array
     return array_map(fn($c) => [
         't' => $kljucevi[(int) $c['Id']] ?? '', 'id' => (int) $c['Id'], 'ime' => prezime_ime($c),
         'sek' => (string) ($c['SekcijaNaziv'] ?? ''), 'f' => $c['FotoDatoteka'] ? foto_url($c['FotoDatoteka']) : null,
+        'pot' => potpis_clana((int) $c['Id']) !== null,
     ], $clanovi);
 }
 
@@ -473,7 +474,8 @@ function gl_popis_json(array $lov): array
         'id' => (int) $p['Id'], 'clan' => $p['ClanId'] !== null ? (int) $p['ClanId'] : null, 'ime' => $p['Ime'], 'sek' => (string) $p['Sekcija'],
         'gost' => (bool) $p['Gost'], 'nacin' => $p['Nacin'], 'vrijeme' => date('H:i', strtotime($p['Vrijeme'])), 'upisao' => (string) $p['Upisao'],
         'f' => $p['ClanId'] !== null ? ($foto[(int) $p['ClanId']] ?? null) : null,
-        'isk' => (string) ($p['GostIskaznica'] ?? ''), 'ol' => (string) ($p['GostOruzni'] ?? ''), 'pot' => !empty($p['Potpis']),
+        'isk' => (string) ($p['GostIskaznica'] ?? ''), 'ol' => (string) ($p['GostOruzni'] ?? ''),
+        'pot' => !empty($p['Potpis']) || ($p['ClanId'] !== null && potpis_clana((int) $p['ClanId']) !== null),
     ], gl_popis($lov));
 }
 
@@ -509,11 +511,17 @@ function gl_popis_skeniraj(array $lov, string $tekst, ?int $ms = null, ?string $
         return ['ok' => false, 'trajno' => true, 'ime' => $ime, 'greska' => 'Iskaznica ne vrijedi – ' . $ime . ' nije aktivan član.'];
     }
     $rez = ['ok' => true, 'vec' => false, 'ime' => $ime, 'sek' => (string) ($c['SekcijaNaziv'] ?? ''), 'f' => $c['FotoDatoteka'] ? foto_url($c['FotoDatoteka']) : null];
-    if (vrijednost('SELECT 1 FROM GrupniLovPopis WHERE LovId=? AND ClanId=?', [$lov['Id'], $c['Id']])) {
-        return ['vec' => true] + $rez;
+    $vec = red('SELECT Id, Potpis FROM GrupniLovPopis WHERE LovId=? AND ClanId=?', [$lov['Id'], $c['Id']]);
+    if (!$vec) {
+        q('INSERT OR IGNORE INTO GrupniLovPopis (LovId, ClanId, Ime, Sekcija, Gost, Nacin, Vrijeme, Upisao, KlijentId, Kreirano) VALUES (?,?,?,?,0,?,?,?,?,?)',
+            [$lov['Id'], $c['Id'], $ime, $rez['sek'] ?: null, 'qr', gl_popis_vrijeme($lov, $ms), $k['Naziv'], $klijentId ? mb_substr($klijentId, 0, 40) : null, sada()]);
+        $vec = red('SELECT Id, Potpis FROM GrupniLovPopis WHERE LovId=? AND ClanId=?', [$lov['Id'], $c['Id']]);
+    } else {
+        $rez['vec'] = true;
     }
-    q('INSERT OR IGNORE INTO GrupniLovPopis (LovId, ClanId, Ime, Sekcija, Gost, Nacin, Vrijeme, Upisao, KlijentId, Kreirano) VALUES (?,?,?,?,0,?,?,?,?,?)',
-        [$lov['Id'], $c['Id'], $ime, $rez['sek'] ?: null, 'qr', gl_popis_vrijeme($lov, $ms), $k['Naziv'], $klijentId ? mb_substr($klijentId, 0, 40) : null, sada()]);
+    // bez spremljenog potpisa član se potpiše na mobitelu voditelja lova
+    $rez['pid'] = (int) $vec['Id'];
+    $rez['pot'] = !empty($vec['Potpis']) || potpis_clana((int) $c['Id']) !== null;
     return $rez;
 }
 
@@ -561,6 +569,36 @@ function gl_popis_rucno(array $lov, ?int $clanId, string $gost, array $gostPodac
     return null;
 }
 
+/** Potpis sudionika na mobitelu (za PDF); $spremi = zapamti kao potpis člana za sljedeći put. @return string|null greška */
+function gl_popis_potpis(array $lov, int $pid, string $crtez, bool $spremi): ?string
+{
+    $p = red('SELECT * FROM GrupniLovPopis WHERE Id=? AND LovId=?', [$pid, $lov['Id']]);
+    if (!$p) {
+        return 'Sudionik nije na popisu.';
+    }
+    if (!str_starts_with($crtez, 'data:image/png;base64,')) {
+        return 'Potpis nije zaprimljen.';
+    }
+    $tmp = tempnam(sys_get_temp_dir(), 'pot');
+    file_put_contents($tmp, (string) base64_decode(substr($crtez, 22), true));
+    try {
+        $ime = spremi_sliku(['tmp_name' => $tmp, 'error' => UPLOAD_ERR_OK, 'name' => 'potpis.png'], 'glpotpis-', 600, true);
+    } catch (Throwable $e) {
+        return 'Potpis nije spremljen: ' . $e->getMessage();
+    } finally {
+        @unlink($tmp);
+    }
+    if ($p['Potpis']) {
+        obrisi_sliku($p['Potpis']);
+    }
+    q('UPDATE GrupniLovPopis SET Potpis=? WHERE Id=?', [$ime, $pid]);
+    if ($spremi && $p['ClanId'] !== null) {
+        potpis_clana_spremi_kopiju((int) $p['ClanId'], $ime);
+        dnevnik('Spremljen potpis člana (skupni lov)', 'Clan', (int) $p['ClanId'], $p['Ime']);
+    }
+    return null;
+}
+
 function gl_popis_ukloni(array $lov, int $id): void
 {
     $p = red('SELECT * FROM GrupniLovPopis WHERE Id=? AND LovId=?', [$id, $lov['Id']]);
@@ -597,7 +635,7 @@ function gl_popis_pdf(array $lov): string
         $cid = (int) $p['ClanId'];
         $redovi .= '<tr><td class="d">' . ($i + 1) . '.</td><td>' . e($p['Ime']) . ($p['Gost'] ? ' <i>(gost)</i>' : '') . '</td>'
             . '<td>' . e($p['Gost'] ? (string) $p['GostIskaznica'] : (string) ($isk[$cid] ?? '')) . '</td><td class="ol">' . e($p['Gost'] ? (string) $p['GostOruzni'] : ($oruzje[$cid] ?? '')) . '</td>'
-            . '<td>' . ($p['Nacin'] === 'qr' ? 'iskaznica' : 'ručno') . '</td><td class="potpis-polje">' . gl_potpis_img($p['Potpis'] ?? null) . '</td></tr>';
+            . '<td>' . ($p['Nacin'] === 'qr' ? 'iskaznica' : 'ručno') . '</td><td class="potpis-polje">' . gl_potpis_img(($p['Potpis'] ?? null) ?: ($cid ? potpis_clana($cid) : null)) . '</td></tr>';
     }
     $kraj = $lov['Zavrseno'] ? date('H:i', strtotime($lov['Zavrseno'])) : '';
     // osobni potpis voditelja lova (Moj profil) – tek kad je lov završen
