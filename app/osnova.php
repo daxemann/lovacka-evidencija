@@ -5,7 +5,7 @@
  */
 declare(strict_types=1);
 
-const VERZIJA = '1.40.0';
+const VERZIJA = '1.41.0';
 const KONTAKT_EMAIL = 'daxemann@googlemail.com';
 const PODRSKA_PAYPAL = 'darko.bakic@freenet.de'; // dobrovoljna podrška razvoju (Pomoć i kontakt)
 const PROJEKT_URL = 'https://github.com/daxemann/lovacka-evidencija';
@@ -153,7 +153,7 @@ function db(bool $novo = false): PDO
  * Dodatne tablice PHP verzije (PRAGMA user_version). .NET verzija ih ne poznaje i zanemaruje,
  * pa baza i dalje radi u oba smjera.
  */
-const SHEMA_PHP = 33;
+const SHEMA_PHP = 34;
 function nadogradi_bazu(PDO $pdo): void
 {
     if ((int) $pdo->query('PRAGMA user_version')->fetchColumn() >= SHEMA_PHP) {
@@ -804,6 +804,12 @@ SQL);
                 "Oruzje" TEXT NULL,
                 "Kreirano" TEXT NOT NULL)');
         $pdo->exec('CREATE INDEX IF NOT EXISTS "IX_ClanOruzniListovi_ClanId" ON "ClanOruzniListovi" ("ClanId")');
+    }
+    if ($v < 34) {
+        // Skupni lov – gost na popisu: broj lovačke iskaznice, oružni list i potpis na mobitelu (za potpun PDF)
+        $pdo->exec('ALTER TABLE "GrupniLovPopis" ADD COLUMN "GostIskaznica" TEXT NULL');
+        $pdo->exec('ALTER TABLE "GrupniLovPopis" ADD COLUMN "GostOruzni" TEXT NULL');
+        $pdo->exec('ALTER TABLE "GrupniLovPopis" ADD COLUMN "Potpis" TEXT NULL');
     }
 }
 

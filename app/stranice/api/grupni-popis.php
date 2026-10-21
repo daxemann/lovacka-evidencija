@@ -31,7 +31,8 @@ if (je_post()) {
     $radnja = (string) ($_POST['radnja'] ?? '');
     $greska = null;
     if ($radnja === 'rucno') {
-        $greska = gl_popis_rucno($lov, ($_POST['clan'] ?? '') !== '' ? (int) $_POST['clan'] : null, (string) ($_POST['gost'] ?? ''));
+        $greska = gl_popis_rucno($lov, ($_POST['clan'] ?? '') !== '' ? (int) $_POST['clan'] : null, (string) ($_POST['gost'] ?? ''),
+            ['iskaznica' => (string) ($_POST['gost_iskaznica'] ?? ''), 'oruzni' => (string) ($_POST['gost_oruzni'] ?? ''), 'potpis' => (string) ($_POST['gost_potpis'] ?? '')]);
     } elseif ($radnja === 'ukloni') {
         gl_popis_ukloni($lov, (int) ($_POST['pid'] ?? 0));
     } else {

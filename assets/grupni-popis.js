@@ -46,7 +46,7 @@
         svi.forEach(function (p) {
             h += '<div class="list-group-item d-flex align-items-center gap-2">' + slika(p.f, p.ime)
                 + '<div class="flex-grow-1 lh-sm"><div class="fw-semibold">' + esc(p.ime) + (p.gost ? ' <span class="badge text-bg-info">gost</span>' : '') + '</div>'
-                + '<div class="text-muted">' + esc([p.sek, p.nacin === 'rucno' ? '✍ ručno' : ''].filter(Boolean).join(' · ')) + '</div></div>'
+                + '<div class="text-muted">' + esc([p.sek, p.gost && p.isk ? 'LI ' + p.isk : '', p.gost && p.ol ? 'OL ' + p.ol : '', p.nacin === 'rucno' ? '✍ ručno' : '', p.gost ? (p.pot ? 'potpisan' : 'bez potpisa') : ''].filter(Boolean).join(' · ')) + '</div></div>'
                 + '<span class="text-muted">' + esc(p.vrijeme) + '</span>'
                 + '<button type="button" class="btn btn-sm btn-link text-danger p-0 ms-1" data-ukloni="' + p.id + '" title="Ukloni s popisa" aria-label="Ukloni ' + esc(p.ime) + '">✕</button></div>';
         });
@@ -238,10 +238,24 @@
         if (!c) { alert('Odaberite člana s popisa (počnite upisivati prezime).'); return; }
         posalji({ radnja: 'rucno', clan: c.id }).then(function (j) { if (j.ok) $('gp-clan').value = ''; });
     });
+    // potpis gosta prstom (samo za PDF popisa)
+    var gc = $('gp-gost-potpis'), gx = gc.getContext('2d'), gCrta = false, gIma = false;
+    gx.lineWidth = 3; gx.lineCap = 'round'; gx.lineJoin = 'round'; gx.strokeStyle = '#0b2a6b';
+    function gT(e) { var r = gc.getBoundingClientRect(), t = e.touches ? e.touches[0] : e; return [(t.clientX - r.left) * gc.width / r.width, (t.clientY - r.top) * gc.height / r.height]; }
+    function gP(e) { e.preventDefault(); gCrta = true; var p = gT(e); gx.beginPath(); gx.moveTo(p[0], p[1]); }
+    function gM(e) { if (!gCrta) return; e.preventDefault(); var p = gT(e); gx.lineTo(p[0], p[1]); gx.stroke(); gIma = true; }
+    gc.addEventListener('mousedown', gP); gc.addEventListener('mousemove', gM); window.addEventListener('mouseup', function () { gCrta = false; });
+    gc.addEventListener('touchstart', gP, { passive: false }); gc.addEventListener('touchmove', gM, { passive: false }); gc.addEventListener('touchend', function () { gCrta = false; });
+    function gOcisti() { gx.clearRect(0, 0, gc.width, gc.height); gIma = false; }
+    $('gp-gost-ocisti').addEventListener('click', gOcisti);
     $('gp-gost-dodaj').addEventListener('click', function () {
-        var v = $('gp-gost').value.trim();
+        var v = $('gp-gost').value.trim(), isk = $('gp-gost-isk').value.trim(), ol = $('gp-gost-ol').value.trim();
         if (v.length < 3) { alert('Upišite ime i prezime gosta.'); return; }
-        posalji({ radnja: 'rucno', gost: v }).then(function (j) { if (j.ok) $('gp-gost').value = ''; });
+        if (!isk || !ol) { alert('Upišite broj lovačke iskaznice i oružni list gosta.'); return; }
+        if (!gIma && !confirm('Gost se nije potpisao. Dodati ga bez potpisa?')) return;
+        posalji({ radnja: 'rucno', gost: v, gost_iskaznica: isk, gost_oruzni: ol, gost_potpis: gIma ? gc.toDataURL('image/png') : '' }).then(function (j) {
+            if (j.ok) { $('gp-gost').value = ''; $('gp-gost-isk').value = ''; $('gp-gost-ol').value = ''; gOcisti(); }
+        });
     });
     $('gp-popis').addEventListener('click', function (e) {
         var b = e.target.closest('[data-ukloni]');

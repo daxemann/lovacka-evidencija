@@ -1,5 +1,10 @@
 # Promjene
 
+## 1.41.0 – 2026-10
+- **Skupni lov – ručni upis gosta:** uz ime sada obavezno **broj lovačke iskaznice** i **oružni list**, a gost se **potpiše prstom** na mobitelu voditelja lova.
+  Sve troje je na PDF-u popisa (potpis u stupcu *Potpis*). Bez potpisa gost se može dodati samo uz potvrdu.
+- Potpis gosta koristi se samo za PDF popisa i briše se zajedno s upisom ili lovom.
+
 ## 1.40.0 – 2026-10
 - **✍ Osobni potpis:** *Moj profil → ✍ Moj potpis* – svaki funkcionar potpiše se prstom (ili fotografija potpisa) i sam ga može obrisati; nitko drugi ga ne postavlja.
   Potpis se automatski stavlja na PDF-ove gdje je osoba potpisnik:

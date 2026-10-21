@@ -58,9 +58,16 @@ ob_start(); ?>
                 </div>
                 <datalist id="gp-imenik"></datalist>
                 <label class="form-label small mb-1" for="gp-gost">Gost (nije član udruge)</label>
+                <input class="form-control form-control-sm mb-2" id="gp-gost" maxlength="80" placeholder="Ime i prezime gosta" autocomplete="off">
+                <div class="d-flex gap-2 mb-2">
+                    <input class="form-control form-control-sm" id="gp-gost-isk" maxlength="40" placeholder="Broj lovačke iskaznice" autocomplete="off">
+                    <input class="form-control form-control-sm" id="gp-gost-ol" maxlength="120" placeholder="Oružni list" autocomplete="off">
+                </div>
+                <div class="small text-muted mb-1">Potpis gosta (prstom):</div>
+                <canvas id="gp-gost-potpis" class="dez-potpis-platno mb-1" width="600" height="160"></canvas>
                 <div class="d-flex gap-2">
-                    <input class="form-control form-control-sm" id="gp-gost" maxlength="80" placeholder="Ime i prezime gosta" autocomplete="off">
-                    <button type="button" class="btn btn-sm btn-outline-primary text-nowrap" id="gp-gost-dodaj">Dodaj gosta</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="gp-gost-ocisti">Očisti potpis</button>
+                    <button type="button" class="btn btn-sm btn-outline-primary text-nowrap ms-auto" id="gp-gost-dodaj">Dodaj gosta</button>
                 </div>
                 <div class="form-text">Ručni upis treba signal.</div>
             </div>
