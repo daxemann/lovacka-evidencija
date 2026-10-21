@@ -14,6 +14,8 @@ const POCETNA_BLOKOVI = [
     'skupni' => ['🎯 Skupni lov', 'Gumb – pokretanje / karta lova (organizatori, sudionici dok traje).', true],
     'mobilna' => ['📱 Mobilna stanica', 'Gumb – aktivacija dezinfekcije za skupni lov.', true],
     'kvarovi' => ['🔧 Kvarovi na napravama', 'Gumb s brojem otvorenih prijava.', true],
+    'obavijest_nova' => ['📢 Pošalji obavijest', 'Gumb – nova obavijest s push porukom na mobitel (samo s pravom Obavijesti).', true],
+    'obavijesti' => ['📢 Obavijesti', 'Gumb s brojem nepročitanih obavijesti udruge.', true],
     'danas_popis' => ['🌲 Danas u lovištu – popis', 'Popis zauzetih naprava odmah na početnoj (osvježava se).', false],
     'uprava' => ['🗂️ Uprava – upozorenja', 'Naslov „Uprava“, + Nova radna akcija, članovi čekaju odobrenje, duplikati.', false],
     'termini' => ['📅 Nadolazeći termini', 'Kalendar – sljedeći termini.', false],
@@ -26,7 +28,7 @@ const POCETNA_BLOKOVI = [
 ];
 const POCETNA_ZADANO = [
     'clan' => ['sken', 'qr', 'karta', 'danas', 'termini', 'moje_akcije', 'precaci', 'clanarina'],
-    'uloga' => ['sken', 'qr', 'karta', 'danas', 'uprava', 'termini', 'clanarina', 'brojke', 'rodjendani', 'iskaznice', 'precaci'],
+    'uloga' => ['sken', 'qr', 'karta', 'danas', 'obavijest_nova', 'uprava', 'termini', 'clanarina', 'brojke', 'rodjendani', 'iskaznice', 'precaci'],
     'glavni' => ['uprava', 'termini', 'clanarina', 'brojke', 'rodjendani', 'iskaznice'],
 ];
 
@@ -143,6 +145,10 @@ function pocetna_blok(string $b, array $k): string
             return modul('dezinfekcija') && ima(P_DEZ_MOBILNA) ? pocetna_plocica(url('dezinfekcija/mobilna'), '📱', 'Mobilna stanica', 'dezinfekcija za skupni lov') : '';
         case 'kvarovi':
             return $revir() ? pocetna_plocica(url('revir/kvarovi'), '🔧', 'Kvarovi', 'prijave na napravama', '', revir_broj_kvarova()) : '';
+        case 'obavijest_nova':
+            return modul('obavijesti') && ima(P_OBAVIJESTI) ? pocetna_plocica(url('obavijesti/nova'), '📢', 'Pošalji obavijest', 'push poruka članovima') : '';
+        case 'obavijesti':
+            return modul('obavijesti') && ($cid || ima(P_OBAVIJESTI)) ? pocetna_plocica(url('obavijesti'), '📢', 'Obavijesti', 'obavijesti udruge', '', obav_broj_nepotvrdjenih()) : '';
         case 'danas_popis':
             return $revir() ? pocetna_danas_popis() : '';
         case 'uprava':

@@ -1,5 +1,11 @@
 # Promjene
 
+## 1.46.0 – 2026-10
+- **Početna – novi gumbi** (odabir u *Sustav → Početna stranica*):
+  - **📢 Pošalji obavijest** – ravno na novu obavijest s push porukom; vidi ga samo tko ima pravo *Obavijesti*,
+  - **📢 Obavijesti** – s brojem nepročitanih obavijesti udruge.
+- Kod zadanih postavki *Pošalji obavijest* je uključen za sve uloge (vidi ga samo tko ima pravo).
+
 ## 1.45.1 – 2026-10
 - **Početna – gumb 🌲 Danas u lovištu:** broj na gumbu je sada **koliko ih trenutno sjedi u lovištu** – isti za sve (prije samo nepročitane obavijesti za nadzor, pa ga lovočuvar bez tog prava nije vidio).
   Tko ima pravo *Lovište – nadzor*, ispod vidi i *🔔 n novo*.
