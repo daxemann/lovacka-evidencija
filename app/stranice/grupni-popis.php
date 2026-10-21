@@ -19,6 +19,26 @@ if (($_GET['pdf'] ?? '') === '1') {
     exit;
 }
 
+if (je_post() && ($_POST['radnja'] ?? '') === 'posalji') {
+    $moguci = gl_primatelji_popisa($lov);
+    $prim = array_values(array_intersect(array_keys($moguci), (array) ($_POST['prima'] ?? [])));
+    $dod = trim((string) ($_POST['dodatno'] ?? ''));
+    if ($dod !== '') {
+        if (!filter_var($dod, FILTER_VALIDATE_EMAIL)) {
+            poruka('Dodatna e-adresa nije ispravna.', 'warning');
+            preusmjeri('grupni-popis', ['id' => $lov['Id']]);
+        }
+        $prim[] = $dod;
+    }
+    if (!$prim) {
+        poruka('Odaberite barem jednog primatelja.', 'warning');
+    } elseif ($g = gl_posalji_popis($lov, $prim, korisnik()['Naziv'])) {
+        poruka('Slanje nije uspjelo: ' . e($g), 'danger');
+    } else {
+        poruka('📧 Popis (PDF) poslan: ' . e(implode(', ', $prim)));
+    }
+    preusmjeri('grupni-popis', ['id' => $lov['Id']]);
+}
 $aktivan = gl_aktivan($lov);
 $cfg = [
     'api' => url('api/grupni-popis', ['id' => $lov['Id']]),
@@ -90,6 +110,23 @@ ob_start(); ?>
         <div id="gp-popis" class="list-group small"></div>
     </div>
 </div>
+<?php $moguci = gl_primatelji_popisa($lov); $vod = gl_email_voditelja($lov); ?>
+<details class="card mt-3" id="gp-posalji"><summary class="card-header small fw-semibold">📧 Pošalji PDF popisa e-poštom</summary>
+    <div class="card-body p-3">
+    <?php if (!posta_dostupna()): ?><div class="small text-muted">Slanje e-pošte nije podešeno (Sustav → E-pošta i adresa).</div>
+    <?php else: ?>
+        <form method="post" action="<?= e(url('grupni-popis', ['id' => $lov['Id']])) ?>"><?= csrf() ?><input type="hidden" name="radnja" value="posalji">
+            <?php foreach ($moguci as $m => $ime): ?>
+                <label class="form-check small"><input type="checkbox" class="form-check-input" name="prima[]" value="<?= e($m) ?>"<?= $m === $vod ? ' checked' : '' ?>>
+                    <span class="form-check-label"><?= e($ime) ?> <span class="text-muted">· <?= e($m) ?></span><?= $m === $vod ? ' <span class="badge text-bg-light border">voditelj lova</span>' : '' ?></span></label>
+            <?php endforeach; ?>
+            <?php if (!$moguci): ?><div class="small text-muted mb-2">Nitko od voditelja, lovočuvara i administratora nema upisanu e-poštu.</div><?php endif; ?>
+            <input type="email" name="dodatno" class="form-control form-control-sm my-2" placeholder="druga e-adresa (nije obavezno)">
+            <button class="btn btn-sm btn-primary">📧 Pošalji</button>
+        </form>
+        <div class="form-text">Kad lov završi, popis se sam šalje voditelju lova (bez njegove e-pošte – administratoru).</div>
+    <?php endif; ?>
+    </div></details>
 <p class="small text-muted mt-3 mb-0">Popis je samo popis sudionika – ne mijenja odgovore na poziv, bodove ni dezinfekciju.
     Iskaznice izdaje uprava (Članovi → član → 🪪 Iskaznica), a svaki član je ima i u aplikaciji (Moje → Moja iskaznica).</p>
 <script id="gp-cfg" type="application/json"><?= json_encode($cfg, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP) ?></script>

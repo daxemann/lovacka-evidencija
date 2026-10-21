@@ -46,7 +46,7 @@
         svi.forEach(function (p) {
             h += '<div class="list-group-item d-flex align-items-center gap-2">' + slika(p.f, p.ime)
                 + '<div class="flex-grow-1 lh-sm"><div class="fw-semibold">' + esc(p.ime) + (p.gost ? ' <span class="badge text-bg-info">gost</span>' : '') + '</div>'
-                + '<div class="text-muted">' + esc([p.sek, p.gost && p.isk ? 'LI ' + p.isk : '', p.gost && p.ol ? 'OL ' + p.ol : '', p.nacin === 'rucno' ? '✍ ručno' : '', p.gost ? (p.pot ? 'potpisan' : 'bez potpisa') : ''].filter(Boolean).join(' · ')) + '</div></div>'
+                + '<div class="text-muted">' + esc([p.sek, p.gost && p.isk ? 'LI ' + p.isk : '', p.gost && p.ol ? 'OL ' + p.ol : '', p.nacin === 'rucno' ? '✍ ručno' : (p.nacin === 'voditelj' ? '🎯 voditelj lova' : ''), p.gost ? (p.pot ? 'potpisan' : 'bez potpisa') : ''].filter(Boolean).join(' · ')) + '</div></div>'
                 + (!p.pot ? '<button type="button" class="btn btn-sm btn-outline-primary py-0 px-1 me-1" data-potpis="' + p.id + '" title="Potpis">✍</button>' : '')
                 + '<span class="text-muted">' + esc(p.vrijeme) + '</span>'
                 + '<button type="button" class="btn btn-sm btn-link text-danger p-0 ms-1" data-ukloni="' + p.id + '" title="Ukloni s popisa" aria-label="Ukloni ' + esc(p.ime) + '">✕</button></div>';

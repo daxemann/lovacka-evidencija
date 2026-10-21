@@ -1,5 +1,11 @@
 # Promjene
 
+## 1.43.0 – 2026-10
+- **Skupni lov – voditelj lova automatski je na popisu sudionika** (oznaka *voditelj lova*).
+- **PDF popisa e-poštom:** kad lov završi (ručno ili automatski u 23:00), popis se sam šalje voditelju lova; ako nema upisanu e-poštu – administratoru.
+  Na stranici popisa novo **📧 Pošalji PDF**: voditelj, organizatori i lovočuvari sekcija lova te administratori (s e-poštom) + bilo koja druga adresa.
+- Izbornik *Moje* novim redom: Moje radne akcije · Moj profil · Moja iskaznica · ostalo.
+
 ## 1.42.0 – 2026-10
 - **Skupni lov – potpis članova na popisu:**
   - član koji ima spremljen potpis (*Moj profil* ili spremljen ranije) – potpis je **automatski** na PDF-u,
