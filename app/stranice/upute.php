@@ -201,6 +201,7 @@ if (ima(P_DEZ_ZA_DRUGE)) {
 }
 if (ima(P_DEZ_MOBILNA)) {
     $dez .= '<li><b>Mobilna stanica</b> (skupni lov): na mjestu okupljanja <b>📍 Aktiviraj ovdje</b>, lovci skeniraju QR mobilne stanice. Uživo vidite tko je stigao i tko otišao. Pri zatvaranju potvrdite organiziranu dezinfekciju pri odlasku i tko ju je provodio.</li>';
+    $dez .= '<li><b>📷 Skeniranje iskaznica</b> (samo mobilna stanica): lovočuvar nakon aktivacije odabere najviše <b>5 ovlaštenih</b> (uključujući sebe). Oni skeniraju članske iskaznice – gore odaberu ⬇ DOLAZAK ili ⬆ ODLAZAK, jedno vozilo se upisuje samo, kod više vozila odaberu. U knjizi piše <i>skenirao: ime (iskaznica)</i>. Gosti i dalje preko člana. Gumb se ovlaštenima pojavi na početnoj.</li>';
 }
 if (ima(P_DEZ_UREDI)) {
     $dez .= '<li><b>Naknadni upis</b> i <b>poništavanje</b> – uvijek s razlogom, vidljivo u knjizi. <b>Papirnate liste:</b> fotografirajte papirnatu listu sa stanice i priložite je uz stanicu i razdoblje.</li>';

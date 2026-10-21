@@ -602,3 +602,6 @@ main {
 .clan-precaci .badge { position: absolute; top: .25rem; right: .35rem; }
 /* dugi naziv uloge u zaglavlju ne smije proširiti stranicu na mobitelu */
 @media (max-width: 640.98px) { main > .top-row .badge { max-width: 42vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: middle; } }
+.lov-gumb-sken { background: #8a5a12; border-color: #8a5a12; }
+.lov-gumb-sken:hover, .lov-gumb-sken:active { background: #74490c; }
+.di-smjer .btn { font-weight: 600; }

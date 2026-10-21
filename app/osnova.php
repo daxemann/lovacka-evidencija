@@ -5,7 +5,7 @@
  */
 declare(strict_types=1);
 
-const VERZIJA = '1.37.1';
+const VERZIJA = '1.38.0';
 const KONTAKT_EMAIL = 'daxemann@googlemail.com';
 const PODRSKA_PAYPAL = 'darko.bakic@freenet.de'; // dobrovoljna podrška razvoju (Pomoć i kontakt)
 const PROJEKT_URL = 'https://github.com/daxemann/lovacka-evidencija';
@@ -153,7 +153,7 @@ function db(bool $novo = false): PDO
  * Dodatne tablice PHP verzije (PRAGMA user_version). .NET verzija ih ne poznaje i zanemaruje,
  * pa baza i dalje radi u oba smjera.
  */
-const SHEMA_PHP = 31;
+const SHEMA_PHP = 32;
 function nadogradi_bazu(PDO $pdo): void
 {
     if ((int) $pdo->query('PRAGMA user_version')->fetchColumn() >= SHEMA_PHP) {
@@ -783,6 +783,17 @@ SQL);
     if ($v < 31) {
         // pravo „Popusti u trgovinama – uređivanje“: dobivaju ga uloge koje već imaju sva prava (Glavni admin)
         $pdo->exec('UPDATE "Uloge" SET "Prava" = "Prava" | 16777216 WHERE ("Prava" & 16777215) = 16777215;');
+    }
+    if ($v < 32) {
+        // Mobilna stanica: najviše 5 ovlaštenih (uključujući lovočuvara) smije upisivati skeniranjem članskih iskaznica
+        $pdo->exec('CREATE TABLE IF NOT EXISTS "DezSkeneri" (
+                "AktivacijaId" INTEGER NOT NULL,
+                "KorisnikId" INTEGER NOT NULL,
+                "Ime" TEXT NOT NULL,
+                "DodaoIme" TEXT NULL,
+                "Kreirano" TEXT NOT NULL,
+                PRIMARY KEY ("AktivacijaId", "KorisnikId"))');
+        $pdo->exec('ALTER TABLE "DezUpisi" ADD COLUMN "Skenirano" INTEGER NOT NULL DEFAULT 0');
     }
 }
 

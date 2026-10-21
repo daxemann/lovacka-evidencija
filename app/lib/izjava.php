@@ -66,6 +66,9 @@ function izjava_html(array $stanice): string
         . '<li><b>Skupni lov (mobilna stanica):</b> pri dolasku svaki lovac upisuje se sam. Pri odlasku dežurna ekipa na izlazu redom dezinficira sva vozila (kao kontrolna točka), '
         . 'jer bi inače svi čekali satima. Pri zatvaranju stanice odgovorna osoba to potvrđuje, a za svakoga tko nije sam upisao odlazak upisuje se odlazak s oznakom '
         . '<b>„organizirana dezinfekcija pri odlasku“</b> i imenima osoba koje su dezinfekciju provele.</li>'
+        . '<li><b>Mobilna stanica – skeniranje članskih iskaznica:</b> dok je mobilna stanica aktivna, lovočuvar može odrediti najviše <b>5 ovlaštenih osoba</b> (uključujući sebe) '
+        . 'koje upisuju lovce skeniranjem QR koda članske iskaznice (dolazak ili odlazak, vozilo člana). Upis je moguć samo kod stanice (položaj mobitela koji skenira) i samo dok je stanica aktivna. '
+        . 'Kod svakog takvog upisa piše <b>„skenirao: ime (iskaznica)“</b>. Na stalnim stanicama ovaj način upisa ne postoji.</li>'
         . '<li>Ako lovac pri odlasku ne upiše odlazak, odlaska u evidenciji nema. <b>Program ništa ne dopisuje sam</b> (osim potvrđene organizirane dezinfekcije na mobilnoj stanici).</li>'
         . '</ul>';
 

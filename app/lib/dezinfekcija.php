@@ -15,6 +15,8 @@ const DEZ_LOKACIJA = [
     DEZ_LOK_ORGANIZIRANO => 'na stanici (organizirano)',
 ];
 const DEZ_MAX_SUPUTNIKA = 3;
+/** Mobilna stanica: najviše toliko osoba (uključujući lovočuvara) smije upisivati skeniranjem iskaznica – zahtjev lovne inspekcije. */
+const DEZ_MAX_SKENERA = 5;
 const DEZ_MAX_GOSTIJU = 6;
 /** Najveća dopuštena nepreciznost GPS-a (m) izvan radijusa – dalje od radijus + 1000 m upis se odbija. */
 const DEZ_MAX_TOLERANCIJA = 1000;
@@ -211,8 +213,9 @@ function dodaj_vozilo(int $clanId, string $oznaka, bool $zadano = false): void
  * $grupa: oznaka upisa (izvanmrežni upis je šalje sam – ponovno slanje se ne upisuje dvaput).
  * @return array{ok:bool, poruka?:string, grupa?:string, ponovljeno?:bool}
  */
-function dez_spremi_upis(array $st, array $k, array $u, ?int $klijentVrijeme = null, ?string $grupa = null, ?int $pomakSata = null): array
+function dez_spremi_upis(array $st, array $k, array $u, ?int $klijentVrijeme = null, ?string $grupa = null, ?int $pomakSata = null, bool $skenirano = false): array
 {
+    // $skenirano: upis skeniranjem članske iskaznice na mobilnoj stanici – pozivatelj (dez_skeniraj_iskaznicu) je već provjerio ovlaštenje
     $greska = fn(string $p) => ['ok' => false, 'poruka' => $p];
     if (!$st['Aktivna']) {
         return $greska('Stanica nije aktivna.');
@@ -254,7 +257,7 @@ function dez_spremi_upis(array $st, array $k, array $u, ?int $klijentVrijeme = n
     // upis za drugog lovca (bez mobitela) – samo s pravom, i dalje na samoj stanici
     $zaDrugog = null;
     if (!empty($u['za_clana']) && (int) $u['za_clana'] !== (int) ($clan['Id'] ?? 0)) {
-        if (!ima(P_DEZ_ZA_DRUGE)) {
+        if (!$skenirano && !ima(P_DEZ_ZA_DRUGE)) {
             return $greska('Nemate pravo upisivati druge lovce.');
         }
         $zaDrugog = red('SELECT * FROM Clanovi WHERE Id=? AND Status=0', [(int) $u['za_clana']]);
@@ -330,9 +333,9 @@ function dez_spremi_upis(array $st, array $k, array $u, ?int $klijentVrijeme = n
         'Udaljenost' => $udalj, 'Lokacija' => $lok, 'Naknadno' => 0, 'Grupa' => $grupa, 'Kreirano' => sada(),
         'AktivacijaId' => $stP['AktivacijaId'], 'Izvanmrezno' => $izvan ? 1 : 0,
     ];
-    transakcija(function () use ($zajedno, $clan, $k, $ja, $oznaka, $saVozilom, $suputnici, $gosti, $zaDrugog) {
+    transakcija(function () use ($zajedno, $clan, $k, $ja, $oznaka, $saVozilom, $suputnici, $gosti, $zaDrugog, $skenirano) {
         umetni('DezUpisi', $zajedno + ['ClanId' => $clan['Id'] ?? null, 'Ime' => $clan['Ime'] ?? $k['Naziv'], 'Prezime' => $clan['Prezime'] ?? '',
-            'Gost' => 0, 'Oznaka' => $oznaka, 'Vozilo' => $saVozilom ? 1 : 0, 'PozvaoIme' => $zaDrugog ? $ja : null]);
+            'Gost' => 0, 'Oznaka' => $oznaka, 'Vozilo' => $saVozilom ? 1 : 0, 'PozvaoIme' => $zaDrugog ? $ja : null, 'Skenirano' => $skenirano ? 1 : 0]);
         foreach ($suputnici as $c) {
             umetni('DezUpisi', $zajedno + ['ClanId' => (int) $c['Id'], 'Ime' => $c['Ime'], 'Prezime' => $c['Prezime'], 'Gost' => 0,
                 'Oznaka' => $oznaka, 'Vozilo' => $saVozilom ? 1 : 0, 'PozvaoIme' => $ja]);
@@ -344,8 +347,8 @@ function dez_spremi_upis(array $st, array $k, array $u, ?int $klijentVrijeme = n
     });
     $sat = $izvan && $pomakSata !== null && abs($pomakSata) > DEZ_SAT_TOLERANCIJA
         ? ' · sat mobitela ' . ($pomakSata > 0 ? 'kasni ' : 'žuri ') . dez_trajanje(abs($pomakSata)) : '';
-    dnevnik('Dezinfekcija – ' . mb_strtolower(DEZ_SMJER[$smjer]) . ($izvan ? ' (izvanmrežno)' : ''), 'DezStanica', (int) $st['Id'],
-        ($zaDrugog ? puno_ime($zaDrugog) . ' (upisao ' . $ja . ')' : $ja) . ' + ' . count($suputnici) . ' suputnika, ' . count($gosti) . ' gostiju · ' . DEZ_LOKACIJA[$lok] . $sat, $k);
+    dnevnik('Dezinfekcija – ' . mb_strtolower(DEZ_SMJER[$smjer]) . ($skenirano ? ' (skenirana iskaznica)' : '') . ($izvan ? ' (izvanmrežno)' : ''), 'DezStanica', (int) $st['Id'],
+        ($zaDrugog ? puno_ime($zaDrugog) . ' (' . ($skenirano ? 'skenirao ' : 'upisao ') . $ja . ')' : $ja) . ' + ' . count($suputnici) . ' suputnika, ' . count($gosti) . ' gostiju · ' . DEZ_LOKACIJA[$lok] . $sat, $k);
     return ['ok' => true, 'grupa' => $grupa];
 }
 
@@ -465,6 +468,9 @@ function dez_upisao(array $u): string
     }
     if ($u['Gost']) {
         return 'gost – pozvao: ' . ($u['PozvaoIme'] ?? $u['UpisaoIme'] ?? '');
+    }
+    if (!empty($u['Skenirano'])) {
+        return 'skenirao: ' . ($u['PozvaoIme'] ?? $u['UpisaoIme'] ?? '') . ' (iskaznica)';
     }
     if ($u['PozvaoIme']) {
         return 'upisao: ' . $u['PozvaoIme'];
@@ -865,4 +871,123 @@ function dez_posalji_pdf(array $datoteke, bool $prikaz = true): never
     readfile($tmp);
     @unlink($tmp);
     exit;
+}
+
+// ---------- Mobilna stanica: upis skeniranjem članskih iskaznica ----------
+/** Ovlašteni za skeniranje na aktivaciji (najviše DEZ_MAX_SKENERA, uključujući lovočuvara). */
+function dez_skeneri(int $aktivacijaId): array
+{
+    return redovi('SELECT * FROM DezSkeneri WHERE AktivacijaId=? ORDER BY Kreirano, Ime', [$aktivacijaId]);
+}
+
+/** Smije li korisnik skenirati iskaznice na ovoj aktivaciji (samo dok je otvorena i samo ako je na popisu ovlaštenih). */
+function dez_smije_skenirati(array $a, array $k): bool
+{
+    return $a['Zatvoreno'] === null && $a['Do'] >= sada()
+        && (bool) vrijednost('SELECT 1 FROM DezSkeneri WHERE AktivacijaId=? AND KorisnikId=?', [$a['Id'], $k['Id']]);
+}
+
+/** Otvorene aktivacije mobilnih stanica na kojima trenutni korisnik smije skenirati (za gumb na početnoj). */
+function dez_moje_skeniranje(): array
+{
+    $k = korisnik();
+    if (!$k || !modul('dezinfekcija')) {
+        return [];
+    }
+    return redovi('SELECT a.*, st.Naziv AS Stanica FROM DezSkeneri s JOIN DezAktivacije a ON a.Id=s.AktivacijaId JOIN DezStanice st ON st.Id=a.StanicaId
+        WHERE s.KorisnikId=? AND a.Zatvoreno IS NULL AND a.Od<=? AND a.Do>=? AND st.Aktivna=1 ORDER BY a.Od', [$k['Id'], sada(), sada()]);
+}
+
+/** Korisnici (s računom i aktivnim članom) koje lovočuvar može odabrati za skeniranje na stanici – iz sekcije stanice. */
+function dez_skeneri_kandidati(array $st): array
+{
+    $sek = $st['SekcijaId'] !== null ? ' AND c.SekcijaId=' . (int) $st['SekcijaId'] : '';
+    return redovi('SELECT k.Id, c.Ime, c.Prezime FROM Korisnici k JOIN Clanovi c ON c.Id=k.ClanId
+        WHERE k.Aktivan=1 AND k.Odobren=1 AND c.Status=0' . $sek . ' ORDER BY c.Prezime, c.Ime');
+}
+
+/** Dodaje ovlaštenog za skeniranje. @return string|null greška */
+function dez_skener_dodaj(array $a, int $korisnikId, array $k): ?string
+{
+    if (vrijednost('SELECT 1 FROM DezSkeneri WHERE AktivacijaId=? AND KorisnikId=?', [$a['Id'], $korisnikId])) {
+        return null;
+    }
+    if ((int) vrijednost('SELECT COUNT(*) FROM DezSkeneri WHERE AktivacijaId=?', [$a['Id']]) >= DEZ_MAX_SKENERA) {
+        return 'Najviše ' . DEZ_MAX_SKENERA . ' osoba (uključujući vas) smije skenirati iskaznice na jednoj stanici.';
+    }
+    $r = red('SELECT k.Id, k.PrikaznoIme, c.Ime, c.Prezime FROM Korisnici k LEFT JOIN Clanovi c ON c.Id=k.ClanId WHERE k.Id=? AND k.Aktivan=1', [$korisnikId]);
+    if (!$r) {
+        return 'Korisnik nije pronađen.';
+    }
+    $ime = $r['Ime'] !== null ? trim($r['Ime'] . ' ' . $r['Prezime']) : (string) $r['PrikaznoIme'];
+    umetni('DezSkeneri', ['AktivacijaId' => (int) $a['Id'], 'KorisnikId' => $korisnikId, 'Ime' => $ime, 'DodaoIme' => $k['Naziv'], 'Kreirano' => sada()]);
+    dnevnik('Dezinfekcija – ovlašten za skeniranje iskaznica', 'DezAktivacija', (int) $a['Id'], $ime . ' (dodao ' . $k['Naziv'] . ')', $k);
+    return null;
+}
+
+/** Član po iskaznici za skeniranje na stanici (s vozilima) – za popis na mobitelu (radi i bez signala). */
+function dez_skener_imenik(array $st): array
+{
+    $sek = $st['SekcijaId'] !== null ? ' AND c.SekcijaId=' . (int) $st['SekcijaId'] : '';
+    $vozila = [];
+    foreach (redovi('SELECT v.Id, v.ClanId, v.Oznaka, v.Zadano FROM ClanVozila v JOIN Clanovi c ON c.Id=v.ClanId WHERE c.Status=0' . $sek . ' ORDER BY v.Zadano DESC, v.Id') as $v) {
+        $vozila[(int) $v['ClanId']][] = ['id' => (int) $v['Id'], 'o' => $v['Oznaka']];
+    }
+    $out = [];
+    foreach (redovi('SELECT c.Id, c.Ime, c.Prezime, c.FotoDatoteka, s.Naziv AS Sek, i.Token FROM Clanovi c JOIN ClanIskaznice i ON i.ClanId=c.Id
+            LEFT JOIN Sekcije s ON s.Id=c.SekcijaId WHERE c.Status=0' . $sek) as $c) {
+        $out[] = ['id' => (int) $c['Id'], 't' => $c['Token'], 'ime' => prezime_ime($c), 'sek' => (string) $c['Sek'],
+            'f' => $c['FotoDatoteka'] ? foto_url($c['FotoDatoteka']) : null, 'v' => $vozila[(int) $c['Id']] ?? []];
+    }
+    return $out;
+}
+
+/**
+ * Upis skeniranjem iskaznice. $s = {k (id na mobitelu), q (QR), smjer D|O, vozilo ('v<id>' | 'bez' | ''), lat, lon, acc, v (ms), o (1 = bez signala)}.
+ * Vozilo: jedno → samo; više → odabir skenera (bez odabira → zadano vozilo člana); nijedno → bez vozila.
+ */
+function dez_skeniraj_iskaznicu(array $a, array $st, array $k, array $s): array
+{
+    $token = isk_token_iz_teksta((string) ($s['q'] ?? ''));
+    if (!$token) {
+        return ['ok' => false, 'trajno' => true, 'greska' => 'Ovo nije članska iskaznica.'];
+    }
+    $c = isk_clan($token);
+    if (!$c) {
+        return ['ok' => false, 'trajno' => true, 'greska' => 'Iskaznica ne vrijedi (zamijenjena novom ili član više ne postoji).'];
+    }
+    $ime = prezime_ime($c);
+    if ((int) $c['Status'] !== CLAN_AKTIVAN) {
+        return ['ok' => false, 'trajno' => true, 'ime' => $ime, 'greska' => 'Iskaznica ne vrijedi – ' . $ime . ' nije aktivan član.'];
+    }
+    $vozila = vozila_clana((int) $c['Id']);
+    $v = (string) ($s['vozilo'] ?? '');
+    if ($v !== 'bez' && !preg_match('/^v\d+$/', $v)) {
+        $v = $vozila ? 'v' . $vozila[0]['Id'] : 'bez'; // vozila_clana: zadano vozilo prvo
+    }
+    $raz = $a['Razlog'] ? vrijednost('SELECT Id FROM DezRazlozi WHERE Naziv=? LIMIT 1', [$a['Razlog']]) : null;
+    $raz ??= vrijednost('SELECT Id FROM DezRazlozi WHERE Aktivan=1 AND Slobodno=0 ORDER BY Redoslijed, Id LIMIT 1');
+    $u = ['smjer' => (string) ($s['smjer'] ?? ''), 'razlog' => (int) $raz, 'potvrda' => 1, 'vozilo' => $v, 'za_clana' => (int) $c['Id'],
+        'lat' => $s['lat'] ?? null, 'lon' => $s['lon'] ?? null, 'acc' => $s['acc'] ?? null];
+    $izvan = !empty($s['o']) && isset($s['v']) && is_numeric($s['v']);
+    $grupa = isset($s['k']) && preg_match('/^[a-z0-9]{6,24}$/', (string) $s['k']) ? 'sk-' . $a['Id'] . '-' . $s['k'] : null;
+    // ako je skener sam član koji je skeniran, upis je i dalje „skenirao“ (iskaznica), ne „osobno“
+    $r = dez_spremi_upis($st, $k, $u, $izvan ? intdiv((int) $s['v'], 1000) : null, $grupa, null, true);
+    $rez = ['ime' => $ime, 'sek' => (string) ($c['SekcijaNaziv'] ?? ''), 'f' => $c['FotoDatoteka'] ? foto_url($c['FotoDatoteka']) : null];
+    if (!$r['ok']) {
+        return $rez + ['ok' => false, 'trajno' => true, 'greska' => $ime . ': ' . ($r['poruka'] ?? 'upis nije uspio')];
+    }
+    $oz = str_starts_with($v, 'v') ? (string) vrijednost('SELECT Oznaka FROM ClanVozila WHERE Id=?', [(int) substr($v, 1)]) : '';
+    return $rez + ['ok' => true, 'vec' => !empty($r['ponovljeno']), 'oznaka' => $oz];
+}
+
+/** Zadnji upisi skeniranjem na aktivaciji (za popis kod skenera). */
+function dez_skenirani_json(array $a): array
+{
+    $out = [];
+    foreach (redovi('SELECT * FROM DezUpisi WHERE AktivacijaId=? AND Ponisteno=0 AND Skenirano=1 ORDER BY Id DESC LIMIT 200', [$a['Id']]) as $u) {
+        $out[] = ['id' => (int) $u['Id'], 'clan' => (int) $u['ClanId'], 'ime' => dez_ime($u), 's' => $u['Smjer'], 'oz' => (string) $u['Oznaka'],
+            'vr' => date('H:i', strtotime($u['Vrijeme'])), 'tko' => (string) ($u['PozvaoIme'] ?: $u['UpisaoIme']), 'izv' => (int) $u['Izvanmrezno']];
+    }
+    return $out;
 }

@@ -49,7 +49,34 @@ if (je_post()) {
                 'Lat' => $kk[0], 'Lon' => $kk[1], 'Tocnost' => $kk[2], 'Od' => sada(), 'Do' => $do, 'AktiviraoId' => $k['Id'], 'AktiviraoIme' => $k['Naziv'],
             ]);
             dnevnik('Dezinfekcija – mobilna stanica aktivirana', 'DezAktivacija', $id, ul_str('naziv') . ' · ' . $kk[0] . ', ' . $kk[1] . ' ±' . $kk[2] . ' m');
+            // lovočuvar koji je postavio stanicu prvi je od najviše 5 ovlaštenih za skeniranje iskaznica
+            dez_skener_dodaj(dez_aktivacija_po_id($id), (int) $k['Id'], $k);
             poruka('Mobilna stanica je aktivna. Lovci sada mogu skenirati QR oznaku.' . ($kk[2] !== null && $kk[2] > 50 ? ' <b>Točnost lokacije je ±' . (int) $kk[2] . ' m</b> – po potrebi „Premjesti ovdje“ na otvorenom.' : ''));
+            break;
+        case 'skener-dodaj':
+            $kid = (int) ($_POST['korisnik'] ?? 0);
+            $st = dez_stanica((int) $a['StanicaId']);
+            if (!in_array($kid, array_map(fn($x) => (int) $x['Id'], dez_skeneri_kandidati($st)), true) && $kid !== (int) $k['Id']) {
+                poruka('Odaberite lovca iz sekcije stanice.', 'warning');
+                break;
+            }
+            if ($g = dez_skener_dodaj($a, $kid, $k)) {
+                poruka(e($g), 'warning');
+                break;
+            }
+            if ($kid !== (int) $k['Id']) {
+                push_posalji([$kid], 'dez-skener', '📷 Skeniranje iskaznica', 'Smijete upisivati lovce skeniranjem iskaznica na stanici: ' . $a['Naziv'],
+                    'dez/iskaznice', ['a' => $a['Id']], 'dez-skener-' . $a['Id']);
+            }
+            poruka('Dodano. Ovlašteni na početnoj vidi gumb <b>📷 Skeniraj iskaznice</b>.');
+            break;
+        case 'skener-ukloni':
+            $kid = (int) ($_POST['korisnik'] ?? 0);
+            $ime = vrijednost('SELECT Ime FROM DezSkeneri WHERE AktivacijaId=? AND KorisnikId=?', [$a['Id'], $kid]);
+            if ($ime) {
+                q('DELETE FROM DezSkeneri WHERE AktivacijaId=? AND KorisnikId=?', [$a['Id'], $kid]);
+                dnevnik('Dezinfekcija – uklonjen iz skeniranja iskaznica', 'DezAktivacija', (int) $a['Id'], $ime . ' (uklonio ' . $k['Naziv'] . ')');
+            }
             break;
         case 'premjesti':
             $kk = $koord();
@@ -132,6 +159,25 @@ ob_start(); ?>
                         <?= in_array((int) $u['Lokacija'], [DEZ_LOK_NEPOUZDANO, DEZ_LOK_BEZ], true) || $u['Izvanmrezno'] ? ' ⚠' : '' ?></span></li>
                 <?php endforeach; ?></ul>
             <?php else: ?><p class="small text-muted">Još nitko nije skenirao.</p><?php endif; ?>
+            <?php $skeneri = dez_skeneri((int) $a['Id']); $mojSken = in_array((int) $k['Id'], array_map(fn($x) => (int) $x['KorisnikId'], $skeneri), true); ?>
+            <div class="border rounded p-2 mb-3 dez-skeneri">
+                <div class="d-flex align-items-center gap-2 mb-1"><b class="small me-auto">📷 Skeniranje iskaznica – ovlašteni (<?= count($skeneri) ?>/<?= DEZ_MAX_SKENERA ?>)</b>
+                    <?php if ($mojSken): ?><a class="btn btn-sm btn-success" href="<?= e(url('dez/iskaznice', ['a' => $a['Id']])) ?>">📷 Skeniraj iskaznice</a><?php endif; ?></div>
+                <div class="d-flex flex-wrap gap-1 mb-1">
+                <?php foreach ($skeneri as $x): ?>
+                    <form method="post" action="<?= e(url('dezinfekcija/mobilna')) ?>" class="m-0"><?= csrf() ?><input type="hidden" name="radnja" value="skener-ukloni"><input type="hidden" name="id" value="<?= (int) $a['Id'] ?>"><input type="hidden" name="korisnik" value="<?= (int) $x['KorisnikId'] ?>">
+                        <span class="badge text-bg-light border fw-normal"><?= e($x['Ime']) ?> <button class="btn btn-link btn-sm p-0 ms-1 text-danger text-decoration-none" title="Ukloni" data-potvrda="<?= e('Ukloniti ' . $x['Ime'] . ' iz skeniranja?') ?>">✕</button></span></form>
+                <?php endforeach; ?>
+                </div>
+                <?php if (count($skeneri) < DEZ_MAX_SKENERA): $vec = array_map(fn($x) => (int) $x['KorisnikId'], $skeneri); ?>
+                <form method="post" action="<?= e(url('dezinfekcija/mobilna')) ?>" class="d-flex gap-1"><?= csrf() ?><input type="hidden" name="radnja" value="skener-dodaj"><input type="hidden" name="id" value="<?= (int) $a['Id'] ?>">
+                    <select name="korisnik" class="form-select form-select-sm" required><option value="">+ dodaj lovca…</option>
+                        <?php if (!in_array((int) $k['Id'], $vec, true)): ?><option value="<?= (int) $k['Id'] ?>">ja (<?= e($k['Naziv']) ?>)</option><?php endif; ?>
+                        <?php foreach (dez_skeneri_kandidati($s) as $x): if (in_array((int) $x['Id'], $vec, true) || (int) $x['Id'] === (int) $k['Id']) continue; ?><option value="<?= (int) $x['Id'] ?>"><?= e($x['Prezime'] . ' ' . $x['Ime']) ?></option><?php endforeach; ?>
+                    </select><button class="btn btn-sm btn-outline-primary">Dodaj</button></form>
+                <?php endif; ?>
+                <div class="form-text">Najviše <?= DEZ_MAX_SKENERA ?> osoba (uključujući vas) smije upisivati lovce skeniranjem članske iskaznice – samo na ovoj mobilnoj stanici i samo dok je aktivna. U knjizi piše tko je skenirao.</div>
+            </div>
             <div class="d-flex flex-wrap gap-2">
                 <form method="post" action="<?= e(url('dezinfekcija/mobilna')) ?>" class="dez-gps-obrazac"><?= csrf() ?><input type="hidden" name="radnja" value="premjesti"><input type="hidden" name="id" value="<?= (int) $a['Id'] ?>">
                     <input type="hidden" name="lat"><input type="hidden" name="lon"><input type="hidden" name="acc">

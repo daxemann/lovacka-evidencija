@@ -1,5 +1,15 @@
 # Promjene
 
+## 1.38.0 – 2026-10
+- **📷 Mobilna stanica – upis skeniranjem članskih iskaznica** (uz suglasnost lovne inspekcije):
+  - lovočuvar nakon aktivacije odabere najviše **5 ovlaštenih** (uključujući sebe – automatski je prvi); šesti nije moguć,
+  - ovlašteni skeniraju iskaznice: gore jednom odaberu **⬇ DOLAZAK / ⬆ ODLAZAK**, kamera ostaje otvorena,
+  - **vozilo:** jedno → upisuje se samo, više → odabir, nijedno → bez vozila,
+  - u knjizi i PDF-u: **„skenirao: ime (iskaznica)“**; upis samo kod stanice (lokacija mobitela koji skenira) i samo dok je stanica aktivna,
+  - radi i bez signala (upis čeka na mobitelu), gosti i dalje preko člana; na stalnim stanicama ovog načina nema.
+- Ovlašteni dobiju push obavijest i veliki gumb **🪪 Skeniraj iskaznice** na početnoj dok je stanica aktivna.
+- Izjava za inspekciju i upute dopunjene.
+
 ## 1.37.1 – 2026-10
 - **„Grupni lov“ je sada „Skupni lov“** – u izborniku, pozivima, push obavijestima, pravima, modulima, popisu sudionika, PDF-u i uputama.
   Podaci i poveznice ostaju isti.
