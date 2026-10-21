@@ -1,5 +1,11 @@
 # Promjene
 
+## 1.37.0 – 2026-10
+- **Ista početna za sve:** lovnik, lovočuvar, tajnik, blagajnik i ostali s pravima gore imaju iste velike gumbe kao lovci (📷 Skeniraj QR, 🗺️ Karta lovišta, 🌲 Danas u lovištu),
+  ispod je odjeljak **🗂️ Uprava** (termini, brojke, rođendani, iskaznice), a na dnu traka Imenik · Iskaznica · Poruke · Moj profil.
+- Glavni admin zadržava dosadašnji pregled uprave.
+- Mobitel: dugi naziv uloge u zaglavlju više ne širi stranicu.
+
 ## 1.36.2 – 2026-10
 - **← Početna** i na stranicama Karta lovišta, Danas u lovištu i Kvarovi na napravama.
 

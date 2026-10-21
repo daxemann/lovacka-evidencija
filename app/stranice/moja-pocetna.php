@@ -15,23 +15,10 @@ if ($cid) {
     $ceka = (int) vrijednost('SELECT COUNT(*) FROM RadneAkcije WHERE ClanId=? AND Status=0', [$cid]);
     $zadnje = redovi('SELECT a.*, v.Naziv AS Vrsta FROM RadneAkcije a LEFT JOIN VrsteAkcija v ON v.Id=a.VrstaAkcijeId WHERE a.ClanId=? ORDER BY a.Datum DESC, a.Id DESC LIMIT 3', [$cid]);
 }
-$dez = modul('dezinfekcija');
-$revir = modul('revir') && revir_sekcije();
-$neproc = broj_neprocitanih((int) $k['Id']);
 ob_start(); ?>
 <h1 class="h4 mb-3">Pozdrav, <?= e(explode(' ', (string) $k['Naziv'])[0]) ?></h1>
 
-<?php if ($dez || $revir): ?>
-<div class="lov-gumbi mb-3">
-    <?php if ($dez): ?>
-    <a class="lov-gumb lov-gumb-qr" href="<?= e(url('skeniraj')) ?>"><span class="lov-gumb-ikona">📷</span><span><b>Skeniraj QR</b><small>Dezinfekcija – dolazak / odlazak</small></span></a>
-    <?php endif; ?>
-    <?php if ($revir): ?>
-    <a class="lov-gumb" href="<?= e(url('revir')) ?>"><span class="lov-gumb-ikona">🗺️</span><span><b>Karta lovišta</b><small>sjedim ovdje · kvarovi</small></span></a>
-    <a class="lov-gumb" href="<?= e(url('revir/danas')) ?>"><span class="lov-gumb-ikona">🌲</span><span><b>Danas u lovištu</b><small>tko gdje sjedi</small></span></a>
-    <?php endif; ?>
-</div>
-<?php endif; ?>
+<?= predlozak('pocetna-lov') ?>
 
 <?php if (modul('kalendar')): ?>
 <div class="card mb-3"><div class="card-header d-flex align-items-center"><b class="me-auto">📅 Nadolazeći termini</b><a class="small" href="<?= e(url('kalendar')) ?>">kalendar →</a></div>
@@ -62,12 +49,7 @@ ob_start(); ?>
     </div></div>
 <?php endif; ?>
 
-<nav class="clan-precaci mb-3" aria-label="Prečaci">
-    <a href="<?= e(url('imenik')) ?>"><span class="ikona">📇</span>Imenik</a>
-    <?php if (modul('iskaznice') && $cid): ?><a href="<?= e(url('moja-iskaznica')) ?>"><span class="ikona">🪪</span>Iskaznica</a><?php endif; ?>
-    <a href="<?= e(url('poruke')) ?>"><span class="ikona">💬</span>Poruke<?php if ($neproc): ?><span class="badge rounded-pill bg-danger"><?= $neproc ?></span><?php endif; ?></a>
-    <?php if ($cid): ?><a href="<?= e(url('moj-profil')) ?>"><span class="ikona">👤</span>Moj profil</a><?php endif; ?>
-</nav>
+<?= predlozak('pocetna-precaci') ?>
 
 <?php if ($cid && modul('clanarina')) echo predlozak('moja-clanarina', ['clanId' => $cid]); ?>
 <?php stranica('Početna', ob_get_clean());

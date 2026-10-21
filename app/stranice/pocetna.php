@@ -53,11 +53,22 @@ usort($rodj, fn($a, $b) => $a[1] <=> $b[1]);
 $cestitke = poslane_cestitke(array_map(fn($r) => [(int) $r[0]['Id'], (int) $r[1]->format('Y')], $rodj));
 $mozeMail = posta_dostupna();
 usort($isk, fn($a, $b) => strcmp($a['IskaznicaVrijediDo'], $b['IskaznicaVrijediDo']));
+// glavni admin zadržava čisti pregled uprave; svi ostali s pravima (lovnik, lovočuvar, tajnik…) gore imaju iste gumbe kao lovci
+$glavni = oznaka_uloge()[0] === 'Glavni admin';
 ob_start(); ?>
+<?php if ($glavni): ?>
 <div class="d-flex flex-wrap align-items-center gap-2 mb-4">
     <h1 class="h3 mb-0 me-auto">Dobro došli, <?= e($k['Naziv']) ?></h1>
     <?php if (ima(P_AKCIJE_ODOBRI)): ?><a href="<?= e(url('akcije/nova')) ?>" class="btn btn-primary">+ Nova radna akcija</a><?php endif; ?>
 </div>
+<?php else: ?>
+<h1 class="h4 mb-3">Pozdrav, <?= e(explode(' ', (string) $k['Naziv'])[0]) ?></h1>
+<?= predlozak('pocetna-lov') ?>
+<div class="d-flex flex-wrap align-items-center gap-2 mb-3 pt-2 border-top">
+    <h2 class="h5 mb-0 me-auto">🗂️ Uprava</h2>
+    <?php if (ima(P_AKCIJE_ODOBRI)): ?><a href="<?= e(url('akcije/nova')) ?>" class="btn btn-sm btn-primary">+ Nova radna akcija</a><?php endif; ?>
+</div>
+<?php endif; ?>
 <?php if (ima(P_SUSTAV) && str_starts_with(str_replace('\\', '/', realpath(podaci()) ?: ''), str_replace('\\', '/', realpath(KORIJEN) ?: '-'))): ?>
     <div class="alert alert-danger d-none" id="izlozeno"><b>Upozorenje – baza je javno dostupna!</b> Poslužitelj ne poštuje datoteku .htaccess (npr. nginx), pa se mapa <code>podaci</code> može preuzeti s interneta.
         Premjestite mapu s podacima izvan javne mape weba (config.php → 'podaci') ili zabranite pristup mapi <code>podaci</code> u postavkama poslužitelja. Upute: README.</div>
@@ -130,5 +141,6 @@ ob_start(); ?>
             <?php endforeach; ?>
         </ul></div></div>
 </div>
-<?php endif;
+<?php endif; ?>
+<?php if (!$glavni): ?><div class="mt-4"><?= predlozak('pocetna-precaci') ?></div><?php endif;
 stranica('Početna', ob_get_clean());

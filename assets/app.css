@@ -600,3 +600,5 @@ main {
 .clan-precaci a:hover, .clan-precaci a:active { background: #f2f6ef; color: #1f3d1f; }
 .clan-precaci .ikona { font-size: 1.5rem; line-height: 1; }
 .clan-precaci .badge { position: absolute; top: .25rem; right: .35rem; }
+/* dugi naziv uloge u zaglavlju ne smije proširiti stranicu na mobitelu */
+@media (max-width: 640.98px) { main > .top-row .badge { max-width: 42vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: middle; } }
