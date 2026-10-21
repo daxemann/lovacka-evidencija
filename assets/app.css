@@ -605,3 +605,4 @@ main {
 .lov-gumb-sken { background: #8a5a12; border-color: #8a5a12; }
 .lov-gumb-sken:hover, .lov-gumb-sken:active { background: #74490c; }
 .di-smjer .btn { font-weight: 600; }
+.gost-qr svg { width: 180px; height: 180px; display: block; margin: 0 auto; }

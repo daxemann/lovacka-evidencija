@@ -1,5 +1,13 @@
 # Promjene
 
+## 1.44.0 – 2026-10
+- **Kalendar:** vrsta termina „Zajednički lov“ sada se zove **„Skupni lov“** (postojeći termini preimenovani).
+- **Lovni gost uz termin lova:** nakon *✔ Dolazim* kvačica **„Vodim lovnog gosta“** (jedan po članu): ime, prezime, broj lovačke iskaznice i oružni list (mogu se dopuniti na lovu), e-pošta.
+  - gost dobiva **QR pozivnicu** e-poštom (PDF), ili je član spremi kao sliku i pošalje (Viber/WhatsApp),
+  - QR vrijedi **samo za tu pozivnicu i samo na dan termina**; uklanjanjem gosta ili „Ne dolazim“ prestaje vrijediti,
+  - voditelj lova u terminu vidi popis gostiju, tko ih je pozvao i koji podaci nedostaju.
+- **Popis skupnog lova:** skeniranjem pozivnice gost je odmah na popisu (*gost – pozvao …*); ako nedostaju podaci, upišu se na licu mjesta – i gost se samo potpiše.
+
 ## 1.43.0 – 2026-10
 - **Skupni lov – voditelj lova automatski je na popisu sudionika** (oznaka *voditelj lova*).
 - **PDF popisa e-poštom:** kad lov završi (ručno ili automatski u 23:00), popis se sam šalje voditelju lova; ako nema upisanu e-poštu – administratoru.

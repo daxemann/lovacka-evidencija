@@ -5,7 +5,7 @@ declare(strict_types=1);
 const VRSTE_DOGADJAJA_ZADANO = [
     ['naziv' => 'Radna akcija', 'boja' => '#3d6b2f', 'akcija' => true],
     ['naziv' => 'Sastanak / Skupština', 'boja' => '#1f5fa8', 'akcija' => false],
-    ['naziv' => 'Zajednički lov', 'boja' => '#a8551f', 'akcija' => false, 'psi' => true],
+    ['naziv' => 'Skupni lov', 'boja' => '#a8551f', 'akcija' => false, 'psi' => true],
     ['naziv' => 'Skupni lov na sitnu divljač', 'boja' => '#c0392b', 'akcija' => false, 'psi' => true],
     ['naziv' => 'Gađanje', 'boja' => '#7a3fa8', 'akcija' => false],
     ['naziv' => 'Druženje', 'boja' => '#c28a00', 'akcija' => false],

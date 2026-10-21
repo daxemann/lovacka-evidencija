@@ -5,7 +5,7 @@
  */
 declare(strict_types=1);
 
-const VERZIJA = '1.43.0';
+const VERZIJA = '1.44.0';
 const KONTAKT_EMAIL = 'daxemann@googlemail.com';
 const PODRSKA_PAYPAL = 'darko.bakic@freenet.de'; // dobrovoljna podrška razvoju (Pomoć i kontakt)
 const PROJEKT_URL = 'https://github.com/daxemann/lovacka-evidencija';
@@ -153,7 +153,7 @@ function db(bool $novo = false): PDO
  * Dodatne tablice PHP verzije (PRAGMA user_version). .NET verzija ih ne poznaje i zanemaruje,
  * pa baza i dalje radi u oba smjera.
  */
-const SHEMA_PHP = 34;
+const SHEMA_PHP = 35;
 function nadogradi_bazu(PDO $pdo): void
 {
     if ((int) $pdo->query('PRAGMA user_version')->fetchColumn() >= SHEMA_PHP) {
@@ -810,6 +810,38 @@ SQL);
         $pdo->exec('ALTER TABLE "GrupniLovPopis" ADD COLUMN "GostIskaznica" TEXT NULL');
         $pdo->exec('ALTER TABLE "GrupniLovPopis" ADD COLUMN "GostOruzni" TEXT NULL');
         $pdo->exec('ALTER TABLE "GrupniLovPopis" ADD COLUMN "Potpis" TEXT NULL');
+    }
+    if ($v < 35) {
+        // lovni gost člana na terminu lova (QR pozivnica vrijedi samo za taj dan) + veza na popis skupnog lova
+        $pdo->exec('CREATE TABLE IF NOT EXISTS "DogadjajGosti" (
+                "Id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                "DogadjajId" INTEGER NOT NULL REFERENCES "Dogadjaji" ("Id") ON DELETE CASCADE,
+                "ClanId" INTEGER NOT NULL,
+                "Ime" TEXT NOT NULL,
+                "Prezime" TEXT NOT NULL,
+                "BrojIskaznice" TEXT NULL,
+                "OruzniList" TEXT NULL,
+                "Email" TEXT NULL,
+                "Token" TEXT NOT NULL UNIQUE,
+                "Poslano" TEXT NULL,
+                "Kreirano" TEXT NOT NULL,
+                UNIQUE ("DogadjajId", "ClanId"))');
+        $pdo->exec('ALTER TABLE "GrupniLovPopis" ADD COLUMN "GostId" INTEGER NULL');
+        $pdo->exec('ALTER TABLE "GrupniLovPopis" ADD COLUMN "PozvaoIme" TEXT NULL');
+        // vrsta termina „Zajednički lov“ → „Skupni lov“
+        $st = $pdo->prepare('SELECT Vrijednost FROM Postavke WHERE Kljuc=?');
+        $st->execute(['Kalendar.Vrste']);
+        $vr = json_decode((string) $st->fetchColumn(), true);
+        if (is_array($vr) && $vr) {
+            foreach ($vr as &$x) {
+                if (($x['naziv'] ?? '') === 'Zajednički lov') {
+                    $x['naziv'] = 'Skupni lov';
+                }
+            }
+            unset($x);
+            $pdo->prepare('UPDATE Postavke SET Vrijednost=? WHERE Kljuc=?')->execute([json_encode($vr, JSON_UNESCAPED_UNICODE), 'Kalendar.Vrste']);
+        }
+        $pdo->exec("UPDATE \"Dogadjaji\" SET \"Vrsta\" = 'Skupni lov' WHERE \"Vrsta\" = 'Zajednički lov'");
     }
 }
 

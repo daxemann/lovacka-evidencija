@@ -34,7 +34,7 @@
         var el = $('gp-popis'), h = '';
         var cekaju = red.map(function (x) {
             var c = imenik[token(x.q)];
-            return { ime: c ? c.ime : 'Iskaznica – provjera kad bude signala', sek: c ? c.sek : '', f: c ? c.f : null, ceka: true, v: x.v };
+            return { ime: c ? c.ime : (x.q.indexOf('LEG1:') === 0 ? 'Pozivnica gosta' : 'Iskaznica') + ' – provjera kad bude signala', sek: c ? c.sek : '', f: c ? c.f : null, ceka: true, v: x.v };
         });
         var svi = popis.slice().reverse();
         cekaju.slice().reverse().forEach(function (c) {
@@ -46,7 +46,7 @@
         svi.forEach(function (p) {
             h += '<div class="list-group-item d-flex align-items-center gap-2">' + slika(p.f, p.ime)
                 + '<div class="flex-grow-1 lh-sm"><div class="fw-semibold">' + esc(p.ime) + (p.gost ? ' <span class="badge text-bg-info">gost</span>' : '') + '</div>'
-                + '<div class="text-muted">' + esc([p.sek, p.gost && p.isk ? 'LI ' + p.isk : '', p.gost && p.ol ? 'OL ' + p.ol : '', p.nacin === 'rucno' ? '✍ ručno' : (p.nacin === 'voditelj' ? '🎯 voditelj lova' : ''), p.gost ? (p.pot ? 'potpisan' : 'bez potpisa') : ''].filter(Boolean).join(' · ')) + '</div></div>'
+                + '<div class="text-muted">' + esc([p.sek, p.gost && p.pozvao ? 'pozvao ' + p.pozvao : '', p.gost && p.isk ? 'LI ' + p.isk : '', p.gost && p.ol ? 'OL ' + p.ol : '', p.nacin === 'rucno' ? '✍ ručno' : (p.nacin === 'voditelj' ? '🎯 voditelj lova' : ''), p.gost ? (p.pot ? 'potpisan' : 'bez potpisa') : ''].filter(Boolean).join(' · ')) + '</div></div>'
                 + (!p.pot ? '<button type="button" class="btn btn-sm btn-outline-primary py-0 px-1 me-1" data-potpis="' + p.id + '" title="Potpis">✍</button>' : '')
                 + '<span class="text-muted">' + esc(p.vrijeme) + '</span>'
                 + '<button type="button" class="btn btn-sm btn-link text-danger p-0 ms-1" data-ukloni="' + p.id + '" title="Ukloni s popisa" aria-label="Ukloni ' + esc(p.ime) + '">✕</button></div>';
@@ -140,6 +140,20 @@
     }, 30000);
 
     function nadjeno(tekst) {
+        if (String(tekst || '').trim().toUpperCase().indexOf('LEG1:') === 0) { // pozivnica lovnog gosta – provjerava poslužitelj
+            var g = String(tekst).trim().toUpperCase();
+            if (red.some(function (x) { return x.q === g; })) return;
+            var sg = { k: Date.now().toString(36) + Math.random().toString(36).slice(2, 7), q: g, v: Date.now() };
+            red.push(sg); spremiRed(red);
+            zadnji('ok', 'Pozivnica gosta', navigator.onLine === false ? 'provjera kad bude signala' : 'provjeravam…'); pisak(true); prikaziPopis();
+            sinkroniziraj().then(function (j) {
+                var r = j && (j.rezultati || []).filter(function (x) { return x.k === sg.k; })[0];
+                if (!r) return;
+                if (r.ok) { zadnji(r.vec ? 'vec' : 'ok', r.ime, (r.vec ? 'već je na popisu · ' : '✔ upisan · ') + r.sek); if (!r.pot) otvoriPotpis(r.pid, r.ime, { isk: r.isk, ol: r.ol }); }
+                else zadnji('greska', 'Pozivnica ne vrijedi', r.greska || '');
+            });
+            return;
+        }
         var t = token(tekst);
         if (!t) { zadnji('greska', 'Nije članska iskaznica', 'Ovaj QR kod nije iskaznica udruge.'); pisak(false); return; }
         var c = imenik[t];
@@ -154,7 +168,7 @@
         sinkroniziraj().then(function (j) {
             // iskaznica koju mobitel nije poznavao (druga sekcija) – ime i provjera s poslužitelja
             var r = j && (j.rezultati || []).filter(function (x) { return x.k === stavka.k; })[0];
-            if (r && r.ok && r.pot === false && r.pid) otvoriPotpis(r.pid, r.ime);
+            if (r && r.ok && r.pot === false && r.pid) otvoriPotpis(r.pid, r.ime, r.gost ? { isk: r.isk, ol: r.ol } : null);
             if (c || !r) return;
             if (r.ok) zadnji(r.vec ? 'vec' : 'ok', r.ime, r.vec ? 'već je na popisu' : '✔ upisan' + (r.sek ? ' · ' + r.sek : ''), r.f);
             else zadnji('greska', r.ime || 'Iskaznica ne vrijedi', r.greska || '');
@@ -259,11 +273,16 @@
 
     // ---------- potpis člana bez spremljenog potpisa ----------
     var cp = potpisPolje($('gp-potpis-platno')), potpisPid = null, potpisRed = [];
-    function otvoriPotpis(pid, ime) {
+    var potpisGost = null;
+    function otvoriPotpis(pid, ime, gost) {
         if (potpisPid === pid) return;
         if (potpisPid !== null) { if (potpisRed.indexOf(pid) < 0) potpisRed.push(pid); return; }
         potpisPid = pid; cp.ocisti();
-        $('gp-potpis-naslov').textContent = '✍ ' + ime + ' – potpis (nema spremljen potpis)';
+        if (!gost) { var pp = popis.filter(function (x) { return x.id === pid; })[0]; if (pp && pp.gost) gost = { isk: pp.isk, ol: pp.ol }; }
+        potpisGost = gost || null;
+        $('gp-potpis-gost').hidden = !gost; $('gp-potpis-spremi-red').hidden = !!gost;
+        if (gost) { $('gp-potpis-isk').value = gost.isk || ''; $('gp-potpis-ol').value = gost.ol || ''; }
+        $('gp-potpis-naslov').textContent = '✍ ' + ime + (gost ? ' (gost) – ' + (gost.isk && gost.ol ? 'potpis' : 'dopunite podatke i potpis') : ' – potpis (nema spremljen potpis)');
         $('gp-potpis').hidden = false;
     }
     function zatvoriPotpis() {
@@ -275,8 +294,12 @@
     $('gp-potpis-kasnije').addEventListener('click', zatvoriPotpis);
     $('gp-potpis-spremi-btn').addEventListener('click', function () {
         if (!cp.ima) { alert('Najprije se potpišite u polju.'); return; }
-        var pid = potpisPid;
-        posalji({ radnja: 'potpis', pid: pid, potpis: cp.png(), spremi: $('gp-potpis-spremi').checked ? 1 : '' }).then(function (j) { if (j.ok) zatvoriPotpis(); });
+        var pid = potpisPid, polja = { radnja: 'potpis', pid: pid, potpis: cp.png(), spremi: $('gp-potpis-spremi').checked ? 1 : '' };
+        if (potpisGost) {
+            polja.iskaznica = $('gp-potpis-isk').value.trim(); polja.oruzni = $('gp-potpis-ol').value.trim();
+            if (!polja.iskaznica || !polja.oruzni) { alert('Upišite broj lovačke iskaznice i oružni list gosta.'); return; }
+        }
+        posalji(polja).then(function (j) { if (j.ok) zatvoriPotpis(); });
     });
     $('gp-gost-dodaj').addEventListener('click', function () {
         var v = $('gp-gost').value.trim(), isk = $('gp-gost-isk').value.trim(), ol = $('gp-gost-ol').value.trim();

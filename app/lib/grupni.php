@@ -545,7 +545,7 @@ function gl_popis_json(array $lov): array
         'id' => (int) $p['Id'], 'clan' => $p['ClanId'] !== null ? (int) $p['ClanId'] : null, 'ime' => $p['Ime'], 'sek' => (string) $p['Sekcija'],
         'gost' => (bool) $p['Gost'], 'nacin' => $p['Nacin'], 'vrijeme' => date('H:i', strtotime($p['Vrijeme'])), 'upisao' => (string) $p['Upisao'],
         'f' => $p['ClanId'] !== null ? ($foto[(int) $p['ClanId']] ?? null) : null,
-        'isk' => (string) ($p['GostIskaznica'] ?? ''), 'ol' => (string) ($p['GostOruzni'] ?? ''),
+        'isk' => (string) ($p['GostIskaznica'] ?? ''), 'ol' => (string) ($p['GostOruzni'] ?? ''), 'pozvao' => (string) ($p['PozvaoIme'] ?? ''),
         'pot' => !empty($p['Potpis']) || ($p['ClanId'] !== null && potpis_clana((int) $p['ClanId']) !== null),
     ], gl_popis($lov));
 }
@@ -569,6 +569,9 @@ function gl_popis_vrijeme(array $lov, ?int $ms): string
 function gl_popis_skeniraj(array $lov, string $tekst, ?int $ms = null, ?string $klijentId = null): array
 {
     $k = korisnik();
+    if (str_starts_with(strtoupper(trim($tekst)), GOST_PREFIKS)) {
+        return gl_popis_skeniraj_gosta($lov, $tekst, $ms, $klijentId);
+    }
     $token = isk_token_iz_teksta($tekst);
     if (!$token) {
         return ['ok' => false, 'trajno' => true, 'greska' => 'Ovo nije članska iskaznica.'];
@@ -594,6 +597,28 @@ function gl_popis_skeniraj(array $lov, string $tekst, ?int $ms = null, ?string $
     $rez['pid'] = (int) $vec['Id'];
     $rez['pot'] = !empty($vec['Potpis']) || potpis_clana((int) $c['Id']) !== null;
     return $rez;
+}
+
+/** Lovni gost s QR pozivnicom (prijavio ga član u kalendaru) – vrijedi samo na dan termina. */
+function gl_popis_skeniraj_gosta(array $lov, string $tekst, ?int $ms, ?string $klijentId): array
+{
+    $k = korisnik();
+    [$g, $greska] = gost_po_qr($tekst, substr($lov['Pocetak'], 0, 10));
+    if (!$g) {
+        return ['ok' => false, 'trajno' => true, 'greska' => $greska];
+    }
+    $ime = $g['Prezime'] . ' ' . $g['Ime'];
+    $pozvao = trim($g['CIme'] . ' ' . $g['CPrezime']);
+    $p = red('SELECT * FROM GrupniLovPopis WHERE LovId=? AND GostId=?', [$lov['Id'], $g['Id']]);
+    $vec = (bool) $p;
+    if (!$p) {
+        $pid = umetni('GrupniLovPopis', ['LovId' => $lov['Id'], 'ClanId' => null, 'Ime' => $ime, 'Sekcija' => null, 'Gost' => 1, 'Nacin' => 'qr',
+            'Vrijeme' => gl_popis_vrijeme($lov, $ms), 'Upisao' => $k['Naziv'], 'KlijentId' => $klijentId ? mb_substr($klijentId, 0, 40) : null, 'Kreirano' => sada(),
+            'GostIskaznica' => $g['BrojIskaznice'], 'GostOruzni' => $g['OruzniList'], 'GostId' => (int) $g['Id'], 'PozvaoIme' => $pozvao]);
+        $p = red('SELECT * FROM GrupniLovPopis WHERE Id=?', [$pid]);
+    }
+    return ['ok' => true, 'vec' => $vec, 'gost' => true, 'ime' => $ime, 'sek' => 'gost – pozvao ' . $pozvao, 'f' => null,
+        'pid' => (int) $p['Id'], 'pot' => !empty($p['Potpis']), 'isk' => (string) $p['GostIskaznica'], 'ol' => (string) $p['GostOruzni']];
 }
 
 /** Ručni upis: član (bez iskaznice pri ruci) ili gost (ime, broj lovačke iskaznice, oružni list, potpis na mobitelu). */
@@ -641,11 +666,24 @@ function gl_popis_rucno(array $lov, ?int $clanId, string $gost, array $gostPodac
 }
 
 /** Potpis sudionika na mobitelu (za PDF); $spremi = zapamti kao potpis člana za sljedeći put. @return string|null greška */
-function gl_popis_potpis(array $lov, int $pid, string $crtez, bool $spremi): ?string
+function gl_popis_potpis(array $lov, int $pid, string $crtez, bool $spremi, array $gostPodaci = []): ?string
 {
     $p = red('SELECT * FROM GrupniLovPopis WHERE Id=? AND LovId=?', [$pid, $lov['Id']]);
     if (!$p) {
         return 'Sudionik nije na popisu.';
+    }
+    if ($p['Gost']) {
+        // gost dopunjuje podatke koji nedostaju (broj lovačke iskaznice, oružni list)
+        $isk = mb_substr(trim((string) ($gostPodaci['iskaznica'] ?? '')), 0, 40) ?: (string) $p['GostIskaznica'];
+        $ol = mb_substr(trim((string) ($gostPodaci['oruzni'] ?? '')), 0, 120) ?: (string) $p['GostOruzni'];
+        if ($isk === '' || $ol === '') {
+            return 'Za gosta upišite broj lovačke iskaznice i oružni list.';
+        }
+        q('UPDATE GrupniLovPopis SET GostIskaznica=?, GostOruzni=? WHERE Id=?', [$isk, $ol, $pid]);
+        if ($p['GostId']) {
+            q('UPDATE DogadjajGosti SET BrojIskaznice=?, OruzniList=? WHERE Id=?', [$isk, $ol, $p['GostId']]);
+        }
+        $spremi = false;
     }
     if (!str_starts_with($crtez, 'data:image/png;base64,')) {
         return 'Potpis nije zaprimljen.';
@@ -704,9 +742,9 @@ function gl_popis_pdf(array $lov): string
     $redovi = '';
     foreach ($popis as $i => $p) {
         $cid = (int) $p['ClanId'];
-        $redovi .= '<tr><td class="d">' . ($i + 1) . '.</td><td>' . e($p['Ime']) . ($p['Gost'] ? ' <i>(gost)</i>' : '') . '</td>'
+        $redovi .= '<tr><td class="d">' . ($i + 1) . '.</td><td>' . e($p['Ime']) . ($p['Gost'] ? ' <i>(gost' . (!empty($p['PozvaoIme']) ? ' – pozvao ' . e($p['PozvaoIme']) : '') . ')</i>' : '') . '</td>'
             . '<td>' . e($p['Gost'] ? (string) $p['GostIskaznica'] : (string) ($isk[$cid] ?? '')) . '</td><td class="ol">' . e($p['Gost'] ? (string) $p['GostOruzni'] : ($oruzje[$cid] ?? '')) . '</td>'
-            . '<td>' . ($p['Nacin'] === 'qr' ? 'iskaznica' : ($p['Nacin'] === 'voditelj' ? 'voditelj lova' : 'ručno')) . '</td><td class="potpis-polje">' . gl_potpis_img(($p['Potpis'] ?? null) ?: ($cid ? potpis_clana($cid) : null)) . '</td></tr>';
+            . '<td>' . ($p['Nacin'] === 'qr' ? ($p['Gost'] ? 'pozivnica' : 'iskaznica') : ($p['Nacin'] === 'voditelj' ? 'voditelj lova' : 'ručno')) . '</td><td class="potpis-polje">' . gl_potpis_img(($p['Potpis'] ?? null) ?: ($cid ? potpis_clana($cid) : null)) . '</td></tr>';
     }
     $kraj = $lov['Zavrseno'] ? date('H:i', strtotime($lov['Zavrseno'])) : '';
     // osobni potpis voditelja lova (Moj profil) – tek kad je lov završen

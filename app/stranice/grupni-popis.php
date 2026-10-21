@@ -67,8 +67,12 @@ ob_start(); ?>
         <div id="gp-zadnji" class="gp-zadnji mb-2" hidden></div>
         <div id="gp-potpis" class="card border-primary mb-2" hidden><div class="card-body p-2">
             <div class="small fw-semibold mb-1" id="gp-potpis-naslov">Potpis</div>
+            <div id="gp-potpis-gost" class="d-flex gap-2 mb-2" hidden>
+                <input class="form-control form-control-sm" id="gp-potpis-isk" maxlength="40" placeholder="Broj lovačke iskaznice">
+                <input class="form-control form-control-sm" id="gp-potpis-ol" maxlength="120" placeholder="Oružni list">
+            </div>
             <canvas id="gp-potpis-platno" class="dez-potpis-platno mb-1" width="600" height="160"></canvas>
-            <label class="form-check small mb-2"><input type="checkbox" class="form-check-input" id="gp-potpis-spremi" checked>
+            <label class="form-check small mb-2" id="gp-potpis-spremi-red"><input type="checkbox" class="form-check-input" id="gp-potpis-spremi" checked>
                 <span class="form-check-label">spremi moj potpis za sljedeći put (vidljiv u <i>Moj profil</i>, mogu ga obrisati)</span></label>
             <div class="d-flex gap-2"><button type="button" class="btn btn-sm btn-outline-secondary" id="gp-potpis-ocisti">Očisti</button>
                 <button type="button" class="btn btn-sm btn-link text-muted" id="gp-potpis-kasnije">kasnije</button>
