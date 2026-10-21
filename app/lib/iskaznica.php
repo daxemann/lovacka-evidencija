@@ -259,14 +259,15 @@ function isk_pdf(array $clanovi, string $format = 'a4'): string
             $stranice[] = isk_html($c, $kljucevi[(int) $c['Id']], 0, 0, $logo);
         }
     } else {
-        // A4 210 × 297: 2 stupca × 5 redaka, razmak 4 mm između stupaca
-        $razmak = 4.0;
+        // A4 210 × 297: 2 stupca × 5 redaka, razmak između iskaznica (lakše rezanje): 6 mm vodoravno, 3,5 mm okomito
+        $razmak = 6.0;
+        $razmakV = 3.5;
         $lijevo0 = (210 - 2 * ISK_SIRINA_MM - $razmak) / 2;
-        $gore0 = (297 - 5 * ISK_VISINA_MM) / 2;
+        $gore0 = (297 - 5 * ISK_VISINA_MM - 4 * $razmakV) / 2;
         foreach (array_chunk($clanovi, 10) as $dio) {
             $s = '';
             foreach ($dio as $i => $c) {
-                $s .= isk_html($c, $kljucevi[(int) $c['Id']], $lijevo0 + ($i % 2) * (ISK_SIRINA_MM + $razmak), $gore0 + intdiv($i, 2) * ISK_VISINA_MM, $logo);
+                $s .= isk_html($c, $kljucevi[(int) $c['Id']], $lijevo0 + ($i % 2) * (ISK_SIRINA_MM + $razmak), $gore0 + intdiv($i, 2) * (ISK_VISINA_MM + $razmakV), $logo);
             }
             $stranice[] = $s . '<div class="podnozje">' . e(udruga_naziv()) . ' · članske iskaznice · ispisati na 100 % (bez „prilagodi stranici“), izrezati po rubu</div>';
         }
@@ -278,7 +279,7 @@ function isk_pdf(array $clanovi, string $format = 'a4'): string
     $html = '<!doctype html><html><head><meta charset="utf-8"><style>
         @page { margin: 0; } body { margin: 0; font-family: "DejaVu Sans"; }
         .stranica { position: relative; width: ' . ($kartica ? ISK_SIRINA_MM . 'mm' : '210mm') . '; height: ' . ($kartica ? ISK_VISINA_MM . 'mm' : '296mm') . '; }
-        .podnozje { position: absolute; left: 0; width: 210mm; top: 289mm; text-align: center; font-size: 6.5pt; color: #999; }
+        .podnozje { position: absolute; left: 0; width: 210mm; top: 291.2mm; text-align: center; font-size: 6pt; color: #999; }
         ' . isk_css() . '
     </style></head><body>' . ($tijelo ?: '<div class="stranica"></div>') . '</body></html>';
     $opt = new Dompdf\Options();

@@ -1,5 +1,8 @@
 # Promjene
 
+## 1.46.1 – 2026-10
+- **Iskaznice (PDF A4, 10 po stranici):** razmak između iskaznica – 6 mm lijevo/desno i 3,5 mm gore/dolje – lakše rezanje nakon ispisa (prije su se dodirivale).
+
 ## 1.46.0 – 2026-10
 - **Početna – novi gumbi** (odabir u *Sustav → Početna stranica*):
   - **📢 Pošalji obavijest** – ravno na novu obavijest s push porukom; vidi ga samo tko ima pravo *Obavijesti*,
