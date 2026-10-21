@@ -1,5 +1,9 @@
 # Promjene
 
+## 1.45.1 – 2026-10
+- **Početna – gumb 🌲 Danas u lovištu:** broj na gumbu je sada **koliko ih trenutno sjedi u lovištu** – isti za sve (prije samo nepročitane obavijesti za nadzor, pa ga lovočuvar bez tog prava nije vidio).
+  Tko ima pravo *Lovište – nadzor*, ispod vidi i *🔔 n novo*.
+
 ## 1.45.0 – 2026-10
 - **⚙️ Sustav → 🏠 Početna stranica:** administrator za svaku ulogu (i za članove bez uloge) kvačicama bira što se vidi na početnoj, a strelicama redoslijed.
   Tko ima više uloga, vidi blokove svih svojih uloga. **👁 pregled** – početna kako je vidi odabrana uloga.

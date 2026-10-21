@@ -125,7 +125,14 @@ function pocetna_blok(string $b, array $k): string
         case 'karta':
             return $revir() ? pocetna_plocica(url('revir'), '🗺️', 'Karta lovišta', 'sjedim ovdje · kvarovi') : '';
         case 'danas':
-            return $revir() ? pocetna_plocica(url('revir/danas'), '🌲', 'Danas u lovištu', 'tko gdje sjedi', '', ima(P_REVIR_NADZOR) ? revir_broj_obavijesti() : 0) : '';
+            if (!$revir()) {
+                return '';
+            }
+            // broj = koliko ih trenutno sjedi (isto za sve); lovočuvari s nadzorom vide i nove obavijesti
+            revir_zatvori_istekle();
+            $sjede = count(array_filter(revir_stanje(revir_sekcije()), fn($n) => $n['zauzeto'] !== null));
+            $nove = revir_broj_obavijesti();
+            return pocetna_plocica(url('revir/danas'), '🌲', 'Danas u lovištu', ($sjede ? $sjede . ' u lovištu' : 'nitko u lovištu') . ($nove ? ' · 🔔 ' . $nove . ' novo' : ''), '', $sjede);
         case 'skupni':
             if (!modul('grupni') || !(gl_vidljivo() || ima(P_GRUPNI_LOV))) {
                 return '';
