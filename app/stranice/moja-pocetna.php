@@ -1,5 +1,5 @@
 <?php
-/** Početna stranica člana (mobitel): termini, radne akcije, oglasnik, članarina u jednoj liniji. */
+/** Početna stranica člana (mobitel): veliki gumbi za lov (QR / dezinfekcija, karta lovišta, danas u lovištu), termini, radne akcije, članarina. */
 $k = korisnik();
 $cid = $k['ClanId'];
 $termini = modul('kalendar') ? dogadjaji(danas(), null, null, 3) : [];
@@ -9,15 +9,29 @@ if ($cid && $termini) {
         $mojiOdg[(int) $o['DogadjajId']] = (int) $o['Dolazi'];
     }
 }
-$oglasi = redovi('SELECT o.*, (SELECT Datoteka FROM OglasSlike s WHERE s.OglasId=o.Id ORDER BY s.Redoslijed, s.Id LIMIT 1) AS Slika FROM Oglasi o WHERE o.Status IN (0,1) ORDER BY o.Kreirano DESC LIMIT 3');
 if ($cid) {
     $lg = pocetak_lovne_godine();
     $bodovi = (float) vrijednost('SELECT COALESCE(SUM(CAST(Bodovi AS REAL)),0) FROM RadneAkcije WHERE ClanId=? AND Status=1 AND substr(Datum,1,10) BETWEEN ? AND ?', [$cid, $lg->format('Y-m-d'), $lg->modify('+1 year -1 day')->format('Y-m-d')]);
     $ceka = (int) vrijednost('SELECT COUNT(*) FROM RadneAkcije WHERE ClanId=? AND Status=0', [$cid]);
     $zadnje = redovi('SELECT a.*, v.Naziv AS Vrsta FROM RadneAkcije a LEFT JOIN VrsteAkcija v ON v.Id=a.VrstaAkcijeId WHERE a.ClanId=? ORDER BY a.Datum DESC, a.Id DESC LIMIT 3', [$cid]);
 }
+$dez = modul('dezinfekcija');
+$revir = modul('revir') && revir_sekcije();
+$neproc = broj_neprocitanih((int) $k['Id']);
 ob_start(); ?>
 <h1 class="h4 mb-3">Pozdrav, <?= e(explode(' ', (string) $k['Naziv'])[0]) ?></h1>
+
+<?php if ($dez || $revir): ?>
+<div class="lov-gumbi mb-3">
+    <?php if ($dez): ?>
+    <a class="lov-gumb lov-gumb-qr" href="<?= e(url('skeniraj')) ?>"><span class="lov-gumb-ikona">📷</span><span><b>Skeniraj QR</b><small>Dezinfekcija – dolazak / odlazak</small></span></a>
+    <?php endif; ?>
+    <?php if ($revir): ?>
+    <a class="lov-gumb" href="<?= e(url('revir')) ?>"><span class="lov-gumb-ikona">🗺️</span><span><b>Karta lovišta</b><small>sjedim ovdje · kvarovi</small></span></a>
+    <a class="lov-gumb" href="<?= e(url('revir/danas')) ?>"><span class="lov-gumb-ikona">🌲</span><span><b>Danas u lovištu</b><small>tko gdje sjedi</small></span></a>
+    <?php endif; ?>
+</div>
+<?php endif; ?>
 
 <?php if (modul('kalendar')): ?>
 <div class="card mb-3"><div class="card-header d-flex align-items-center"><b class="me-auto">📅 Nadolazeći termini</b><a class="small" href="<?= e(url('kalendar')) ?>">kalendar →</a></div>
@@ -48,41 +62,12 @@ ob_start(); ?>
     </div></div>
 <?php endif; ?>
 
-<?php if ($cid && modul('popusti') && pop_dostupno()): ?>
-<a class="card mb-3 text-decoration-none pop-pocetna" href="<?= e(url('popusti')) ?>"><div class="card-body d-flex align-items-center gap-3">
-    <div class="fs-2">🏷️</div>
-    <div class="flex-grow-1 text-body"><b>Popusti u trgovinama</b><div class="small text-muted">trgovine za lovce svih udruga · pokažite iskaznicu na blagajni</div></div>
-    <span class="btn btn-primary">Otvori</span>
-</div></a>
-<?php endif; ?>
-
-<?php if (!modul('oglasnik')): ?>
-<?php elseif (ogl_aktivan()): ?>
-<div class="card mb-3"><div class="card-body d-flex align-items-center gap-3">
-    <div class="fs-2">🛒</div>
-    <div class="flex-grow-1"><b>Oglasnik lovaca</b><div class="small text-muted">oglasi vaše udruge i lovaca iz drugih udruga</div></div>
-    <a class="btn btn-primary" href="<?= e(url('oglasnik-sso')) ?>" target="_blank" rel="noopener">Otvori</a>
-</div></div>
-<?php else: ?>
-<div class="card mb-3"><div class="card-header d-flex align-items-center"><b class="me-auto">🛒 Oglasnik</b><a class="small" href="<?= e(url('oglasnik')) ?>">svi oglasi →</a></div>
-    <div class="list-group list-group-flush">
-    <?php foreach ($oglasi as $o): ?>
-        <a class="list-group-item list-group-item-action d-flex gap-3 align-items-center" href="<?= e(url('oglasnik/oglas', ['id' => $o['Id']])) ?>">
-            <div class="oglas-mini-slika"><?php if ($o['Slika']): ?><img src="<?= e(foto_url($o['Slika'])) ?>" alt="" loading="lazy"><?php endif; ?></div>
-            <div class="flex-grow-1 overflow-hidden"><div class="text-truncate"><?= e($o['Naslov']) ?></div><div class="small text-muted"><?= e(cijena_oglasa($o)) ?></div></div>
-        </a>
-    <?php endforeach; ?>
-    <?php if (!$oglasi): ?><div class="list-group-item small text-muted">Trenutno nema oglasa.</div><?php endif; ?>
-    </div></div>
-<?php endif; ?>
-
-<div class="d-flex flex-wrap gap-2 mb-3">
-    <a class="btn btn-outline-secondary btn-sm" href="<?= e(url('imenik')) ?>">📇 Imenik</a>
-    <?php if (modul('psi')): ?><a class="btn btn-outline-secondary btn-sm" href="<?= e(url('vodici-pasa')) ?>">🐕 Vodiči pasa</a><?php endif; ?>
-    <?php if (modul('iskaznice') && $cid): ?><a class="btn btn-outline-secondary btn-sm" href="<?= e(url('moja-iskaznica')) ?>">🪪 Moja iskaznica</a><?php endif; ?>
-    <a class="btn btn-outline-secondary btn-sm" href="<?= e(url('poruke')) ?>">💬 Poruke</a>
-    <?php if ($cid): ?><a class="btn btn-outline-secondary btn-sm" href="<?= e(url('moj-profil')) ?>">👤 Moj profil</a><?php endif; ?>
-</div>
+<nav class="clan-precaci mb-3" aria-label="Prečaci">
+    <a href="<?= e(url('imenik')) ?>"><span class="ikona">📇</span>Imenik</a>
+    <?php if (modul('iskaznice') && $cid): ?><a href="<?= e(url('moja-iskaznica')) ?>"><span class="ikona">🪪</span>Iskaznica</a><?php endif; ?>
+    <a href="<?= e(url('poruke')) ?>"><span class="ikona">💬</span>Poruke<?php if ($neproc): ?><span class="badge rounded-pill bg-danger"><?= $neproc ?></span><?php endif; ?></a>
+    <?php if ($cid): ?><a href="<?= e(url('moj-profil')) ?>"><span class="ikona">👤</span>Moj profil</a><?php endif; ?>
+</nav>
 
 <?php if ($cid && modul('clanarina')) echo predlozak('moja-clanarina', ['clanId' => $cid]); ?>
 <?php stranica('Početna', ob_get_clean());

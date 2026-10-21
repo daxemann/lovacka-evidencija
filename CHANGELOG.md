@@ -1,5 +1,11 @@
 # Promjene
 
+## 1.36.0 – 2026-10
+- **Nova početna za lovce:** na vrhu veliki gumbi za ono što je u lovu važno – **📷 Skeniraj QR (dezinfekcija)**, **🗺️ Karta lovišta** i **🌲 Danas u lovištu**.
+- S početne su maknuti *Popusti u trgovinama* i *Oglasnik lovaca* (i dalje su u izborniku lijevo).
+- Donja traka prečaca: Imenik · Iskaznica · Poruke (s brojem nepročitanih) · Moj profil. *Vodiči pasa* su samo u izborniku.
+- **← Početna** gumb na stranicama Moja iskaznica, Moj profil, Poruke, Imenik i ostalim stranicama člana.
+
 ## 1.35.1 – 2026-10
 - **Tražilice isključene:** Google, Bing i ostale tražilice više ne prikazuju vašu evidenciju u rezultatima pretrage (ni stranicu za prijavu, ni PDF-ove, slike ili kalendar).
   Samo javna demo verzija ostaje vidljiva. Iznimka po želji: `'dopusti_trazilice' => true` u `config.php`.

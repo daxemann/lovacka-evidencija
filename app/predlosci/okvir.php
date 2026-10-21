@@ -167,6 +167,10 @@ $glUTijeku = $glMoj && (int) $glMoj['ja']['Odgovor'] === 1 && $glMoj['ja']['Otis
             if ($k && ima(P_SUSTAV) && (str_starts_with($trenutna, 'sustav/') || in_array($trenutna, ['akcije/vrste', 'revir/postavke', 'dezinfekcija/postavke'], true))): ?>
                 <a class="btn btn-sm btn-outline-secondary mb-3 no-print" href="<?= e(url('sustav')) ?>">← Sustav</a>
             <?php endif; ?>
+            <?php // stranice člana bez vlastitog povratka: gumb natrag na početnu
+            if ($k && in_array($trenutna, ['moja-iskaznica', 'moj-profil', 'poruke', 'imenik', 'vodici-pasa', 'popusti', 'moje-akcije', 'uplatnica', 'push', 'moja-prava', 'oglasnik', 'obavijesti', 'dokumenti'], true) && !isset($_GET['id']) && !isset($_GET['clan'])): ?>
+                <a class="btn btn-sm btn-outline-secondary mb-3 no-print" href="<?= e(url('pocetna')) ?>">← Početna</a>
+            <?php endif; ?>
             <?= $sadrzaj ?>
         </article>
     </main>
