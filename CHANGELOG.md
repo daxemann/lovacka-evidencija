@@ -1,5 +1,10 @@
 # Promjene
 
+## 1.39.0 – 2026-10
+- **Oružni listovi kod člana:** Članovi → član → kartica *Podaci* → **Oružni listovi** – neograničeno upisa (broj + oružje, opis nije obavezan).
+- **Popis sudionika skupnog lova (PDF):** maknuti stupci *Sekcija* i *Vrijeme*; novi stupci **Broj lovačke iskaznice** i **Oružni list** (svi brojevi člana). Gost je označen uz ime.
+- Na dnu PDF-a sada piše ime lovnika / voditelja lova (tko je pokrenuo lov).
+
 ## 1.38.0 – 2026-10
 - **📷 Mobilna stanica – upis skeniranjem članskih iskaznica** (uz suglasnost lovne inspekcije):
   - lovočuvar nakon aktivacije odabere najviše **5 ovlaštenih** (uključujući sebe – automatski je prvi); šesti nije moguć,

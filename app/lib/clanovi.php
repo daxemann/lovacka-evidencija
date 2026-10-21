@@ -329,3 +329,24 @@ function spoji_clanove(int $zadrzatiId, int $ukloniId, array $odDrugog): string
     dnevnik('Spajanje duplikata', 'Clan', (int) $z['Id'], $opis);
     return $opis;
 }
+
+// ---------- Oružni listovi ----------
+/** Oružni listovi člana (broj + opis oružja), redom upisa. */
+function oruzni_listovi(int $clanId): array
+{
+    return redovi('SELECT * FROM ClanOruzniListovi WHERE ClanId=? ORDER BY Id', [$clanId]);
+}
+/** Brojevi oružnih listova po članu: [ClanId => '123, 456'] (za popise i PDF). */
+function oruzni_listovi_brojevi(array $clanIds): array
+{
+    $clanIds = array_values(array_unique(array_filter(array_map('intval', $clanIds))));
+    if (!$clanIds) {
+        return [];
+    }
+    $o = [];
+    foreach (redovi('SELECT ClanId, Broj FROM ClanOruzniListovi WHERE ClanId IN (' . implode(',', $clanIds) . ') ORDER BY Id') as $r) {
+        $o[(int) $r['ClanId']][] = $r['Broj'];
+    }
+    return array_map(fn($b) => implode(', ', $b), $o);
+}
+

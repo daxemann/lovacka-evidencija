@@ -5,7 +5,7 @@
  */
 declare(strict_types=1);
 
-const VERZIJA = '1.38.0';
+const VERZIJA = '1.39.0';
 const KONTAKT_EMAIL = 'daxemann@googlemail.com';
 const PODRSKA_PAYPAL = 'darko.bakic@freenet.de'; // dobrovoljna podrška razvoju (Pomoć i kontakt)
 const PROJEKT_URL = 'https://github.com/daxemann/lovacka-evidencija';
@@ -153,7 +153,7 @@ function db(bool $novo = false): PDO
  * Dodatne tablice PHP verzije (PRAGMA user_version). .NET verzija ih ne poznaje i zanemaruje,
  * pa baza i dalje radi u oba smjera.
  */
-const SHEMA_PHP = 32;
+const SHEMA_PHP = 33;
 function nadogradi_bazu(PDO $pdo): void
 {
     if ((int) $pdo->query('PRAGMA user_version')->fetchColumn() >= SHEMA_PHP) {
@@ -794,6 +794,16 @@ SQL);
                 "Kreirano" TEXT NOT NULL,
                 PRIMARY KEY ("AktivacijaId", "KorisnikId"))');
         $pdo->exec('ALTER TABLE "DezUpisi" ADD COLUMN "Skenirano" INTEGER NOT NULL DEFAULT 0');
+    }
+    if ($v < 33) {
+        // Oružni listovi člana (jedan član može imati više oružja – svako ima svoj oružni list)
+        $pdo->exec('CREATE TABLE IF NOT EXISTS "ClanOruzniListovi" (
+                "Id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                "ClanId" INTEGER NOT NULL REFERENCES "Clanovi" ("Id") ON DELETE CASCADE,
+                "Broj" TEXT NOT NULL,
+                "Oruzje" TEXT NULL,
+                "Kreirano" TEXT NOT NULL)');
+        $pdo->exec('CREATE INDEX IF NOT EXISTS "IX_ClanOruzniListovi_ClanId" ON "ClanOruzniListovi" ("ClanId")');
     }
 }
 

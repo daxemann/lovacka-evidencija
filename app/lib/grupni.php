@@ -559,10 +559,15 @@ function gl_popis_pdf(array $lov): string
     usort($popis, fn($a, $b) => ((int) $a['Gost'] <=> (int) $b['Gost'])
         ?: ($coll ? $coll->compare($a['Ime'], $b['Ime']) : strcmp(kljuc($a['Ime']), kljuc($b['Ime']))));
     $clanova = count(array_filter($popis, fn($p) => !$p['Gost']));
+    $ids = array_filter(array_map(fn($p) => (int) $p['ClanId'], $popis));
+    $oruzje = oruzni_listovi_brojevi($ids);
+    $isk = $ids ? array_column(redovi('SELECT Id, BrojIskaznice FROM Clanovi WHERE Id IN (' . implode(',', $ids) . ')'), 'BrojIskaznice', 'Id') : [];
     $redovi = '';
     foreach ($popis as $i => $p) {
-        $redovi .= '<tr><td class="d">' . ($i + 1) . '.</td><td>' . e($p['Ime']) . '</td><td>' . ($p['Gost'] ? '<i>gost</i>' : e((string) $p['Sekcija'])) . '</td>'
-            . '<td class="d">' . e(date('H:i', strtotime($p['Vrijeme']))) . '</td><td>' . ($p['Nacin'] === 'qr' ? 'iskaznica' : 'ručno') . '</td><td class="potpis-polje"></td></tr>';
+        $cid = (int) $p['ClanId'];
+        $redovi .= '<tr><td class="d">' . ($i + 1) . '.</td><td>' . e($p['Ime']) . ($p['Gost'] ? ' <i>(gost)</i>' : '') . '</td>'
+            . '<td>' . e((string) ($isk[$cid] ?? '')) . '</td><td class="ol">' . e($oruzje[$cid] ?? '') . '</td>'
+            . '<td>' . ($p['Nacin'] === 'qr' ? 'iskaznica' : 'ručno') . '</td><td class="potpis-polje"></td></tr>';
     }
     $kraj = $lov['Zavrseno'] ? date('H:i', strtotime($lov['Zavrseno'])) : '';
     $html = '<html><head><meta charset="utf-8"><style>
@@ -573,7 +578,7 @@ function gl_popis_pdf(array $lov): string
         h2 { font-size: 12pt; margin: 4px 0 2px; } .info { color: #555; margin-bottom: 8px; }
         table.t { width: 100%; border-collapse: collapse; } .t th { background: #e9efe5; text-align: left; }
         .t th, .t td { border: 0.5pt solid #999; padding: 4px 4px; vertical-align: middle; } .t .d { text-align: right; white-space: nowrap; }
-        .t td.potpis-polje { width: 32mm; } .t tbody td { height: 6mm; }
+        .t td.potpis-polje { width: 30mm; } .t tbody td { height: 6mm; } .t td.ol { font-size: 8pt; }
         .potpis { width: 100%; margin-top: 14mm; font-size: 9pt; } .potpis td { padding: 0 4px; }
         .podnozje { position: fixed; bottom: -8mm; left: 0; right: 0; font-size: 7.5pt; color: #888; }
     </style></head><body>
@@ -583,9 +588,9 @@ function gl_popis_pdf(array $lov): string
     <div class="info">' . e(datum($lov['Pocetak'])) . ' · ' . e(date('H:i', strtotime($lov['Pocetak']))) . ($kraj ? '–' . e($kraj) : '')
         . ($lov['Mjesto'] ? ' · ' . e($lov['Mjesto']) : '') . ' · organizator ' . e($lov['KreiraoIme'])
         . '<br>Ukupno <b>' . count($popis) . '</b> (članova ' . $clanova . ', gostiju ' . (count($popis) - $clanova) . ')</div>
-    <table class="t"><thead><tr><th class="d">Rb.</th><th>Prezime i ime</th><th>Sekcija</th><th class="d">Vrijeme</th><th>Upis</th><th>Potpis</th></tr></thead>
+    <table class="t"><thead><tr><th class="d">Rb.</th><th>Prezime i ime</th><th>Broj lovačke iskaznice</th><th>Oružni list</th><th>Upis</th><th>Potpis</th></tr></thead>
     <tbody>' . ($redovi ?: '<tr><td colspan="6">Popis je prazan.</td></tr>') . '</tbody></table>
-    <table class="potpis"><tr><td>Lovnik / voditelj lova: ______________________________</td><td>Potpis: ____________________</td></tr></table>
+    <table class="potpis"><tr><td>Lovnik / voditelj lova: <b>' . e((string) $lov['KreiraoIme']) . '</b></td><td>Potpis: ____________________</td></tr></table>
     </body></html>';
     $opt = new Dompdf\Options();
     $opt->set('defaultFont', 'DejaVu Sans');

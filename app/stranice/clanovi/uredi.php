@@ -271,6 +271,23 @@ if (je_post()) {
             dnevnik('Bodovi za lovačke pse upisani ručno', 'Clan', $id, puno_ime($clan) . ': ' . $n);
             poruka($n ? "Upisano: $n × radna akcija „Lovački pas“ – čekaju odobrenje (Radne akcije)." : 'Nema novih upisa.');
             $natrag('psi');
+        case 'oruzje-dodaj':
+        case 'oruzje-obrisi':
+            $treba(P_CLANOVI_UREDI);
+            if ($radnja === 'oruzje-dodaj') {
+                $broj = mb_substr(ul_str('broj'), 0, 40);
+                if ($broj !== '' && (int) vrijednost('SELECT COUNT(*) FROM ClanOruzniListovi WHERE ClanId=?', [$id]) < 50) {
+                    umetni('ClanOruzniListovi', ['ClanId' => $id, 'Broj' => $broj, 'Oruzje' => mb_substr(ul_str('oruzje'), 0, 120) ?: null, 'Kreirano' => sada()]);
+                    dnevnik('Oružni list dodan', 'Clan', $id, puno_ime($clan) . ': ' . $broj);
+                }
+            } else {
+                $b = vrijednost('SELECT Broj FROM ClanOruzniListovi WHERE Id=? AND ClanId=?', [(int) ($_POST['oid'] ?? 0), $id]);
+                if ($b !== null) {
+                    q('DELETE FROM ClanOruzniListovi WHERE Id=? AND ClanId=?', [(int) $_POST['oid'], $id]);
+                    dnevnik('Oružni list uklonjen', 'Clan', $id, puno_ime($clan) . ': ' . $b);
+                }
+            }
+            $natrag('podaci');
         case 'vozilo-dodaj':
         case 'vozilo-obrisi':
         case 'vozilo-zadano':
@@ -489,6 +506,23 @@ ob_start(); ?>
             <button class="btn btn-outline-primary text-nowrap">Dodaj</button></form>
         <?php endif; ?>
         <div class="form-text">Član ih može i sam upisati (Moj profil). Pri upisu na stanici dezinfekcije zadano vozilo je već odabrano.</div>
+    </div></div>
+<?php endif; ?>
+<?php if ($id): $oruzje = oruzni_listovi($id); $ourl = e(url('clanovi/uredi', ['id' => $id])); ?>
+    <div class="card mt-3" id="oruzje" style="max-width:640px"><div class="card-header">Oružni listovi <span class="small text-muted">(<?= count($oruzje) ?>)</span></div><div class="card-body">
+        <?php if ($oruzje): ?><ul class="list-group mb-2">
+            <?php foreach ($oruzje as $o): ?><li class="list-group-item d-flex align-items-center gap-2">
+                <b><?= e($o['Broj']) ?></b><span class="text-muted small me-auto"><?= e((string) $o['Oruzje']) ?></span>
+                <?php if ($uredi && !$arhiviran): ?><form method="post" action="<?= $ourl ?>"><?= csrf() ?><input type="hidden" name="radnja" value="oruzje-obrisi"><input type="hidden" name="oid" value="<?= (int) $o['Id'] ?>"><button class="btn btn-sm btn-link text-danger p-0" data-potvrda="<?= e('Ukloniti oružni list ' . $o['Broj'] . '?') ?>">✕</button></form><?php endif; ?>
+            </li><?php endforeach; ?></ul>
+        <?php else: ?><p class="small text-muted mb-2">Još nema upisanih oružnih listova.</p><?php endif; ?>
+        <?php if ($uredi && !$arhiviran): ?>
+        <form method="post" action="<?= $ourl ?>" class="row g-2"><?= csrf() ?><input type="hidden" name="radnja" value="oruzje-dodaj">
+            <div class="col-sm-4"><input name="broj" class="form-control" maxlength="40" placeholder="Broj oružnog lista" required></div>
+            <div class="col-sm-6"><input name="oruzje" class="form-control" maxlength="120" placeholder="Oružje (npr. Blaser R8, .308 Win) – nije obavezno"></div>
+            <div class="col-sm-2 d-grid"><button class="btn btn-outline-primary">Dodaj</button></div></form>
+        <?php endif; ?>
+        <div class="form-text">Brojevi oružnih listova ispisuju se na popisu sudionika skupnog lova.</div>
     </div></div>
 <?php endif; ?>
 <?php if ($id && $uredi): ?>
