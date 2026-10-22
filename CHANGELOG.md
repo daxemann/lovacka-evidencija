@@ -1,5 +1,8 @@
 # Promjene
 
+## 1.53.1 – 2026-10
+- **Mobitel – gornja traka:** *Odjava* je sada skroz lijevo, dalje od gumba izbornika ☰ – manje slučajnih odjava.
+
 ## 1.53.0 – 2026-10
 - **Početna – gumbi za sve stavke izbornika:** u *Sustav → Početna stranica* uz postojeće blokove sada se može odabrati gumb za svaku stavku izbornika lijevo
   (Kalendar, Lovački domovi, Moj profil, Moja iskaznica, Imenik, Poruke, Oglasnik, Članovi, Članarina, Radne akcije, Inventura, Knjiga dezinfekcije, Naknadni upis, Sustav, Upute …).

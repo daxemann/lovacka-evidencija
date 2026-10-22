@@ -118,7 +118,7 @@ $glUTijeku = $glMoj && (int) $glMoj['ja']['Odgovor'] === 1 && $glMoj['ja']['Otis
                 </a>
                 <a href="<?= e(url('promjena-lozinke')) ?>">Lozinka</a>
                 <?php if ($k['Prava'] && dvofaktor_ukljucen()): ?><a href="<?= e(url('dvofaktorska')) ?>" class="ms-3" title="Dvofaktorska prijava (Google Authenticator)"><?= $k['Ima2fa'] ? '🔐' : '🔓' ?><span class="d-none d-md-inline"> 2FA</span></a><?php endif; ?>
-                <form method="post" action="<?= e(url('odjava')) ?>" class="ms-3 d-inline"><?= csrf() ?>
+                <form method="post" action="<?= e(url('odjava')) ?>" class="ms-3 d-inline odjava-forma"><?= csrf() ?>
                     <button type="submit" class="btn btn-link p-0">Odjava</button>
                 </form>
             <?php endif; ?>

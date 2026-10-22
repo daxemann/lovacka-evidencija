@@ -167,6 +167,12 @@ main {
     .top-row a, .top-row .btn-link {
         margin-left: 0;
     }
+
+    /* Odjava ganz links – weg vom ☰-Menü (Fehlklicks am Handy) */
+    .top-row .odjava-forma {
+        order: -1;
+        margin-left: 0 !important;
+    }
 }
 
 @media (min-width: 641px) {
