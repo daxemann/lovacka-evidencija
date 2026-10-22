@@ -80,7 +80,8 @@ if (modul('grupni') && (gl_vidljivo() || ($k['ClanId'] && $revir))) {
 <li>Odlazite ranije? <b>🚶 Odlazim</b> – položaj se više ne šalje.</li>
 <li>Lov završava organizator (<b>🏁 Lov završen</b>), inače sam u ' . GL_SAT_KRAJA . ':00. Tada se <b>brišu svi položaji</b>, a stavka nestaje iz izbornika.</li>'
     . (ima(P_GRUPNI_LOV) ? '
-<li><i>Organizator:</i> <b>🎯 Skupni lov → Pokreni</b> (naziv, mjesto okupljanja, napomena, sekcije). Vidite tko dolazi, tko ne i tko nije odgovorio,
+<li><i>Organizator – lov iz kalendara:</i> termin vrste <b>Skupni lov</b> na dan lova ima gumb <b>🎯 Počni skupni lov</b> (i u <b>🎯 Skupni lov</b> pod „Danas u kalendaru“). <b>Novi poziv se ne šalje</b> – vrijede odgovori iz kalendara; tko je potvrdio dolazak dobiva samo obavijest da otvori kartu.</li>
+<li><i>Organizator – lov koji nije u kalendaru:</i> <b>🎯 Skupni lov → Novi skupni lov → Pokreni i pošalji poziv</b> (naziv, mjesto okupljanja, napomena, sekcije). Vidite tko dolazi, tko ne i tko nije odgovorio,
 sve sudionike na karti, <b>📡 gubitak signala</b> (nema javljanja ' . GL_SIGNAL_MIN . ' min – sivo, zadnji poznati položaj) i <b>🆘 SOS</b> s gumbom <b>🚑 Idem pomoći</b> i telefonom.
 SOS stiže organizatorima (tko je pokrenuo lov i svi s pravom Skupni lov za tu sekciju, npr. Lovnik) i svim sudionicima; gubitak signala samo organizatorima. Za istu sekciju istodobno može biti samo jedan lov. Završeni lovovi: popis tko je sudjelovao (bez položaja).</li>
 <li><i>Organizator / Lovnik:</i> <b>📋 Popis sudionika – skeniraj iskaznice</b>: kamera ostaje otvorena, skenirate člansku iskaznicu (plastičnu ili 🪪 u aplikaciji) jednu za drugom – zvučni signal, fotografija i ime, popis se slaže sam.

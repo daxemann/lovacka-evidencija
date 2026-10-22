@@ -27,6 +27,29 @@ if (je_post()) {
         poruka("🎯 Skupni lov pokrenut – poziv je poslan lovcima ($n). Odgovori i položaji pojavljuju se na karti.");
         preusmjeri('grupni-lov', ['id' => $id]);
     }
+    if ($radnja === 'pokreni-termin') {
+        $t = dogadjaj((int) ($_POST['dogadjaj'] ?? 0));
+        if (!$t || $t['Vrsta'] !== 'Skupni lov') {
+            nije_pronadjeno('Termin');
+        }
+        if ($l = gl_lov_termina((int) $t['Id'])) {
+            preusmjeri('grupni-lov', ['id' => $l['Id']]);
+        }
+        $d = danas();
+        if (substr($t['Pocetak'], 0, 10) > $d || substr($t['Kraj'] ?: $t['Pocetak'], 0, 10) < $d) {
+            poruka('Lov iz termina može se pokrenuti samo na dan termina.', 'warning');
+            preusmjeri('kalendar/termin', ['id' => $t['Id']]);
+        }
+        $mjesto = preg_match('#^https?://#i', (string) $t['Mjesto']) ? '' : (string) $t['Mjesto'];
+        [$id, $g] = gl_pokreni($t['Naslov'], $mjesto, ul_str('napomena'), [], $t);
+        if ($g) {
+            poruka(e($g), 'danger');
+            preusmjeri('kalendar/termin', ['id' => $t['Id']]);
+        }
+        $n = (int) vrijednost('SELECT COUNT(*) FROM GrupniLovSudionici WHERE LovId=? AND Odgovor=1 AND KorisnikId<>?', [$id, $k['Id']]);
+        poruka("🎯 Skupni lov počeo – bez novog poziva. Potvrdili dolazak u kalendaru: $n (dobili su obavijest da otvore kartu).");
+        preusmjeri('grupni-lov', ['id' => $id]);
+    }
     if ($radnja === 'obrisi-sve') {
         $svi = gl_zavrseni_moji();
         if (!$svi) {
@@ -120,9 +143,31 @@ if (!$lov) {
         <div class="alert alert-warning">Vaša uloga nema sekciju – skupni lov ne možete pokrenuti.</div>
     <?php elseif (!gl_kraj_danas()): ?>
         <div class="alert alert-secondary">Nakon <?= GL_SAT_KRAJA ?>:00 skupni lov se više ne može pokrenuti – lov završava sam u <?= GL_SAT_KRAJA ?>:00.</div>
-    <?php else: ?>
-    <div class="card mb-4"><div class="card-body">
-        <h2 class="h5">Pokreni skupni lov</h2>
+    <?php else: $termini = gl_termini_danas(); ?>
+    <?php foreach ($termini as $t): ?>
+    <div class="card mb-3 border-success"><div class="card-body">
+        <div class="d-flex flex-wrap gap-2 align-items-start">
+            <div class="me-auto">
+                <span class="badge text-bg-success mb-1">📅 Danas u kalendaru</span>
+                <h2 class="h5 mb-1"><?= e($t['Naslov']) ?></h2>
+                <div class="small">🕒 <?= e(oznaka_vremena($t)) ?> · <?= $t['ZaSve'] ? 'cijela udruga' : e(implode(', ', $t['Sekcije'])) ?></div>
+                <div class="small">✔ dolazi <b><?= (int) $t['Dolaze'] ?></b><?= $t['Gosti'] ? ' · 🧑‍🤝‍🧑 gostiju <b>' . (int) $t['Gosti'] . '</b>' : '' ?>
+                    · <a href="<?= e(url('kalendar/termin', ['id' => $t['Id']])) ?>">termin</a></div>
+            </div>
+        </div>
+        <form method="post" class="mt-2"><?= csrf() ?><input type="hidden" name="radnja" value="pokreni-termin"><input type="hidden" name="dogadjaj" value="<?= (int) $t['Id'] ?>">
+            <input class="form-control mb-2" name="napomena" maxlength="500" placeholder="Napomena (nije obavezno)">
+            <button class="btn btn-success btn-lg" data-potvrda="Početi lov „<?= e($t['Naslov']) ?>“? Poziv je već bio u kalendaru – novi se ne šalje. Tko je potvrdio dolazak, dobiva obavijest da otvori kartu.">🎯 Počni lov</button>
+            <div class="small text-muted mt-1">Bez novog poziva – vrijede odgovori iz kalendara. Gosti s QR pozivnicom skeniraju se na popisu.</div>
+        </form>
+    </div></div>
+    <?php endforeach; ?>
+    <?php if ($termini): ?>
+    <details class="mb-4"><summary class="btn btn-sm btn-outline-secondary">➕ Novi skupni lov (nije u kalendaru)</summary>
+    <?php endif; ?>
+    <div class="card mb-4<?= $termini ? ' mt-2' : '' ?>"><div class="card-body">
+        <h2 class="h5"><?= $termini ? 'Novi skupni lov (bez termina)' : 'Pokreni skupni lov' ?></h2>
+        <?php if (!$termini): ?><p class="small text-muted">💡 Ako je lov upisan u kalendar kao <b>Skupni lov</b>, na dan lova ovdje se pojavi gumb <b>🎯 Počni lov</b> – bez dvostrukog poziva.</p><?php endif; ?>
         <p class="small text-muted">Svi lovci odabranih sekcija odmah dobivaju poziv na mobitel (<b>Dolazim / Ne dolazim</b>) i prozor u aplikaciji.
             Tko dolazi, vidi se uživo na karti dok mu je karta otvorena. Lov završavate gumbom <b>🏁 Lov završen</b>, inače završava sam u <?= GL_SAT_KRAJA ?>:00 – tada se brišu svi položaji.</p>
         <form method="post"><?= csrf() ?><input type="hidden" name="radnja" value="pokreni">
@@ -136,9 +181,10 @@ if (!$lov) {
                     <?php endforeach; ?>
                 </div>
             </div>
-            <button class="btn btn-success btn-lg mt-3" onclick="return confirm('Pokrenuti skupni lov i poslati poziv svim lovcima odabranih sekcija?')">🎯 Pokreni i pošalji poziv</button>
+            <button class="btn btn-<?= $termini ? 'outline-' : '' ?>success btn-lg mt-3" onclick="return confirm('Pokrenuti NOVI skupni lov i poslati poziv svim lovcima odabranih sekcija?')">🎯 Pokreni i pošalji poziv</button>
         </form>
     </div></div>
+    <?php if ($termini): ?></details><?php endif; ?>
     <?php endif; ?>
     <?php if ($prosli): ?>
     <div class="d-flex flex-wrap align-items-center gap-2 mb-2">

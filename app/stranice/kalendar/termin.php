@@ -90,6 +90,26 @@ ob_start(); ?>
     <div class="small text-muted mt-3">Upisao/la: <?= e($d['KreiraoIme'] ?: '—') ?> · <?= e(datum_vrijeme($d['Kreirano'])) ?></div>
 </div></div>
 
+<?php
+// skupni lov iz termina: voditelj na dan lova pokreće lov ovdje – bez novog poziva
+if ($d['Vrsta'] === 'Skupni lov' && modul('grupni') && gl_sekcije_organizator()):
+    $danasT = substr($d['Pocetak'], 0, 10) <= danas() && substr($d['Kraj'] ?: $d['Pocetak'], 0, 10) >= danas();
+    $lovT = gl_lov_termina($id); ?>
+<div class="card mb-3 border-success"><div class="card-body d-flex flex-wrap gap-2 align-items-center">
+    <?php if ($lovT): ?>
+        <span class="me-auto">🎯 <b>Skupni lov je u tijeku</b></span>
+        <a class="btn btn-success" href="<?= e(url('grupni-lov', ['id' => $lovT['Id']])) ?>">🗺️ Karta lova</a>
+        <a class="btn btn-outline-secondary" href="<?= e(url('grupni-popis', ['id' => $lovT['Id']])) ?>">📋 Popis</a>
+    <?php elseif ($danasT && gl_kraj_danas()): ?>
+        <span class="me-auto small">🎯 Na dan lova: pokrenite lov – <b>bez novog poziva</b>, vrijede odgovori iz ovog termina.</span>
+        <form method="post" action="<?= e(url('grupni-lov')) ?>"><?= csrf() ?><input type="hidden" name="radnja" value="pokreni-termin"><input type="hidden" name="dogadjaj" value="<?= $id ?>">
+            <button class="btn btn-success" data-potvrda="Početi skupni lov „<?= e($d['Naslov']) ?>“? Novi poziv se ne šalje – tko je potvrdio dolazak, dobiva obavijest da otvori kartu.">🎯 Počni skupni lov</button></form>
+    <?php elseif (!$prosao): ?>
+        <span class="small text-muted">🎯 Na dan lova ovdje se pojavi gumb <b>Počni skupni lov</b> (karta uživo, SOS, popis) – bez novog poziva.</span>
+    <?php endif; ?>
+</div></div>
+<?php endif; ?>
+
 <?php if ($k['ClanId'] && !$prosao): ?>
 <div class="card mb-3"><div class="card-body">
     <div class="small text-muted mb-2">Dolazite? (nije obavezno – organizatoru pomaže u planiranju)</div>

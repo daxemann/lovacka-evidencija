@@ -5,7 +5,7 @@
  */
 declare(strict_types=1);
 
-const VERZIJA = '1.46.3';
+const VERZIJA = '1.47.0';
 const KONTAKT_EMAIL = 'daxemann@googlemail.com';
 const PODRSKA_PAYPAL = 'darko.bakic@freenet.de'; // dobrovoljna podrška razvoju (Pomoć i kontakt)
 const PROJEKT_URL = 'https://github.com/daxemann/lovacka-evidencija';
@@ -153,7 +153,7 @@ function db(bool $novo = false): PDO
  * Dodatne tablice PHP verzije (PRAGMA user_version). .NET verzija ih ne poznaje i zanemaruje,
  * pa baza i dalje radi u oba smjera.
  */
-const SHEMA_PHP = 35;
+const SHEMA_PHP = 36;
 function nadogradi_bazu(PDO $pdo): void
 {
     if ((int) $pdo->query('PRAGMA user_version')->fetchColumn() >= SHEMA_PHP) {
@@ -842,6 +842,10 @@ SQL);
             $pdo->prepare('UPDATE Postavke SET Vrijednost=? WHERE Kljuc=?')->execute([json_encode($vr, JSON_UNESCAPED_UNICODE), 'Kalendar.Vrste']);
         }
         $pdo->exec("UPDATE \"Dogadjaji\" SET \"Vrsta\" = 'Skupni lov' WHERE \"Vrsta\" = 'Zajednički lov'");
+    }
+    if ($v < 36) {
+        // skupni lov pokrenut iz termina u kalendaru (bez novog poziva – vrijede odgovori iz kalendara)
+        $pdo->exec('ALTER TABLE "GrupniLov" ADD COLUMN "DogadjajId" INTEGER NULL');
     }
 }
 

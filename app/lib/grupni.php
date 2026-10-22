@@ -119,10 +119,20 @@ function gl_kraj_danas(): ?string
 }
 
 /** Pokreće lov i šalje poziv. Vraća [id, null] ili [null, greška]. */
-function gl_pokreni(string $naziv, string $mjesto, string $napomena, array $sekcije): array
+function gl_pokreni(string $naziv, string $mjesto, string $napomena, array $sekcije, ?array $termin = null): array
 {
     $k = korisnik();
     $dozvoljene = gl_sekcije_organizator();
+    if ($termin) {
+        // sekcije iz termina (cijela udruga = sve sekcije organizatora)
+        $sekcije = $termin['ZaSve'] ? array_keys($dozvoljene) : array_keys($termin['Sekcije']);
+        if ($termin['ZaSve'] && !$sekcije) {
+            $sekcije = [0];
+        }
+        if ($l = gl_lov_termina((int) $termin['Id'])) {
+            return [null, 'Za ovaj termin skupni lov je već u tijeku.'];
+        }
+    }
     $sekcije = array_values(array_intersect(array_map('intval', $sekcije), array_keys($dozvoljene)));
     if (!$sekcije) {
         return [null, 'Odaberite barem jednu sekciju.'];
@@ -148,22 +158,37 @@ function gl_pokreni(string $naziv, string $mjesto, string $napomena, array $sekc
     }
     $lovci = redovi('SELECT k.Id AS KorisnikId, c.Id AS ClanId, c.Ime, c.Prezime, c.SekcijaId FROM Korisnici k JOIN Clanovi c ON c.Id=k.ClanId
         WHERE k.Aktivan=1 AND k.Odobren=1 AND c.Status=' . CLAN_AKTIVAN . ' AND (' . implode(' OR ', $uvjet) . ')');
+    // iz termina: odgovori iz kalendara vrijede (dolazim / ne dolazim) – i tko je potvrdio iz druge sekcije
+    $kal = [];
+    if ($termin) {
+        foreach (redovi('SELECT ClanId, Dolazi FROM DogadjajOdgovori WHERE DogadjajId=?', [$termin['Id']]) as $o) {
+            $kal[(int) $o['ClanId']] = (int) $o['Dolazi'];
+        }
+        $vec = array_map(fn($l) => (int) $l['ClanId'], $lovci);
+        $dodatni = array_diff(array_keys(array_filter($kal)), $vec);
+        if ($dodatni) {
+            $lovci = array_merge($lovci, redovi('SELECT k.Id AS KorisnikId, c.Id AS ClanId, c.Ime, c.Prezime, c.SekcijaId FROM Korisnici k JOIN Clanovi c ON c.Id=k.ClanId
+                WHERE k.Aktivan=1 AND k.Odobren=1 AND c.Status=' . CLAN_AKTIVAN . ' AND c.Id IN (' . implode(',', array_map('intval', $dodatni)) . ')'));
+        }
+    }
     if (!$lovci) {
         return [null, 'U odabranim sekcijama nema lovaca s korisničkim računom – nema koga pozvati.'];
     }
-    $id = transakcija(function () use ($k, $naziv, $mjesto, $napomena, $sekcije, $kraj, $lovci) {
+    $id = transakcija(function () use ($k, $naziv, $mjesto, $napomena, $sekcije, $kraj, $lovci, $termin, $kal) {
         $id = umetni('GrupniLov', [
             'Naziv' => $naziv, 'Mjesto' => mb_substr(trim($mjesto), 0, 120) ?: null, 'Napomena' => mb_substr(trim($napomena), 0, 500) ?: null,
             'Sekcije' => implode(',', $sekcije), 'Pocetak' => sada(), 'Kraj' => $kraj,
             'KreiraoKorisnikId' => $k['Id'], 'KreiraoClanId' => $k['ClanId'], 'KreiraoIme' => $k['Naziv'], 'Kreirano' => sada(),
+            'DogadjajId' => $termin ? (int) $termin['Id'] : null,
         ]);
         foreach ($lovci as $l) {
             $ja = (int) $l['KorisnikId'] === (int) $k['Id'];
+            // organizator dolazi (on je pokrenuo lov); iz termina vrijedi odgovor iz kalendara
+            $odg = $ja ? 1 : ($kal[(int) $l['ClanId']] ?? null);
             umetni('GrupniLovSudionici', [
                 'LovId' => $id, 'KorisnikId' => $l['KorisnikId'], 'ClanId' => $l['ClanId'], 'Ime' => trim($l['Ime'] . ' ' . $l['Prezime']),
                 'SekcijaId' => $l['SekcijaId'], 'Token' => bin2hex(random_bytes(16)),
-                // organizator koji je i sam lovac te sekcije – dolazi (on je pokrenuo lov)
-                'Odgovor' => $ja ? 1 : null, 'Odgovoreno' => $ja ? sada() : null,
+                'Odgovor' => $odg, 'Odgovoreno' => $odg !== null ? sada() : null,
             ]);
         }
         // voditelj lova (ako je član) odmah je na popisu sudionika
@@ -173,9 +198,42 @@ function gl_pokreni(string $naziv, string $mjesto, string $napomena, array $sekc
         }
         return $id;
     });
-    dnevnik('Skupni lov – pokrenut', 'GrupniLov', $id, $naziv . ' · pozvano ' . count($lovci));
-    gl_posalji_poziv($id);
+    dnevnik('Skupni lov – pokrenut', 'GrupniLov', $id, $naziv . ($termin ? ' · iz termina ' . datum($termin['Pocetak']) : '') . ' · lovaca ' . count($lovci));
+    $termin ? gl_javi_pocetak($id) : gl_posalji_poziv($id);
     return [$id, null];
+}
+
+/** Aktivni skupni lov pokrenut iz ovog termina (ili null). */
+function gl_lov_termina(int $dogadjajId): ?array
+{
+    return red('SELECT * FROM GrupniLov WHERE DogadjajId=? AND Zavrseno IS NULL AND Kraj>? ORDER BY Id DESC LIMIT 1', [$dogadjajId, sada()]);
+}
+
+/** Termini vrste „Skupni lov“ koji su danas, u sekcijama organizatora (za pokretanje bez novog poziva). */
+function gl_termini_danas(): array
+{
+    if (!gl_sekcije_organizator()) {
+        return [];
+    }
+    $d = danas();
+    $r = redovi('SELECT d.* FROM Dogadjaji d WHERE d.Vrsta=? AND substr(d.Pocetak,1,10)<=? AND substr(COALESCE(d.Kraj,d.Pocetak),1,10)>=? AND '
+        . kalendar_uvjet(kalendar_opseg()) . ' ORDER BY d.Pocetak', ['Skupni lov', $d, $d]);
+    foreach ($r as &$t) {
+        $t['Dolaze'] = (int) vrijednost('SELECT COUNT(*) FROM DogadjajOdgovori WHERE DogadjajId=? AND Dolazi=1', [$t['Id']]);
+        $t['Gosti'] = (int) vrijednost('SELECT COUNT(*) FROM DogadjajGosti WHERE DogadjajId=?', [$t['Id']]);
+    }
+    return dopuni_sekcije($r);
+}
+
+/** Lov iz termina: nema novog poziva – samo onima koji su u kalendaru potvrdili dolazak javljamo da je lov počeo. */
+function gl_javi_pocetak(int $lovId): void
+{
+    $lov = gl_lov($lovId);
+    $ids = array_map('intval', array_column(redovi('SELECT KorisnikId FROM GrupniLovSudionici WHERE LovId=? AND Odgovor=1', [$lovId]), 'KorisnikId'));
+    if ($ids) {
+        push_posalji($ids, 'grupni', '🎯 ' . $lov['Naziv'] . ' – lov je počeo', ($lov['Mjesto'] ? '📍 ' . $lov['Mjesto'] . ' · ' : '') . 'Otvorite kartu lova da vas voditelj vidi.',
+            'grupni-lov', ['id' => $lovId], 'gl-' . $lovId, ['vibracija' => [300, 150, 300]]);
+    }
 }
 
 /** Push poziv svima koji još nisu odgovorili – s osobnim gumbima „Dolazim / Ne dolazim“. */

@@ -1,5 +1,12 @@
 # Promjene
 
+## 1.47.0 – 2026-10
+- **Skupni lov iz kalendara – bez dvostrukog poziva:** termin vrste *Skupni lov* na dan lova ima gumb **🎯 Počni skupni lov** (voditelj s pravom Skupni lov).
+  - Lov se veže uz termin: naziv, mjesto i sekcije preuzimaju se iz termina.
+  - **Novi poziv se ne šalje** – vrijede odgovori iz kalendara (*Dolazim / Ne dolazim*); tko je potvrdio dolazak dobiva samo obavijest „lov je počeo – otvorite kartu“.
+  - U terminu za vrijeme lova: **🗺️ Karta lova** i **📋 Popis**.
+- **🎯 Skupni lov:** na vrhu „📅 Danas u kalendaru“ s gumbom **Počni lov**; *Pokreni i pošalji poziv* ostaje pod **➕ Novi skupni lov (nije u kalendaru)** za lov koji nije upisan.
+
 ## 1.46.3 – 2026-10
 - **Sigurnosno upozorenje (PHP2Shell):** administratori na početnoj vide upozorenje ako poslužitelj radi na ranjivoj verziji PHP-a (CVE-2026-109618, CVE-2026-109619) – s objašnjenjem da PHP mora ažurirati hosting i tablicom što privremeno ne radi kad hosting blokira učitavanje datoteka (403). Upozorenje nestaje samo nakon ažuriranja PHP-a.
 
