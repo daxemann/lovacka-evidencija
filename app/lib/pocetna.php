@@ -25,6 +25,36 @@ const POCETNA_BLOKOVI = [
     'rodjendani' => ['🎂 Rođendani (14 dana)', 'S gumbom za čestitku e-poštom.', false],
     'iskaznice' => ['🪪 Lovačke iskaznice ističu', 'Ističu u 60 dana ili su istekle.', false],
     'precaci' => ['📇 Prečaci', 'Imenik · Iskaznica · Poruke · Moj profil.', false],
+    // gumbi za sve ostale stavke izbornika – prikazuju se samo uz pravo / uključen modul (kao u izborniku)
+    'm_kalendar' => ['📅 Kalendar', 'Gumb iz izbornika.', true],
+    'm_domovi' => ['🏡 Lovački domovi', 'Gumb iz izbornika (s brojem zahtjeva na čekanju).', true],
+    'm_moje_akcije' => ['🛠️ Moje radne akcije', 'Gumb iz izbornika (Moje).', true],
+    'm_moj_profil' => ['👤 Moj profil', 'Gumb iz izbornika (Moje).', true],
+    'm_iskaznica' => ['🪪 Moja iskaznica', 'Gumb iz izbornika (Moje).', true],
+    'm_uplatnica' => ['💳 Moja uplatnica', 'Gumb iz izbornika (Moje).', true],
+    'm_popusti' => ['🏷️ Popusti u trgovinama', 'Gumb iz izbornika.', true],
+    'm_push' => ['🔔 Push obavijesti', 'Gumb iz izbornika.', true],
+    'm_prava' => ['🔑 Moja prava', 'Gumb iz izbornika (Moje).', true],
+    'm_dnevnik' => ['📓 Lovački dnevnik', 'Gumb iz izbornika (Lovište, pravo dnevnik).', true],
+    'm_revir_postavke' => ['⚙️ Postavke lovišta', 'Gumb iz izbornika (Lovište, uređivanje).', true],
+    'm_imenik' => ['📒 Imenik', 'Gumb iz izbornika (Članovi).', true],
+    'm_psi' => ['🐕 Vodiči pasa', 'Gumb iz izbornika (Članovi).', true],
+    'm_poruke' => ['✉️ Poruke', 'Gumb iz izbornika (s brojem nepročitanih).', true],
+    'm_oglasnik' => ['🛒 Oglasnik', 'Gumb iz izbornika (Članovi).', true],
+    'm_dokumenti' => ['📜 Statut i pravilnici', 'Gumb iz izbornika (Članovi).', true],
+    'm_clanovi' => ['👥 Članovi', 'Gumb iz izbornika (Udruga).', true],
+    'm_clanarina' => ['💶 Članarina', 'Gumb iz izbornika (Udruga).', true],
+    'm_akcija_nova' => ['➕ Nova radna akcija', 'Gumb iz izbornika (Udruga).', true],
+    'm_akcije' => ['🔨 Radne akcije', 'Gumb iz izbornika (s brojem na čekanju).', true],
+    'm_izvjestaj' => ['📊 Izvještaj radnih akcija', 'Gumb iz izbornika (Udruga).', true],
+    'm_inventura' => ['📦 Inventura', 'Gumb iz izbornika (Udruga).', true],
+    'm_dez_knjiga' => ['🧴 Knjiga dezinfekcije', 'Gumb iz izbornika (Dezinfekcija).', true],
+    'm_dez_naknadno' => ['➕ Naknadni upis dezinfekcije', 'Gumb iz izbornika (Dezinfekcija).', true],
+    'm_dez_liste' => ['📄 Papirnate liste', 'Gumb iz izbornika (Dezinfekcija).', true],
+    'm_dez_postavke' => ['🔳 Stanice i QR', 'Gumb iz izbornika (Dezinfekcija).', true],
+    'm_sustav' => ['⚙️ Sustav', 'Gumb iz izbornika (Administracija).', true],
+    'm_upute' => ['📖 Upute za korištenje', 'Gumb iz izbornika (Program).', true],
+    'm_pomoc' => ['❓ Pomoć i kontakt', 'Gumb iz izbornika (Program).', true],
 ];
 const POCETNA_ZADANO = [
     'clan' => ['sken', 'qr', 'karta', 'danas', 'termini', 'moje_akcije', 'precaci', 'clanarina'],
@@ -167,7 +197,51 @@ function pocetna_blok(string $b, array $k): string
         case 'precaci':
             return '<div class="mt-2">' . predlozak('pocetna-precaci') . '</div>';
     }
-    return '';
+    return str_starts_with($b, 'm_') ? pocetna_meni($b, $k) : '';
+}
+
+/** Gumb za stavku izbornika – isti uvjeti (pravo, modul) kao u izborniku lijevo; bez prava gumba nema. */
+function pocetna_meni(string $b, array $k): string
+{
+    $cid = $k['ClanId'];
+    $dez = modul('dezinfekcija');
+    // [stranica, ikona, naslov, opis, vidljivo, broj (fn)]
+    $m = match ($b) {
+        'm_kalendar' => ['kalendar', '📅', 'Kalendar', 'termini udruge', modul('kalendar'), null],
+        'm_domovi' => ['domovi', '🏡', 'Lovački domovi', 'rezervacije', modul('domovi') && (dom_ima_vidljivih() || ima(P_DOMOVI)), fn() => dom_broj_na_cekanju()],
+        'm_moje_akcije' => ['moje-akcije', '🛠️', 'Moje radne akcije', 'bodovi i akcije', $cid && modul('akcije'), null],
+        'm_moj_profil' => ['moj-profil', '👤', 'Moj profil', 'podaci, vozila, potpis', (bool) $cid, null],
+        'm_iskaznica' => ['moja-iskaznica', '🪪', 'Moja iskaznica', 'QR iskaznica', $cid && modul('iskaznice'), null],
+        'm_uplatnica' => ['uplatnica', '💳', 'Moja uplatnica', 'članarina – HUB-3', $cid && modul('clanarina') && uplatnica_za_clanove(), null],
+        'm_popusti' => ['popusti', '🏷️', 'Popusti', 'u trgovinama', modul('popusti') && pop_dostupno() && ($cid || ima(P_POPUSTI)), null],
+        'm_push' => ['push', '🔔', 'Push obavijesti', 'obavijesti na mobitel', true, null],
+        'm_prava' => ['moja-prava', '🔑', 'Moja prava', 'što smijem', (bool) $cid, null],
+        'm_dnevnik' => ['revir/dnevnik', '📓', 'Lovački dnevnik', 'lovište', modul('revir') && revir_sekcije() && ima(P_REVIR_DNEVNIK), null],
+        'm_revir_postavke' => ['revir/postavke', '⚙️', 'Postavke lovišta', 'naprave, granice', modul('revir') && (ima(P_SUSTAV) || ima(P_REVIR_UREDI)), null],
+        'm_imenik' => ['imenik', '📒', 'Imenik', 'telefoni članova', true, null],
+        'm_psi' => ['vodici-pasa', '🐕', 'Vodiči pasa', 'lovački psi', modul('psi'), null],
+        'm_poruke' => ['poruke', '✉️', 'Poruke', 'pošta u aplikaciji', true, fn() => broj_neprocitanih((int) $k['Id'])],
+        'm_oglasnik' => [modul('oglasnik') && ogl_aktivan() ? 'oglasnik-sso' : 'oglasnik', '🛒', 'Oglasnik', 'oglasi lovaca', modul('oglasnik'), null],
+        'm_dokumenti' => ['dokumenti', '📜', 'Statut i pravilnici', 'dokumenti udruge', modul('dokumenti'), null],
+        'm_clanovi' => ['clanovi', '👥', 'Članovi', 'evidencija članova', ima(P_CLANOVI_CITAJ), null],
+        'm_clanarina' => ['clanarina', '💶', 'Članarina', 'uplate i dugovanja', modul('clanarina') && ima(P_CLANARINA_CITAJ), null],
+        'm_akcija_nova' => ['akcije/nova', '➕', 'Nova radna akcija', 'upis akcije', modul('akcije') && ima(P_AKCIJE_ODOBRI), null],
+        'm_akcije' => ['akcije', '🔨', 'Radne akcije', 'popis i odobravanje', modul('akcije') && ima(P_AKCIJE_CITAJ), fn() => broj_akcija_na_cekanju()],
+        'm_izvjestaj' => ['izvjestaji/akcije', '📊', 'Izvještaj', 'radne akcije', modul('akcije') && ima(P_IZVJESTAJI), null],
+        'm_inventura' => ['inventura', '📦', 'Inventura', 'stanje opreme', modul('inventura') && (ima(P_INVENTURA) || ima(P_INVENTURA_UREDI)), null],
+        'm_dez_knjiga' => ['dezinfekcija', '🧴', 'Knjiga dezinfekcije', 'upisi i inspekcija', $dez && ima(P_DEZ_PREGLED), null],
+        'm_dez_naknadno' => ['dezinfekcija/naknadno', '➕', 'Naknadni upis', 'dezinfekcija', $dez && ima(P_DEZ_UREDI), null],
+        'm_dez_liste' => ['dezinfekcija/liste', '📄', 'Papirnate liste', 'dezinfekcija', $dez && ima(P_DEZ_UREDI), null],
+        'm_dez_postavke' => ['dezinfekcija/postavke', '🔳', 'Stanice i QR', 'dezinfekcija', $dez && ima(P_DEZ_POSTAVKE), null],
+        'm_sustav' => ['sustav', '⚙️', 'Sustav', 'postavke programa', ima(P_SUSTAV), null],
+        'm_upute' => ['upute', '📖', 'Upute', 'kako koristiti', true, null],
+        'm_pomoc' => ['pomoc', '❓', 'Pomoć i kontakt', 'kontakt', true, null],
+        default => null,
+    };
+    if (!$m || !$m[4]) {
+        return '';
+    }
+    return pocetna_plocica(url($m[0]), $m[1], $m[2], $m[3], '', $m[5] ? (int) ($m[5])() : 0);
 }
 
 function pocetna_danas_popis(): string

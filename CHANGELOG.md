@@ -1,5 +1,10 @@
 # Promjene
 
+## 1.53.0 – 2026-10
+- **Početna – gumbi za sve stavke izbornika:** u *Sustav → Početna stranica* uz postojeće blokove sada se može odabrati gumb za svaku stavku izbornika lijevo
+  (Kalendar, Lovački domovi, Moj profil, Moja iskaznica, Imenik, Poruke, Oglasnik, Članovi, Članarina, Radne akcije, Inventura, Knjiga dezinfekcije, Naknadni upis, Sustav, Upute …).
+  Gumb se pokazuje samo ako osoba ima to pravo i modul je uključen – kao u izborniku; označeno za ulogu bez prava jednostavno se ne vidi. Zadano nije ništa novo uključeno.
+
 ## 1.52.1 – 2026-10
 - **Naknadni upis – sken iskaznice:** ispravljena provjera iskaznice (prije je uvijek javljalo „Provjera nije uspjela“).
   Nakon skeniranja sve je ispunjeno: član, **datum i vrijeme skeniranja**, reg. oznaka (jedno vozilo – samo; više vozila – odabir gumbom).

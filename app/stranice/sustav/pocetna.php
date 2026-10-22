@@ -33,7 +33,7 @@ if (je_post()) {
 ob_start(); ?>
 <h1 class="h3 mb-1">🏠 Početna stranica</h1>
 <p class="text-muted small mb-3">Za svaku ulogu odaberite što vidi na početnoj i kojim redom (strelice mijenjaju redoslijed za sve). Tko ima više uloga, vidi sve blokove svojih uloga.
-    Blok se i dalje pokazuje samo ako osoba ima pravo na te podatke i modul je uključen. Veliki gumbi (🟩) koji stoje jedan iza drugoga slažu se u mrežu.</p>
+    Blok se i dalje pokazuje samo ako osoba ima pravo na te podatke i modul je uključen. Veliki gumbi (🟩) koji stoje jedan iza drugoga slažu se u mrežu.<br>Na dnu su <b>gumbi za sve stavke izbornika</b> (Kalendar, Imenik, Članovi, Knjiga dezinfekcije, Sustav …) – tko nema pravo ili modul nije uključen, gumb ne vidi, iako je označen.</p>
 <form method="post" id="pocetna-obrazac"><?= csrf() ?><input type="hidden" name="radnja" value="spremi">
 <div class="table-responsive pocetna-matrica mb-3"><table class="table table-sm align-middle mb-0">
     <thead><tr><th class="sticky-start">Blok</th>
