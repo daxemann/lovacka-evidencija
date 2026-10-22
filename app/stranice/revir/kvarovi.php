@@ -44,7 +44,7 @@ foreach (redovi('SELECT Status, COUNT(*) AS n FROM RevirKvarovi WHERE ' . revir_
 $aktivnih = ($broj['otvoreno'] ?? 0) + ($broj['u_radu'] ?? 0);
 $naprave = revir_naprave($opseg);
 $visePolja = count($sekcije) > 1;
-$filtar = fn(array $p) => url('revir/kvarovi', array_filter(['status' => $statusF, 's' => $sF] + $p, fn($v) => $v !== '' && $v !== 'aktivni'));
+$filtar = fn(array $p) => url('revir/kvarovi', array_filter($p + ['status' => $statusF, 's' => $sF], fn($v) => $v !== '' && $v !== 'aktivni'));
 
 ob_start(); ?>
 <div class="d-flex flex-wrap align-items-center gap-2 mb-1">

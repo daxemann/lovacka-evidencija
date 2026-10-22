@@ -1,5 +1,8 @@
 # Promjene
 
+## 1.51.1 – 2026-10
+- **Kvarovi:** gumbi *Riješeni* i *Svi* (i odabir sekcije) sada rade – prije su uvijek ostajali na *Otvoreni*.
+
 ## 1.51.0 – 2026-10
 - **Završeni skupni lovovi:** gumb **📝 Dodatni zapisnik** s tekstom (umjesto same ikone) i novi gumb **📧 Pošalji**.
 - **📧 Slanje e-poštom – popis i zapisnik zajedno:** odaberete što šaljete (📋 popis sudionika, 📝 dodatni zapisnik) – oba PDF-a u jednoj poruci, primatelji s popisa ili upisana e-adresa.
