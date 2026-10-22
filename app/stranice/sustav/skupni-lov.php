@@ -13,7 +13,7 @@ if (je_post()) {
             'ovlastenik' => $t('ovlastenik', 80) ?: $z['ovlastenik'],
             'st_iskaznica' => isset($_POST['st_iskaznica']), 'st_oruzni' => isset($_POST['st_oruzni']),
             'st_upis' => isset($_POST['st_upis']), 'st_potpis' => isset($_POST['st_potpis']),
-            'potpis_voditelja' => isset($_POST['potpis_voditelja']),
+            'potpis_voditelja' => isset($_POST['potpis_voditelja']), 'broj_po_sekciji' => isset($_POST['broj_po_sekciji']),
             'zapisnik_naslov' => $t('zapisnik_naslov', 250) ?: $z['zapisnik_naslov'],
             'zapisnik_stupci' => $stupci ?: $z['zapisnik_stupci'],
             'zapisnik_redaka' => max(1, min(200, (int) ($_POST['zapisnik_redaka'] ?? 18))),
@@ -31,6 +31,11 @@ ob_start(); ?>
 <p class="text-muted">Izgled popisa sudionika i dodatnog zapisnika. <b>Broj</b> je redni broj lova u lovnoj godini (od 1. travnja, 0001, 0002 …) –
     obrišete li lov, brojevi se slažu bez rupe.</p>
 <form method="post" style="max-width:720px"><?= csrf() ?>
+<div class="card mb-3"><div class="card-body">
+    <h2 class="h5">🔢 Broj lova</h2>
+    <?= $kv('broj_po_sekciji', '<b>Broj po sekciji</b> – svaka sekcija broji svoje lovove (0001, 0002 …), npr. kad svaka sekcija ima svoje dopuštenje i love istog dana') ?>
+    <div class="small text-muted mt-1">Isključeno: jedan niz brojeva za cijelu udrugu. Uključeno: u PDF-u stoji npr. <i>0003 (Sjever)</i>; zajednički lov više sekcija dobiva broj u svakoj sekciji.</div>
+</div></div>
 <div class="card mb-3"><div class="card-body">
     <h2 class="h5">📋 Popis sudionika</h2>
     <label class="form-label">Naslov (iza njega ide broj)</label>

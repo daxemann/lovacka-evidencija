@@ -1,5 +1,9 @@
 # Promjene
 
+## 1.49.0 – 2026-10
+- **Broj skupnog lova po sekciji** (*Sustav → Skupni lov – PDF → Broj po sekciji*): svaka sekcija broji svoje lovove u lovnoj godini (0001, 0002 …) – za udruge u kojima svaka sekcija ima svoje dopuštenje i sekcije love istog dana.
+  U PDF-u npr. *0003 (Sjever)*; zajednički lov više sekcija dobiva broj u svakoj: *0002 (Sjever), 0002 (Jug)*. Bez rupa nakon brisanja, kao i do sada. Zadano isključeno (jedan niz za cijelu udrugu).
+
 ## 1.48.0 – 2026-10
 - **Broj skupnog lova:** svaki lov ima redni broj u lovnoj godini (od 1. travnja: 0001, 0002 …). Obrišete li lov, brojevi se slažu bez rupe. Broj se vidi u popisu završenih lovova.
 - **Novi PDF popisa sudionika:** naslov *„Popis sudionika skupnog lova po Dopuštenju za lov broj: 0001“*, ispod *„Ovlaštenik prava lova:“* + voditelj koji je pokrenuo lov.

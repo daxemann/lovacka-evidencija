@@ -13,7 +13,7 @@ if (!gl_moze_upravljati($lov)) {
 }
 if (in_array($_GET['pdf'] ?? '', ['1', 'zapisnik'], true)) {
     $zap = $_GET['pdf'] === 'zapisnik';
-    $ime = ($zap ? 'zapisnik-' : 'popis-') . gl_broj($lov) . '-' . substr($lov['Pocetak'], 0, 10);
+    $ime = ($zap ? 'zapisnik-' : 'popis-') . gl_broj_datoteka($lov) . '-' . substr($lov['Pocetak'], 0, 10);
     header('Content-Type: application/pdf');
     header('Content-Disposition: inline; filename="' . $ime . '.pdf"');
     echo $zap ? gl_zapisnik_pdf($lov) : gl_popis_pdf($lov);
