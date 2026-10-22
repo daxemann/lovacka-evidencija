@@ -36,10 +36,12 @@ if (je_post() && ($_POST['radnja'] ?? '') === 'posalji') {
     }
     if (!$prim) {
         poruka('Odaberite barem jednog primatelja.', 'warning');
-    } elseif ($g = gl_posalji_popis($lov, $prim, korisnik()['Naziv'])) {
+    } elseif (empty($_POST['d_popis']) && empty($_POST['d_zapisnik'])) {
+        poruka('Odaberite što šaljete (popis i/ili zapisnik).', 'warning');
+    } elseif ($g = gl_posalji_popis($lov, $prim, korisnik()['Naziv'], !empty($_POST['d_popis']), !empty($_POST['d_zapisnik']))) {
         poruka('Slanje nije uspjelo: ' . e($g), 'danger');
     } else {
-        poruka('📧 Popis (PDF) poslan: ' . e(implode(', ', $prim)));
+        poruka('📧 Poslano (PDF): ' . e(implode(', ', $prim)));
     }
     preusmjeri('grupni-popis', ['id' => $lov['Id']]);
 }
@@ -119,12 +121,17 @@ ob_start(); ?>
         <div id="gp-popis" class="list-group small"></div>
     </div>
 </div>
-<?php $moguci = gl_primatelji_popisa($lov); $vod = gl_email_voditelja($lov); ?>
-<details class="card mt-3" id="gp-posalji"><summary class="card-header small fw-semibold">📧 Pošalji PDF popisa e-poštom</summary>
+<?php $moguci = gl_primatelji_popisa($lov); $vod = gl_email_voditelja($lov); $nZap = (int) vrijednost('SELECT COUNT(*) FROM GrupniLovZapisnik WHERE LovId=?', [$lov['Id']]); ?>
+<details class="card mt-3" id="gp-posalji"<?= isset($_GET['posalji']) ? ' open' : '' ?>><summary class="card-header small fw-semibold">📧 Pošalji e-poštom – popis i dodatni zapisnik</summary>
     <div class="card-body p-3">
     <?php if (!posta_dostupna()): ?><div class="small text-muted">Slanje e-pošte nije podešeno (Sustav → E-pošta i adresa).</div>
     <?php else: ?>
         <form method="post" action="<?= e(url('grupni-popis', ['id' => $lov['Id']])) ?>"><?= csrf() ?><input type="hidden" name="radnja" value="posalji">
+            <div class="d-flex flex-wrap gap-3 mb-2 pb-2 border-bottom">
+                <label class="form-check"><input type="checkbox" class="form-check-input" name="d_popis" value="1" checked> <span class="form-check-label">📋 Popis sudionika</span></label>
+                <label class="form-check"><input type="checkbox" class="form-check-input" name="d_zapisnik" value="1"<?= $nZap ? ' checked' : ' disabled' ?>>
+                    <span class="form-check-label">📝 Dodatni zapisnik <?= $nZap ? '<span class="text-muted small">(' . $nZap . ')</span>' : '<span class="text-muted small">– prazan, <a href="' . e(url('grupni-zapisnik', ['id' => $lov['Id']])) . '">upiši divljač</a></span>' ?></span></label>
+            </div>
             <?php foreach ($moguci as $m => $ime): ?>
                 <label class="form-check small"><input type="checkbox" class="form-check-input" name="prima[]" value="<?= e($m) ?>"<?= $m === $vod ? ' checked' : '' ?>>
                     <span class="form-check-label"><?= e($ime) ?> <span class="text-muted">· <?= e($m) ?></span><?= $m === $vod ? ' <span class="badge text-bg-light border">voditelj lova</span>' : '' ?></span></label>

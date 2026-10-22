@@ -1,5 +1,10 @@
 # Promjene
 
+## 1.51.0 – 2026-10
+- **Završeni skupni lovovi:** gumb **📝 Dodatni zapisnik** s tekstom (umjesto same ikone) i novi gumb **📧 Pošalji**.
+- **📧 Slanje e-poštom – popis i zapisnik zajedno:** odaberete što šaljete (📋 popis sudionika, 📝 dodatni zapisnik) – oba PDF-a u jednoj poruci, primatelji s popisa ili upisana e-adresa.
+  Gumb i na završenom lovu i na stranici zapisnika.
+
 ## 1.50.0 – 2026-10
 - **Broj po sekciji = sekcija voditelja:** lov dobiva broj samo u sekciji onoga tko ga je pokrenuo – i kad je lov za sve sekcije (npr. *0001 (Lovna jedinica Bušetina)*), ne više broj u svakoj sekciji.
 - **📝 Dodatni zapisnik – upis u aplikaciji:** nakon lova voditelj upisuje odstrijeljenu divljač (datum, vrsta s prijedlozima, spol, dob, grla/kljunova, napomena – broj markice), može i naknadno; izmjena i brisanje reda.

@@ -76,6 +76,7 @@ ob_start(); ?>
     <a class="btn btn-sm btn-outline-secondary" href="<?= e(url('grupni-lov', ['id' => $lov['Id']])) ?>">← Skupni lov</a>
     <h1 class="h4 mb-0 me-auto">📝 Dodatni zapisnik <span class="text-muted small">br. <?= e(gl_broj($lov)) ?></span></h1>
     <a class="btn btn-sm btn-success<?= $redovi ? '' : ' disabled' ?>" href="<?= e(url('grupni-zapisnik', ['id' => $lov['Id'], 'pdf' => 1])) ?>" target="_blank">📄 PDF</a>
+    <a class="btn btn-sm btn-outline-primary<?= $redovi ? '' : ' disabled' ?>" href="<?= e(url('grupni-popis', ['id' => $lov['Id'], 'posalji' => 1])) ?>#gp-posalji">📧 Pošalji</a>
 </div>
 <p class="small text-muted mb-3"><?= e($lov['Naziv']) ?> · <?= e(datum($lov['Pocetak'])) ?> · voditelj <?= e($lov['KreiraoIme']) ?> –
     upišite odstrijeljenu divljač (može i naknadno), zatim PDF.</p>

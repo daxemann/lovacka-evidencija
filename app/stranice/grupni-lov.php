@@ -201,7 +201,8 @@ if (!$lov) {
                 <td class="text-end"><?= (int) $p['NaPopisu'] ?: '' ?></td>
                 <td class="text-end text-nowrap"><a class="btn btn-sm btn-outline-secondary" href="<?= e(url('grupni-lov', ['id' => $p['Id']])) ?>">Sudionici</a>
                     <a class="btn btn-sm btn-outline-secondary" href="<?= e(url('grupni-popis', ['id' => $p['Id']])) ?>">📋 Popis</a>
-                    <a class="btn btn-sm btn-outline-secondary" href="<?= e(url('grupni-zapisnik', ['id' => $p['Id']])) ?>" title="Dodatni zapisnik – upis divljači">📝</a>
+                    <a class="btn btn-sm btn-outline-secondary" href="<?= e(url('grupni-zapisnik', ['id' => $p['Id']])) ?>">📝 Dodatni zapisnik</a>
+                    <a class="btn btn-sm btn-outline-primary" href="<?= e(url('grupni-popis', ['id' => $p['Id'], 'posalji' => 1])) ?>#gp-posalji">📧 Pošalji</a>
                     <form method="post" class="d-inline"><?= csrf() ?><input type="hidden" name="radnja" value="obrisi"><input type="hidden" name="id" value="<?= (int) $p['Id'] ?>">
                         <button class="btn btn-sm btn-outline-danger" title="Obriši lov i popis" aria-label="Obriši <?= e($p['Naziv']) ?>"
                             data-potvrda="Trajno obrisati lov „<?= e($p['Naziv']) ?>“ (<?= e(datum($p['Pocetak'])) ?>) i njegov popis sudionika?">🗑</button></form></td></tr>
@@ -226,7 +227,8 @@ if (!gl_aktivan($lov)) {
     <div class="d-flex flex-wrap gap-2 mb-3">
         <a class="btn btn-outline-primary" href="<?= e(url('grupni-popis', ['id' => $lov['Id']])) ?>">📋 Popis sudionika (skenirane iskaznice: <?= $naPopisu ?>)</a>
         <?php if ($naPopisu): ?><a class="btn btn-outline-secondary" href="<?= e(url('grupni-popis', ['id' => $lov['Id'], 'pdf' => 1])) ?>" target="_blank">📄 PDF popisa</a><?php endif; ?>
-        <?php if (!gl_aktivan($lov)): ?><a class="btn btn-outline-success" href="<?= e(url('grupni-zapisnik', ['id' => $lov['Id']])) ?>">📝 Dodatni zapisnik – upis divljači (br. <?= e(gl_broj($lov)) ?>)</a><?php endif; ?>
+        <?php if (!gl_aktivan($lov)): ?><a class="btn btn-outline-success" href="<?= e(url('grupni-zapisnik', ['id' => $lov['Id']])) ?>">📝 Dodatni zapisnik – upis divljači (br. <?= e(gl_broj($lov)) ?>)</a>
+        <a class="btn btn-outline-primary" href="<?= e(url('grupni-popis', ['id' => $lov['Id'], 'posalji' => 1])) ?>#gp-posalji">📧 Pošalji e-poštom</a><?php endif; ?>
     </div>
     <h2 class="h6">Odgovori na poziv</h2>
     <table class="table table-sm"><thead><tr><th>Lovac</th><th>Odgovor</th><th>Napomena</th></tr></thead><tbody>

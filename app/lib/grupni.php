@@ -444,21 +444,36 @@ function gl_primatelji_popisa(array $lov): array
     }
     return $out;
 }
-/** Šalje PDF popisa sudionika. @return string|null greška */
-function gl_posalji_popis(array $lov, array $primatelji, ?string $poslao = null): ?string
+/** Šalje PDF popisa sudionika i/ili dodatnog zapisnika (jedna poruka, oba privitka). @return string|null greška */
+function gl_posalji_popis(array $lov, array $primatelji, ?string $poslao = null, bool $popis = true, bool $zapisnik = false): ?string
 {
-    $ime = 'popis-' . gl_broj_datoteka($lov) . '-' . substr($lov['Pocetak'], 0, 10) . '.pdf';
+    $dat = substr($lov['Pocetak'], 0, 10);
+    $broj = gl_broj_datoteka($lov);
+    $privitci = [];
+    if ($popis) {
+        $privitci["popis-$broj-$dat.pdf"] = gl_popis_pdf($lov);
+    }
+    $nz = (int) vrijednost('SELECT COUNT(*) FROM GrupniLovZapisnik WHERE LovId=?', [$lov['Id']]);
+    if ($zapisnik && $nz) {
+        $privitci["zapisnik-$broj-$dat.pdf"] = gl_zapisnik_pdf($lov);
+    }
+    if (!$privitci) {
+        return 'Nema što poslati – dodatni zapisnik je prazan.';
+    }
     $n = (int) vrijednost('SELECT COUNT(*) FROM GrupniLovPopis WHERE LovId=?', [$lov['Id']]);
-    $tijelo = '<p>U privitku je popis sudionika skupnog lova <b>' . e($lov['Naziv']) . '</b> (' . e(datum($lov['Pocetak'])) . ($lov['Mjesto'] ? ', ' . e($lov['Mjesto']) : '') . ').</p>'
-        . '<p>Voditelj lova: ' . e((string) $lov['KreiraoIme']) . ' · sudionika: ' . $n . ($lov['Zavrseno'] ? ' · lov završen ' . e(date('H:i', strtotime($lov['Zavrseno']))) : '') . '</p>'
+    $sto = implode(' i ', array_filter([$popis ? 'popis sudionika' : null, isset($privitci["zapisnik-$broj-$dat.pdf"]) ? 'dodatni zapisnik o obavljenom lovu' : null]));
+    $tijelo = '<p>U privitku: ' . e($sto) . ' – skupni lov <b>' . e($lov['Naziv']) . '</b> br. ' . e(gl_broj($lov)) . ' (' . e(datum($lov['Pocetak'])) . ($lov['Mjesto'] ? ', ' . e($lov['Mjesto']) : '') . ').</p>'
+        . '<p>Voditelj lova: ' . e((string) $lov['KreiraoIme']) . ($popis ? ' · sudionika: ' . $n : '') . ($zapisnik && $nz ? ' · upisano divljači: ' . $nz : '')
+        . ($lov['Zavrseno'] ? ' · lov završen ' . e(date('H:i', strtotime($lov['Zavrseno']))) : '') . '</p>'
         . '<p style="color:#888;font-size:12px">' . e(udruga_naziv()) . ' – Lovačka evidencija</p>';
+    $naslov = ($popis && count($privitci) > 1 ? 'Popis sudionika i dodatni zapisnik' : ($popis ? 'Popis sudionika' : 'Dodatni zapisnik')) . ' – ' . $lov['Naziv'] . ' br. ' . gl_broj($lov) . ' (' . datum($lov['Pocetak']) . ')';
     try {
-        posalji_mail($primatelji, 'Popis sudionika – ' . $lov['Naziv'] . ' (' . datum($lov['Pocetak']) . ')', $tijelo, true, null, [$ime => gl_popis_pdf($lov)]);
-        dnevnik('Skupni lov – popis poslan e-poštom', 'GrupniLov', (int) $lov['Id'], implode(', ', $primatelji) . ($poslao ? ' (poslao ' . $poslao . ')' : ' (automatski)'),
+        posalji_mail($primatelji, $naslov, $tijelo, true, null, $privitci);
+        dnevnik('Skupni lov – ' . $sto . ' poslan e-poštom', 'GrupniLov', (int) $lov['Id'], implode(', ', $primatelji) . ($poslao ? ' (poslao ' . $poslao . ')' : ' (automatski)'),
             korisnik() ?: ['Id' => null, 'KorisnickoIme' => 'sustav']);
         return null;
     } catch (Throwable $e) {
-        dnevnik('Skupni lov – slanje popisa nije uspjelo', 'GrupniLov', (int) $lov['Id'], $e->getMessage(), korisnik() ?: ['Id' => null, 'KorisnickoIme' => 'sustav']);
+        dnevnik('Skupni lov – slanje nije uspjelo', 'GrupniLov', (int) $lov['Id'], $e->getMessage(), korisnik() ?: ['Id' => null, 'KorisnickoIme' => 'sustav']);
         return objasni_smtp_gresku($e);
     }
 }
