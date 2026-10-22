@@ -1,5 +1,10 @@
 # Promjene
 
+## 1.52.1 – 2026-10
+- **Naknadni upis – sken iskaznice:** ispravljena provjera iskaznice (prije je uvijek javljalo „Provjera nije uspjela“).
+  Nakon skeniranja sve je ispunjeno: član, **datum i vrijeme skeniranja**, reg. oznaka (jedno vozilo – samo; više vozila – odabir gumbom).
+- **„Zašto naknadno?“ više nije obavezno.**
+
 ## 1.52.0 – 2026-10
 - **Dezinfekcija – naknadni upis:** uz odabir člana gumb **📷 Iskaznica** – skenirate člansku iskaznicu (QR) i član se odabere sam (s reg. oznakom). Odabir s popisa ostaje kao i prije.
 
