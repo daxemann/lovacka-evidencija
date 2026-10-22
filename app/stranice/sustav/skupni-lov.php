@@ -16,7 +16,7 @@ if (je_post()) {
             'potpis_voditelja' => isset($_POST['potpis_voditelja']), 'broj_po_sekciji' => isset($_POST['broj_po_sekciji']),
             'zapisnik_naslov' => $t('zapisnik_naslov', 250) ?: $z['zapisnik_naslov'],
             'zapisnik_stupci' => $stupci ?: $z['zapisnik_stupci'],
-            'zapisnik_redaka' => max(1, min(200, (int) ($_POST['zapisnik_redaka'] ?? 18))),
+            'zapisnik_redaka' => max(0, min(100, (int) ($_POST['zapisnik_redaka'] ?? 0))),
         ], JSON_UNESCAPED_UNICODE));
     }
     dnevnik('Uređen izgled PDF-a skupnog lova');
@@ -33,8 +33,8 @@ ob_start(); ?>
 <form method="post" style="max-width:720px"><?= csrf() ?>
 <div class="card mb-3"><div class="card-body">
     <h2 class="h5">🔢 Broj lova</h2>
-    <?= $kv('broj_po_sekciji', '<b>Broj po sekciji</b> – svaka sekcija broji svoje lovove (0001, 0002 …), npr. kad svaka sekcija ima svoje dopuštenje i love istog dana') ?>
-    <div class="small text-muted mt-1">Isključeno: jedan niz brojeva za cijelu udrugu. Uključeno: u PDF-u stoji npr. <i>0003 (Sjever)</i>; zajednički lov više sekcija dobiva broj u svakoj sekciji.</div>
+    <?= $kv('broj_po_sekciji', '<b>Broj po sekciji</b> – svaka sekcija broji svoje lovove (0001, 0002 …) prema sekciji voditelja koji je pokrenuo lov') ?>
+    <div class="small text-muted mt-1">Isključeno: jedan niz brojeva za cijelu udrugu. Uključeno: u PDF-u stoji npr. <i>0003 (Bušetina)</i> – uvijek samo sekcija voditelja, i kad je lov za sve sekcije.</div>
 </div></div>
 <div class="card mb-3"><div class="card-body">
     <h2 class="h5">📋 Popis sudionika</h2>
@@ -54,14 +54,14 @@ ob_start(); ?>
     <input class="form-control mb-2" name="zapisnik_naslov" maxlength="250" value="<?= e($p['zapisnik_naslov']) ?>">
     <label class="form-label">Stupci – jedan po retku <span class="small text-muted">(RB uvijek prvi, najviše 12)</span></label>
     <textarea class="form-control mb-2" name="zapisnik_stupci" rows="7"><?= e($p['zapisnik_stupci']) ?></textarea>
-    <label class="form-label">Broj praznih redaka</label>
-    <input class="form-control" type="number" name="zapisnik_redaka" min="1" max="200" value="<?= (int) $p['zapisnik_redaka'] ?>" style="max-width:120px">
+    <label class="form-label">Dodatni prazni redovi na kraju PDF-a <span class="small text-muted">(0 = samo upisana divljač)</span></label>
+    <input class="form-control" type="number" name="zapisnik_redaka" min="0" max="100" value="<?= (int) $p['zapisnik_redaka'] ?>" style="max-width:120px">
 </div></div>
 <div class="d-flex flex-wrap gap-2"><button class="btn btn-primary">Spremi</button>
     <button class="btn btn-outline-secondary" name="radnja" value="zadano" data-potvrda="Vratiti zadani izgled?">Zadano</button>
     <?php if ($zadnji): ?>
         <a class="btn btn-outline-secondary" target="_blank" href="<?= e(url('grupni-popis', ['id' => $zadnji['Id'], 'pdf' => 1])) ?>">👁 Probni popis</a>
-        <a class="btn btn-outline-secondary" target="_blank" href="<?= e(url('grupni-popis', ['id' => $zadnji['Id'], 'pdf' => 'zapisnik'])) ?>">👁 Probni zapisnik</a>
+        <a class="btn btn-outline-secondary" target="_blank" href="<?= e(url('grupni-zapisnik', ['id' => $zadnji['Id'], 'pdf' => 1])) ?>">👁 Probni zapisnik</a>
     <?php endif; ?>
 </div>
 </form>

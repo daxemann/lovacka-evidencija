@@ -11,8 +11,11 @@ if (!$lov) {
 if (!gl_moze_upravljati($lov)) {
     zabranjeno();
 }
-if (in_array($_GET['pdf'] ?? '', ['1', 'zapisnik'], true)) {
-    $zap = $_GET['pdf'] === 'zapisnik';
+if (($_GET['pdf'] ?? '') === 'zapisnik') {
+    preusmjeri('grupni-zapisnik', ['id' => $lov['Id'], 'pdf' => 1]);
+}
+if (in_array($_GET['pdf'] ?? '', ['1'], true)) {
+    $zap = false;
     $ime = ($zap ? 'zapisnik-' : 'popis-') . gl_broj_datoteka($lov) . '-' . substr($lov['Pocetak'], 0, 10);
     header('Content-Type: application/pdf');
     header('Content-Disposition: inline; filename="' . $ime . '.pdf"');
@@ -111,7 +114,7 @@ ob_start(); ?>
         <div class="d-flex align-items-center gap-2 mb-2">
             <h2 class="h6 mb-0 me-auto">Na popisu: <b id="gp-broj">0</b> <span class="text-muted small" id="gp-broj-detalj"></span></h2>
             <a class="btn btn-sm btn-outline-secondary" href="<?= e(url('grupni-popis', ['id' => $lov['Id'], 'pdf' => 1])) ?>" target="_blank">📄 PDF</a>
-            <?php if (!$aktivan): ?><a class="btn btn-sm btn-outline-secondary" href="<?= e(url('grupni-popis', ['id' => $lov['Id'], 'pdf' => 'zapisnik'])) ?>" target="_blank">📝 Zapisnik</a><?php endif; ?>
+            <?php if (!$aktivan): ?><a class="btn btn-sm btn-outline-secondary" href="<?= e(url('grupni-zapisnik', ['id' => $lov['Id']])) ?>">📝 Zapisnik</a><?php endif; ?>
         </div>
         <div id="gp-popis" class="list-group small"></div>
     </div>

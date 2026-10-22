@@ -180,6 +180,9 @@ function gl_pokreni(string $naziv, string $mjesto, string $napomena, array $sekc
             'Sekcije' => implode(',', $sekcije), 'Pocetak' => sada(), 'Kraj' => $kraj,
             'KreiraoKorisnikId' => $k['Id'], 'KreiraoClanId' => $k['ClanId'], 'KreiraoIme' => $k['Naziv'], 'Kreirano' => sada(),
             'DogadjajId' => $termin ? (int) $termin['Id'] : null,
+            // broj lova po sekciji: sekcija organizatora; bez nje – jedina sekcija lova
+            'SekcijaBroja' => (int) ($k['ClanId'] ? vrijednost('SELECT SekcijaId FROM Clanovi WHERE Id=?', [$k['ClanId']]) : 0)
+                ?: (count(array_filter($sekcije)) === 1 ? (int) array_values(array_filter($sekcije))[0] : null),
         ]);
         foreach ($lovci as $l) {
             $ja = (int) $l['KorisnikId'] === (int) $k['Id'];
@@ -795,31 +798,29 @@ function gl_pdf_postavke(): array
         'potpis_voditelja' => true, 'broj_po_sekciji' => false,
         'zapisnik_naslov' => 'Dodatni zapisnik o obavljenom lovu prema dopuštenju za lov i zapisniku o obavljenom lovu Broj:',
         'zapisnik_stupci' => "Datum izlučenja\nVrsta divljači\nSpol\nDob\nGrla / kljunova\nNapomena – broj markice",
-        'zapisnik_redaka' => 18,
+        'zapisnik_redaka' => 0,
     ];
     $p = json_decode((string) postavka('SkupniLov.Pdf', ''), true);
     return is_array($p) ? array_merge($z, array_intersect_key($p, $z)) : $z;
 }
 
 /** Redni broj lova u lovnoj godini (od 1.4.) – 0001, 0002 … Računa se iz postojećih lovova: obrisani lov ne ostavlja rupu.
- *  Uz „broj po sekciji“ svaka sekcija broji svoje lovove; lov više sekcija dobiva broj u svakoj: „0003 (Sjever), 0001 (Jug)“. */
+ *  Uz „broj po sekciji“ broji se u sekciji organizatora (tko je pokrenuo lov), i kad je lov za više sekcija: „0003 (Bušetina)“. */
 function gl_broj(array $lov): string
 {
     $od = pocetak_lovne_godine(new DateTimeImmutable(substr($lov['Pocetak'], 0, 10)));
     $sql = 'SELECT COUNT(*) FROM GrupniLov WHERE Pocetak>=? AND Pocetak<? AND (Pocetak<? OR (Pocetak=? AND Id<=?))';
     $par = [$od->format('Y-m-d'), $od->modify('+1 year')->format('Y-m-d'), $lov['Pocetak'], $lov['Pocetak'], $lov['Id']];
-    $sek = array_values(array_filter(gl_sekcije_lova($lov)));
-    if (!gl_pdf_postavke()['broj_po_sekciji'] || !$sek) {
+    if (!gl_pdf_postavke()['broj_po_sekciji']) {
         return sprintf('%04d', max(1, (int) vrijednost($sql, $par)));
+    }
+    $sid = (int) ($lov['SekcijaBroja'] ?? 0);
+    if (!$sid) {
+        return sprintf('%04d', max(1, (int) vrijednost($sql . ' AND SekcijaBroja IS NULL', $par)));
     }
     static $imena = null;
     $imena ??= array_column(redovi('SELECT Id, Naziv FROM Sekcije'), 'Naziv', 'Id');
-    $dijelovi = [];
-    foreach ($sek as $sid) {
-        $n = (int) vrijednost($sql . " AND (',' || Sekcije || ',') LIKE ?", array_merge($par, ['%,' . $sid . ',%']));
-        $dijelovi[] = sprintf('%04d', max(1, $n)) . ' (' . ($imena[$sid] ?? '?') . ')';
-    }
-    return implode(', ', $dijelovi);
+    return sprintf('%04d', max(1, (int) vrijednost($sql . ' AND SekcijaBroja=?', array_merge($par, [$sid])))) . ' (' . ($imena[$sid] ?? '?') . ')';
 }
 
 /** Broj za naziv datoteke (bez razmaka i zagrada). */
@@ -867,20 +868,36 @@ function gl_pdf_potpis_voditelja(array $lov): string
     return '<table class="potpis"><tr><td>Lovnik / voditelj lova: <b>' . e((string) $lov['KreiraoIme']) . '</b></td><td>Potpis: ' . $potpis . '</td></tr></table>';
 }
 
-/** Dodatni zapisnik o obavljenom lovu (prazna tablica za upis odstrijeljene divljači) – isti broj kao lov. */
+/** Stupci dodatnog zapisnika (iz postavki, RB je uvijek prvi). */
+function gl_zapisnik_stupci(): array
+{
+    return array_values(array_filter(array_map('trim', explode("\n", str_replace("\r", '', (string) gl_pdf_postavke()['zapisnik_stupci'])))));
+}
+/** Upisani redovi dodatnog zapisnika: [['Id'=>…, 'v'=>[stupac=>vrijednost]] …] */
+function gl_zapisnik_redovi(int $lovId): array
+{
+    return array_map(fn($r) => $r + ['v' => (array) (json_decode((string) $r['Podaci'], true) ?: [])],
+        redovi('SELECT * FROM GrupniLovZapisnik WHERE LovId=? ORDER BY Id', [$lovId]));
+}
+
+/** Dodatni zapisnik o obavljenom lovu – upisana divljač (isti broj kao lov). */
 function gl_zapisnik_pdf(array $lov): string
 {
     $p = gl_pdf_postavke();
-    $stupci = array_values(array_filter(array_map('trim', explode("\n", str_replace("\r", '', (string) $p['zapisnik_stupci'])))));
-    $n = max(1, min(200, (int) $p['zapisnik_redaka']));
-    $th = '<th class="d">RB</th>' . implode('', array_map(fn($s) => '<th>' . e($s) . '</th>', $stupci));
+    $stupci = gl_zapisnik_stupci();
+    $th = '<th class="d">RB</th>' . implode('', array_map(fn($x) => '<th>' . e($x) . '</th>', $stupci));
     $redovi = '';
-    for ($i = 1; $i <= $n; $i++) {
-        $redovi .= '<tr><td class="d">' . $i . '.</td>' . str_repeat('<td></td>', count($stupci)) . '</tr>';
+    $i = 0;
+    foreach (gl_zapisnik_redovi((int) $lov['Id']) as $r) {
+        $redovi .= '<tr><td class="d">' . (++$i) . '.</td>' . implode('', array_map(fn($x) => '<td>' . e((string) ($r['v'][$x] ?? '')) . '</td>', $stupci)) . '</tr>';
+    }
+    for ($k = 0; $k < max(0, min(100, (int) $p['zapisnik_redaka'])); $k++) {
+        $redovi .= '<tr><td class="d">' . (++$i) . '.</td>' . str_repeat('<td></td>', count($stupci)) . '</tr>';
     }
     return gl_pdf_render('<h2>' . e($p['zapisnik_naslov']) . ' ' . gl_broj($lov) . '</h2>
         <div class="info">' . e($p['ovlastenik']) . ' <b>' . e((string) $lov['KreiraoIme']) . '</b></div>
-        <table class="t prazna"><thead><tr>' . $th . '</tr></thead><tbody>' . $redovi . '</tbody></table>'
+        <table class="t"><thead><tr>' . $th . '</tr></thead><tbody>'
+        . ($redovi ?: '<tr><td colspan="' . (count($stupci) + 1) . '">Nije upisana divljač.</td></tr>') . '</tbody></table>'
         . ($p['potpis_voditelja'] ? gl_pdf_potpis_voditelja($lov) : ''));
 }
 
@@ -928,6 +945,7 @@ function gl_obrisi(array $lov): bool
             obrisi_sliku($r['Potpis']);
         }
         q('DELETE FROM GrupniLovPopis WHERE LovId=?', [$lov['Id']]);
+        q('DELETE FROM GrupniLovZapisnik WHERE LovId=?', [$lov['Id']]);
         q('DELETE FROM GrupniLovSudionici WHERE LovId=?', [$lov['Id']]);
         q('DELETE FROM GrupniLov WHERE Id=?', [$lov['Id']]);
     });

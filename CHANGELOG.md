@@ -1,5 +1,10 @@
 # Promjene
 
+## 1.50.0 – 2026-10
+- **Broj po sekciji = sekcija voditelja:** lov dobiva broj samo u sekciji onoga tko ga je pokrenuo – i kad je lov za sve sekcije (npr. *0001 (Lovna jedinica Bušetina)*), ne više broj u svakoj sekciji.
+- **📝 Dodatni zapisnik – upis u aplikaciji:** nakon lova voditelj upisuje odstrijeljenu divljač (datum, vrsta s prijedlozima, spol, dob, grla/kljunova, napomena – broj markice), može i naknadno; izmjena i brisanje reda.
+  **PDF** sadrži upisane redove (prazni redovi na kraju po želji u *Sustav → Skupni lov – PDF*, zadano 0).
+
 ## 1.49.0 – 2026-10
 - **Broj skupnog lova po sekciji** (*Sustav → Skupni lov – PDF → Broj po sekciji*): svaka sekcija broji svoje lovove u lovnoj godini (0001, 0002 …) – za udruge u kojima svaka sekcija ima svoje dopuštenje i sekcije love istog dana.
   U PDF-u npr. *0003 (Sjever)*; zajednički lov više sekcija dobiva broj u svakoj: *0002 (Sjever), 0002 (Jug)*. Bez rupa nakon brisanja, kao i do sada. Zadano isključeno (jedan niz za cijelu udrugu).

@@ -5,7 +5,7 @@
  */
 declare(strict_types=1);
 
-const VERZIJA = '1.49.0';
+const VERZIJA = '1.50.0';
 const KONTAKT_EMAIL = 'daxemann@googlemail.com';
 const PODRSKA_PAYPAL = 'darko.bakic@freenet.de'; // dobrovoljna podrška razvoju (Pomoć i kontakt)
 const PROJEKT_URL = 'https://github.com/daxemann/lovacka-evidencija';
@@ -153,7 +153,7 @@ function db(bool $novo = false): PDO
  * Dodatne tablice PHP verzije (PRAGMA user_version). .NET verzija ih ne poznaje i zanemaruje,
  * pa baza i dalje radi u oba smjera.
  */
-const SHEMA_PHP = 36;
+const SHEMA_PHP = 37;
 function nadogradi_bazu(PDO $pdo): void
 {
     if ((int) $pdo->query('PRAGMA user_version')->fetchColumn() >= SHEMA_PHP) {
@@ -846,6 +846,20 @@ SQL);
     if ($v < 36) {
         // skupni lov pokrenut iz termina u kalendaru (bez novog poziva – vrijede odgovori iz kalendara)
         $pdo->exec('ALTER TABLE "GrupniLov" ADD COLUMN "DogadjajId" INTEGER NULL');
+    }
+    if ($v < 37) {
+        // broj lova po sekciji: sekcija organizatora (tko je pokrenuo lov) + dodatni zapisnik (upis odstrijeljene divljači)
+        $pdo->exec('ALTER TABLE "GrupniLov" ADD COLUMN "SekcijaBroja" INTEGER NULL');
+        $pdo->exec('UPDATE "GrupniLov" SET "SekcijaBroja" = COALESCE((SELECT c."SekcijaId" FROM "Clanovi" c WHERE c."Id" = "GrupniLov"."KreiraoClanId"),
+                CASE WHEN instr(COALESCE("Sekcije", \'\'), \',\') = 0 AND COALESCE("Sekcije", \'\') NOT IN (\'\', \'0\') THEN CAST("Sekcije" AS INTEGER) END)');
+        $pdo->exec('CREATE TABLE IF NOT EXISTS "GrupniLovZapisnik" (
+                "Id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                "LovId" INTEGER NOT NULL REFERENCES "GrupniLov" ("Id") ON DELETE CASCADE,
+                "Podaci" TEXT NOT NULL,
+                "Upisao" TEXT NULL,
+                "Kreirano" TEXT NOT NULL,
+                "Azurirano" TEXT NULL)');
+        $pdo->exec('CREATE INDEX IF NOT EXISTS "IX_GrupniLovZapisnik_Lov" ON "GrupniLovZapisnik" ("LovId")');
     }
 }
 
