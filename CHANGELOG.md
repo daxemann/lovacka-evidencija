@@ -1,5 +1,8 @@
 # Promjene
 
+## 1.52.0 – 2026-10
+- **Dezinfekcija – naknadni upis:** uz odabir člana gumb **📷 Iskaznica** – skenirate člansku iskaznicu (QR) i član se odabere sam (s reg. oznakom). Odabir s popisa ostaje kao i prije.
+
 ## 1.51.1 – 2026-10
 - **Kvarovi:** gumbi *Riješeni* i *Svi* (i odabir sekcije) sada rade – prije su uvijek ostajali na *Otvoreni*.
 

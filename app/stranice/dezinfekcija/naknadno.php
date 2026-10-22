@@ -8,6 +8,18 @@ $razlozi = dez_razlozi();
 $mobIds = array_map(fn($s) => (int) $s['Id'], dez_stanice(true, 'M'));
 $akcije = $mobIds ? redovi('SELECT a.*, st.SekcijaId, st.Naziv AS Stanica FROM DezAktivacije a JOIN DezStanice st ON st.Id=a.StanicaId
     WHERE a.StanicaId IN (' . implode(',', $mobIds) . ') ORDER BY a.Od DESC LIMIT 15') : [];
+// sken iskaznice → član (JSON za obrazac)
+if (isset($_GET['isk'])) {
+    $token = isk_token_iz_teksta((string) $_GET['isk']);
+    $c = $token ? isk_clan($token) : null;
+    if (!$c) {
+        json(['ok' => false, 'greska' => $token ? 'Iskaznica ne vrijedi (zamijenjena novom ili član više ne postoji).' : 'Ovo nije članska iskaznica.']);
+    }
+    if ((int) $c['Status'] !== CLAN_AKTIVAN) {
+        json(['ok' => false, 'greska' => prezime_ime($c) . ' nije aktivan član.']);
+    }
+    json(['ok' => true, 'id' => (int) $c['Id'], 'ime' => prezime_ime($c)]);
+}
 if (je_post()) {
     $st = null;
     $akc = null;
@@ -80,9 +92,18 @@ ob_start(); ?>
             <input type="radio" class="btn-check" name="smjer" id="n-d" value="D"<?= chk(($o['smjer'] ?? 'D') === 'D') ?>><label class="btn btn-outline-success" for="n-d">Dolazak</label>
             <input type="radio" class="btn-check" name="smjer" id="n-o" value="O"<?= chk(($o['smjer'] ?? '') === 'O') ?>><label class="btn btn-outline-warning" for="n-o">Odlazak</label></div></div>
         <div class="col-md-6"><label class="form-label">Član</label>
-            <select name="clan" id="n-clan" class="form-select"><option value="">— gost (upiši ispod) —</option>
-                <?php foreach ($clanovi as $c): ?><option value="<?= (int) $c['Id'] ?>" data-oznaka="<?= e($c['Oznaka']) ?>"<?= sel($c['Id'], $o['clan'] ?? '') ?>><?= e(prezime_ime($c)) ?></option><?php endforeach; ?>
-            </select></div>
+            <div class="input-group">
+                <select name="clan" id="n-clan" class="form-select"><option value="">— gost (upiši ispod) —</option>
+                    <?php foreach ($clanovi as $c): ?><option value="<?= (int) $c['Id'] ?>" data-oznaka="<?= e($c['Oznaka']) ?>"<?= sel($c['Id'], $o['clan'] ?? '') ?>><?= e(prezime_ime($c)) ?></option><?php endforeach; ?>
+                </select>
+                <button type="button" class="btn btn-outline-success" id="n-sken" title="Skeniraj člansku iskaznicu">📷 Iskaznica</button>
+            </div>
+            <div id="n-sken-poruka" class="small mt-1" hidden></div>
+            <div id="n-kamera" class="skener-kamera mt-2" hidden>
+                <video id="n-video" playsinline muted></video>
+                <div class="skener-okvir-ciljnik"></div>
+                <button type="button" class="btn btn-light btn-sm skener-zatvori" id="n-stop">✕</button>
+            </div></div>
         <div class="col-6 col-md-3 gost-polje"><label class="form-label">Ime gosta</label><input name="ime" class="form-control" maxlength="60" value="<?= e($o['ime'] ?? '') ?>"></div>
         <div class="col-6 col-md-3 gost-polje"><label class="form-label">Prezime gosta</label><input name="prezime" class="form-control" maxlength="60" value="<?= e($o['prezime'] ?? '') ?>"></div>
         <div class="col-6 col-md-4"><label class="form-label">Reg. oznaka</label><input name="oznaka" id="n-oznaka" class="form-control text-uppercase" maxlength="20" value="<?= e($o['oznaka'] ?? '') ?>"></div>
@@ -107,6 +128,57 @@ ob_start(); ?>
     function pr() { var gost = !c.value; document.querySelectorAll('.gost-polje').forEach(function (d) { d.hidden = !gost; });
         var o = c.options[c.selectedIndex]; if (!gost && !oz.value && o.getAttribute('data-oznaka')) oz.value = o.getAttribute('data-oznaka'); }
     c.addEventListener('change', function () { oz.value = ''; pr(); }); pr();
+
+    // sken članske iskaznice (QR) → odabir člana
+    var btn = document.getElementById('n-sken'), kam = document.getElementById('n-kamera'), video = document.getElementById('n-video'),
+        msg = document.getElementById('n-sken-poruka'), tok = null, radi = false, det = null,
+        pl = document.createElement('canvas'), ctx = pl.getContext('2d', { willReadFrequently: true });
+    var url = <?= json_encode(url('dezinfekcija/naknadno', ['isk' => '']), JSON_UNESCAPED_SLASHES | JSON_HEX_TAG) ?>;
+    function javi(t, kl) { msg.hidden = false; msg.className = 'small mt-1 ' + kl; msg.textContent = t; }
+    function stani() { radi = false; if (tok) { tok.getTracks().forEach(function (x) { x.stop(); }); tok = null; } kam.hidden = true; }
+    function nadjeno(tekst) {
+        stani();
+        javi('Provjeravam iskaznicu…', 'text-muted');
+        fetch(url + encodeURIComponent(tekst), { credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
+            .then(function (r) { return r.json(); })
+            .then(function (d) {
+                if (!d.ok) { javi('✖ ' + d.greska, 'text-danger'); return; }
+                c.value = String(d.id); oz.value = ''; pr();
+                if (c.value !== String(d.id)) { javi('✖ ' + d.ime + ' nije na popisu članova.', 'text-danger'); return; }
+                javi('✔ ' + d.ime, 'text-success fw-semibold');
+                try { navigator.vibrate && navigator.vibrate(80); } catch (x) { }
+            })
+            .catch(function () { javi('✖ Provjera nije uspjela – treba signal. Odaberite člana s popisa.', 'text-danger'); });
+    }
+    function okvir() {
+        if (!radi) return;
+        if (video.readyState >= 2 && video.videoWidth) {
+            if (det) {
+                det.detect(video).then(function (k) { if (k && k.length) nadjeno(k[0].rawValue); else setTimeout(okvir, 120); })
+                    .catch(function () { det = null; setTimeout(okvir, 120); });
+                return;
+            }
+            var m = Math.min(1, 720 / Math.max(video.videoWidth, video.videoHeight));
+            pl.width = Math.round(video.videoWidth * m); pl.height = Math.round(video.videoHeight * m);
+            ctx.drawImage(video, 0, 0, pl.width, pl.height);
+            var s = ctx.getImageData(0, 0, pl.width, pl.height), k = window.jsQR && jsQR(s.data, s.width, s.height, { inversionAttempts: 'dontInvert' });
+            if (k && k.data) { nadjeno(k.data); return; }
+        }
+        setTimeout(okvir, 120);
+    }
+    btn.addEventListener('click', function () {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { javi('Ovaj preglednik ne dopušta kameru – odaberite člana s popisa.', 'text-danger'); return; }
+        javi('Usmjerite kameru na QR kod iskaznice…', 'text-muted');
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio: false }).then(function (t) {
+            tok = t; video.srcObject = t; kam.hidden = false; return video.play();
+        }).then(function () {
+            if ('BarcodeDetector' in window) { try { det = new BarcodeDetector({ formats: ['qr_code'] }); } catch (x) { det = null; } }
+            radi = true; okvir();
+        }).catch(function (e) { stani(); javi(e && e.name === 'NotAllowedError' ? 'Kamera nije dopuštena.' : 'Kamera se ne može pokrenuti.', 'text-danger'); });
+    });
+    document.getElementById('n-stop').addEventListener('click', function () { stani(); msg.hidden = true; });
+    document.addEventListener('visibilitychange', function () { if (document.hidden) stani(); });
 })();
 </script>
+<script src="<?= e(asset('assets/jsqr.min.js')) ?>"></script>
 <?php stranica('Naknadni upis', ob_get_clean());
