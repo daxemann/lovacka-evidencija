@@ -444,7 +444,7 @@ function gl_primatelji_popisa(array $lov): array
 /** Šalje PDF popisa sudionika. @return string|null greška */
 function gl_posalji_popis(array $lov, array $primatelji, ?string $poslao = null): ?string
 {
-    $ime = trim((string) preg_replace('/[^a-z0-9\-]+/', '-', 'popis-' . kljuc($lov['Naziv']) . '-' . substr($lov['Pocetak'], 0, 10)), '-') . '.pdf';
+    $ime = 'popis-' . gl_broj($lov) . '-' . substr($lov['Pocetak'], 0, 10) . '.pdf';
     $n = (int) vrijednost('SELECT COUNT(*) FROM GrupniLovPopis WHERE LovId=?', [$lov['Id']]);
     $tijelo = '<p>U privitku je popis sudionika skupnog lova <b>' . e($lov['Naziv']) . '</b> (' . e(datum($lov['Pocetak'])) . ($lov['Mjesto'] ? ', ' . e($lov['Mjesto']) : '') . ').</p>'
         . '<p>Voditelj lova: ' . e((string) $lov['KreiraoIme']) . ' · sudionika: ' . $n . ($lov['Zavrseno'] ? ' · lov završen ' . e(date('H:i', strtotime($lov['Zavrseno']))) : '') . '</p>'
@@ -785,52 +785,48 @@ function gl_potpis_img(?string $f): string
     return $put && is_file($put) ? '<img src="data:image/png;base64,' . base64_encode((string) file_get_contents($put)) . '" style="height:6mm;max-width:30mm">' : '';
 }
 
-/** PDF popisa sudionika (abecedno). */
-function gl_popis_pdf(array $lov): string
+/** Postavke PDF-ova skupnog lova (Sustav → Skupni lov – PDF). */
+function gl_pdf_postavke(): array
 {
-    $popis = gl_popis($lov);
-    $coll = class_exists('Collator') ? new Collator('hr_HR') : null;
-    // članovi abecedno, zatim gosti
-    usort($popis, fn($a, $b) => ((int) $a['Gost'] <=> (int) $b['Gost'])
-        ?: ($coll ? $coll->compare($a['Ime'], $b['Ime']) : strcmp(kljuc($a['Ime']), kljuc($b['Ime']))));
-    $clanova = count(array_filter($popis, fn($p) => !$p['Gost']));
-    $ids = array_filter(array_map(fn($p) => (int) $p['ClanId'], $popis));
-    $oruzje = oruzni_listovi_brojevi($ids);
-    $isk = $ids ? array_column(redovi('SELECT Id, BrojIskaznice FROM Clanovi WHERE Id IN (' . implode(',', $ids) . ')'), 'BrojIskaznice', 'Id') : [];
-    $redovi = '';
-    foreach ($popis as $i => $p) {
-        $cid = (int) $p['ClanId'];
-        $redovi .= '<tr><td class="d">' . ($i + 1) . '.</td><td>' . e($p['Ime']) . ($p['Gost'] ? ' <i>(gost' . (!empty($p['PozvaoIme']) ? ' – pozvao ' . e($p['PozvaoIme']) : '') . ')</i>' : '') . '</td>'
-            . '<td>' . e($p['Gost'] ? (string) $p['GostIskaznica'] : (string) ($isk[$cid] ?? '')) . '</td><td class="ol">' . e($p['Gost'] ? (string) $p['GostOruzni'] : ($oruzje[$cid] ?? '')) . '</td>'
-            . '<td>' . ($p['Nacin'] === 'qr' ? ($p['Gost'] ? 'pozivnica' : 'iskaznica') : ($p['Nacin'] === 'voditelj' ? 'voditelj lova' : 'ručno')) . '</td><td class="potpis-polje">' . gl_potpis_img(($p['Potpis'] ?? null) ?: ($cid ? potpis_clana($cid) : null)) . '</td></tr>';
-    }
-    $kraj = $lov['Zavrseno'] ? date('H:i', strtotime($lov['Zavrseno'])) : '';
-    // osobni potpis voditelja lova (Moj profil) – tek kad je lov završen
-    $pot = !gl_aktivan($lov) && $lov['KreiraoKorisnikId'] ? potpis_datauri((int) $lov['KreiraoKorisnikId']) : null;
-    $potpis = $pot ? '<img src="' . $pot . '" style="height:14mm;vertical-align:middle"><br><span style="font-size:7pt;color:#777">elektronički generirano iz evidencije</span>'
-        : '____________________';
+    $z = [
+        'popis_naslov' => 'Popis sudionika skupnog lova po Dopuštenju za lov broj:',
+        'ovlastenik' => 'Ovlaštenik prava lova:',
+        'st_iskaznica' => true, 'st_oruzni' => false, 'st_upis' => false, 'st_potpis' => false,
+        'potpis_voditelja' => true,
+        'zapisnik_naslov' => 'Dodatni zapisnik o obavljenom lovu prema dopuštenju za lov i zapisniku o obavljenom lovu Broj:',
+        'zapisnik_stupci' => "Datum izlučenja\nVrsta divljači\nSpol\nDob\nGrla / kljunova\nNapomena – broj markice",
+        'zapisnik_redaka' => 18,
+    ];
+    $p = json_decode((string) postavka('SkupniLov.Pdf', ''), true);
+    return is_array($p) ? array_merge($z, array_intersect_key($p, $z)) : $z;
+}
+
+/** Redni broj lova u lovnoj godini (od 1.4.) – 0001, 0002 … Računa se iz postojećih lovova: obrisani lov ne ostavlja rupu. */
+function gl_broj(array $lov): string
+{
+    $od = pocetak_lovne_godine(new DateTimeImmutable(substr($lov['Pocetak'], 0, 10)));
+    $n = (int) vrijednost('SELECT COUNT(*) FROM GrupniLov WHERE Pocetak>=? AND Pocetak<? AND (Pocetak<? OR (Pocetak=? AND Id<=?))',
+        [$od->format('Y-m-d'), $od->modify('+1 year')->format('Y-m-d'), $lov['Pocetak'], $lov['Pocetak'], $lov['Id']]);
+    return sprintf('%04d', max(1, $n));
+}
+
+/** Zajednički CSS i render za PDF-ove skupnog lova. */
+function gl_pdf_render(string $tijelo): string
+{
     $html = '<html><head><meta charset="utf-8"><style>
         @page { margin: 16mm 14mm 16mm 14mm; }
         body { font-family: DejaVu Sans, sans-serif; font-size: 9pt; color: #222; }
         .zag { border-bottom: 2px solid #3d6b2f; padding-bottom: 6px; margin-bottom: 10px; }
-        .zag .n { font-size: 13pt; font-weight: bold; color: #2f5d23; } .zag .p { color: #666; }
-        h2 { font-size: 12pt; margin: 4px 0 2px; } .info { color: #555; margin-bottom: 8px; }
-        table.t { width: 100%; border-collapse: collapse; } .t th { background: #e9efe5; text-align: left; }
-        .t th, .t td { border: 0.5pt solid #999; padding: 4px 4px; vertical-align: middle; } .t .d { text-align: right; white-space: nowrap; }
-        .t td.potpis-polje { width: 30mm; } .t tbody td { height: 6mm; } .t td.ol { font-size: 8pt; }
+        .zag .n { font-size: 13pt; font-weight: bold; color: #2f5d23; }
+        h2 { font-size: 11.5pt; margin: 4px 0 4px; } .info { margin-bottom: 10px; font-size: 10pt; }
+        table.t { width: 100%; border-collapse: collapse; } .t th { background: #e9efe5; text-align: left; font-size: 8.5pt; }
+        .t th, .t td { border: 0.5pt solid #999; padding: 4px 4px; vertical-align: middle; } .t .d { text-align: right; white-space: nowrap; width: 9mm; }
+        .t td.potpis-polje { width: 30mm; } .t tbody td { height: 6mm; } .t td.ol { font-size: 8pt; } .t.prazna tbody td { height: 8mm; }
         .potpis { width: 100%; margin-top: 14mm; font-size: 9pt; } .potpis td { padding: 0 4px; }
         .podnozje { position: fixed; bottom: -8mm; left: 0; right: 0; font-size: 7.5pt; color: #888; }
     </style></head><body>
     <div class="podnozje">' . e(udruga_naziv()) . ' · ispisano ' . date('d.m.Y. H:i') . '</div>
-    <div class="zag"><div class="n">' . e(udruga_naziv()) . '</div><div class="p">Popis sudionika skupnog lova</div></div>
-    <h2>' . e($lov['Naziv']) . '</h2>
-    <div class="info">' . e(datum($lov['Pocetak'])) . ' · ' . e(date('H:i', strtotime($lov['Pocetak']))) . ($kraj ? '–' . e($kraj) : '')
-        . ($lov['Mjesto'] ? ' · ' . e($lov['Mjesto']) : '') . ' · organizator ' . e($lov['KreiraoIme'])
-        . '<br>Ukupno <b>' . count($popis) . '</b> (članova ' . $clanova . ', gostiju ' . (count($popis) - $clanova) . ')</div>
-    <table class="t"><thead><tr><th class="d">Rb.</th><th>Prezime i ime</th><th>Broj lovačke iskaznice</th><th>Oružni list</th><th>Upis</th><th>Potpis</th></tr></thead>
-    <tbody>' . ($redovi ?: '<tr><td colspan="6">Popis je prazan.</td></tr>') . '</tbody></table>
-    <table class="potpis"><tr><td>Lovnik / voditelj lova: <b>' . e((string) $lov['KreiraoIme']) . '</b></td><td>Potpis: ' . $potpis . '</td></tr></table>
-    </body></html>';
+    <div class="zag"><div class="n">' . e(udruga_naziv()) . '</div></div>' . $tijelo . '</body></html>';
     $opt = new Dompdf\Options();
     $opt->set('defaultFont', 'DejaVu Sans');
     $opt->set('isRemoteEnabled', false);
@@ -842,6 +838,63 @@ function gl_popis_pdf(array $lov): string
     $pdf->render();
     $pdf->getCanvas()->page_text(520, 815, 'str. {PAGE_NUM}/{PAGE_COUNT}', null, 7, [0.5, 0.5, 0.5]);
     return (string) $pdf->output();
+}
+
+/** Potpis voditelja lova (tek kad je lov završen) – crta za potpis inače. */
+function gl_pdf_potpis_voditelja(array $lov): string
+{
+    $pot = !gl_aktivan($lov) && $lov['KreiraoKorisnikId'] ? potpis_datauri((int) $lov['KreiraoKorisnikId']) : null;
+    $potpis = $pot ? '<img src="' . $pot . '" style="height:14mm;vertical-align:middle"><br><span style="font-size:7pt;color:#777">elektronički generirano iz evidencije</span>'
+        : '____________________';
+    return '<table class="potpis"><tr><td>Lovnik / voditelj lova: <b>' . e((string) $lov['KreiraoIme']) . '</b></td><td>Potpis: ' . $potpis . '</td></tr></table>';
+}
+
+/** Dodatni zapisnik o obavljenom lovu (prazna tablica za upis odstrijeljene divljači) – isti broj kao lov. */
+function gl_zapisnik_pdf(array $lov): string
+{
+    $p = gl_pdf_postavke();
+    $stupci = array_values(array_filter(array_map('trim', explode("\n", str_replace("\r", '', (string) $p['zapisnik_stupci'])))));
+    $n = max(1, min(200, (int) $p['zapisnik_redaka']));
+    $th = '<th class="d">RB</th>' . implode('', array_map(fn($s) => '<th>' . e($s) . '</th>', $stupci));
+    $redovi = '';
+    for ($i = 1; $i <= $n; $i++) {
+        $redovi .= '<tr><td class="d">' . $i . '.</td>' . str_repeat('<td></td>', count($stupci)) . '</tr>';
+    }
+    return gl_pdf_render('<h2>' . e($p['zapisnik_naslov']) . ' ' . gl_broj($lov) . '</h2>
+        <div class="info">' . e($p['ovlastenik']) . ' <b>' . e((string) $lov['KreiraoIme']) . '</b></div>
+        <table class="t prazna"><thead><tr>' . $th . '</tr></thead><tbody>' . $redovi . '</tbody></table>'
+        . ($p['potpis_voditelja'] ? gl_pdf_potpis_voditelja($lov) : ''));
+}
+
+/** PDF popisa sudionika (abecedno). */
+function gl_popis_pdf(array $lov): string
+{
+    $p = gl_pdf_postavke();
+    $popis = gl_popis($lov);
+    $coll = class_exists('Collator') ? new Collator('hr_HR') : null;
+    // članovi abecedno, zatim gosti
+    usort($popis, fn($a, $b) => ((int) $a['Gost'] <=> (int) $b['Gost'])
+        ?: ($coll ? $coll->compare($a['Ime'], $b['Ime']) : strcmp(kljuc($a['Ime']), kljuc($b['Ime']))));
+    $ids = array_filter(array_map(fn($x) => (int) $x['ClanId'], $popis));
+    $oruzje = $p['st_oruzni'] ? oruzni_listovi_brojevi($ids) : [];
+    $isk = $ids ? array_column(redovi('SELECT Id, BrojIskaznice FROM Clanovi WHERE Id IN (' . implode(',', $ids) . ')'), 'BrojIskaznice', 'Id') : [];
+    $th = '<th class="d">Rb.</th><th>Prezime i ime</th>' . ($p['st_iskaznica'] ? '<th>Broj lovačke iskaznice</th>' : '') . ($p['st_oruzni'] ? '<th>Oružni list</th>' : '')
+        . ($p['st_upis'] ? '<th>Upis</th>' : '') . ($p['st_potpis'] ? '<th>Potpis</th>' : '');
+    $stupaca = 2 + (int) $p['st_iskaznica'] + (int) $p['st_oruzni'] + (int) $p['st_upis'] + (int) $p['st_potpis'];
+    $redovi = '';
+    foreach ($popis as $i => $x) {
+        $cid = (int) $x['ClanId'];
+        $redovi .= '<tr><td class="d">' . ($i + 1) . '.</td><td>' . e($x['Ime']) . ($x['Gost'] ? ' <i>(gost' . (!empty($x['PozvaoIme']) ? ' – pozvao ' . e($x['PozvaoIme']) : '') . ')</i>' : '') . '</td>'
+            . ($p['st_iskaznica'] ? '<td>' . e($x['Gost'] ? (string) $x['GostIskaznica'] : (string) ($isk[$cid] ?? '')) . '</td>' : '')
+            . ($p['st_oruzni'] ? '<td class="ol">' . e($x['Gost'] ? (string) $x['GostOruzni'] : ($oruzje[$cid] ?? '')) . '</td>' : '')
+            . ($p['st_upis'] ? '<td>' . ($x['Nacin'] === 'qr' ? ($x['Gost'] ? 'pozivnica' : 'iskaznica') : ($x['Nacin'] === 'voditelj' ? 'voditelj lova' : 'ručno')) . '</td>' : '')
+            . ($p['st_potpis'] ? '<td class="potpis-polje">' . gl_potpis_img(($x['Potpis'] ?? null) ?: ($cid ? potpis_clana($cid) : null)) . '</td>' : '') . '</tr>';
+    }
+    return gl_pdf_render('<h2>' . e($p['popis_naslov']) . ' ' . gl_broj($lov) . '</h2>
+        <div class="info">' . e($p['ovlastenik']) . ' <b>' . e((string) $lov['KreiraoIme']) . '</b></div>
+        <table class="t"><thead><tr>' . $th . '</tr></thead>
+        <tbody>' . ($redovi ?: '<tr><td colspan="' . $stupaca . '">Popis je prazan.</td></tr>') . '</tbody></table>'
+        . ($p['potpis_voditelja'] ? gl_pdf_potpis_voditelja($lov) : ''));
 }
 
 // ---------- Brisanje završenih lovova ----------

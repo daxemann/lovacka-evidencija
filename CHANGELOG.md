@@ -1,5 +1,12 @@
 # Promjene
 
+## 1.48.0 – 2026-10
+- **Broj skupnog lova:** svaki lov ima redni broj u lovnoj godini (od 1. travnja: 0001, 0002 …). Obrišete li lov, brojevi se slažu bez rupe. Broj se vidi u popisu završenih lovova.
+- **Novi PDF popisa sudionika:** naslov *„Popis sudionika skupnog lova po Dopuštenju za lov broj: 0001“*, ispod *„Ovlaštenik prava lova:“* + voditelj koji je pokrenuo lov.
+  Bez retka s datumom/vremenom/organizatorom i bez „Ukupno …“. Zadano u tablici samo Rb., Prezime i ime, Broj lovačke iskaznice.
+- **📝 Dodatni zapisnik o obavljenom lovu** (nakon završetka lova): isti broj kao lov, prazna tablica za upis – RB, Datum izlučenja, Vrsta divljači, Spol, Dob, Grla / kljunova, Napomena – broj markice.
+- **Sustav → 🎯 Skupni lov – PDF:** svaka udruga podešava naslove, stupce popisa (iskaznica, oružni list, upis, potpis), stupce i broj redaka zapisnika te potpis voditelja – s probnim ispisom.
+
 ## 1.47.0 – 2026-10
 - **Skupni lov iz kalendara – bez dvostrukog poziva:** termin vrste *Skupni lov* na dan lova ima gumb **🎯 Počni skupni lov** (voditelj s pravom Skupni lov).
   - Lov se veže uz termin: naziv, mjesto i sekcije preuzimaju se iz termina.

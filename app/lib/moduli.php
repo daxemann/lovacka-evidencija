@@ -23,7 +23,7 @@ function moduli(): array
         'revir' => ['🗺️', 'Lovište', 'Karta lovišta, čeke i zauzimanje, kvarovi na napravama, lovački dnevnik.',
             P_REVIR_UREDI | P_REVIR_NADZOR | P_REVIR_DNEVNIK, ['revir', 'revir/', 'api/revir', 'izvoz/kvarovi-pdf']],
         'grupni' => ['🎯', 'Skupni lov', 'Poziv lovcima, karta uživo, SOS, popis sudionika (skeniranje iskaznica).',
-            P_GRUPNI_LOV, ['grupni-lov', 'grupni-odgovor', 'grupni-popis', 'api/grupni-lov', 'api/grupni-popis']],
+            P_GRUPNI_LOV, ['grupni-lov', 'grupni-odgovor', 'grupni-popis', 'api/grupni-lov', 'api/grupni-popis', 'sustav/skupni-lov']],
         'iskaznice' => ['🪪', 'Članske iskaznice (QR)', 'Iskaznica s fotografijom i QR kodom (PDF i u aplikaciji).',
             0, ['moja-iskaznica', 'izvoz/iskaznice']],
         'domovi' => ['🏡', 'Lovački domovi', 'Domovi udruge / sekcija, rezervacije i kalendar zauzeća.',

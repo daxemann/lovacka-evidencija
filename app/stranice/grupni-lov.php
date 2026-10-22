@@ -194,13 +194,14 @@ if (!$lov) {
         </form>
     </div>
     <div class="table-responsive"><table class="table table-sm align-middle">
-        <thead><tr><th>Datum</th><th>Naziv</th><th>Organizator</th><th class="text-end">Došli / pozvani</th><th class="text-end">Na popisu</th><th></th></tr></thead><tbody>
+        <thead><tr><th>Br.</th><th>Datum</th><th>Naziv</th><th>Organizator</th><th class="text-end">Došli / pozvani</th><th class="text-end">Na popisu</th><th></th></tr></thead><tbody>
         <?php foreach ($prosli as $p): ?>
-            <tr><td><?= e(datum($p['Pocetak'])) ?></td><td><?= e($p['Naziv']) ?></td><td><?= e($p['KreiraoIme']) ?></td>
+            <tr><td class="text-muted"><?= e(gl_broj($p)) ?></td><td><?= e(datum($p['Pocetak'])) ?></td><td><?= e($p['Naziv']) ?></td><td><?= e($p['KreiraoIme']) ?></td>
                 <td class="text-end"><?= (int) $p['Dosli'] ?> / <?= (int) $p['Pozvani'] ?></td>
                 <td class="text-end"><?= (int) $p['NaPopisu'] ?: '' ?></td>
                 <td class="text-end text-nowrap"><a class="btn btn-sm btn-outline-secondary" href="<?= e(url('grupni-lov', ['id' => $p['Id']])) ?>">Sudionici</a>
                     <a class="btn btn-sm btn-outline-secondary" href="<?= e(url('grupni-popis', ['id' => $p['Id']])) ?>">📋 Popis</a>
+                    <a class="btn btn-sm btn-outline-secondary" href="<?= e(url('grupni-popis', ['id' => $p['Id'], 'pdf' => 'zapisnik'])) ?>" target="_blank" title="Dodatni zapisnik o obavljenom lovu">📝</a>
                     <form method="post" class="d-inline"><?= csrf() ?><input type="hidden" name="radnja" value="obrisi"><input type="hidden" name="id" value="<?= (int) $p['Id'] ?>">
                         <button class="btn btn-sm btn-outline-danger" title="Obriši lov i popis" aria-label="Obriši <?= e($p['Naziv']) ?>"
                             data-potvrda="Trajno obrisati lov „<?= e($p['Naziv']) ?>“ (<?= e(datum($p['Pocetak'])) ?>) i njegov popis sudionika?">🗑</button></form></td></tr>
@@ -225,6 +226,7 @@ if (!gl_aktivan($lov)) {
     <div class="d-flex flex-wrap gap-2 mb-3">
         <a class="btn btn-outline-primary" href="<?= e(url('grupni-popis', ['id' => $lov['Id']])) ?>">📋 Popis sudionika (skenirane iskaznice: <?= $naPopisu ?>)</a>
         <?php if ($naPopisu): ?><a class="btn btn-outline-secondary" href="<?= e(url('grupni-popis', ['id' => $lov['Id'], 'pdf' => 1])) ?>" target="_blank">📄 PDF popisa</a><?php endif; ?>
+        <?php if (!gl_aktivan($lov)): ?><a class="btn btn-outline-success" href="<?= e(url('grupni-popis', ['id' => $lov['Id'], 'pdf' => 'zapisnik'])) ?>" target="_blank">📝 Dodatni zapisnik br. <?= e(gl_broj($lov)) ?></a><?php endif; ?>
     </div>
     <h2 class="h6">Odgovori na poziv</h2>
     <table class="table table-sm"><thead><tr><th>Lovac</th><th>Odgovor</th><th>Napomena</th></tr></thead><tbody>

@@ -11,11 +11,12 @@ if (!$lov) {
 if (!gl_moze_upravljati($lov)) {
     zabranjeno();
 }
-if (($_GET['pdf'] ?? '') === '1') {
-    $ime = (string) preg_replace('/[^a-z0-9\-]+/', '-', 'popis-' . kljuc($lov['Naziv']) . '-' . substr($lov['Pocetak'], 0, 10));
+if (in_array($_GET['pdf'] ?? '', ['1', 'zapisnik'], true)) {
+    $zap = $_GET['pdf'] === 'zapisnik';
+    $ime = ($zap ? 'zapisnik-' : 'popis-') . gl_broj($lov) . '-' . substr($lov['Pocetak'], 0, 10);
     header('Content-Type: application/pdf');
-    header('Content-Disposition: inline; filename="' . trim($ime, '-') . '.pdf"');
-    echo gl_popis_pdf($lov);
+    header('Content-Disposition: inline; filename="' . $ime . '.pdf"');
+    echo $zap ? gl_zapisnik_pdf($lov) : gl_popis_pdf($lov);
     exit;
 }
 
@@ -50,7 +51,7 @@ $cfg = [
 ob_start(); ?>
 <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
     <a class="btn btn-sm btn-outline-secondary" href="<?= e(url('grupni-lov', ['id' => $lov['Id']])) ?>">← <?= $aktivan ? 'Karta lova' : 'Skupni lov' ?></a>
-    <h1 class="h4 mb-0 me-auto">📋 Popis sudionika</h1>
+    <h1 class="h4 mb-0 me-auto">📋 Popis sudionika <span class="text-muted small">br. <?= e(gl_broj($lov)) ?></span></h1>
     <span id="gp-mreza" class="badge rounded-pill text-bg-secondary">…</span>
 </div>
 <p class="small text-muted mb-3"><?= e($lov['Naziv']) ?> · <?= e(datum($lov['Pocetak'])) ?><?= $lov['Mjesto'] ? ' · 📍 ' . e($lov['Mjesto']) : '' ?>
@@ -110,6 +111,7 @@ ob_start(); ?>
         <div class="d-flex align-items-center gap-2 mb-2">
             <h2 class="h6 mb-0 me-auto">Na popisu: <b id="gp-broj">0</b> <span class="text-muted small" id="gp-broj-detalj"></span></h2>
             <a class="btn btn-sm btn-outline-secondary" href="<?= e(url('grupni-popis', ['id' => $lov['Id'], 'pdf' => 1])) ?>" target="_blank">📄 PDF</a>
+            <?php if (!$aktivan): ?><a class="btn btn-sm btn-outline-secondary" href="<?= e(url('grupni-popis', ['id' => $lov['Id'], 'pdf' => 'zapisnik'])) ?>" target="_blank">📝 Zapisnik</a><?php endif; ?>
         </div>
         <div id="gp-popis" class="list-group small"></div>
     </div>
