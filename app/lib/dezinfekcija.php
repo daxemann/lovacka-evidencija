@@ -208,7 +208,7 @@ function dodaj_vozilo(int $clanId, string $oznaka, bool $zadano = false): void
 // ---------- Spremanje upisa (online i izvanmrežno) ----------
 /**
  * Sprema upis s QR stanice. $u = podaci obrasca (smjer, razlog, razlog_opis, vozilo, oznaka, spremi_vozilo, lat, lon, acc,
- * suputnik[], gost_ime[], gost_prezime[], gost_oznaka[], potvrda).
+ * suputnik[], suputnik_oznaka[], gost_ime[], gost_prezime[], gost_oznaka[], potvrda).
  * $klijentVrijeme: vrijeme s mobitela (unix) za izvanmrežni upis; null = vrijeme poslužitelja.
  * $grupa: oznaka upisa (izvanmrežni upis je šalje sam – ponovno slanje se ne upisuje dvaput).
  * @return array{ok:bool, poruka?:string, grupa?:string, ponovljeno?:bool}
@@ -304,8 +304,17 @@ function dez_spremi_upis(array $st, array $k, array $u, ?int $klijentVrijeme = n
         }
     }
     $suputnici = [];
-    foreach (array_slice(array_unique(array_map('intval', (array) ($u['suputnik'] ?? []))), 0, DEZ_MAX_SUPUTNIKA) as $sid) {
-        if ($sid && $sid !== (int) ($clan['Id'] ?? 0) && ($c = red('SELECT * FROM Clanovi WHERE Id=? AND Status=0', [$sid]))) {
+    $so = array_values((array) ($u['suputnik_oznaka'] ?? []));
+    $vec = [];
+    foreach (array_values((array) ($u['suputnik'] ?? [])) as $i => $sid) {
+        $sid = (int) $sid;
+        if (count($suputnici) >= DEZ_MAX_SUPUTNIKA) {
+            break;
+        }
+        if ($sid && !isset($vec[$sid]) && $sid !== (int) ($clan['Id'] ?? 0) && ($c = red('SELECT * FROM Clanovi WHERE Id=? AND Status=0', [$sid]))) {
+            $vec[$sid] = true;
+            // suputnik svojim vozilom → njegova oznaka; prazno = vozilo glavnog upisa
+            $c['_oznaka'] = normaliziraj_oznaku((string) ($so[$i] ?? '')) ?: null;
             $suputnici[] = $c;
         }
     }
@@ -338,7 +347,7 @@ function dez_spremi_upis(array $st, array $k, array $u, ?int $klijentVrijeme = n
             'Gost' => 0, 'Oznaka' => $oznaka, 'Vozilo' => $saVozilom ? 1 : 0, 'PozvaoIme' => $zaDrugog ? $ja : null, 'Skenirano' => $skenirano ? 1 : 0]);
         foreach ($suputnici as $c) {
             umetni('DezUpisi', $zajedno + ['ClanId' => (int) $c['Id'], 'Ime' => $c['Ime'], 'Prezime' => $c['Prezime'], 'Gost' => 0,
-                'Oznaka' => $oznaka, 'Vozilo' => $saVozilom ? 1 : 0, 'PozvaoIme' => $ja]);
+                'Oznaka' => $c['_oznaka'] ?? $oznaka, 'Vozilo' => ($c['_oznaka'] !== null || $saVozilom) ? 1 : 0, 'PozvaoIme' => $ja]);
         }
         foreach ($gosti as [$ime, $prez, $oz]) {
             umetni('DezUpisi', $zajedno + ['ClanId' => null, 'Ime' => $ime, 'Prezime' => $prez, 'Gost' => 1,

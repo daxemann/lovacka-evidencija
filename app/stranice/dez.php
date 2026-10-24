@@ -38,7 +38,8 @@ foreach ($razlozi as $r) {
         $predRazlog = (int) $r['Id'];
     }
 }
-$clanovi = redovi('SELECT Id, Ime, Prezime FROM Clanovi WHERE Status=0 AND Id<>? ORDER BY Prezime, Ime', [$clan['Id'] ?? 0]);
+$clanovi = redovi('SELECT c.Id, c.Ime, c.Prezime, (SELECT GROUP_CONCAT(Oznaka, \',\') FROM (SELECT Oznaka FROM ClanVozila v WHERE v.ClanId=c.Id ORDER BY Zadano DESC, Id)) AS Vozila
+    FROM Clanovi c WHERE c.Status=0 AND c.Id<>? ORDER BY c.Prezime, c.Ime', [$clan['Id'] ?? 0]);
 $imaKoord = $stP && $stP['Lat'] !== null && $stP['Lon'] !== null;
 // upis za drugog lovca (lovočuvar i ovlašteni): zadano vozilo i zadnji smjer svakog člana na ovoj stanici
 $zaDruge = ima(P_DEZ_ZA_DRUGE);
@@ -130,7 +131,7 @@ ob_start(); ?>
         </div>
         <div id="suputnici" class="mt-2"></div>
         <div id="gosti" class="mt-2"></div>
-        <div class="form-text">Suputnici i gosti dobivaju isti upis (vrijeme, smjer, razlog, vaše vozilo ako ne upišete drugo).</div>
+        <div class="form-text">Suputnici i gosti dobivaju isti upis (vrijeme, smjer, razlog). Došao je svojim autom? Upišite njegovu oznaku – prazno znači vaše vozilo.</div>
     </div>
     <div class="form-check dez-potvrda mb-3">
         <input class="form-check-input" type="checkbox" name="potvrda" id="potvrda" value="1" required>
@@ -149,9 +150,12 @@ ob_start(); ?>
         čim bude signala (otvorite aplikaciju kad ste opet u dometu). U knjizi će biti označen „offline“.</div>
     <button type="button" class="btn btn-outline-secondary w-100 mt-3" onclick="location.reload()">Novi upis</button>
 </div>
-<template id="tpl-suputnik"><div class="input-group mb-2"><select name="suputnik[]" class="form-select"><option value="">— lovac —</option>
-    <?php foreach ($clanovi as $c): ?><option value="<?= (int) $c['Id'] ?>"><?= e(prezime_ime($c)) ?></option><?php endforeach; ?>
-    </select><button type="button" class="btn btn-outline-danger" data-ukloni>✕</button></div></template>
+<template id="tpl-suputnik"><div class="border rounded p-2 mb-2 bg-light dez-suputnik"><div class="d-flex justify-content-between small fw-semibold mb-1">Lovac iz udruge<button type="button" class="btn-close" data-ukloni aria-label="Ukloni"></button></div>
+    <select name="suputnik[]" class="form-select form-select-sm mb-1"><option value="">— lovac —</option>
+    <?php foreach ($clanovi as $c): ?><option value="<?= (int) $c['Id'] ?>"<?= $zaDruge && $c['Vozila'] ? ' data-vozila="' . e($c['Vozila']) . '"' : '' ?>><?= e(prezime_ime($c)) ?></option><?php endforeach; ?>
+    </select>
+    <input name="suputnik_oznaka[]" class="form-control form-control-sm text-uppercase" placeholder="Njegova reg. oznaka (prazno = moje vozilo)" maxlength="20">
+    <div class="d-flex flex-wrap gap-1 mt-1 sup-vozila" hidden></div></div></template>
 <template id="tpl-gost"><div class="border rounded p-2 mb-2 bg-light"><div class="d-flex justify-content-between small fw-semibold mb-1">Gost<button type="button" class="btn-close" data-ukloni aria-label="Ukloni"></button></div>
     <div class="row g-1"><div class="col-6"><input name="gost_ime[]" class="form-control form-control-sm" placeholder="Ime" maxlength="60"></div>
     <div class="col-6"><input name="gost_prezime[]" class="form-control form-control-sm" placeholder="Prezime" maxlength="60"></div>

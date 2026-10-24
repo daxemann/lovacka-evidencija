@@ -278,6 +278,18 @@
         document.getElementById('dodaj-suputnika').onclick = function () { dodaj('tpl-suputnik', 'suputnici', window.DEZ_MAX[0]); };
         document.getElementById('dodaj-gosta').onclick = function () { dodaj('tpl-gost', 'gosti', window.DEZ_MAX[1]); };
         document.addEventListener('click', function (e) { var u = e.target.closest('[data-ukloni]'); if (u) u.parentElement.closest('.input-group, .border').remove(); });
+        // suputnik svojim vozilom: ponudi njegove spremljene oznake
+        document.getElementById('suputnici').addEventListener('change', function (e) {
+            var s = e.target; if (s.name !== 'suputnik[]') return;
+            var box = s.closest('.dez-suputnik'), inp = box.querySelector('input[name="suputnik_oznaka[]"]'), ch = box.querySelector('.sup-vozila');
+            var o = s.options[s.selectedIndex], lista = (o && o.getAttribute('data-vozila') || '').split(',').filter(Boolean);
+            inp.value = ''; ch.innerHTML = ''; ch.hidden = !lista.length;
+            ['moje vozilo'].concat(lista).forEach(function (oz, i) {
+                var b = document.createElement('button'); b.type = 'button'; b.className = 'btn btn-sm ' + (i === 0 ? 'btn-secondary' : 'btn-outline-secondary'); b.textContent = oz;
+                b.addEventListener('click', function () { inp.value = i === 0 ? '' : oz; ch.querySelectorAll('button').forEach(function (x) { x.className = 'btn btn-sm btn-outline-secondary'; }); b.className = 'btn btn-sm btn-secondary'; });
+                ch.appendChild(b);
+            });
+        });
 
         function polja() {
             var o = {};
@@ -291,7 +303,9 @@
             var za = document.getElementById('za-clana');
             var glavni = za && za.value ? za.options[za.selectedIndex].text + ' (upisao: ' + ST.ja + ')' : ST.ja;
             var n = [glavni + (p.vozilo === 'bez' ? '' : ' · ' + oznaka(p))];
-            forma.querySelectorAll('select[name="suputnik[]"]').forEach(function (s) { if (s.value) n.push(s.options[s.selectedIndex].text); });
+            forma.querySelectorAll('select[name="suputnik[]"]').forEach(function (s) { if (!s.value) return;
+                var oz = (s.closest('.dez-suputnik').querySelector('input[name="suputnik_oznaka[]"]').value || '').trim().toUpperCase();
+                n.push(s.options[s.selectedIndex].text + (oz ? ' · ' + oz : '')); });
             (p.gost_ime || []).forEach(function (im, i) { if (im) n.push(im + ' ' + (p.gost_prezime[i] || '') + ' (gost)'); });
             return n;
         }

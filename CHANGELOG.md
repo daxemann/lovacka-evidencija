@@ -1,5 +1,9 @@
 # Promjene
 
+## 1.54.0 – 2026-10
+- **Dezinfekcija – lovac iz udruge svojim autom:** kod „+ Lovac iz udruge“ sada se upisuje i **njegova reg. oznaka** (prazno = vaše vozilo, kao prije).
+  Lovočuvar/ovlašteni vidi spremljene oznake tog lovca kao gumbe za odabir. U knjizi i PDF-u svaki lovac stoji sa svojim vozilom.
+
 ## 1.53.1 – 2026-10
 - **Mobitel – gornja traka:** *Odjava* je sada skroz lijevo, dalje od gumba izbornika ☰ – manje slučajnih odjava.
 
