@@ -1,5 +1,9 @@
 # Promjene
 
+## 1.54.1 – 2026-10
+- **Izbornik – Dezinfekcija:** *Stanice i QR* je postavka i nalazi se samo u **⚙️ Sustav → Postavke modula** (više ne u izborniku lijevo).
+  Tko nema pristup Sustavu (npr. lovočuvar s pravom „stanice/QR“), i dalje ga vidi u izborniku Dezinfekcija.
+
 ## 1.54.0 – 2026-10
 - **Dezinfekcija – lovac iz udruge svojim autom:** kod „+ Lovac iz udruge“ sada se upisuje i **njegova reg. oznaka** (prazno = vaše vozilo, kao prije).
   Lovočuvar/ovlašteni vidi spremljene oznake tog lovca kao gumbe za odabir. U knjizi i PDF-u svaki lovac stoji sa svojim vozilom.

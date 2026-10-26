@@ -89,12 +89,14 @@ $glUTijeku = $glMoj && (int) $glMoj['ja']['Odgovor'] === 1 && $glMoj['ja']['Otis
                         . (ima(P_IZVJESTAJI) ? $stavka('izvjestaji/akcije', '📊 Izvještaj radnih akcija') : '')
                         . (ima(P_INVENTURA) || ima(P_INVENTURA_UREDI) ? $stavka('inventura', '📦 Inventura') : '')
                         . (!$k['ClanId'] && modul('popusti') && ima(P_POPUSTI) && pop_dostupno() ? $stavka('popusti', '🏷️ Popusti u trgovinama', 0, true) : '')); ?>
-                    <?php if (ima(P_DEZ_PREGLED) || ima(P_DEZ_UREDI) || ima(P_DEZ_POSTAVKE) || ima(P_DEZ_MOBILNA)) echo $grupa('dezinfekcija', 'Dezinfekcija',
+                    <?php // Stanice i QR su postavka → kartica u ⚙️ Sustav; u izborniku samo za one bez pristupa Sustavu
+                    $dezPostIzb = ima(P_DEZ_POSTAVKE) && !ima(P_SUSTAV);
+                    if (ima(P_DEZ_PREGLED) || ima(P_DEZ_UREDI) || $dezPostIzb || ima(P_DEZ_MOBILNA)) echo $grupa('dezinfekcija', 'Dezinfekcija',
                         (ima(P_DEZ_PREGLED) ? $stavka('dezinfekcija', '🧴 Knjiga dezinfekcije', 0, true) : '')
                         . (ima(P_DEZ_MOBILNA) ? $stavka('dezinfekcija/mobilna', '📱 Mobilna stanica', (int) vrijednost("SELECT COUNT(*) FROM DezAktivacije WHERE Zatvoreno IS NULL AND Od<=? AND Do>=?", [sada(), sada()])) : '')
                         . (ima(P_DEZ_UREDI) ? $stavka('dezinfekcija/naknadno', '➕ Naknadni upis') : '')
                         . (ima(P_DEZ_UREDI) ? $stavka('dezinfekcija/liste', '📄 Papirnate liste') : '')
-                        . (ima(P_DEZ_POSTAVKE) ? $stavka('dezinfekcija/postavke', '🔳 Stanice i QR') : '')); ?>
+                        . ($dezPostIzb ? $stavka('dezinfekcija/postavke', '🔳 Stanice i QR') : '')); ?>
                     <?php if (ima(P_SUSTAV)) echo $grupa('sustav', 'Administracija', $stavka('sustav', '⚙️ Sustav',
                         (int) vrijednost('SELECT COUNT(*) FROM Korisnici WHERE Odobren=0 AND Aktivan=1') + ($novaVerzija ? 1 : 0))); ?>
                     <?= $grupa('program', 'Program', (!$k['ClanId'] ? $stavka('push', '🔔 Push obavijesti') : '') . $stavka('upute', '📖 Upute za korištenje') . $stavka('pomoc', '❓ Pomoć i kontakt') . (je_demo() ? $stavka('demo-posta', '📧 Demo – e-pošta') : '')) ?>
