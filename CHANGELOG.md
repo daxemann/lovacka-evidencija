@@ -1,5 +1,8 @@
 # Promjene
 
+## 1.62.2 – 2026-10
+- **Logo programa doteran:** srnjak prirodnijih proporcija (kratak vrat, duge noge, šesterac), mirnije boje sumraka; noge ne nestaju iza donje grede absehena.
+
 ## 1.62.1 – 2026-10
 - **Novi logo programa:** absehen (križ nišana) s točkom na plećki srnjaka u sumrak. Mijenja se u izborniku (potpis programa), na prijavi, u *Pomoć* i na GitHubu (banner),
   te zadane ikone aplikacije i favicon – **samo ako udruga nema svoj logo** (logo udruge i dalje je ikona aplikacije).
