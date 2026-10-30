@@ -77,7 +77,7 @@ $glUTijeku = $glMoj && (int) $glMoj['ja']['Odgovor'] === 1 && $glMoj['ja']['Otis
                     <?php if (modul('kalendar')) echo $stavka('kalendar', '📅 Kalendar'); ?>
                     <?php if (modul('domovi') && (dom_ima_vidljivih() || ima(P_DOMOVI))) echo $stavka('domovi', '🏡 Lovački domovi', dom_broj_na_cekanju()); ?>
                     <?php if ($glVidljivo) echo $stavka('grupni-lov', $glAktivan ? '🎯 Skupni lov – u tijeku' : '🎯 Skupni lov', $glBroj); ?>
-                    <?php if ($k['ClanId']) echo $grupa('moje', 'Moje', (modul('akcije') ? $stavka('moje-akcije', '🛠️ Moje radne akcije') : '') . $stavka('moj-profil', '👤 Moj profil') . (modul('iskaznice') ? $stavka('moja-iskaznica', '🪪 Moja iskaznica') : '') . (modul('clanarina') && uplatnica_za_clanove() ? $stavka('uplatnica', '💳 Moja uplatnica', 0, true) : '') . (modul('popusti') && pop_dostupno() ? $stavka('popusti', '🏷️ Popusti u trgovinama', 0, true) : '') . $stavka('push', '🔔 Push obavijesti') . $stavka('moja-prava', '🔑 Moja prava')); ?>
+                    <?php if ($k['ClanId']) echo $grupa('moje', 'Moje', (modul('akcije') ? $stavka('moje-akcije', '🛠️ Moje radne akcije') : '') . $stavka('moj-profil', '👤 Moj profil') . (modul('mojidok') ? $stavka('moji-dokumenti', '📄 Moji dokumenti') : '') . (modul('iskaznice') ? $stavka('moja-iskaznica', '🪪 Moja iskaznica') : '') . (modul('clanarina') && uplatnica_za_clanove() ? $stavka('uplatnica', '💳 Moja uplatnica', 0, true) : '') . (modul('popusti') && pop_dostupno() ? $stavka('popusti', '🏷️ Popusti u trgovinama', 0, true) : '') . $stavka('push', '🔔 Push obavijesti') . $stavka('moja-prava', '🔑 Moja prava')); ?>
                     <?php $revirSek = modul('revir') ? revir_sekcije() : []; $odstrelSt = odstrel_dostupno() ? $stavka('odstrel', odstrel_sekcije() ? '🦌 Odstrel' : '🦌 Moj odstrel') : '';
                     if ((modul('revir') && ($revirSek || ima(P_SUSTAV))) || $odstrelSt) echo $grupa('loviste', 'Lovište',
                         ($revirSek ? $stavka('revir', '🗺️ Karta lovišta', 0, true) . $stavka('revir/danas', '🌲 Danas u lovištu', $revirObav) . $stavka('revir/kvarovi', '🔧 Kvarovi na napravama', revir_broj_kvarova()) . (ima(P_REVIR_DNEVNIK) ? $stavka('revir/dnevnik', '📓 Lovački dnevnik') : '') : '')
@@ -174,7 +174,7 @@ $glUTijeku = $glMoj && (int) $glMoj['ja']['Odgovor'] === 1 && $glMoj['ja']['Otis
                 <a class="btn btn-sm btn-outline-secondary mb-3 no-print" href="<?= e(url('sustav')) ?>">← Sustav</a>
             <?php endif; ?>
             <?php // stranice člana bez vlastitog povratka: gumb natrag na početnu
-            if ($k && in_array($trenutna, ['revir', 'revir/danas', 'revir/kvarovi', 'moja-iskaznica', 'moj-profil', 'poruke', 'imenik', 'vodici-pasa', 'popusti', 'moje-akcije', 'uplatnica', 'push', 'moja-prava', 'oglasnik', 'obavijesti', 'dokumenti'], true) && !isset($_GET['id']) && !isset($_GET['clan'])): ?>
+            if ($k && in_array($trenutna, ['revir', 'revir/danas', 'revir/kvarovi', 'moja-iskaznica', 'moj-profil', 'moji-dokumenti', 'poruke', 'imenik', 'vodici-pasa', 'popusti', 'moje-akcije', 'uplatnica', 'push', 'moja-prava', 'oglasnik', 'obavijesti', 'dokumenti'], true) && !isset($_GET['id']) && !isset($_GET['clan'])): ?>
                 <a class="btn btn-sm btn-outline-secondary mb-3 no-print" href="<?= e(url('pocetna')) ?>">← Početna</a>
             <?php endif; ?>
             <?= $sadrzaj ?>

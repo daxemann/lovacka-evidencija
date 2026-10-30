@@ -393,6 +393,7 @@ ob_start(); ?>
         <?php if (ima(P_AKCIJE_CITAJ)): ?><a class="btn btn-sm btn-outline-success no-print" href="<?= e(url('clanovi/uredi', ['id' => $id, 'kartica' => $kartica, 'posalji' => 'bodovi'])) ?>">Pošalji popis bodova</a><?php endif; ?>
         <?php if (ima(P_CLANARINA_CITAJ)): ?><a class="btn btn-sm btn-outline-success no-print" href="<?= e(url('clanovi/uredi', ['id' => $id, 'kartica' => $kartica, 'posalji' => 'clanarina'])) ?>">Info o članarini</a><?php endif; ?>
         <?php if ($uredi && !$arhiviran && modul('iskaznice')): ?>
+        <?php if (modul('mojidok') && mojidok_vidi((int) $id)): $nDok = (int) vrijednost('SELECT COUNT(*) FROM ClanDokumenti WHERE ClanId=?', [$id]); ?><a class="btn btn-sm btn-outline-primary no-print" href="<?= e(url('moji-dokumenti', ['clan' => $id])) ?>">📄 Dokumenti<?= $nDok ? ' <span class="badge text-bg-secondary">' . $nDok . '</span>' : '' ?></a><?php endif; ?>
         <a class="btn btn-sm btn-outline-primary no-print" href="<?= e(url('izvoz/iskaznice', ['clan' => $id])) ?>" target="_blank" title="Članska iskaznica s QR kodom (PDF)">🪪 Iskaznica</a>
         <?php endif; ?>
         <button class="btn btn-sm btn-outline-secondary no-print" onclick="window.print()">Ispis</button>

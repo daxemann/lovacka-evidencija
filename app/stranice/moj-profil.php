@@ -164,6 +164,11 @@ ob_start(); ?>
         <div class="card-footer small text-muted">Ako nešto nije točno, javite se tajniku ili administratoru.</div>
     </div></div>
 </div>
+<?php if (modul('mojidok')): $nDok = (int) vrijednost('SELECT COUNT(*) FROM ClanDokumenti WHERE ClanId=?', [$c['Id']]); ?>
+<a class="card mt-3 text-decoration-none" style="max-width:640px" href="<?= e(url('moji-dokumenti')) ?>"><div class="card-body d-flex align-items-center gap-3">
+    <span style="font-size:1.8rem">📄</span><span class="flex-grow-1 text-body"><b>Moji dokumenti</b><span class="d-block small text-muted">Lovačka iskaznica, dozvole, oružni list, osiguranje – fotografija ili upis s rokom.</span></span>
+    <span class="badge text-bg-secondary"><?= $nDok ?></span></div></a>
+<?php endif; ?>
 <?php if ($oruzje = oruzni_listovi((int) $c['Id'])): ?>
 <div class="card mt-3" style="max-width:640px"><div class="card-header">Moji oružni listovi <span class="small text-muted">(upisuje udruga)</span></div>
     <ul class="list-group list-group-flush small"><?php foreach ($oruzje as $o): ?><li class="list-group-item d-flex gap-2"><b><?= e($o['Broj']) ?></b><span class="text-muted"><?= e((string) $o['Oruzje']) ?></span></li><?php endforeach; ?></ul></div>

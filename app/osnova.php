@@ -5,7 +5,7 @@
  */
 declare(strict_types=1);
 
-const VERZIJA = '1.61.0';
+const VERZIJA = '1.62.0';
 const KONTAKT_EMAIL = 'daxemann@googlemail.com';
 const PODRSKA_PAYPAL = 'darko.bakic@freenet.de'; // dobrovoljna podrška razvoju (Pomoć i kontakt)
 const PROJEKT_URL = 'https://github.com/daxemann/lovacka-evidencija';
@@ -157,7 +157,7 @@ function db(bool $novo = false): PDO
  * Dodatne tablice PHP verzije (PRAGMA user_version). .NET verzija ih ne poznaje i zanemaruje,
  * pa baza i dalje radi u oba smjera.
  */
-const SHEMA_PHP = 40;
+const SHEMA_PHP = 41;
 function nadogradi_bazu(PDO $pdo): void
 {
     if ((int) $pdo->query('PRAGMA user_version')->fetchColumn() >= SHEMA_PHP) {
@@ -946,6 +946,24 @@ SQL);
                 ->execute([$naz, $pol ? json_encode($pol) : null, $lin ? json_encode($lin, JSON_UNESCAPED_UNICODE) : null,
                     'Preuzeto iz uvezenog KML-a' . (!empty($j['datoteka']) ? ' (' . $j['datoteka'] . ')' : ''), date('Y-m-d H:i:s')]);
         }
+    }
+    if ($v < 41) {
+        // Moji dokumenti: lovačka iskaznica, dozvole, oružni list, osiguranje … – fotografija (prednja/stražnja) i/ili upis s rokom
+        $pdo->exec('CREATE TABLE IF NOT EXISTS "ClanDokumenti" (
+                "Id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                "ClanId" INTEGER NOT NULL REFERENCES "Clanovi" ("Id") ON DELETE CASCADE,
+                "Vrsta" TEXT NOT NULL,
+                "Naziv" TEXT NULL,
+                "Broj" TEXT NULL,
+                "Izdavatelj" TEXT NULL,
+                "VrijediOd" TEXT NULL,
+                "VrijediDo" TEXT NULL,
+                "Napomena" TEXT NULL,
+                "Foto1" TEXT NULL,
+                "Foto2" TEXT NULL,
+                "Kreirano" TEXT NOT NULL,
+                "Azurirano" TEXT NULL)');
+        $pdo->exec('CREATE INDEX IF NOT EXISTS "IX_ClanDokumenti_Clan" ON "ClanDokumenti" ("ClanId")');
     }
 }
 

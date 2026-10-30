@@ -28,6 +28,8 @@ function moduli(): array
             0, []],
         'odstrel' => ['🦌', 'Odstrel i plan odstrela', 'Upis odstrela s brojem markice po sekcijama, plan odstrela (planirano / ostvareno) po lovnoj godini, PDF.',
             P_ODSTREL | P_ODSTREL_CITAJ, ['odstrel', 'odstrel/', 'izvoz/odstrel-pdf']],
+        'mojidok' => ['📄', 'Moji dokumenti', 'Član sprema svoje dokumente (lovačka iskaznica, dozvola za lov, oružni list, osiguranje …) kao fotografiju i/ili upis s brojem i rokom; vide ih samo on i tko smije vidjeti člana.',
+            0, ['moji-dokumenti']],
         'grupni' => ['🎯', 'Skupni lov', 'Poziv lovcima, karta uživo, SOS, popis sudionika (skeniranje iskaznica).',
             P_GRUPNI_LOV, ['grupni-lov', 'grupni-odgovor', 'grupni-popis', 'grupni-zapisnik', 'api/grupni-lov', 'api/grupni-popis', 'sustav/skupni-lov']],
         'iskaznice' => ['🪪', 'Članske iskaznice (QR)', 'Iskaznica s fotografijom i QR kodom (PDF i u aplikaciji).',

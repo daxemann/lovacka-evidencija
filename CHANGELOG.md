@@ -1,5 +1,13 @@
 # Promjene
 
+## 1.62.0 – 2026-10
+- **📄 Moji dokumenti** (novi modul, *Sustav → Moduli*; izbornik *Moje → Moji dokumenti*, kartica u *Moj profil*, gumb za početnu):
+  član sprema **lovačku iskaznicu, dozvolu za lov, oružni list, osiguranje, lovački ispit** i ostalo – **fotografija prednje i stražnje strane** (kamera mobitela) i/ili **upis** (broj, izdavatelj, vrijedi od – do, napomena).
+  Oznaka roka: zeleno vrijedi, žuto ističe u 60 dana, crveno istekao.
+- **Privatnost:** dokumente i fotografije vide samo član sam i tko u udruzi smije vidjeti tog člana (*Članovi – pregled* za njegovu sekciju) – na kartici člana gumb **📄 Dokumenti**.
+  Mijenja ih član ili tko ima *Članovi – uređivanje*. Fotografije se ne mogu otvoriti izravnom poveznicom bez prava.
+- Oružni listovi koje upisuje udruga prikazuju se uz dokumente samo za pregled (bez dvostrukog upisa).
+
 ## 1.61.0 – 2026-10
 - **🌲 Lovišta** (*Sustav → Postavke modula → Lovišta*, ili *Postavke lovišta → Otvori Lovišta*): udruga može imati **više lovišta** – svako sa svojim podacima:
   naziv, broj lovišta (npr. VII/118), vrsta (otvoreno, zajedničko, državno, ograđeno, uzgajalište), lovoovlaštenik, županija, površina (ha – sama iz granice), boja na karti,
