@@ -41,6 +41,7 @@ $skupine = [
         ['sustav/kopije', '💾', 'Sigurnosne kopije', 'Dnevne kopije, kompletna kopija (ZIP).', 0, null],
         smije_azurirati() ? ['sustav/azuriranje', '🔄', 'Ažuriranje programa', $nova ? 'Dostupna nova verzija ' . $nova['verzija'] . '.' : 'Verzija ' . VERZIJA . '.', $nova ? 1 : 0, null] : null,
         ['sustav/dnevnik', '🧾', 'Dnevnik promjena', 'Tko je što i kada promijenio.', 0, null],
+        ['sustav/reset', '🧹', 'Reset nakon testiranja', 'Obriši probne upise – članovi i postavke ostaju.', 0, null],
     ]],
 ];
 ob_start(); ?>

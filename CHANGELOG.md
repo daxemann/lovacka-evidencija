@@ -1,5 +1,12 @@
 # Promjene
 
+## 1.59.0 – 2026-10
+- **🧹 Reset nakon testiranja** (*Sustav → Podaci*): kad udruga završi isprobavanje, administrator jednim potezom briše probne upise –
+  **članovi, korisnici i lozinke, uloge, sekcije, funkcije, psi, vozila, oružni listovi, postavke i šifrarnici** (stanice, lovne naprave, vrste akcija, domovi, inventura) **ostaju**.
+  - Odabir po dijelovima s brojem upisa: knjiga dezinfekcije, zauzeća i lovački dnevnik, kvarovi, radne akcije i bodovi, odstrel i plan, skupni lov, kalendar, rezervacije domova, poruke i obavijesti, interni oglasi
+    (zadano označeno); članarina i dnevnik promjena samo ako se posebno označe.
+  - Potvrda riječju **RESET** i vlastitom lozinkom. **Prije brisanja automatski se radi sigurnosna kopija baze** (vraća se u *Sustav → Sigurnosne kopije*). Brojevi (npr. skupnog lova) kreću ispočetka.
+
 ## 1.58.0 – 2026-10
 - **🦌 Odstrel** (novi modul, *Sustav → Moduli*, zadano uključen) – izbornik *Lovište → 🦌 Odstrel*:
   - **Upis odstrela:** datum i vrijeme, vrsta (s prijedlozima), spol / kategorija prema vrsti (npr. Vepar, Krmača, Nazime, Prase), dob, **broj markice** (upisuje se), masa, trofej (CIC),
