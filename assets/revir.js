@@ -39,7 +39,7 @@
     var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap' });
     var topo = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', { maxZoom: 17, attribution: '&copy; OpenTopoMap (CC-BY-SA), OpenStreetMap' });
     satelit.addTo(karta);
-    L.control.layers({ 'Satelit': satelit, 'Karta': osm, 'Topografska': topo }, null, { position: 'topright' }).addTo(karta);
+    var slojevi = L.control.layers({ 'Satelit': satelit, 'Karta': osm, 'Topografska': topo }, null, { position: 'topright' }).addTo(karta);
     L.control.scale({ imperial: false }).addTo(karta);
 
     var vjetarKontrola = null;
@@ -59,11 +59,18 @@
         }).catch(function () { if (vjetarKontrola) vjetarKontrola.getContainer().innerHTML = '💨 vjetar nedostupan'; });
     }
 
-    var granice = L.featureGroup().addTo(karta);
+    var granice = L.featureGroup().addTo(karta), linije = L.featureGroup().addTo(karta);
     (cfg.granice || []).forEach(function (g) {
-        var stil = { color: '#ffd400', weight: 3, opacity: 0.95, fillColor: '#ffd400', fillOpacity: 0.04, interactive: false };
-        (g.tip === 'poligon' ? L.polygon(g.koord, stil) : L.polyline(g.koord, stil)).addTo(granice);
+        var boja = g.boja || '#ffd400';
+        if (g.tip === 'poligon') {
+            L.polygon(g.koord, { color: boja, weight: 3, opacity: 0.95, fillColor: boja, fillOpacity: 0.04, interactive: false }).addTo(granice);
+        } else {
+            L.polyline(g.koord, { color: boja, weight: g.vrsta === 'Granica' ? 3 : 2.5, opacity: 0.9, dashArray: g.crtkano ? '8 6' : null })
+                .bindTooltip(esc((g.ime || g.vrsta || '') + (g.ime && g.vrsta ? ' · ' + g.vrsta : '')), { sticky: true }).addTo(linije);
+        }
     });
+    if (granice.getLayers().length) slojevi.addOverlay(granice, 'Granice lovišta');
+    if (linije.getLayers().length) slojevi.addOverlay(linije, 'Putevi i linije');
     var sloj = L.featureGroup().addTo(karta);
     window.EvKarta = { karta: karta, granice: granice, sloj: sloj }; // karta-offline.js
     // izdaleka manji pinovi bez imena – inače se preklapaju

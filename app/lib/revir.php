@@ -446,9 +446,77 @@ function revir_spremi_granice(?array $podaci): void
     spremi_postavku('Revir.Granice', $podaci ? json_encode($podaci, JSON_UNESCAPED_UNICODE) : null);
     @unlink(revir_granice_datoteka());
 }
-function revir_granice(): array
+/**
+ * Oblici za kartu: granice (poligoni) i linije svih aktivnih lovišta koja korisnik vidi (sekcija lovišta u njegovim sekcijama
+ * ili lovište za sve sekcije). [['tip' => 'poligon'|'linija', 'ime', 'koord' => [[lat, lon], …], 'boja', 'crtkano', 'vrsta', 'lovisteId'], …]
+ */
+function revir_granice(?array $sekcije = null): array
 {
-    return revir_granice_podaci()['oblici'] ?? [];
+    if (!vrijednost("SELECT 1 FROM sqlite_master WHERE type='table' AND name='Lovista'")) {
+        return revir_granice_podaci()['oblici'] ?? [];
+    }
+    $sekcije ??= revir_sekcije();
+    $out = [];
+    foreach (lovista(false) as $l) {
+        if ($l['SekcijaId'] !== null && !array_key_exists((int) $l['SekcijaId'], $sekcije)) {
+            continue;
+        }
+        foreach (json_decode((string) $l['Granica'], true) ?: [] as $pol) {
+            $out[] = ['tip' => 'poligon', 'ime' => $l['Naziv'], 'koord' => $pol, 'boja' => $l['Boja'] ?: '#ffd400', 'crtkano' => 0, 'vrsta' => 'Granica', 'lovisteId' => (int) $l['Id']];
+        }
+        foreach (json_decode((string) $l['Linije'], true) ?: [] as $li) {
+            $out[] = ['tip' => 'linija', 'ime' => (string) ($li['naziv'] ?? ''), 'koord' => $li['koord'] ?? [], 'boja' => $li['boja'] ?? '#ffffff',
+                'crtkano' => (int) ($li['crtkano'] ?? 0), 'vrsta' => (string) ($li['vrsta'] ?? ''), 'lovisteId' => (int) $l['Id']];
+        }
+    }
+    return $out;
+}
+
+// ---------- Lovišta (Sustav → Lovišta) ----------
+const LOVISTE_VRSTE = ['Otvoreno', 'Zajedničko', 'Državno', 'Ograđeno', 'Uzgajalište'];
+const LINIJA_VRSTE = ['Put', 'Prosjeka', 'Staza za šuljanje', 'Prilaz', 'Granica', 'Potok', 'Ostalo'];
+const ZUPANIJE = ['Bjelovarsko-bilogorska', 'Brodsko-posavska', 'Dubrovačko-neretvanska', 'Grad Zagreb', 'Istarska', 'Karlovačka', 'Koprivničko-križevačka',
+    'Krapinsko-zagorska', 'Ličko-senjska', 'Međimurska', 'Osječko-baranjska', 'Požeško-slavonska', 'Primorsko-goranska', 'Sisačko-moslavačka',
+    'Splitsko-dalmatinska', 'Šibensko-kninska', 'Varaždinska', 'Virovitičko-podravska', 'Vukovarsko-srijemska', 'Zadarska', 'Zagrebačka'];
+function lovista(bool $iNeaktivna = true): array
+{
+    return redovi('SELECT * FROM Lovista' . ($iNeaktivna ? '' : ' WHERE Aktivno=1') . ' ORDER BY Aktivno DESC, Naziv');
+}
+function loviste(int $id): ?array
+{
+    return red('SELECT * FROM Lovista WHERE Id=?', [$id]);
+}
+/** Uređivati lovišta smije Sustav ili tko uređuje lovne naprave (za lovište svoje sekcije / za sve: samo sa svim sekcijama). */
+function loviste_moze_urediti(?int $sekcijaId): bool
+{
+    if (ima(P_SUSTAV)) {
+        return true;
+    }
+    if (!ima(P_REVIR_UREDI)) {
+        return false;
+    }
+    $o = opseg_prava(P_REVIR_UREDI);
+    return $o['sve'] || ($sekcijaId !== null && in_array($sekcijaId, $o['s'], true));
+}
+/** Površina poligona na Zemlji (m²) – sferna formula, dovoljno točna za lovišta. */
+function loviste_povrsina(array $poligoni): float
+{
+    $R = 6378137.0;
+    $uk = 0.0;
+    foreach ($poligoni as $p) {
+        $n = count($p);
+        if ($n < 3) {
+            continue;
+        }
+        $a = 0.0;
+        for ($i = 0; $i < $n; $i++) {
+            [$la1, $lo1] = $p[$i];
+            [$la2, $lo2] = $p[($i + 1) % $n];
+            $a += deg2rad($lo2 - $lo1) * (2 + sin(deg2rad($la1)) + sin(deg2rad($la2)));
+        }
+        $uk += abs($a * $R * $R / 2);
+    }
+    return $uk;
 }
 
 // ---------- Vjetar ----------

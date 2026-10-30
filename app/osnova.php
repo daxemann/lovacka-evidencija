@@ -5,7 +5,7 @@
  */
 declare(strict_types=1);
 
-const VERZIJA = '1.60.0';
+const VERZIJA = '1.61.0';
 const KONTAKT_EMAIL = 'daxemann@googlemail.com';
 const PODRSKA_PAYPAL = 'darko.bakic@freenet.de'; // dobrovoljna podrška razvoju (Pomoć i kontakt)
 const PROJEKT_URL = 'https://github.com/daxemann/lovacka-evidencija';
@@ -157,7 +157,7 @@ function db(bool $novo = false): PDO
  * Dodatne tablice PHP verzije (PRAGMA user_version). .NET verzija ih ne poznaje i zanemaruje,
  * pa baza i dalje radi u oba smjera.
  */
-const SHEMA_PHP = 39;
+const SHEMA_PHP = 40;
 function nadogradi_bazu(PDO $pdo): void
 {
     if ((int) $pdo->query('PRAGMA user_version')->fetchColumn() >= SHEMA_PHP) {
@@ -909,6 +909,43 @@ SQL);
         // prava: tko ima sva dosadašnja prava (glavni admin i sl.) dobiva oba; lovnik i tko vidi lovački dnevnik – pregled
         $pdo->exec('UPDATE "Uloge" SET "Prava" = "Prava" | 100663296 WHERE ("Prava" & 33554431) = 33554431 OR "Naziv" LIKE \'Lovnik%\'');
         $pdo->exec('UPDATE "Uloge" SET "Prava" = "Prava" | 33554432 WHERE ("Prava" & 131072) = 131072');
+    }
+    if ($v < 40) {
+        // više lovišta: podaci lovišta, granica (poligoni) i linije (putevi, prosjeke…) kao JSON; sekcija NULL = za sve sekcije
+        $pdo->exec('CREATE TABLE IF NOT EXISTS "Lovista" (
+                "Id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                "Naziv" TEXT NOT NULL,
+                "Broj" TEXT NULL,
+                "Vrsta" TEXT NULL,
+                "Ovlastenik" TEXT NULL,
+                "Zupanija" TEXT NULL,
+                "Povrsina" REAL NULL,
+                "Boja" TEXT NOT NULL DEFAULT \'#ffd400\',
+                "SekcijaId" INTEGER NULL REFERENCES "Sekcije" ("Id") ON DELETE SET NULL,
+                "Aktivno" INTEGER NOT NULL DEFAULT 1,
+                "Granica" TEXT NULL,
+                "Linije" TEXT NULL,
+                "Napomena" TEXT NULL,
+                "Kreirano" TEXT NOT NULL,
+                "Azurirano" TEXT NULL)');
+        // dosadašnje granice (jedan KML za cijelu udrugu) → prvo lovište; linije iz KML-a → linije lovišta
+        $g = $pdo->query('SELECT Vrijednost FROM Postavke WHERE Kljuc=\'Revir.Granice\'')->fetchColumn();
+        $j = $g ? json_decode((string) $g, true) : null;
+        if (is_array($j) && !empty($j['oblici'])) {
+            $pol = [];
+            $lin = [];
+            foreach ($j['oblici'] as $o) {
+                if (($o['tip'] ?? '') === 'poligon') {
+                    $pol[] = $o['koord'];
+                } else {
+                    $lin[] = ['naziv' => (string) ($o['ime'] ?? ''), 'vrsta' => 'Granica', 'boja' => '#ffd400', 'crtkano' => 0, 'koord' => $o['koord']];
+                }
+            }
+            $naz = (string) ($pdo->query('SELECT Vrijednost FROM Postavke WHERE Kljuc=\'Udruga.Kratko\'')->fetchColumn() ?: 'Lovište');
+            $pdo->prepare('INSERT INTO "Lovista" ("Naziv", "Granica", "Linije", "Napomena", "Kreirano") VALUES (?, ?, ?, ?, ?)')
+                ->execute([$naz, $pol ? json_encode($pol) : null, $lin ? json_encode($lin, JSON_UNESCAPED_UNICODE) : null,
+                    'Preuzeto iz uvezenog KML-a' . (!empty($j['datoteka']) ? ' (' . $j['datoteka'] . ')' : ''), date('Y-m-d H:i:s')]);
+        }
     }
 }
 

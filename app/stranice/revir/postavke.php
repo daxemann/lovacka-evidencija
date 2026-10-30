@@ -188,21 +188,11 @@ ob_start(); ?>
     </form>
 </div></div>
 
-<div class="card mb-4"><div class="card-body">
-    <h2 class="h5">Granice lovišta (KML)</h2>
-    <p class="small text-muted">Iz Google My Maps: ⋮ → „Izvezi u KML/KMZ“ (označite „Izvezi u .KML“). Iz Google Eartha: desni klik na mapu → „Spremi mjesto kao…“ → KML.
-        Uvoze se poligoni i linije; točke se preskaču. Granice ostaju samo na ovom poslužitelju (i u sigurnosnim kopijama).</p>
-    <?php if ($gr): ?>
-        <div class="alert alert-success py-2 small">Uvezeno: <b><?= e($gr['datoteka'] ?? '') ?></b> · <?= count($gr['oblici'] ?? []) ?> oblika · <?= e(datum_vrijeme($gr['uvezeno'] ?? '')) ?> · <?= e($gr['uvezao'] ?? '') ?></div>
-    <?php endif; ?>
-    <form method="post" enctype="multipart/form-data" action="<?= e(url('revir/postavke')) ?>" class="d-flex flex-wrap gap-2"><?= csrf() ?><input type="hidden" name="radnja" value="kml">
-        <input type="file" name="kml" accept=".kml,.kmz,application/vnd.google-earth.kml+xml,application/vnd.google-earth.kmz" class="form-control w-auto" required>
-        <button class="btn btn-primary"><?= $gr ? 'Zamijeni granice' : 'Uvezi' ?></button>
-    </form>
-    <?php if ($gr): ?>
-        <form method="post" action="<?= e(url('revir/postavke')) ?>" class="mt-2"><?= csrf() ?><input type="hidden" name="radnja" value="kml-obrisi">
-            <button class="btn btn-sm btn-link text-danger p-0" data-potvrda="Obrisati granice lovišta?">Obriši granice</button></form>
-    <?php endif; ?>
+<div class="card mb-4 border-success"><div class="card-body d-flex flex-wrap align-items-center gap-3">
+    <div class="flex-grow-1"><h2 class="h5 mb-1">🗺️ Lovišta i granice</h2>
+        <p class="small text-muted mb-0">Granice, putevi i podaci lovišta uređuju se po lovištu: uvoz KML-a (Google My Maps), crtanje točku po točku ili slobodno olovkom.
+            Lovišta: <b><?= (int) vrijednost('SELECT COUNT(*) FROM Lovista') ?></b>.</p></div>
+    <a class="btn btn-success" href="<?= e(url('revir/lovista')) ?>">Otvori Lovišta</a>
 </div></div>
 
 <div class="card mb-4"><div class="card-body">

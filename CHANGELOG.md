@@ -1,5 +1,18 @@
 # Promjene
 
+## 1.61.0 – 2026-10
+- **🌲 Lovišta** (*Sustav → Postavke modula → Lovišta*, ili *Postavke lovišta → Otvori Lovišta*): udruga može imati **više lovišta** – svako sa svojim podacima:
+  naziv, broj lovišta (npr. VII/118), vrsta (otvoreno, zajedničko, državno, ograđeno, uzgajalište), lovoovlaštenik, županija, površina (ha – sama iz granice), boja na karti,
+  sekcija (ili sve sekcije), **aktivno / neaktivno** (na karti lovišta samo aktivna), napomena.
+- **Granica – tri načina:** 📂 **uvoz KML-a** (Google My Maps), 📍 **točku po točku**, 🖍️ **slobodno olovkom** (vucite prstom – pri puštanju se crta izgladi i granica sama zatvori).
+  Zatim ✋ *Pomakni točke* i 🗑 *Briši oblik*. Površina i duljine računaju se odmah.
+- **Linije** (〰): putevi, prosjeke, staze za šuljanje, prilazi, potoci … s nazivom, vrstom, bojom i crtkano – istim alatima. Na karti lovišta s nazivom pri dodiru, u izborniku slojeva uključivo/isključivo (*Granice lovišta*, *Putevi i linije*).
+- **🔒 Zaključaj kartu:** karta stoji dok crtate (ne pomiče se i ne zumira), ponovni dodir je otključava. Olovka zaključava kartu sama.
+- **⬇ KML izvoz** granice i linija (natrag u Google My Maps / Google Earth).
+- **Nadogradnja:** dosadašnje granice iz uvezenog KML-a automatski postaju prvo lovište (ništa se ne gubi).
+- Uređuje *Sustav* ili tko ima pravo *Lovište – lovne naprave* (za lovišta svojih sekcija).
+- Biblioteka za crtanje: Leaflet-Geoman (MIT licenca), uključena u program – radi i bez interneta.
+
 ## 1.60.0 – 2026-10
 - **📥 Karta bez signala** (Karta lovišta, gumb 📥 ispod ◎): satelitska karta lovišta preuzima se na mobitel (granice lovišta, inače sve naprave, s rubom).
   Odabir detalja (srednje / detaljno / najdetaljnije) s brojem pločica i veličinom, tijek preuzimanja, datum spremanja, brisanje. Preporuka: preuzeti preko Wi-Fi-ja.
