@@ -1,16 +1,28 @@
-<svg role="img" aria-label="Lovačka Evidencija" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-  <rect width="100" height="100" rx="22" fill="#2f5d23"/>
-  <g id="pola" fill="none" stroke="#e9c46a" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M55 37 C59 28 62 20 69 11"/>
-    <path d="M58.5 28.5 L68 26"/>
-    <path d="M61.5 21 L57 12"/>
-    <path d="M66 15 L77 15"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="Lovačka Evidencija">
+  <defs>
+    <linearGradient id="nebo" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2c4a63"/><stop offset=".42" stop-color="#d98a3d"/><stop offset=".6" stop-color="#f2c46d"/><stop offset=".605" stop-color="#46632f"/><stop offset="1" stop-color="#1f3517"/>
+    </linearGradient>
+    <clipPath id="okular"><circle cx="50" cy="50" r="42"/></clipPath>
+  </defs>
+  <rect width="100" height="100" rx="22" fill="#14200f"/>
+  <g clip-path="url(#okular)">
+    <rect width="100" height="100" fill="url(#nebo)"/>
+    <!-- srnjak (silueta, glava lijevo); točka nišana na plećki -->
+    <g transform="translate(13 -6)" fill="#16130d" stroke="#16130d" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M33 56 C34 50.5 43 49 53 49.3 C60 49.5 65 51.5 65.4 56 C65.8 60.5 62.5 63.2 57.5 63.2 L39.5 63.2 C35 63.2 32.4 60.5 33 56 Z" stroke-width=".5"/>
+      <path d="M35.6 55.5 C34.4 51.2 32.6 47.6 30.8 45 L29.8 43.4 C28.4 41.6 26 41.4 24 42.4 L20.6 44.4 C19.7 45 20.1 46.3 21.2 46.4 L26 46.8 C27.8 49.6 29.6 53 30.6 56.5 Z" stroke-width=".5"/>
+      <path d="M29 42.2 L31.4 37.8 L31.2 43 Z M27.2 42 L26.4 37.6 L28.8 41.6 Z" stroke-width=".6"/>
+      <path d="M29.2 40.6 L29.6 32 M29.4 35.6 L32 34.2 M29.6 32.8 L27.6 31.2 M28 40.8 L25.8 33.2 M26.4 36 L24.2 35.6" fill="none" stroke-width="1.35"/>
+      <path d="M38.2 62 L37.6 73 M41.6 62.4 L41.2 73.6 M57.6 61.6 L59.4 67.4 L58.6 73.6 M61.8 60.4 L63.4 66.6 L62.8 73.2" fill="none" stroke-width="2.4"/>
+    </g>
   </g>
-  <use href="#pola" transform="translate(100 0) scale(-1 1)"/>
-  <path d="M58 40 Q71 33 77 37 Q69 45 59 44 Z" fill="#f4efe1"/>
-  <path d="M42 40 Q29 33 23 37 Q31 45 41 44 Z" fill="#f4efe1"/>
-  <path d="M43 38 L57 38 L59 46 L54.5 70 Q50 76 45.5 70 L41 46 Z" fill="#f4efe1"/>
-  <path d="M46.5 69 Q50 73 53.5 69 L52.5 66 Q50 67 47.5 66 Z" fill="#2f5d23"/>
-  <circle cx="45.6" cy="49" r="1.6" fill="#2f5d23"/><circle cx="54.4" cy="49" r="1.6" fill="#2f5d23"/>
-  <path d="M30 84 H70" stroke="#e9c46a" stroke-width="3" stroke-linecap="round"/>
+  <!-- absehen 4 -->
+  <g stroke="#0b0b0b" stroke-linecap="butt">
+    <path d="M8 50 H34 M66 50 H92 M50 92 V66" stroke-width="5.4"/>
+    <path d="M34 50 H66 M50 8 V66" stroke-width="1.1"/>
+  </g>
+  <circle cx="50" cy="50" r="2.2" fill="#ff2a1a" stroke="#0b0b0b" stroke-width=".6"/>
+  <circle cx="50" cy="50" r="42" fill="none" stroke="#0b0b0b" stroke-width="4"/>
+  <circle cx="50" cy="50" r="44.2" fill="none" stroke="#c9a227" stroke-width="1"/>
 </svg>

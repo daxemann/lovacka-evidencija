@@ -1,5 +1,9 @@
 # Promjene
 
+## 1.62.1 – 2026-10
+- **Novi logo programa:** absehen (križ nišana) s točkom na plećki srnjaka u sumrak. Mijenja se u izborniku (potpis programa), na prijavi, u *Pomoć* i na GitHubu (banner),
+  te zadane ikone aplikacije i favicon – **samo ako udruga nema svoj logo** (logo udruge i dalje je ikona aplikacije).
+
 ## 1.62.0 – 2026-10
 - **📄 Moji dokumenti** (novi modul, *Sustav → Moduli*; izbornik *Moje → Moji dokumenti*, kartica u *Moj profil*, gumb za početnu):
   član sprema **lovačku iskaznicu, dozvolu za lov, oružni list, osiguranje, lovački ispit** i ostalo – **fotografija prednje i stražnje strane** (kamera mobitela) i/ili **upis** (broj, izdavatelj, vrijedi od – do, napomena).
