@@ -44,6 +44,7 @@ ob_start(); ?>
     <a class="btn btn-sm btn-outline-warning" href="<?= e(url('revir/kvarovi')) ?>">🔧 Kvarovi<?php $brKv = (int) vrijednost("SELECT COUNT(*) FROM RevirKvarovi WHERE Status<>'rijeseno' AND " . revir_kvar_sql($sekcije)); if ($brKv): ?> <span class="badge bg-warning text-dark"><?= $brKv ?></span><?php endif; ?></a>
     <?php if ($uredive): ?><button type="button" class="btn btn-sm btn-outline-secondary" id="revir-uredi" aria-pressed="false">✏️ Uredi naprave</button><?php endif; ?>
 </div>
+<div id="revir-bez-signala" class="alert alert-warning py-2 px-3 mb-2 small" hidden>📵 <b>Bez signala</b> – karta i GPS rade (ako je karta preuzeta), stanje naprava je zadnje spremljeno. Zauzimanje i „Odlazim“ trebaju vezu.</div>
 <div id="revir-moje" class="revir-moje alert alert-danger py-2 px-3 mb-2 d-flex align-items-center gap-2" hidden></div>
 <div id="revir-uredi-traka" class="alert alert-warning py-2 px-3 mb-2 small" hidden>
     <div class="d-flex flex-wrap gap-2 align-items-center">
@@ -64,6 +65,8 @@ ob_start(); ?>
         <?php if ($cfg['vjetar']): ?><span><i class="revir-pin-vjetar dobar static">✓</i><i class="revir-pin-vjetar los static">✗</i> vjetar</span><?php endif; ?>
     </div>
     <button type="button" class="revir-lociraj" id="revir-lociraj" title="Gdje sam?" aria-label="Gdje sam?">◎</button>
+    <button type="button" class="revir-lociraj revir-offline" id="revir-offline" title="Karta bez signala" aria-label="Karta bez signala">📥</button>
+    <div id="revir-offline-panel" class="revir-panel revir-offline-panel" hidden></div>
     <div id="revir-panel" class="revir-panel" hidden></div>
 </div>
 <p class="small text-muted mt-2 mb-0">Zauzeće vrijedi dok ne dodirnete „Odlazim“, najkasnije do <?= e($cfg['istek']) ?> sljedećeg jutra. Gost sjedi sam na drugoj napravi koju zauzmete za njega.
@@ -73,4 +76,5 @@ ob_start(); ?>
 <script src="<?= e(asset('assets/revir-foto.js')) ?>"></script>
 <?php if ($cfg['vjetar']): ?><script src="<?= e(asset('assets/vjetar.js')) ?>"></script><?php endif; ?>
 <script src="<?= e(asset('assets/revir.js')) ?>"></script>
+<script src="<?= e(asset('assets/karta-offline.js')) ?>"></script>
 <?php stranica('Karta lovišta', ob_get_clean());

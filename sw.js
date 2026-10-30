@@ -4,8 +4,13 @@
  *  - bez interneta se aplikacija otvara na stranici "Skeniraj" (skener QR, upisi na čekanju, spremljene stanice),
  *  - upisi spremljeni bez interneta šalju se i kad je aplikacija zatvorena (Background Sync – Android/Chrome;
  *    iPhone to ne podržava – tamo se šalju kad se aplikacija otvori).
+ *  - karta lovišta: stranica i zadnje stanje naprava spremaju se na mobitel; pločice satelitske karte koje je lovac
+ *    preuzeo („📥 Karta bez signala“) služe se iz memorije – karta i GPS položaj rade i bez signala.
  * Ostale stranice se uvijek učitavaju svježe s poslužitelja. */
 var SPREMNIK = 'ev-dez-2';
+var KARTA = 'ev-karta-1'; // preuzete pločice karte – ne briše se pri novoj verziji programa
+var KARTA_HOSTOVI = ['server.arcgisonline.com', 'tile.openstreetmap.org', 'a.tile.openstreetmap.org', 'b.tile.openstreetmap.org', 'c.tile.openstreetmap.org',
+    'a.tile.opentopomap.org', 'b.tile.opentopomap.org', 'c.tile.opentopomap.org'];
 var BAZA = 'ev-dez', TABLICA = 'kv';
 
 self.addEventListener('install', function (e) {
@@ -16,12 +21,15 @@ self.addEventListener('install', function (e) {
 });
 self.addEventListener('activate', function (e) {
     e.waitUntil(caches.keys().then(function (k) {
-        return Promise.all(k.filter(function (n) { return n !== SPREMNIK; }).map(function (n) { return caches.delete(n); }));
+        return Promise.all(k.filter(function (n) { return n !== SPREMNIK && n !== KARTA; }).map(function (n) { return caches.delete(n); }));
     }).then(function () { return self.clients.claim(); }));
 });
 function skeniraj() { return new URL('index.php?p=skeniraj', self.registration.scope).href; }
 function jeStanica(u) { return u.searchParams.get('p') === 'dez' && !!u.searchParams.get('s'); }
 function jeSkeniraj(u) { return u.searchParams.get('p') === 'skeniraj'; }
+function revir() { return new URL('index.php?p=revir', self.registration.scope).href; }
+function jeRevir(u) { return u.searchParams.get('p') === 'revir'; }
+function jeRevirApi(u) { return u.searchParams.get('p') === 'api/revir'; }
 function iskaznica() { return new URL('index.php?p=moja-iskaznica', self.registration.scope).href; }
 function jeIskaznica(u) { return u.searchParams.get('p') === 'moja-iskaznica'; }
 function bezInterneta() {
@@ -107,7 +115,7 @@ self.addEventListener('message', function (e) {
         // promjena korisnika / odjava: spremljene stranice stanica sadrže ime i vozila prethodnog korisnika
         e.waitUntil(caches.open(SPREMNIK).then(function (c) {
             return c.keys().then(function (k) {
-                return Promise.all(k.filter(function (r) { var u = new URL(r.url); return jeStanica(u) || jeIskaznica(u); }).map(function (r) { return c.delete(r); }));
+                return Promise.all(k.filter(function (r) { var u = new URL(r.url); return jeStanica(u) || jeIskaznica(u) || jeRevir(u) || jeRevirApi(u); }).map(function (r) { return c.delete(r); }));
             });
         }));
         return;
@@ -128,8 +136,28 @@ self.addEventListener('fetch', function (e) {
     var req = e.request;
     if (req.method !== 'GET') return;
     var url = new URL(req.url);
+    if (KARTA_HOSTOVI.indexOf(url.hostname) !== -1) {
+        // pločica karte: preuzeta (bez signala) iz memorije, inače s interneta
+        e.respondWith(caches.open(KARTA).then(function (c) { return c.match(req.url); }).then(function (m) { return m || fetch(req); }));
+        return;
+    }
     if (url.origin !== self.location.origin) return;
+    if (jeRevirApi(url)) {
+        // stanje naprava: s interneta, bez signala zadnje spremljeno (samo pregled – zauzimanje traži vezu)
+        e.respondWith(sRokom(fetch(req), 10000).then(function (r) { spremi(req.url, r); return r; })
+            .catch(function () { return caches.match(req.url).then(function (m) { return m || Response.error(); }); }));
+        return;
+    }
     if (req.mode === 'navigate') {
+        if (jeRevir(url) && !url.searchParams.get('naprava')) {
+            e.respondWith(sRokom(fetch(req), 8000).then(function (r) { spremi(revir(), r); return r; })
+                .catch(function () { return caches.match(revir()).then(function (m) { return m || izvanmrezno(); }); }));
+            return;
+        }
+        if (jeRevir(url)) {
+            e.respondWith(sRokom(fetch(req), 8000).catch(function () { return caches.match(revir()).then(function (m) { return m || izvanmrezno(); }); }));
+            return;
+        }
         if (jeStanica(url)) {
             // stanica: s interneta (najviše 8 s, slab signal u lovištu), inače spremljena kopija; nije spremljena → "Skeniraj" s porukom
             e.respondWith(sRokom(fetch(req), 8000).then(function (r) { spremi(url.href, r); return r; })

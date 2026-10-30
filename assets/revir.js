@@ -65,6 +65,7 @@
         (g.tip === 'poligon' ? L.polygon(g.koord, stil) : L.polyline(g.koord, stil)).addTo(granice);
     });
     var sloj = L.featureGroup().addTo(karta);
+    window.EvKarta = { karta: karta, granice: granice, sloj: sloj }; // karta-offline.js
     // izdaleka manji pinovi bez imena – inače se preklapaju
     function velicina() { document.getElementById('revir-karta').classList.toggle('daleko', karta.getZoom() < 14); }
     karta.on('zoomend', velicina);

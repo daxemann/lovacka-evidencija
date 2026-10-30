@@ -1,5 +1,12 @@
 # Promjene
 
+## 1.60.0 – 2026-10
+- **📥 Karta bez signala** (Karta lovišta, gumb 📥 ispod ◎): satelitska karta lovišta preuzima se na mobitel (granice lovišta, inače sve naprave, s rubom).
+  Odabir detalja (srednje / detaljno / najdetaljnije) s brojem pločica i veličinom, tijek preuzimanja, datum spremanja, brisanje. Preporuka: preuzeti preko Wi-Fi-ja.
+- **Rad bez signala na karti:** stranica *Karta lovišta* i zadnje stanje lovnih naprava spremaju se na mobitel – u lovištu bez signala otvara se karta s napravama,
+  a **GPS položaj ◎** radi i dalje. Žuta traka „📵 Bez signala“ upozorava da zauzimanje i „Odlazim“ trebaju vezu.
+- Spremljena karta ostaje i nakon ažuriranja programa. Kod odjave / promjene korisnika spremljena stranica karte se briše (kao i stanice dezinfekcije).
+
 ## 1.59.0 – 2026-10
 - **🧹 Reset nakon testiranja** (*Sustav → Podaci*): kad udruga završi isprobavanje, administrator jednim potezom briše probne upise –
   **članovi, korisnici i lozinke, uloge, sekcije, funkcije, psi, vozila, oružni listovi, postavke i šifrarnici** (stanice, lovne naprave, vrste akcija, domovi, inventura) **ostaju**.

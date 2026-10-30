@@ -751,3 +751,8 @@ main {
 .odstrel-tablica td { font-size: .9rem; }
 .odstrel-plan .odstrel-plan-kat td:nth-child(2) { padding-left: 1.2rem; color: var(--bs-secondary-color); }
 .odstrel-plan input[type=number] { max-width: 6rem; margin-left: auto; }
+
+/* ---------- Karta bez signala ---------- */
+.revir-lociraj.revir-offline { top: 7rem; font-size: 1.1rem; }
+.revir-lociraj.revir-offline.spremljeno { box-shadow: inset 0 0 0 2px #2e7d32; }
+.revir-offline-panel { top: auto; z-index: 650; }
