@@ -746,3 +746,8 @@ main {
 [data-bs-theme=dark] .vr-najbolje { background: #1c3318; border-color: #34502b; }
 .vr-kad .table td { padding: .3rem .4rem; }
 @media (max-width: 420px) { .vrijeme-svjetlo b { font-size: .9rem; } .vrijeme-svjetlo span { font-size: .6rem; } }
+
+/* ---------- Odstrel ---------- */
+.odstrel-tablica td { font-size: .9rem; }
+.odstrel-plan .odstrel-plan-kat td:nth-child(2) { padding-left: 1.2rem; color: var(--bs-secondary-color); }
+.odstrel-plan input[type=number] { max-width: 6rem; margin-left: auto; }

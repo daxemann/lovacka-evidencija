@@ -1,5 +1,18 @@
 # Promjene
 
+## 1.58.0 – 2026-10
+- **🦌 Odstrel** (novi modul, *Sustav → Moduli*, zadano uključen) – izbornik *Lovište → 🦌 Odstrel*:
+  - **Upis odstrela:** datum i vrijeme, vrsta (s prijedlozima), spol / kategorija prema vrsti (npr. Vepar, Krmača, Nazime, Prase), dob, **broj markice** (upisuje se), masa, trofej (CIC),
+    lovac (član sekcije ili **gost**), lovna naprava s karte ili opis mjesta, oružje, kalibar, udaljenost, napomena, fotografija. *Spremi i upiši još jedan* za više grla.
+    Ista markica dvaput u lovnoj godini → upozorenje.
+  - **Popis** po lovnoj godini (1.4.–31.3.) i sekciji, filtar po vrsti, traženje po markici ili lovcu, **sortiranje po markici** ili datumu, zbroj po vrstama, **PDF**.
+  - **📋 Plan odstrela** po sekciji i lovnoj godini: vrsta ukupno i po kategorijama (npr. Divlja svinja 10, od toga Vepar 3) – **planirano / ostvareno / preostalo**, prekoračenje crveno;
+    *Preuzmi iz prošle godine*; **PDF plana**.
+  - **Strogo po sekcijama.** Nova prava (*Sustav → Uloge i prava*): **Odstrel – pregled** i **Odstrel – upis** – svaka udruga sama odlučuje tko upisuje (npr. lovnik).
+    Nadogradnja ih daje ulogama sa svim pravima i ulogama „Lovnik…“; *pregled* i ulogama s pravom Lovački dnevnik.
+  - Član bez tih prava vidi **„Moj odstrel“** – samo svoja grla.
+  - Na početnoj se može uključiti gumb **🦌 Odstrel** (*Sustav → Početna stranica*).
+
 ## 1.57.0 – 2026-10
 - **🌤️ Vrijeme i Mjesec** (novi modul, *Sustav → Moduli*, zadano uključen; treba modul Lovište) – blok **„🌤️ Vrijeme u lovištu“** na početnoj i na vrhu stranice **🌲 Danas u lovištu**:
   - **Svjetlo dana:** zora, izlazak i zalazak Sunca, sumrak, dužina dana – za vaše lovište.

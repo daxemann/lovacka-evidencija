@@ -5,7 +5,7 @@
  */
 declare(strict_types=1);
 
-const VERZIJA = '1.57.0';
+const VERZIJA = '1.58.0';
 const KONTAKT_EMAIL = 'daxemann@googlemail.com';
 const PODRSKA_PAYPAL = 'darko.bakic@freenet.de'; // dobrovoljna podrška razvoju (Pomoć i kontakt)
 const PROJEKT_URL = 'https://github.com/daxemann/lovacka-evidencija';
@@ -37,8 +37,10 @@ const P_OBAVIJESTI = 2097152;
 const P_GRUPNI_LOV = 4194304;
 const P_DOMOVI = 8388608;
 const P_POPUSTI = 16777216;
+const P_ODSTREL_CITAJ = 33554432;
+const P_ODSTREL = 67108864;
 const P_OSNOVNA = 255; // prava iz .NET verzije
-const P_SVE = 33554431;
+const P_SVE = 134217727;
 
 const PRAVA_OPIS = [
     P_CLANOVI_CITAJ => ['Članovi – pregled', 'vidi popis članova i njihove podatke'],
@@ -65,6 +67,8 @@ const PRAVA_OPIS = [
     P_GRUPNI_LOV => ['Skupni lov – organizacija', 'pokreće skupni lov za sekcije u svom opsegu (poziv svima na mobitel), vidi uživo položaj sudionika na karti, prima SOS i upozorenje o gubitku signala, završava lov'],
     P_DOMOVI => ['Lovački domovi – upravljanje', 'dodaje i uređuje lovačke domove (položaj, fotografija) za sekcije u svom opsegu, odobrava i odbija privatne rezervacije, upisuje događaje udruge (imaju prednost), otkazuje rezervacije'],
     P_POPUSTI => ['Popusti u trgovinama – uređivanje', 'dodaje, mijenja i briše trgovine s popustom za članove (popust, uvjeti, kontakt, logo, rok); članovi bez ovog prava vide samo važeće ponude'],
+    P_ODSTREL_CITAJ => ['Odstrel – pregled', 'vidi odstrel i plan odstrela (ostvarenje) za sekcije u svom opsegu, PDF; bez ovog prava član vidi samo svoj odstrel'],
+    P_ODSTREL => ['Odstrel – upis', 'upisuje, mijenja i briše odstrel (s brojem markice) i plan odstrela za sekcije u svom opsegu'],
     P_REVIR_DNEVNIK => ['Lovište – lovački dnevnik', 'vidi lovački dnevnik (tko, kada, gdje) za sekcije u svom opsegu, ispis i PDF; bez ovog prava dnevnik se ne prikazuje'],
 ];
 
@@ -153,7 +157,7 @@ function db(bool $novo = false): PDO
  * Dodatne tablice PHP verzije (PRAGMA user_version). .NET verzija ih ne poznaje i zanemaruje,
  * pa baza i dalje radi u oba smjera.
  */
-const SHEMA_PHP = 38;
+const SHEMA_PHP = 39;
 function nadogradi_bazu(PDO $pdo): void
 {
     if ((int) $pdo->query('PRAGMA user_version')->fetchColumn() >= SHEMA_PHP) {
@@ -864,6 +868,47 @@ SQL);
     if ($v < 38) {
         // idealni smjerovi vjetra za lovnu napravu (iz kojih strana smije puhati), npr. „SI,I“
         $pdo->exec('ALTER TABLE "RevirNaprave" ADD COLUMN "Vjetar" TEXT NULL');
+    }
+    if ($v < 39) {
+        // Odstrel (s brojem markice) i plan odstrela po sekciji i lovnoj godini
+        $pdo->exec('CREATE TABLE IF NOT EXISTS "Odstrel" (
+                "Id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                "SekcijaId" INTEGER NULL REFERENCES "Sekcije" ("Id") ON DELETE SET NULL,
+                "LovnaGodina" INTEGER NOT NULL,
+                "Datum" TEXT NOT NULL,
+                "Vrijeme" TEXT NULL,
+                "Vrsta" TEXT NOT NULL,
+                "Spol" TEXT NULL,
+                "Dob" TEXT NULL,
+                "Masa" REAL NULL,
+                "Markica" TEXT NULL,
+                "ClanId" INTEGER NULL REFERENCES "Clanovi" ("Id") ON DELETE SET NULL,
+                "Lovac" TEXT NOT NULL,
+                "Gost" INTEGER NOT NULL DEFAULT 0,
+                "NapravaId" INTEGER NULL REFERENCES "RevirNaprave" ("Id") ON DELETE SET NULL,
+                "Mjesto" TEXT NULL,
+                "Oruzje" TEXT NULL,
+                "Kalibar" TEXT NULL,
+                "Udaljenost" INTEGER NULL,
+                "Trofej" REAL NULL,
+                "Napomena" TEXT NULL,
+                "Foto" TEXT NULL,
+                "Upisao" TEXT NULL,
+                "Kreirano" TEXT NOT NULL,
+                "Azurirano" TEXT NULL)');
+        $pdo->exec('CREATE INDEX IF NOT EXISTS "IX_Odstrel_Godina" ON "Odstrel" ("LovnaGodina", "SekcijaId")');
+        $pdo->exec('CREATE INDEX IF NOT EXISTS "IX_Odstrel_Clan" ON "Odstrel" ("ClanId")');
+        $pdo->exec('CREATE TABLE IF NOT EXISTS "OdstrelPlan" (
+                "Id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                "SekcijaId" INTEGER NULL REFERENCES "Sekcije" ("Id") ON DELETE CASCADE,
+                "LovnaGodina" INTEGER NOT NULL,
+                "Vrsta" TEXT NOT NULL,
+                "Kategorija" TEXT NOT NULL DEFAULT \'\',
+                "Broj" INTEGER NOT NULL DEFAULT 0)');
+        $pdo->exec('CREATE INDEX IF NOT EXISTS "IX_OdstrelPlan_Godina" ON "OdstrelPlan" ("LovnaGodina", "SekcijaId")');
+        // prava: tko ima sva dosadašnja prava (glavni admin i sl.) dobiva oba; lovnik i tko vidi lovački dnevnik – pregled
+        $pdo->exec('UPDATE "Uloge" SET "Prava" = "Prava" | 100663296 WHERE ("Prava" & 33554431) = 33554431 OR "Naziv" LIKE \'Lovnik%\'');
+        $pdo->exec('UPDATE "Uloge" SET "Prava" = "Prava" | 33554432 WHERE ("Prava" & 131072) = 131072');
     }
 }
 

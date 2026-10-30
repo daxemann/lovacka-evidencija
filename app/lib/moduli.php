@@ -26,6 +26,8 @@ function moduli(): array
             0, []],
         'vrijeme' => ['🌤️', 'Vrijeme i Mjesec', 'Danas u lovištu: zora, izlazak i zalazak Sunca, Mjesec, temperatura, kiša i „Kad u lov?“ za danas i sutra. Treba modul Lovište.',
             0, []],
+        'odstrel' => ['🦌', 'Odstrel i plan odstrela', 'Upis odstrela s brojem markice po sekcijama, plan odstrela (planirano / ostvareno) po lovnoj godini, PDF.',
+            P_ODSTREL | P_ODSTREL_CITAJ, ['odstrel', 'odstrel/', 'izvoz/odstrel-pdf']],
         'grupni' => ['🎯', 'Skupni lov', 'Poziv lovcima, karta uživo, SOS, popis sudionika (skeniranje iskaznica).',
             P_GRUPNI_LOV, ['grupni-lov', 'grupni-odgovor', 'grupni-popis', 'grupni-zapisnik', 'api/grupni-lov', 'api/grupni-popis', 'sustav/skupni-lov']],
         'iskaznice' => ['🪪', 'Članske iskaznice (QR)', 'Iskaznica s fotografijom i QR kodom (PDF i u aplikaciji).',
