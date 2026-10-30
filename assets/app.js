@@ -13,6 +13,27 @@ window.viberPoruka = function (broj) {
 };
 (function () {
     'use strict';
+    // ---------- tema (svijetla / tamna): ☀️/🌙 gore i izbor u Moj profil; sprema se na uređaju ----------
+    function temaUcitaj() { try { return localStorage.getItem('ev-tema') || ''; } catch (x) { return ''; } }
+    function temaPrimijeni() {
+        var t = temaUcitaj() || window.EV_TEMA_ZADANA || 'svijetla';
+        if (t === 'uredaj') t = window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches ? 'tamna' : 'svijetla';
+        document.documentElement.setAttribute('data-bs-theme', t === 'tamna' ? 'dark' : 'light');
+        var m = document.querySelector('meta[name=theme-color]'); if (m) m.content = t === 'tamna' ? '#101810' : '#1f3d1f';
+        document.querySelectorAll('[data-tema-izbor]').forEach(function (r) { r.checked = r.value === temaUcitaj(); });
+    }
+    function temaSpremi(t) { try { if (t) localStorage.setItem('ev-tema', t); else localStorage.removeItem('ev-tema'); } catch (x) { /* ništa */ } temaPrimijeni(); }
+    document.addEventListener('click', function (e) {
+        if (!e.target.closest('[data-tema-gumb]')) return;
+        temaSpremi(document.documentElement.getAttribute('data-bs-theme') === 'dark' ? 'svijetla' : 'tamna');
+    });
+    document.addEventListener('change', function (e) { if (e.target.matches && e.target.matches('[data-tema-izbor]')) temaSpremi(e.target.value); });
+    if (window.matchMedia) { var mq = matchMedia('(prefers-color-scheme: dark)'); if (mq.addEventListener) mq.addEventListener('change', temaPrimijeni); }
+    // ispis je uvijek svijetli
+    var temaPrijeIspisa = null;
+    window.addEventListener('beforeprint', function () { temaPrijeIspisa = document.documentElement.getAttribute('data-bs-theme'); document.documentElement.setAttribute('data-bs-theme', 'light'); });
+    window.addEventListener('afterprint', function () { if (temaPrijeIspisa) document.documentElement.setAttribute('data-bs-theme', temaPrijeIspisa); });
+    temaPrimijeni();
     // potvrda prije opasnih radnji: <button data-potvrda="Sigurno?">
     document.addEventListener('click', function (e) {
         var b = e.target.closest('[data-potvrda]');

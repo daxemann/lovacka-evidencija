@@ -196,4 +196,14 @@ ob_start(); ?>
 <?= predlozak('clan-psi', ['id' => (int) $c['Id'], 'psiProfil' => true]) ?>
 <?php endif; ?>
 <?php if (!empty($_GET['psi'])): ?><script>document.getElementById('psi').scrollIntoView();</script><?php endif; ?>
+<h2 class="h5 mt-4" id="izgled">🎨 Izgled na ovom uređaju</h2>
+<div class="card card-body" style="max-width:640px">
+    <div class="btn-group w-100" role="group" aria-label="Tema">
+        <?php foreach (['' => '🏛️ Zadano udruge', 'svijetla' => '☀️ Svijetla', 'tamna' => '🌙 Tamna', 'uredaj' => '📱 Kao uređaj'] as $v => $n): ?>
+        <input type="radio" class="btn-check" name="ev-tema" id="ev-tema-<?= $v ?: 'zadano' ?>" value="<?= $v ?>" data-tema-izbor>
+        <label class="btn btn-outline-primary btn-sm" for="ev-tema-<?= $v ?: 'zadano' ?>"><?= $n ?></label>
+        <?php endforeach; ?>
+    </div>
+    <div class="small text-muted mt-2">Zadano udruge: <b><?= e(TEME_NAZIVI[tema_zadana()]) ?></b>. Odabir vrijedi samo na ovom mobitelu/računalu, sprema se odmah.</div>
+</div>
 <?php stranica('Moj profil', ob_get_clean());

@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <?php if (!dopusti_trazilice()): ?><meta name="robots" content="noindex, nofollow, noarchive"><?php endif; ?>
     <meta name="theme-color" content="#1f3d1f">
+    <?= tema_skripta() ?>
     <link rel="manifest" href="<?= e(url('manifest')) ?>">
     <link rel="apple-touch-icon" href="<?= e(url('ikona', ['v' => 180, 'x' => postavka('Udruga.Logo')])) ?>">
     <meta name="apple-mobile-web-app-capable" content="yes">

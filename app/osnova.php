@@ -5,7 +5,7 @@
  */
 declare(strict_types=1);
 
-const VERZIJA = '1.54.1';
+const VERZIJA = '1.55.0';
 const KONTAKT_EMAIL = 'daxemann@googlemail.com';
 const PODRSKA_PAYPAL = 'darko.bakic@freenet.de'; // dobrovoljna podrška razvoju (Pomoć i kontakt)
 const PROJEKT_URL = 'https://github.com/daxemann/lovacka-evidencija';
@@ -962,6 +962,24 @@ function udruga_kratko(): string
 {
     return postavka('Udruga.Kratko', 'Evidencija');
 }
+// ---------- Izgled (tema) ----------
+const TEME = ['svijetla', 'tamna', 'uredaj'];
+const TEME_NAZIVI = ['svijetla' => 'Svijetla', 'tamna' => 'Tamna', 'uredaj' => 'Kao uređaj'];
+/** Zadana tema udruge (Sustav → Izgled). Korisnik je može promijeniti za sebe (localStorage „ev-tema“). */
+function tema_zadana(): string
+{
+    $t = (string) postavka('Izgled.Tema', 'svijetla');
+    return in_array($t, TEME, true) ? $t : 'svijetla';
+}
+/** <script> u <head>: postavi data-bs-theme prije iscrtavanja (bez bljeska svijetle stranice). */
+function tema_skripta(): string
+{
+    return '<script>(function(){var z=' . json_encode(tema_zadana()) . ',t=null;try{t=localStorage.getItem("ev-tema")}catch(x){}'
+        . 'if(t!=="svijetla"&&t!=="tamna"&&t!=="uredaj")t=z;window.EV_TEMA_ZADANA=z;'
+        . 'if(t==="uredaj")t=window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches?"tamna":"svijetla";'
+        . 'document.documentElement.setAttribute("data-bs-theme",t==="tamna"?"dark":"light");})();</script>';
+}
+
 function udruga_podnaslov(): string
 {
     return postavka('Udruga.Podnaslov', 'Evidencija članova');

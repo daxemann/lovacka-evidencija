@@ -10,6 +10,7 @@ $ukljuceno = count(array_filter(array_keys(moduli()), 'modul'));
 $skupine = [
     ['Udruga', [
         ['sustav/udruga', '🏛️', 'Podaci o udruzi', 'Naziv, logo, adresa, OIB, podnaslov.', 0, null],
+        ['sustav/izgled', '🎨', 'Izgled', 'Svijetla ili tamna tema – zadano za sve.', 0, null],
         ['sustav/pocetna', '🏠', 'Početna stranica', 'Što koja uloga vidi na početnoj i kojim redom.', 0, null],
         ['sustav/moduli', '🧩', 'Moduli', "Što udruga koristi – uključeno $ukljuceno od " . count(moduli()) . '.', 0, null],
         ['sustav/sekcije', '🗂️', 'Sekcije', 'Sekcije / lovne jedinice.', 0, null],

@@ -44,6 +44,7 @@ $glUTijeku = $glMoj && (int) $glMoj['ja']['Odgovor'] === 1 && $glMoj['ja']['Otis
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <?php if (!dopusti_trazilice()): ?><meta name="robots" content="noindex, nofollow, noarchive"><?php endif; ?>
     <meta name="theme-color" content="#1f3d1f">
+    <?= tema_skripta() ?>
     <link rel="manifest" href="<?= e(url('manifest')) ?>">
     <link rel="apple-touch-icon" href="<?= e(url('ikona', ['v' => 180, 'x' => postavka('Udruga.Logo')])) ?>">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -114,6 +115,7 @@ $glUTijeku = $glMoj && (int) $glMoj['ja']['Odgovor'] === 1 && $glMoj['ja']['Otis
             <button type="button" class="izbornik-gumb no-print me-auto" data-izbornik title="Sakrij / prikaži izbornik" aria-label="Sakrij / prikaži izbornik">☰</button>
             <?php if ($k): ?>
                 <?php if (ima(P_REVIR_NADZOR)): ?><a href="<?= e(url('revir/danas')) ?>" class="revir-zvono me-3" title="Obavijesti – lovište" aria-label="Obavijesti – lovište">🔔<?php if ($revirObav): ?><span class="badge rounded-pill bg-danger"><?= $revirObav ?></span><?php endif; ?></a><?php endif; ?>
+                <button type="button" class="tema-gumb me-2" data-tema-gumb title="Svijetla / tamna tema" aria-label="Svijetla / tamna tema"><span class="tema-ik-svijetla" aria-hidden="true">🌙</span><span class="tema-ik-tamna" aria-hidden="true">☀️</span></button>
                 <a href="<?= e(url('moja-prava')) ?>" class="text-decoration-none d-flex align-items-center gap-1 me-3" title="Moja prava">
                     <span class="small text-body d-none d-sm-inline"><?= e($k['Naziv']) ?></span>
                     <span class="badge <?= e($boja) ?>"><?= e($uloga) ?></span>

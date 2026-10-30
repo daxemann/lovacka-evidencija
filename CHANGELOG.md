@@ -1,5 +1,11 @@
 # Promjene
 
+## 1.55.0 – 2026-10
+- **🎨 Tamna tema:** cijela aplikacija može biti svijetla ili tamna – tamna štedi bateriju i ne zasljepljuje na čeki u sumrak.
+  - **⚙️ Sustav → 🎨 Izgled:** zadana tema za sve korisnike – *Svijetla*, *Tamna* ili *Kao uređaj* (prati postavku mobitela/računala). Zadano: svijetla.
+  - **Svaki korisnik sam:** gumb **🌙 / ☀️** u gornjoj traci, ili **Moj profil → 🎨 Izgled na ovom uređaju** (Zadano udruge / Svijetla / Tamna / Kao uređaj). Odabir vrijedi na tom uređaju.
+  - Ispis je uvijek svijetli; članska iskaznica, QR i potpisi ostaju na bijeloj podlozi.
+
 ## 1.54.1 – 2026-10
 - **Izbornik – Dezinfekcija:** *Stanice i QR* je postavka i nalazi se samo u **⚙️ Sustav → Postavke modula** (više ne u izborniku lijevo).
   Tko nema pristup Sustavu (npr. lovočuvar s pravom „stanice/QR“), i dalje ga vidi u izborniku Dezinfekcija.
