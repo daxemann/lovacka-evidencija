@@ -329,7 +329,7 @@ function revir_stanje(array $sekcije): array
             'id' => (int) $n['Id'], 'broj' => (string) $n['Broj'], 'naziv' => $n['Naziv'], 'vrsta' => $v['Naziv'] ?? (string) $n['Vrsta'],
             'vrstaId' => $v ? (int) $v['Id'] : null, 'ikona' => $v && $v['Ikona'] ? foto_url($v['Ikona']) : null, 'zauzimanje' => revir_zauzima_se($n),
             'sekcija' => revir_sid($sid), 'lat' => $n['Lat'] !== null ? (float) $n['Lat'] : null, 'lon' => $n['Lon'] !== null ? (float) $n['Lon'] : null,
-            'foto' => $n['Foto'] ? foto_url($n['Foto']) : null, 'napomena' => (string) $n['Napomena'],
+            'foto' => $n['Foto'] ? foto_url($n['Foto']) : null, 'napomena' => (string) $n['Napomena'], 'vjetar' => revir_vjetar_lista($n['Vjetar'] ?? null),
             'zauzeto' => $z ? [
                 'id' => (int) $z['Id'], 'ime' => $z['Ime'], 'gost' => $z['Gost'], 'od' => date('H:i', strtotime($z['Od'])),
                 'odDatum' => datum($z['Od']), 'moje' => $k['ClanId'] !== null && (int) $z['ClanId'] === (int) $k['ClanId'],
@@ -449,6 +449,37 @@ function revir_spremi_granice(?array $podaci): void
 function revir_granice(): array
 {
     return revir_granice_podaci()['oblici'] ?? [];
+}
+
+// ---------- Vjetar ----------
+const REVIR_SMJEROVI = ['S', 'SI', 'I', 'JI', 'J', 'JZ', 'Z', 'SZ'];
+function revir_vjetar_ukljucen(): bool
+{
+    return modul('vjetar') && modul('revir');
+}
+/** „SI,I“ → ['SI','I'] (samo ispravni, redom kao na kompasu). */
+function revir_vjetar_lista(?string $s): array
+{
+    $l = array_map('trim', explode(',', strtoupper((string) $s)));
+    return array_values(array_filter(REVIR_SMJEROVI, fn($x) => in_array($x, $l, true)));
+}
+/** Točka za prognozu vjetra: zadano središte karte, inače prosjek naprava sekcija, inače granice. [lat, lon] ili null. */
+function revir_tocka_vremena(array $sekcije): ?array
+{
+    if ($c = revir_centar()) {
+        return [round($c[0], 3), round($c[1], 3)];
+    }
+    $t = array_filter(revir_naprave($sekcije), fn($n) => $n['Lat'] !== null);
+    if ($t) {
+        return [round(array_sum(array_column($t, 'Lat')) / count($t), 3), round(array_sum(array_column($t, 'Lon')) / count($t), 3)];
+    }
+    foreach (revir_granice() as $g) {
+        if (!empty($g['koord'])) {
+            $k = $g['koord'];
+            return [round(array_sum(array_column($k, 0)) / count($k), 3), round(array_sum(array_column($k, 1)) / count($k), 3)];
+        }
+    }
+    return null;
 }
 
 /** Početni prikaz karte: ručno zadan [lat, lon, zoom] ili null. */

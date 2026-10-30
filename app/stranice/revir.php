@@ -29,6 +29,7 @@ $cfg = [
     'danas' => url('revir/danas'),
     'kvarovi' => url('revir/kvarovi'),
     'odabir' => (string) ul('naprava', ''),
+    'vjetar' => revir_vjetar_ukljucen() ? revir_tocka_vremena($sekcije) : null,
 ];
 ob_start(); ?>
 <link rel="stylesheet" href="<?= e(asset('assets/leaflet/leaflet.css')) ?>">
@@ -60,6 +61,7 @@ ob_start(); ?>
         <span><i class="revir-tocka moje"></i> moje</span>
         <span><i class="revir-tocka info"></i> info</span>
         <span>🔧 kvar</span>
+        <?php if ($cfg['vjetar']): ?><span><i class="revir-pin-vjetar dobar static">✓</i><i class="revir-pin-vjetar los static">✗</i> vjetar</span><?php endif; ?>
     </div>
     <button type="button" class="revir-lociraj" id="revir-lociraj" title="Gdje sam?" aria-label="Gdje sam?">◎</button>
     <div id="revir-panel" class="revir-panel" hidden></div>
@@ -69,5 +71,6 @@ ob_start(); ?>
 <script id="revir-cfg" type="application/json"><?= json_encode($cfg, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP) ?></script>
 <script src="<?= e(asset('assets/leaflet/leaflet.js')) ?>"></script>
 <script src="<?= e(asset('assets/revir-foto.js')) ?>"></script>
+<?php if ($cfg['vjetar']): ?><script src="<?= e(asset('assets/vjetar.js')) ?>"></script><?php endif; ?>
 <script src="<?= e(asset('assets/revir.js')) ?>"></script>
 <?php stranica('Karta lovišta', ob_get_clean());

@@ -1,5 +1,13 @@
 # Promjene
 
+## 1.56.0 – 2026-10
+- **💨 Vjetar** (novi modul, *Sustav → Moduli*, zadano uključen; treba modul Lovište):
+  - **Idealni smjerovi vjetra za svaku napravu:** *Karta lovišta → ✏️ Uredi naprave →* naprava *→ ✏️ Uredi* – kompas s 8 strana (S, SI, I, JI, J, JZ, Z, SZ): odakle smije puhati da miris ne ide prema divljači.
+  - **Karta lovišta:** gore lijevo trenutni vjetar (smjer, km/h). Naprave s upisanim smjerovima imaju oznaku **✓** (vjetar povoljan) ili **✗** (nepovoljan); u prozorčiću naprave „Vjetar sada iz SI, 12 km/h – povoljan ✓“.
+  - **Početna – blok „💨 Vjetar – kompas“:** kompas sa strelicom, Beaufort, udari, temperatura, kamo ide vaš miris, stabilnost smjera, vjetar za sljedećih 12 sati i **čeke za ovaj vjetar** (dodir otvara napravu na karti).
+    Za nove instalacije uključen za članove i uloge; ako ste već mijenjali početnu, uključite ga u *Sustav → Početna stranica*.
+  - Prognoza: **Open-Meteo** (besplatno, bez registracije). Dohvaća je mobitel izravno za središte lovišta, sprema 15 min; bez interneta pokazuje zadnju prognozu.
+
 ## 1.55.0 – 2026-10
 - **🎨 Tamna tema:** cijela aplikacija može biti svijetla ili tamna – tamna štedi bateriju i ne zasljepljuje na čeki u sumrak.
   - **⚙️ Sustav → 🎨 Izgled:** zadana tema za sve korisnike – *Svijetla*, *Tamna* ili *Kao uređaj* (prati postavku mobitela/računala). Zadano: svijetla.

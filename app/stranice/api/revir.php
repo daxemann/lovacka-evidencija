@@ -71,6 +71,9 @@ switch ($radnja) {
             'SekcijaId' => $sid, 'Napomena' => mb_substr(ul_str('napomena'), 0, 500) ?: null,
             'Lat' => $koord[0] ?? null, 'Lon' => $koord[1] ?? null, 'Azurirano' => sada(),
         ];
+        if (isset($_POST['vjetarPolje'])) { // obrazac s kompasom (modul Vjetar) – bez njega se postojeći smjerovi ne diraju
+            $polja['Vjetar'] = implode(',', revir_vjetar_lista(implode(',', array_map('strval', (array) ($_POST['vjetar'] ?? []))))) ?: null;
+        }
         if (!$koord && $stara && !isset($_POST['bezPolozaja'])) {
             unset($polja['Lat'], $polja['Lon']); // položaj se ne mijenja
         }

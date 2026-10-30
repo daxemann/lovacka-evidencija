@@ -14,6 +14,9 @@
     var st = { sek: cfg.zadana === null ? '' : String(cfg.zadana), naprave: [], uredi: false, odabrana: null, obrazac: false, postavi: null, prvi: true };
     var markeri = {};
     var privremeni = null;
+    // vjetar (modul Vjetar): trenutni smjer i brzina; naprave s idealnim smjerovima dobivaju ✓ / ✗
+    var VJ = cfg.vjetar && window.EvVjetar ? window.EvVjetar : null, vjetarSada = null;
+    function vjetarOcjena(n) { return VJ && vjetarSada && vjetarSada.smjer !== null && vjetarSada.smjer !== undefined ? VJ.povoljan(n.vjetar, vjetarSada.smjer) : null; }
 
     function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
     function nesigurna(n) { return (n.kvarovi || []).some(function (k) { return k.nesigurno; }); }
@@ -39,6 +42,23 @@
     L.control.layers({ 'Satelit': satelit, 'Karta': osm, 'Topografska': topo }, null, { position: 'topright' }).addTo(karta);
     L.control.scale({ imperial: false }).addTo(karta);
 
+    var vjetarKontrola = null;
+    if (VJ) {
+        vjetarKontrola = L.control({ position: 'topleft' });
+        vjetarKontrola.onAdd = function () { var d = L.DomUtil.create('div', 'revir-vjetar-kontrola'); d.innerHTML = '💨 …'; L.DomEvent.disableClickPropagation(d); return d; };
+        vjetarKontrola.addTo(karta);
+    }
+    function ucitajVjetar() {
+        if (!VJ) return;
+        VJ.dohvati(cfg.vjetar[0], cfg.vjetar[1]).then(function (d) {
+            vjetarSada = d;
+            var el = vjetarKontrola.getContainer();
+            el.innerHTML = '<span class="vjetar-strelica-velika" style="transform:rotate(' + Math.round((d.smjer + 180) % 360) + 'deg)">↑</span>' +
+                '<span><b>iz ' + VJ.smjer(d.smjer) + '</b> · ' + Math.round(d.brzina) + ' km/h' + (d.staro ? ' <small>(staro)</small>' : '') + '<br><small>' + VJ.opisSnage(d.brzina) + '</small></span>';
+            if (!st.prvi) crtaj(); // prvo crtanje (centriranje) čeka naprave
+        }).catch(function () { if (vjetarKontrola) vjetarKontrola.getContainer().innerHTML = '💨 vjetar nedostupan'; });
+    }
+
     var granice = L.featureGroup().addTo(karta);
     (cfg.granice || []).forEach(function (g) {
         var stil = { color: '#ffd400', weight: 3, opacity: 0.95, fillColor: '#ffd400', fillOpacity: 0.04, interactive: false };
@@ -57,6 +77,8 @@
         var z = n.zauzeto, kl = !z ? (n.zauzimanje ? 'slobodno' : 'info') : (z.moje ? 'moje' : 'zauzeto');
         var odabran = st.odabrana === n.id ? ' odabran' : '';
         var ime = (st.uredi || z) ? '<div class="revir-pin-ime">' + esc(z ? (z.gost ? 'gost' : z.ime.split(' ')[0]) : n.naziv) + '</div>' : '';
+        var vo = vjetarOcjena(n);
+        if (vo !== null) ime += '<span class="revir-pin-vjetar ' + (vo ? 'dobar' : 'los') + '" title="' + (vo ? 'Vjetar povoljan' : 'Vjetar nepovoljan') + '">' + (vo ? '✓' : '✗') + '</span>';
         if (n.kvarovi && n.kvarovi.length) ime += '<span class="revir-pin-kvar' + (nesigurna(n) ? ' nesigurno' : '') + '" title="Prijavljen kvar">' + (nesigurna(n) ? '⚠' : '🔧') + '</span>';
         if (n.ikona) {
             return L.divIcon({
@@ -167,6 +189,7 @@
             '<div class="h5 mb-0">' + esc(oznaka(n)) + '</div></div>';
         h += '<div class="small text-muted mb-2">' + esc([n.vrsta, cfg.sekcije.length > 1 ? nazivSekcije(n.sekcija) : ''].filter(Boolean).join(' · ')) + '</div>';
         if (n.napomena) h += '<div class="small mb-2">' + esc(n.napomena) + '</div>';
+        h += vjetarHtml(n);
         h += kvaroviHtml(n);
         if (z) {
             h += '<div class="revir-status zauzeto mb-2">🔴 Zauzeto: <b>' + esc(z.gost ? 'gost' + (z.gost !== 'gost' ? ' ' + z.gost : '') : z.ime) + '</b>' +
@@ -188,6 +211,23 @@
         if (nav || ur) h += '<div class="d-flex gap-2">' + nav + ur + '</div>';
         panel.innerHTML = h;
         panel.hidden = false;
+    }
+
+    function vjetarHtml(n) {
+        if (!VJ) return '';
+        var idealno = n.vjetar && n.vjetar.length ? 'idealno iz: <b>' + n.vjetar.join(', ') + '</b>' : '<span class="text-muted">idealni smjerovi nisu upisani</span>';
+        if (!vjetarSada) return '<div class="revir-vjetar mb-2 small">💨 ' + idealno + '</div>';
+        var vo = vjetarOcjena(n), sada = 'iz <b>' + VJ.smjer(vjetarSada.smjer) + '</b>, ' + Math.round(vjetarSada.brzina) + ' km/h';
+        return '<div class="revir-vjetar mb-2 small ' + (vo === true ? 'dobar' : vo === false ? 'los' : '') + '">💨 Vjetar sada ' + sada +
+            (vo === true ? ' – <b>povoljan ✓</b>' : vo === false ? ' – <b>nepovoljan ✗</b>' : '') + '<br>' + idealno + '</div>';
+    }
+    function vjetarBiracHtml(lista) {
+        // 3×3 kao kompas: SZ S SI / Z · I / JZ J JI
+        var raspored = ['SZ', 'S', 'SI', 'Z', '', 'I', 'JZ', 'J', 'JI'];
+        return '<input type="hidden" name="vjetarPolje" value="1"><div class="vjetar-birac">' + raspored.map(function (s) {
+            if (!s) return '<span class="vjetar-birac-sredina">💨</span>';
+            return '<label><input type="checkbox" name="vjetar[]" value="' + s + '"' + (lista.indexOf(s) >= 0 ? ' checked' : '') + '><span>' + s + '</span></label>';
+        }).join('') + '</div>';
     }
 
     function kvaroviHtml(n) {
@@ -245,6 +285,7 @@
             '<div class="col-8"><label class="form-label small mb-0">Naziv *</label><input name="naziv" class="form-control form-control-sm" maxlength="80" required value="' + esc(n.naziv) + '"></div>' +
             '<div class="col-12"><label class="form-label small mb-0">Vrsta – dodirnite sličicu</label><div class="revir-vrste">' + vr + '</div></div>' +
             '<div class="col-12"><label class="form-label small mb-0">Sekcija</label><select name="sekcija" class="form-select form-select-sm">' + sek + '</select></div>' +
+            (VJ ? '<div class="col-12"><label class="form-label small mb-0">Idealni vjetar – odakle smije puhati (vaš miris ne ide prema divljači)</label>' + vjetarBiracHtml(n.vjetar || []) + '</div>' : '') +
             '<div class="col-12"><label class="form-label small mb-0">Napomena</label><input name="napomena" class="form-control form-control-sm" maxlength="500" value="' + esc(n.napomena) + '"></div>' +
             '<div class="col-12"><label class="form-label small mb-0">Fotografija</label><input type="file" name="foto" accept="image/*" class="form-control form-control-sm">' +
             (n.foto ? '<label class="small mt-1"><input type="checkbox" name="obrisiFoto" value="1"> obriši postojeću</label>' : '') + '</div>' +
@@ -418,6 +459,8 @@
 
     velicina();
     ucitaj();
+    ucitajVjetar();
+    setInterval(function () { if (!document.hidden) ucitajVjetar(); }, 15 * 60 * 1000);
     setInterval(function () { if (!document.hidden && !st.obrazac) ucitaj(); }, 30000);
     document.addEventListener('visibilitychange', function () { if (!document.hidden && !st.obrazac) ucitaj(); });
 })();

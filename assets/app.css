@@ -699,3 +699,38 @@ main {
 [data-bs-theme=dark] .izjava .pod, [data-bs-theme=dark] .izjava .mala, [data-bs-theme=dark] .isk-kartica-tijelo .isk-k-sek { color: #9aa596; }
 /* ostaje svijetlo: iskaznica, QR, potpis (moraju se čitati/skenirati kao na papiru) */
 [data-bs-theme=dark] .isk-kartica, [data-bs-theme=dark] .isk-qr-veliki, [data-bs-theme=dark] .dez-potpis-platno, [data-bs-theme=dark] .dez-potpis-slika { color: #212529; }
+
+/* ---------- Vjetar ---------- */
+.vjetar-kompas { flex: 0 0 auto; }
+.vk-krug { fill: #f4f6f2; stroke: #c9d2c3; stroke-width: 1.5; }
+.vk-crta { stroke: #9aa596; stroke-width: 1; } .vk-glavna { stroke: #3d6b2f; stroke-width: 2; }
+.vk-slovo { font: 700 11px system-ui, sans-serif; fill: #3d4a39; }
+.vk-strelica { fill: #e0a100; stroke: #8a6200; stroke-width: .8; } .vk-rep { fill: #e0a100; }
+.vk-sredina { fill: #fff; stroke: #c9d2c3; } .vk-broj { font: 700 15px system-ui, sans-serif; fill: #1f3d1f; } .vk-jed { font: 7px system-ui, sans-serif; fill: #6c7569; }
+[data-bs-theme=dark] .vk-krug { fill: #182017; stroke: #34402f; } [data-bs-theme=dark] .vk-sredina { fill: #10150f; stroke: #34402f; }
+[data-bs-theme=dark] .vk-slovo { fill: #c9d2c3; } [data-bs-theme=dark] .vk-broj { fill: #e3ead9; } [data-bs-theme=dark] .vk-glavna { stroke: #7fb069; }
+.vjetar-glavno { display: flex; gap: 1rem; align-items: center; }
+@media (max-width: 420px) { .vjetar-glavno { flex-direction: column; align-items: flex-start; } }
+.vjetar-sati { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 2px; text-align: center; }
+.vjetar-sati > div { display: flex; flex-direction: column; align-items: center; line-height: 1.2; }
+.vjetar-strelica { display: inline-block; font-weight: 700; font-size: 1.05rem; color: #e0a100; }
+.vjetar-strelica-velika { display: inline-block; font-weight: 800; font-size: 1.4rem; color: #e0a100; line-height: 1; }
+/* karta */
+.revir-vjetar-kontrola { display: flex; gap: .45rem; align-items: center; background: rgba(255,255,255,.92); border-radius: .4rem; padding: .3rem .55rem; font-size: .8rem; line-height: 1.2;
+    box-shadow: 0 1px 5px rgba(0,0,0,.35); color: #212529; }
+.revir-vjetar-kontrola small { color: #6c757d; }
+[data-bs-theme=dark] .revir-vjetar-kontrola { background: rgba(20,26,19,.92); color: #e3ead9; } [data-bs-theme=dark] .revir-vjetar-kontrola small { color: #9aa596; }
+.revir-pin-vjetar { position: absolute; right: -9px; top: -9px; width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid #fff; color: #fff;
+    font: 800 .7rem/15px system-ui, sans-serif; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,.6); pointer-events: none; }
+.revir-pin-vjetar.dobar { background: #2e7d32; } .revir-pin-vjetar.los { background: #c62828; }
+.revir-pin-vjetar.static { position: static; display: inline-block; width: 14px; height: 14px; font-size: .55rem; line-height: 11px; vertical-align: -1px; margin-right: 1px; }
+.revir-vjetar { border-left: 4px solid #9aa596; background: var(--bs-tertiary-bg); border-radius: .4rem; padding: .4rem .6rem; }
+.revir-vjetar.dobar { border-left-color: #2e7d32; } .revir-vjetar.los { border-left-color: #c62828; }
+.vjetar-birac { display: grid; grid-template-columns: repeat(3, 3.2rem); gap: .3rem; }
+.vjetar-birac label { margin: 0; cursor: pointer; }
+.vjetar-birac input { position: absolute; opacity: 0; pointer-events: none; }
+.vjetar-birac span { display: flex; align-items: center; justify-content: center; height: 2.4rem; border: 2px solid var(--bs-border-color); border-radius: .5rem; font-weight: 700; font-size: .85rem; }
+.vjetar-birac input:checked + span { border-color: #2e7d32; background: #2e7d32; color: #fff; }
+.vjetar-birac input:focus-visible + span { outline: 2px solid #1a73e8; }
+.vjetar-birac-sredina { display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
+@media (max-width: 576px) { .vjetar-sati { grid-template-columns: repeat(6, minmax(0, 1fr)); } .vjetar-sati > div:nth-child(even) { display: none; } }

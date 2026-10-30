@@ -16,6 +16,7 @@ const POCETNA_BLOKOVI = [
     'kvarovi' => ['🔧 Kvarovi na napravama', 'Gumb s brojem otvorenih prijava.', true],
     'obavijest_nova' => ['📢 Pošalji obavijest', 'Gumb – nova obavijest s push porukom na mobitel (samo s pravom Obavijesti).', true],
     'obavijesti' => ['📢 Obavijesti', 'Gumb s brojem nepročitanih obavijesti udruge.', true],
+    'vjetar' => ['💨 Vjetar – kompas', 'Trenutni vjetar, sljedećih 12 sati i čeke koje odgovaraju vjetru (modul Vjetar).', false],
     'danas_popis' => ['🌲 Danas u lovištu – popis', 'Popis zauzetih naprava odmah na početnoj (osvježava se).', false],
     'uprava' => ['🗂️ Uprava – upozorenja', 'Naslov „Uprava“, + Nova radna akcija, članovi čekaju odobrenje, duplikati.', false],
     'termini' => ['📅 Nadolazeći termini', 'Kalendar – sljedeći termini.', false],
@@ -57,8 +58,8 @@ const POCETNA_BLOKOVI = [
     'm_pomoc' => ['❓ Pomoć i kontakt', 'Gumb iz izbornika (Program).', true],
 ];
 const POCETNA_ZADANO = [
-    'clan' => ['sken', 'qr', 'karta', 'danas', 'termini', 'moje_akcije', 'precaci', 'clanarina'],
-    'uloga' => ['sken', 'qr', 'karta', 'danas', 'obavijest_nova', 'uprava', 'termini', 'clanarina', 'brojke', 'rodjendani', 'iskaznice', 'precaci'],
+    'clan' => ['sken', 'qr', 'karta', 'danas', 'vjetar', 'termini', 'moje_akcije', 'precaci', 'clanarina'],
+    'uloga' => ['sken', 'qr', 'karta', 'danas', 'vjetar', 'obavijest_nova', 'uprava', 'termini', 'clanarina', 'brojke', 'rodjendani', 'iskaznice', 'precaci'],
     'glavni' => ['uprava', 'termini', 'clanarina', 'brojke', 'rodjendani', 'iskaznice'],
 ];
 
@@ -181,6 +182,8 @@ function pocetna_blok(string $b, array $k): string
             return modul('obavijesti') && ($cid || ima(P_OBAVIJESTI)) ? pocetna_plocica(url('obavijesti'), '📢', 'Obavijesti', 'obavijesti udruge', '', obav_broj_nepotvrdjenih()) : '';
         case 'danas_popis':
             return $revir() ? pocetna_danas_popis() : '';
+        case 'vjetar':
+            return $revir() && revir_vjetar_ukljucen() ? pocetna_vjetar() : '';
         case 'uprava':
             return $k['Prava'] ? pocetna_uprava() : '';
         case 'termini':
@@ -264,6 +267,27 @@ function pocetna_danas_popis(): string
         $o .= '<li class="list-group-item text-muted">Trenutno nitko nije u lovištu.</li>';
     }
     return $o . '</ul></div>';
+}
+
+/** 💨 Kompas vjetra + 12 sati + čeke za ovaj vjetar. Prognozu dohvaća preglednik (assets/vjetar.js). */
+function pocetna_vjetar(): string
+{
+    $sek = revir_sekcije();
+    $t = revir_tocka_vremena($sek);
+    if (!$t) {
+        return ima(P_REVIR_UREDI) || ima(P_SUSTAV) ? '<div class="alert alert-secondary small">💨 Za vjetar unesite lovne naprave na karti ili središte karte (Postavke lovišta).</div>' : '';
+    }
+    $naprave = [];
+    foreach (revir_naprave($sek) as $n) {
+        if ($l = revir_vjetar_lista($n['Vjetar'] ?? null)) {
+            $naprave[] = ['id' => (int) $n['Id'], 'n' => ($n['Broj'] !== null && $n['Broj'] !== '' ? $n['Broj'] . ' · ' : '') . $n['Naziv'], 'v' => $l];
+        }
+    }
+    $pod = ['t' => $t, 'n' => $naprave, 'karta' => url('revir'), 'u' => ima(P_REVIR_UREDI)];
+    return '<div class="card mb-3 vjetar-blok" data-vjetar-blok><div class="card-header d-flex align-items-center"><b class="me-auto">💨 Vjetar u lovištu</b>'
+        . '<span class="small text-muted" data-vj-vrijeme></span></div><div class="card-body" data-vj-tijelo><div class="text-muted small">Učitavam vjetar…</div></div>'
+        . '<script type="application/json" data-vj-podaci>' . json_encode($pod, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP) . '</script></div>'
+        . '<script src="' . e(asset('assets/vjetar.js')) . '"></script><script src="' . e(asset('assets/vjetar-blok.js')) . '"></script>';
 }
 
 function pocetna_uprava(): string
