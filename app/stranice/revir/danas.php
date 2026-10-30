@@ -26,6 +26,7 @@ ob_start(); ?>
     <h1 class="h3 mb-0 me-auto">Danas u lovištu</h1>
     <a class="btn btn-sm btn-outline-secondary" href="<?= e(url('revir')) ?>">Karta lovišta</a>
 </div>
+<?php if (revir_vrijeme_ukljuceno()) echo pocetna_vrijeme(); ?>
 <p class="text-muted small">Trenutno zauzete lovne naprave<?= count($sekcije) > 1 ? ' po sekcijama' : '' ?>. Osvježava se svakih 30 s.</p>
 <?php if (!$zauzete): ?><div class="alert alert-secondary">Trenutno nitko nije u lovištu.</div><?php endif; ?>
 <?php foreach ($poSekciji as $sid => $lista): ?>

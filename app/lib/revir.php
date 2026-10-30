@@ -457,6 +457,10 @@ function revir_vjetar_ukljucen(): bool
 {
     return modul('vjetar') && modul('revir');
 }
+function revir_vrijeme_ukljuceno(): bool
+{
+    return modul('vrijeme') && modul('revir');
+}
 /** „SI,I“ → ['SI','I'] (samo ispravni, redom kao na kompasu). */
 function revir_vjetar_lista(?string $s): array
 {

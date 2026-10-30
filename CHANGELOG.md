@@ -1,5 +1,14 @@
 # Promjene
 
+## 1.57.0 – 2026-10
+- **🌤️ Vrijeme i Mjesec** (novi modul, *Sustav → Moduli*, zadano uključen; treba modul Lovište) – blok **„🌤️ Vrijeme u lovištu“** na početnoj i na vrhu stranice **🌲 Danas u lovištu**:
+  - **Svjetlo dana:** zora, izlazak i zalazak Sunca, sumrak, dužina dana – za vaše lovište.
+  - **Mjesec:** mijena i osvijetljenost s kratkim savjetom (svijetla / tamna noć).
+  - **Temperatura i kiša** (vjerojatnost u sljedećih 6 sati).
+  - **🎯 Kad u lov?** – danas i sutra, jutro (zora – 2 h nakon izlaska) i večer (2 h prije zalaska – sumrak): ✅ Dobro / 🤏 Slabije / ❌ Loše s razlogom (vjetar, kiša, pun mjesec, „vedri se nakon kiše“) i preporuka najboljeg termina.
+  - Sunce i Mjesec računa mobitel sam – **rade i bez interneta**. Prognoza: Open-Meteo (kao kod vjetra).
+  - Za nove instalacije blok je uključen za članove i uloge; ako ste već mijenjali početnu, uključite ga u *Sustav → Početna stranica*.
+
 ## 1.56.0 – 2026-10
 - **💨 Vjetar** (novi modul, *Sustav → Moduli*, zadano uključen; treba modul Lovište):
   - **Idealni smjerovi vjetra za svaku napravu:** *Karta lovišta → ✏️ Uredi naprave →* naprava *→ ✏️ Uredi* – kompas s 8 strana (S, SI, I, JI, J, JZ, Z, SZ): odakle smije puhati da miris ne ide prema divljači.

@@ -32,21 +32,27 @@ window.EvVjetar = (function () {
     }
 
     function dohvati(lat, lon) {
-        var kljuc = 'ev-vjetar:' + (+lat).toFixed(2) + ',' + (+lon).toFixed(2), sad = Date.now();
+        var kljuc = 'ev-vrijeme2:' + (+lat).toFixed(2) + ',' + (+lon).toFixed(2), sad = Date.now();
         try {
             var c = JSON.parse(localStorage.getItem(kljuc) || 'null');
             if (c && sad - c.t < TRAJANJE) return Promise.resolve(c.d);
         } catch (x) { /* ništa */ }
         var url = 'https://api.open-meteo.com/v1/forecast?latitude=' + (+lat).toFixed(3) + '&longitude=' + (+lon).toFixed(3) +
             '&current=temperature_2m,wind_speed_10m,wind_direction_10m,wind_gusts_10m,precipitation,cloud_cover' +
-            '&hourly=wind_speed_10m,wind_direction_10m&forecast_hours=12&wind_speed_unit=kmh&timezone=auto';
+            '&hourly=wind_speed_10m,wind_direction_10m,wind_gusts_10m,temperature_2m,precipitation,precipitation_probability&past_hours=6&forecast_hours=48&wind_speed_unit=kmh&timezone=auto';
         return fetch(url).then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); }).then(function (j) {
             var c = j.current || {}, h = j.hourly || {};
             var d = {
                 smjer: c.wind_direction_10m, brzina: c.wind_speed_10m, udari: c.wind_gusts_10m, temp: c.temperature_2m,
                 oborine: c.precipitation, naoblaka: c.cloud_cover, vrijeme: c.time,
-                sati: (h.time || []).map(function (t, i) { return { sat: t.slice(11, 13), smjer: h.wind_direction_10m[i], brzina: h.wind_speed_10m[i] }; })
+                // svi sati (6 prošlih + 48 sljedećih) za ocjenu „Kad u lov?“; „sati“ = sljedećih 12 za prikaz vjetra
+                svi: (h.time || []).map(function (t, i) {
+                    return { t: t, sat: t.slice(11, 13), smjer: h.wind_direction_10m[i], brzina: h.wind_speed_10m[i], udari: (h.wind_gusts_10m || [])[i],
+                        temp: (h.temperature_2m || [])[i], kisa: (h.precipitation || [])[i] || 0, vjer: (h.precipitation_probability || [])[i] || 0 };
+                })
             };
+            var od = (c.time || '').slice(0, 13);
+            d.sati = d.svi.filter(function (x) { return x.t.slice(0, 13) >= od; }).slice(0, 12);
             try { localStorage.setItem(kljuc, JSON.stringify({ t: sad, d: d })); } catch (x) { /* ništa */ }
             return d;
         }).catch(function (e) {

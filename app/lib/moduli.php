@@ -24,6 +24,8 @@ function moduli(): array
             P_REVIR_UREDI | P_REVIR_NADZOR | P_REVIR_DNEVNIK, ['revir', 'revir/', 'api/revir', 'izvoz/kvarovi-pdf']],
         'vjetar' => ['💨', 'Vjetar', 'Trenutni vjetar za lovište (Open-Meteo, besplatno), idealni smjerovi vjetra za čeke na karti, kompas na početnoj. Treba modul Lovište.',
             0, []],
+        'vrijeme' => ['🌤️', 'Vrijeme i Mjesec', 'Danas u lovištu: zora, izlazak i zalazak Sunca, Mjesec, temperatura, kiša i „Kad u lov?“ za danas i sutra. Treba modul Lovište.',
+            0, []],
         'grupni' => ['🎯', 'Skupni lov', 'Poziv lovcima, karta uživo, SOS, popis sudionika (skeniranje iskaznica).',
             P_GRUPNI_LOV, ['grupni-lov', 'grupni-odgovor', 'grupni-popis', 'grupni-zapisnik', 'api/grupni-lov', 'api/grupni-popis', 'sustav/skupni-lov']],
         'iskaznice' => ['🪪', 'Članske iskaznice (QR)', 'Iskaznica s fotografijom i QR kodom (PDF i u aplikaciji).',

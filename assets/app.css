@@ -734,3 +734,15 @@ main {
 .vjetar-birac input:focus-visible + span { outline: 2px solid #1a73e8; }
 .vjetar-birac-sredina { display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
 @media (max-width: 576px) { .vjetar-sati { grid-template-columns: repeat(6, minmax(0, 1fr)); } .vjetar-sati > div:nth-child(even) { display: none; } }
+
+/* ---------- Vrijeme i Mjesec ---------- */
+.vrijeme-svjetlo { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: .25rem; text-align: center; }
+.vrijeme-svjetlo span { display: block; font-size: .7rem; text-transform: uppercase; letter-spacing: .04em; color: var(--bs-secondary-color); }
+.vrijeme-svjetlo b { font-size: 1.05rem; } .vrijeme-svjetlo .vr-istaknuto { color: #c98a00; }
+[data-bs-theme=dark] .vrijeme-svjetlo .vr-istaknuto { color: #f0b43c; }
+.vrijeme-red { display: flex; align-items: center; gap: .75rem; padding-top: .6rem; border-top: 1px solid var(--bs-border-color); }
+.vr-mjesec { font-size: 2.2rem; line-height: 1; }
+.vr-najbolje { background: #eef6ea; border: 1px solid #cfe3c6; border-radius: .5rem; padding: .45rem .65rem; font-size: .9rem; }
+[data-bs-theme=dark] .vr-najbolje { background: #1c3318; border-color: #34502b; }
+.vr-kad .table td { padding: .3rem .4rem; }
+@media (max-width: 420px) { .vrijeme-svjetlo b { font-size: .9rem; } .vrijeme-svjetlo span { font-size: .6rem; } }

@@ -16,6 +16,7 @@ const POCETNA_BLOKOVI = [
     'kvarovi' => ['🔧 Kvarovi na napravama', 'Gumb s brojem otvorenih prijava.', true],
     'obavijest_nova' => ['📢 Pošalji obavijest', 'Gumb – nova obavijest s push porukom na mobitel (samo s pravom Obavijesti).', true],
     'obavijesti' => ['📢 Obavijesti', 'Gumb s brojem nepročitanih obavijesti udruge.', true],
+    'vrijeme' => ['🌤️ Vrijeme i Mjesec', 'Zora, izlazak/zalazak, Mjesec, temperatura, kiša i „Kad u lov?“ danas i sutra (modul Vrijeme i Mjesec).', false],
     'vjetar' => ['💨 Vjetar – kompas', 'Trenutni vjetar, sljedećih 12 sati i čeke koje odgovaraju vjetru (modul Vjetar).', false],
     'danas_popis' => ['🌲 Danas u lovištu – popis', 'Popis zauzetih naprava odmah na početnoj (osvježava se).', false],
     'uprava' => ['🗂️ Uprava – upozorenja', 'Naslov „Uprava“, + Nova radna akcija, članovi čekaju odobrenje, duplikati.', false],
@@ -58,8 +59,8 @@ const POCETNA_BLOKOVI = [
     'm_pomoc' => ['❓ Pomoć i kontakt', 'Gumb iz izbornika (Program).', true],
 ];
 const POCETNA_ZADANO = [
-    'clan' => ['sken', 'qr', 'karta', 'danas', 'vjetar', 'termini', 'moje_akcije', 'precaci', 'clanarina'],
-    'uloga' => ['sken', 'qr', 'karta', 'danas', 'vjetar', 'obavijest_nova', 'uprava', 'termini', 'clanarina', 'brojke', 'rodjendani', 'iskaznice', 'precaci'],
+    'clan' => ['sken', 'qr', 'karta', 'danas', 'vrijeme', 'vjetar', 'termini', 'moje_akcije', 'precaci', 'clanarina'],
+    'uloga' => ['sken', 'qr', 'karta', 'danas', 'vrijeme', 'vjetar', 'obavijest_nova', 'uprava', 'termini', 'clanarina', 'brojke', 'rodjendani', 'iskaznice', 'precaci'],
     'glavni' => ['uprava', 'termini', 'clanarina', 'brojke', 'rodjendani', 'iskaznice'],
 ];
 
@@ -182,6 +183,8 @@ function pocetna_blok(string $b, array $k): string
             return modul('obavijesti') && ($cid || ima(P_OBAVIJESTI)) ? pocetna_plocica(url('obavijesti'), '📢', 'Obavijesti', 'obavijesti udruge', '', obav_broj_nepotvrdjenih()) : '';
         case 'danas_popis':
             return $revir() ? pocetna_danas_popis() : '';
+        case 'vrijeme':
+            return $revir() && revir_vrijeme_ukljuceno() ? pocetna_vrijeme() : '';
         case 'vjetar':
             return $revir() && revir_vjetar_ukljucen() ? pocetna_vjetar() : '';
         case 'uprava':
@@ -267,6 +270,20 @@ function pocetna_danas_popis(): string
         $o .= '<li class="list-group-item text-muted">Trenutno nitko nije u lovištu.</li>';
     }
     return $o . '</ul></div>';
+}
+
+/** 🌤️ Sunce, Mjesec, vrijeme i „Kad u lov?“ – računa preglednik (assets/astro.js, assets/vjetar.js). */
+function pocetna_vrijeme(): string
+{
+    $t = revir_tocka_vremena(revir_sekcije());
+    if (!$t) {
+        return '';
+    }
+    return '<div class="card mb-3 vrijeme-blok" data-vrijeme-blok data-lat="' . e((string) $t[0]) . '" data-lon="' . e((string) $t[1]) . '">'
+        . '<div class="card-header d-flex align-items-center"><b class="me-auto">🌤️ Vrijeme u lovištu</b><span class="small text-muted text-end" data-vr-vrijeme></span></div>'
+        . '<div class="card-body" data-vr-tijelo><div class="text-muted small">Učitavam…</div></div></div>'
+        . '<script src="' . e(asset('assets/astro.js')) . '"></script><script src="' . e(asset('assets/vjetar.js')) . '"></script>'
+        . '<script src="' . e(asset('assets/vrijeme-blok.js')) . '"></script>';
 }
 
 /** 💨 Kompas vjetra + 12 sati + čeke za ovaj vjetar. Prognozu dohvaća preglednik (assets/vjetar.js). */
