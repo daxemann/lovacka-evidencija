@@ -1,5 +1,11 @@
 # Promjene
 
+## 1.62.3 – 2026-10
+- **Uloge i prava – preglednija tablica:** prava su sada **redovi grupirani po područjima** (Članovi i udruga, Kalendar/obavijesti, Dezinfekcija, Lovište i lov, Inventura/domovi/popusti, Administracija), a **uloge su stupci**.
+  Naziv prava (lijevo) i nazivi uloga (gore) **ostaju vidljivi pri pomicanju**, redak i stupac se ističu pod mišem. Kratak opis prava stoji uz naziv.
+- Izbornik **„Prikaži“**: samo jedna uloga – pregledno i na mobitelu.
+- Nazivi i opisi uloga uređuju se u zasebnom popisu iznad tablice (s brojem članova i brojem prava). Gumb **Spremi** uvijek je vidljiv na dnu.
+
 ## 1.62.2 – 2026-10
 - **Logo programa doteran:** srnjak prirodnijih proporcija (kratak vrat, duge noge, šesterac), mirnije boje sumraka; noge ne nestaju iza donje grede absehena.
 

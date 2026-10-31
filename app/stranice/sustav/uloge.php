@@ -75,38 +75,106 @@ if (je_post()) {
 }
 $uloge = redovi('SELECT u.*, (SELECT COUNT(*) FROM KorisnikUloge ku WHERE ku.UlogaId=u.Id) AS Broj FROM Uloge u ORDER BY u.Id');
 $funkcije = redovi('SELECT f.*, (SELECT COUNT(*) FROM ClanFunkcije cf WHERE cf.FunkcijaId=f.Id AND cf.Do IS NULL) AS Broj FROM Funkcije f ORDER BY f.Redoslijed, f.Naziv');
-$kratko = [P_CLANOVI_CITAJ => 'Članovi<br>pregled', P_CLANOVI_UREDI => 'Članovi<br>uređ.', P_CLANARINA_CITAJ => 'Članarina<br>pregled', P_CLANARINA_UREDI => 'Članarina<br>uređ.',
-    P_AKCIJE_CITAJ => 'Akcije<br>pregled', P_AKCIJE_ODOBRI => 'Akcije<br>unos/odobr.', P_IZVJESTAJI => 'Izvještaji<br>poruke', P_SUSTAV => 'Sustav',
-    P_KALENDAR => 'Kalendar<br>uređ.', P_IMENIK_SVI => 'Imenik<br>svi kontakti',
-    P_DEZ_PREGLED => 'Dezinf.<br>pregled', P_DEZ_UREDI => 'Dezinf.<br>naknadno', P_DEZ_POSTAVKE => 'Dezinf.<br>stanice/QR', P_DEZ_MOBILNA => 'Dezinf.<br>mobilna', P_DEZ_ZA_DRUGE => 'Dezinf.<br>upis za druge',
-    P_REVIR_UREDI => 'Lovište<br>naprave', P_REVIR_NADZOR => 'Lovište<br>nadzor', P_REVIR_DNEVNIK => 'Lovački<br>dnevnik', P_INVENTURA => 'Inventura<br>pregled', P_INVENTURA_UREDI => 'Inventura<br>uređ.', P_OBAVIJESTI => 'Obavijesti<br>slanje', P_GRUPNI_LOV => 'Skupni lov<br>organizacija', P_DOMOVI => 'Lovački<br>domovi', P_POPUSTI => 'Popusti<br>trgovine', P_ODSTREL_CITAJ => 'Odstrel<br>pregled', P_ODSTREL => 'Odstrel<br>upis'];
-$kratko = array_filter($kratko, fn($p) => !($p & moduli_iskljucena_prava()), ARRAY_FILTER_USE_KEY); // isključeni moduli – stupci skriveni
+// prava grupirana po područjima – redovi tablice (uloge su stupci)
+$grupe = [
+    '👥 Članovi i udruga' => [P_CLANOVI_CITAJ, P_CLANOVI_UREDI, P_IMENIK_SVI, P_CLANARINA_CITAJ, P_CLANARINA_UREDI, P_AKCIJE_CITAJ, P_AKCIJE_ODOBRI],
+    '📢 Kalendar, obavijesti, izvještaji' => [P_KALENDAR, P_OBAVIJESTI, P_IZVJESTAJI],
+    '🧴 Dezinfekcija' => [P_DEZ_PREGLED, P_DEZ_UREDI, P_DEZ_POSTAVKE, P_DEZ_MOBILNA, P_DEZ_ZA_DRUGE],
+    '🌲 Lovište i lov' => [P_REVIR_UREDI, P_REVIR_NADZOR, P_REVIR_DNEVNIK, P_GRUPNI_LOV, P_ODSTREL_CITAJ, P_ODSTREL],
+    '📦 Inventura, domovi, popusti' => [P_INVENTURA, P_INVENTURA_UREDI, P_DOMOVI, P_POPUSTI],
+    '⚙️ Administracija' => [P_SUSTAV],
+];
+$skriveno = moduli_iskljucena_prava(); // isključeni moduli – redovi skriveni
+foreach ($grupe as $g => $pp) {
+    $grupe[$g] = array_values(array_filter($pp, fn($p) => !($p & $skriveno)));
+    if (!$grupe[$g]) {
+        unset($grupe[$g]);
+    }
+}
+$brojPrava = fn(array $u) => count(array_filter(array_merge(...array_values($grupe)), fn($p) => ((int) $u['Prava'] & $p) === $p));
 ob_start(); ?>
+<style>
+    .uloge-mat { max-height: 75vh; overflow: auto; border: 1px solid var(--bs-border-color); border-radius: .5rem; }
+    .uloge-mat table { margin: 0; border-collapse: separate; border-spacing: 0; }
+    .uloge-mat th, .uloge-mat td { background: var(--bs-body-bg); }
+    .uloge-mat thead th { position: sticky; top: 0; z-index: 2; vertical-align: bottom; box-shadow: inset 0 -2px 0 var(--bs-border-color); }
+    .uloge-mat .pravo { position: sticky; left: 0; z-index: 1; min-width: 210px; max-width: 320px; box-shadow: inset -2px 0 0 var(--bs-border-color); }
+    .uloge-mat thead th.pravo { z-index: 3; }
+    .uloge-mat .ul-stup { min-width: 5.5rem; max-width: 8rem; text-align: center; font-size: .8rem; line-height: 1.15; white-space: normal; }
+    .uloge-mat tr.grupa td { background: var(--bs-tertiary-bg); font-weight: 600; font-size: .85rem; padding-top: .6rem; }
+    .uloge-mat tbody tr:not(.grupa):hover td, .uloge-mat td.hl, .uloge-mat th.hl { background: var(--bs-primary-bg-subtle); }
+    .uloge-mat td.ul-stup input { width: 1.25rem; height: 1.25rem; cursor: pointer; }
+    .uloge-mat td.ul-stup input:disabled { cursor: not-allowed; }
+    @media (max-width: 576px) { .uloge-mat .pravo { min-width: 8.5rem; max-width: 10rem; font-size: .85rem; } .uloge-mat .ul-stup { min-width: 4.5rem; } }
+    .uloge-spremi { position: sticky; bottom: 0; z-index: 4; background: var(--bs-body-bg); padding: .6rem 0; border-top: 1px solid var(--bs-border-color); }
+</style>
 <h1 class="h3 mb-1">Uloge i prava</h1>
-<p class="text-muted">Uloge se dodjeljuju na kartici člana (Članovi → član → Pristup i uloge). Sekcije su odvojene: uloga vrijedi samo za odabranu sekciju, osim ako je označeno „Smije sve sekcije“ (npr. Glavni admin, Blagajnik). Ne zaboravite „Spremi“ nakon promjene. Obični član bez uloge vidi samo svoje podatke.</p>
+<p class="text-muted">Uloge se dodjeljuju na kartici člana (Članovi → član → Pristup i uloge). Sekcije su odvojene: uloga vrijedi samo za odabranu sekciju, osim ako je označeno „Smije sve sekcije“ (npr. Glavni admin, Blagajnik). Obični član bez uloge vidi samo svoje podatke.</p>
 <form method="post" action="<?= e(url('sustav/uloge')) ?>"><?= csrf() ?><input type="hidden" name="radnja" value="spremi">
-<div class="table-responsive"><table class="table table-sm align-middle">
-    <thead><tr><th>Uloga</th>
-        <?php foreach ($kratko as $p => $t): ?><th class="text-center small" title="<?= e(PRAVA_OPIS[$p][1]) ?>"><?= $t ?></th><?php endforeach; ?>
-        <th class="text-center small">Smije sve sekcije</th><th></th></tr></thead>
+
+<h2 class="h5 mt-4">1. Uloge</h2>
+<div class="table-responsive" style="max-width:900px"><table class="table table-sm align-middle">
+    <thead><tr><th>Naziv</th><th>Opis</th><th class="text-center small">članova</th><th class="text-center small">prava</th><th></th></tr></thead>
     <tbody>
-    <?php foreach ($uloge as $u): $i = (int) $u['Id']; $dis = $u['Sustavna'] ? ' disabled' : ''; ?>
+    <?php foreach ($uloge as $u): $i = (int) $u['Id']; ?>
         <tr>
-            <td style="min-width:200px"><input name="u[<?= $i ?>][Naziv]" class="form-control form-control-sm" value="<?= e($u['Naziv']) ?>">
-                <input name="u[<?= $i ?>][Opis]" class="form-control form-control-sm mt-1 text-muted" value="<?= e($u['Opis']) ?>" placeholder="opis (neobavezno)"></td>
-            <?php foreach ($kratko as $p => $t): ?>
-                <td class="text-center"><input type="checkbox" class="form-check-input" name="u[<?= $i ?>][p][]" value="<?= $p ?>"<?= chk(((int) $u['Prava'] & $p) === $p) . $dis ?>></td>
-            <?php endforeach; ?>
-            <td class="text-center"><input type="checkbox" class="form-check-input" name="u[<?= $i ?>][SveSekcije]" value="1"<?= chk($u['SveSekcije']) . $dis ?>></td>
-            <td class="text-nowrap small"><?php if ($u['Sustavna']): ?><span class="small text-muted">sistemska</span>
-                <?php else: ?><button class="btn btn-sm btn-link text-danger" form="obrisi<?= $i ?>" data-potvrda="Obrisati ulogu?">Obriši</button><?php endif; ?>
-                <div class="text-muted"><?= (int) $u['Broj'] ?>×</div></td>
+            <td style="min-width:170px"><input name="u[<?= $i ?>][Naziv]" class="form-control form-control-sm fw-semibold" value="<?= e($u['Naziv']) ?>"></td>
+            <td style="min-width:200px"><input name="u[<?= $i ?>][Opis]" class="form-control form-control-sm text-muted" value="<?= e($u['Opis']) ?>" placeholder="opis (neobavezno)"></td>
+            <td class="text-center"><?= (int) $u['Broj'] ?></td>
+            <td class="text-center small text-muted"><?= $u['Sustavna'] ? 'sva' : $brojPrava($u) ?></td>
+            <td class="text-nowrap text-end"><?php if ($u['Sustavna']): ?><span class="small text-muted">sistemska</span>
+                <?php else: ?><button class="btn btn-sm btn-link text-danger" form="obrisi<?= $i ?>" data-potvrda="Obrisati ulogu?">Obriši</button><?php endif; ?></td>
         </tr>
     <?php endforeach; ?>
     </tbody>
 </table></div>
-<button class="btn btn-primary">Spremi</button>
+
+<div class="d-flex flex-wrap align-items-end gap-2 mt-4 mb-2">
+    <h2 class="h5 mb-0 me-auto">2. Tko smije što</h2>
+    <label class="small text-muted">Prikaži
+        <select id="ulogaFilter" class="form-select form-select-sm d-inline-block w-auto ms-1">
+            <option value="">sve uloge</option>
+            <?php foreach ($uloge as $u): ?><option value="<?= (int) $u['Id'] ?>"><?= e($u['Naziv']) ?></option><?php endforeach; ?>
+        </select></label>
+</div>
+<p class="small text-muted mb-2">Redovi su prava (grupirana po područjima), stupci su uloge. Naslovi ostaju vidljivi pri pomicanju. Za opis prava zadržite miš / dodirnite naziv.</p>
+<div class="uloge-mat"><table class="table table-sm align-middle">
+    <thead><tr><th class="pravo">Pravo</th>
+        <?php foreach ($uloge as $u): ?><th class="ul-stup" data-u="<?= (int) $u['Id'] ?>"><?= e($u['Naziv']) ?><div class="fw-normal text-muted"><?= (int) $u['Broj'] ?>×</div></th><?php endforeach; ?>
+    </tr></thead>
+    <tbody>
+    <?php foreach ($grupe as $g => $pp): ?>
+        <tr class="grupa"><td class="pravo"><?= e($g) ?></td><?php foreach ($uloge as $u): ?><td data-u="<?= (int) $u['Id'] ?>"></td><?php endforeach; ?></tr>
+        <?php foreach ($pp as $p): ?>
+            <tr><td class="pravo"><span title="<?= e(PRAVA_OPIS[$p][1]) ?>"><?= e(PRAVA_OPIS[$p][0]) ?></span>
+                    <div class="small text-muted d-none d-md-block text-truncate" style="max-width:300px" title="<?= e(PRAVA_OPIS[$p][1]) ?>"><?= e(PRAVA_OPIS[$p][1]) ?></div></td>
+                <?php foreach ($uloge as $u): $i = (int) $u['Id']; ?>
+                    <td class="ul-stup" data-u="<?= $i ?>"><input type="checkbox" class="form-check-input" name="u[<?= $i ?>][p][]" value="<?= $p ?>" title="<?= e($u['Naziv'] . ' – ' . PRAVA_OPIS[$p][0]) ?>"<?= chk(((int) $u['Prava'] & $p) === $p) . ($u['Sustavna'] ? ' disabled' : '') ?>></td>
+                <?php endforeach; ?></tr>
+        <?php endforeach; ?>
+        <?php if ($g === array_key_last($grupe)): ?>
+            <tr><td class="pravo">Smije sve sekcije<div class="small text-muted d-none d-md-block">uloga vrijedi za sve sekcije, ne samo za sekciju člana</div></td>
+                <?php foreach ($uloge as $u): $i = (int) $u['Id']; ?>
+                    <td class="ul-stup" data-u="<?= $i ?>"><input type="checkbox" class="form-check-input" name="u[<?= $i ?>][SveSekcije]" value="1" title="<?= e($u['Naziv'] . ' – smije sve sekcije') ?>"<?= chk($u['SveSekcije']) . ($u['Sustavna'] ? ' disabled' : '') ?>></td>
+                <?php endforeach; ?></tr>
+        <?php endif; ?>
+    <?php endforeach; ?>
+    </tbody>
+</table></div>
+<div class="uloge-spremi"><button class="btn btn-primary">Spremi</button> <span class="small text-muted ms-2">Ne zaboravite spremiti nakon promjene.</span></div>
 </form>
+<script>
+(function () {
+    var mat = document.querySelector('.uloge-mat');
+    function oznaci(id, da) { mat.querySelectorAll('[data-u="' + id + '"]').forEach(function (c) { c.classList.toggle('hl', da); }); }
+    mat.addEventListener('mouseover', function (e) { var c = e.target.closest('[data-u]'); if (c) oznaci(c.dataset.u, true); });
+    mat.addEventListener('mouseout', function (e) { var c = e.target.closest('[data-u]'); if (c) oznaci(c.dataset.u, false); });
+    document.getElementById('ulogaFilter').addEventListener('change', function () {
+        var v = this.value;
+        mat.querySelectorAll('[data-u]').forEach(function (c) { c.style.display = (!v || c.dataset.u === v) ? '' : 'none'; });
+    });
+})();
+</script>
 <?php foreach ($uloge as $u): if ($u['Sustavna']) continue; ?>
     <form method="post" action="<?= e(url('sustav/uloge')) ?>" id="obrisi<?= (int) $u['Id'] ?>"><?= csrf() ?><input type="hidden" name="radnja" value="obrisi"><input type="hidden" name="id" value="<?= (int) $u['Id'] ?>"></form>
 <?php endforeach; ?>
@@ -114,9 +182,6 @@ ob_start(); ?>
     <div class="col-8"><label class="form-label">Nova uloga</label><input name="Naziv" class="form-control" maxlength="60" required placeholder="npr. Mali administrator"></div>
     <div class="col-4"><button class="btn btn-outline-primary w-100">Dodaj</button></div>
 </form>
-<ul class="small text-muted mt-3">
-    <?php foreach (PRAVA_OPIS as [$n, $o]): ?><li><b><?= e($n) ?></b> – <?= e($o) ?></li><?php endforeach; ?>
-</ul>
 
 <h2 class="h4 mt-5 mb-1">Funkcije u udruzi</h2>
 <p class="text-muted">Funkcije se upisuju na kartici člana (Funkcije). „Oslobođen članarine“ npr. za počasne članove – takvi se ne zadužuju članarinom.</p>
