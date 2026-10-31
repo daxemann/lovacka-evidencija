@@ -23,12 +23,12 @@
     function oznaka(n) { return (n.broj ? n.broj + ' · ' : '') + n.naziv; }
     function nadji(id) { for (var i = 0; i < st.naprave.length; i++) if (st.naprave[i].id === id) return st.naprave[i]; return null; }
     function nazivSekcije(id) { for (var i = 0; i < cfg.sekcije.length; i++) if (cfg.sekcije[i].id === id) return cfg.sekcije[i].naziv; return ''; }
-    function obavijest(t, greska) {
+    function obavijest(t, greska, ms) {
         var o = document.getElementById('obavijest');
         if (!o) { window.alert(t); return; }
         o.innerHTML = '<div class="flex-grow-1' + (greska ? ' text-danger fw-semibold' : '') + '">' + esc(t) + '</div>';
         o.style.display = 'flex';
-        clearTimeout(obavijest.t); obavijest.t = setTimeout(function () { o.style.display = 'none'; }, greska ? 7000 : 3500);
+        clearTimeout(obavijest.t); obavijest.t = setTimeout(function () { o.style.display = 'none'; }, ms || (greska ? 7000 : 3500));
     }
 
     // ---------- Karta ----------
@@ -323,6 +323,16 @@
     }
 
     // ---------- Lokacija ----------
+    var IOS = /iphone|ipad|ipod/i.test(navigator.userAgent || '') || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    var APP = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+    /** Razumljiva poruka za grešku lokacije – na iPhoneu ikona na početnom zaslonu koristi dopuštenje „Safari web-stranice“, ne ono od Chromea. */
+    function lokGreska(er) {
+        if (er && er.code === 1) {
+            if (IOS) return 'Lokacija nije dopuštena. iPhone: Postavke → Privatnost i sigurnost → Lokacijske usluge → uključeno, zatim „Safari web-stranice“ → „Tijekom upotrebe aplikacije“ i „Precizna lokacija“. ' + (APP ? 'Aplikaciju zatvorite (povucite gore) i ponovno otvorite.' : 'Osvježite stranicu.');
+            return 'Lokacija nije dopuštena. Dopustite lokaciju za ovu stranicu (ikona lokota / ⓘ pored adrese → Dopuštenja → Lokacija) i uključite lokaciju na mobitelu.';
+        }
+        return 'Lokacija trenutno nije dostupna – uključite lokaciju (GPS) na mobitelu i pokušajte na otvorenom.';
+    }
     function najboljaLokacija(gotovo, info) {
         if (!navigator.geolocation || !window.isSecureContext) { obavijest('Lokacija radi samo preko https:// adrese.', true); return; }
         var najb = null, kraj = false;
@@ -331,7 +341,7 @@
         var w = navigator.geolocation.watchPosition(function (p) {
             if (!najb || p.coords.accuracy < najb.accuracy) { najb = p.coords; info && info('Točnost ±' + Math.round(najb.accuracy) + ' m…'); }
             if (najb.accuracy <= 12) zavrsi();
-        }, function (er) { if (er.code === 1) { kraj = true; obavijest('Lokacija nije dopuštena u pregledniku.', true); } }, { enableHighAccuracy: true, maximumAge: 0, timeout: 20000 });
+        }, function (er) { if (er.code === 1) { kraj = true; navigator.geolocation.clearWatch(w); obavijest(lokGreska(er), true, 20000); } }, { enableHighAccuracy: true, maximumAge: 0, timeout: 20000 });
         setTimeout(zavrsi, 15000);
     }
     var ja = null, jaKrug = null, jaWatch = null;
@@ -346,7 +356,10 @@
             if (!ja) { jaKrug = L.circle(ll, { radius: p.coords.accuracy, weight: 1, color: '#1a73e8', fillOpacity: 0.1, interactive: false }).addTo(karta); ja = L.circleMarker(ll, { radius: 7, color: '#fff', weight: 2, fillColor: '#1a73e8', fillOpacity: 1, interactive: false }).addTo(karta); }
             else { ja.setLatLng(ll); jaKrug.setLatLng(ll).setRadius(p.coords.accuracy); }
             if (prvi) { prvi = false; karta.setView(ll, Math.max(karta.getZoom(), 16)); }
-        }, function () { obavijest('Lokacija nije dostupna.', true); b.classList.remove('aktivan'); jaWatch = null; }, { enableHighAccuracy: true, maximumAge: 5000 });
+        }, function (er) {
+            if (er.code !== 1 && ja) return; // kratki prekid signala – praćenje ide dalje, zadnji položaj ostaje
+            obavijest(lokGreska(er), true, 20000); b.classList.remove('aktivan'); if (jaWatch !== null) navigator.geolocation.clearWatch(jaWatch); jaWatch = null;
+        }, { enableHighAccuracy: true, maximumAge: 5000 });
     });
 
     // ---------- Događaji ----------

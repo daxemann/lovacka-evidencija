@@ -1,5 +1,10 @@
 # Promjene
 
+## 1.63.2 – 2026-10
+- **iPhone – ikona na početnom zaslonu: „Lokacija nije dostupna“**, a u Chromeu radi: aplikacija s početnog zaslona koristi dopuštenje **„Safari web-stranice“**, ne ono od Chromea.
+  Karta i dezinfekcija sada točno pišu što uključiti: *Postavke → Privatnost i sigurnost → Lokacijske usluge → Safari web-stranice → Tijekom upotrebe aplikacije + Precizna lokacija*.
+- Kratki prekid GPS signala više ne gasi praćenje položaja ◎ na karti.
+
 ## 1.63.1 – 2026-10
 - **Ikona na početnom zaslonu otvarala je http:// adresu** → nije bilo lokacije (GPS), rada bez signala ni obavijesti, dok je u Chromeu sve radilo.
   Aplikacija se sada sama prebacuje na **https://** ako ta adresa na poslužitelju radi (bez certifikata ostaje kako jest).

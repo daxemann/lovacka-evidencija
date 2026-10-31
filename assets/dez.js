@@ -238,7 +238,7 @@
             else { stanje('dez-gps-ne', '🔴 Predaleko od stanice', m(d) + ' od stanice (±' + a + ' m). Upis je moguć samo na dezinfekcijskoj stanici.'); blokirano = true; btn.disabled = true; nap.textContent = 'Priđite stanici – lokacija se osvježava sama.'; }
         }
         function greskaLok(e) {
-            if (e.code === 1) { gotovo = true; stanje('dez-gps-ne', '🔴 Lokacija nije dopuštena', 'Dopustite lokaciju za ovu stranicu (ikona lokota / ⓘ pored adrese → Lokacija → Dopusti) i osvježite stranicu.');
+            if (e.code === 1) { gotovo = true; stanje('dez-gps-ne', '🔴 Lokacija nije dopuštena', /iphone|ipad|ipod/i.test(navigator.userAgent || '') ? 'iPhone: Postavke → Privatnost i sigurnost → Lokacijske usluge → „Safari web-stranice“ → „Tijekom upotrebe aplikacije“ i „Precizna lokacija“. Zatim aplikaciju zatvorite i ponovno otvorite.' : 'Dopustite lokaciju za ovu stranicu (ikona lokota / ⓘ pored adrese → Lokacija → Dopusti) i osvježite stranicu.');
                 btn.disabled = true; nap.textContent = 'Bez lokacije upis nije moguć.'; return; }
             if (!najbolja) { stanje('dez-gps-pola', '🟠 Lokacija još nije pronađena', 'Uključite lokaciju (GPS) na mobitelu. Tražim dalje…'); }
         }
