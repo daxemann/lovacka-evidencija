@@ -1,5 +1,12 @@
 # Promjene
 
+## 1.62.4 – 2026-10
+- **Sustav → Početna stranica – preglednije:** blokovi su podijeljeni u tri skupine: **🟩 Veliki gumbi (lov)**, **📋 Blokovi s podacima**, **🔘 Gumbi iz izbornika**.
+  Nazivi uloga (gore) i blokova (lijevo) **ostaju vidljivi pri pomicanju**; stupac i redak se ističu.
+- **Strelice ▲▼ rade odmah bez ponovnog učitavanja** – kvačice se više ne gube; redoslijed vrijedi nakon *Spremi*.
+- **„Prikaži“** jednu ulogu, prekidač **„samo uključeni blokovi“**; blokovi **isključenih modula** su skriveni (kvačice ostaju sačuvane, mogu se prikazati).
+- Široke tablice više ne sužavaju lijevi izbornik.
+
 ## 1.62.3 – 2026-10
 - **Uloge i prava – preglednija tablica:** prava su sada **redovi grupirani po područjima** (Članovi i udruga, Kalendar/obavijesti, Dezinfekcija, Lovište i lov, Inventura/domovi/popusti, Administracija), a **uloge su stupci**.
   Naziv prava (lijevo) i nazivi uloga (gore) **ostaju vidljivi pri pomicanju**, redak i stupac se ističu pod mišem. Kratak opis prava stoji uz naziv.

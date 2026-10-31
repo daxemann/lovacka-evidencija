@@ -181,3 +181,18 @@ window.viberPoruka = function (broj) {
         if (e.target.closest('[data-upute-zatvori]') || e.target === upute) upute.hidden = true;
     });
 })();
+
+// Matrica (Uloge i prava, Početna stranica): isticanje stupca pod mišem, filtar „Prikaži ulogu“
+(function () {
+    document.querySelectorAll('.matrica').forEach(function (mat) {
+        function oznaci(id, da) { mat.querySelectorAll('[data-u="' + id + '"]').forEach(function (c) { c.classList.toggle('hl', da); }); }
+        mat.addEventListener('mouseover', function (e) { var c = e.target.closest('[data-u]'); if (c) oznaci(c.dataset.u, true); });
+        mat.addEventListener('mouseout', function (e) { var c = e.target.closest('[data-u]'); if (c) oznaci(c.dataset.u, false); });
+    });
+    document.querySelectorAll('[data-matrica-filtar]').forEach(function (sel) {
+        sel.addEventListener('change', function () {
+            var v = sel.value, mat = document.querySelector(sel.dataset.matricaFiltar);
+            mat.querySelectorAll('[data-u]').forEach(function (c) { c.style.display = (!v || c.dataset.u === v) ? '' : 'none'; });
+        });
+    });
+})();

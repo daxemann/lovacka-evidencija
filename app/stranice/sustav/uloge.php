@@ -93,21 +93,6 @@ foreach ($grupe as $g => $pp) {
 }
 $brojPrava = fn(array $u) => count(array_filter(array_merge(...array_values($grupe)), fn($p) => ((int) $u['Prava'] & $p) === $p));
 ob_start(); ?>
-<style>
-    .uloge-mat { max-height: 75vh; overflow: auto; border: 1px solid var(--bs-border-color); border-radius: .5rem; }
-    .uloge-mat table { margin: 0; border-collapse: separate; border-spacing: 0; }
-    .uloge-mat th, .uloge-mat td { background: var(--bs-body-bg); }
-    .uloge-mat thead th { position: sticky; top: 0; z-index: 2; vertical-align: bottom; box-shadow: inset 0 -2px 0 var(--bs-border-color); }
-    .uloge-mat .pravo { position: sticky; left: 0; z-index: 1; min-width: 210px; max-width: 320px; box-shadow: inset -2px 0 0 var(--bs-border-color); }
-    .uloge-mat thead th.pravo { z-index: 3; }
-    .uloge-mat .ul-stup { min-width: 5.5rem; max-width: 8rem; text-align: center; font-size: .8rem; line-height: 1.15; white-space: normal; }
-    .uloge-mat tr.grupa td { background: var(--bs-tertiary-bg); font-weight: 600; font-size: .85rem; padding-top: .6rem; }
-    .uloge-mat tbody tr:not(.grupa):hover td, .uloge-mat td.hl, .uloge-mat th.hl { background: var(--bs-primary-bg-subtle); }
-    .uloge-mat td.ul-stup input { width: 1.25rem; height: 1.25rem; cursor: pointer; }
-    .uloge-mat td.ul-stup input:disabled { cursor: not-allowed; }
-    @media (max-width: 576px) { .uloge-mat .pravo { min-width: 8.5rem; max-width: 10rem; font-size: .85rem; } .uloge-mat .ul-stup { min-width: 4.5rem; } }
-    .uloge-spremi { position: sticky; bottom: 0; z-index: 4; background: var(--bs-body-bg); padding: .6rem 0; border-top: 1px solid var(--bs-border-color); }
-</style>
 <h1 class="h3 mb-1">Uloge i prava</h1>
 <p class="text-muted">Uloge se dodjeljuju na kartici člana (Članovi → član → Pristup i uloge). Sekcije su odvojene: uloga vrijedi samo za odabranu sekciju, osim ako je označeno „Smije sve sekcije“ (npr. Glavni admin, Blagajnik). Obični član bez uloge vidi samo svoje podatke.</p>
 <form method="post" action="<?= e(url('sustav/uloge')) ?>"><?= csrf() ?><input type="hidden" name="radnja" value="spremi">
@@ -132,49 +117,37 @@ ob_start(); ?>
 <div class="d-flex flex-wrap align-items-end gap-2 mt-4 mb-2">
     <h2 class="h5 mb-0 me-auto">2. Tko smije što</h2>
     <label class="small text-muted">Prikaži
-        <select id="ulogaFilter" class="form-select form-select-sm d-inline-block w-auto ms-1">
+        <select id="ulogaFilter" data-matrica-filtar="#mat-prava" class="form-select form-select-sm d-inline-block w-auto ms-1">
             <option value="">sve uloge</option>
             <?php foreach ($uloge as $u): ?><option value="<?= (int) $u['Id'] ?>"><?= e($u['Naziv']) ?></option><?php endforeach; ?>
         </select></label>
 </div>
 <p class="small text-muted mb-2">Redovi su prava (grupirana po područjima), stupci su uloge. Naslovi ostaju vidljivi pri pomicanju. Za opis prava zadržite miš / dodirnite naziv.</p>
-<div class="uloge-mat"><table class="table table-sm align-middle">
-    <thead><tr><th class="pravo">Pravo</th>
-        <?php foreach ($uloge as $u): ?><th class="ul-stup" data-u="<?= (int) $u['Id'] ?>"><?= e($u['Naziv']) ?><div class="fw-normal text-muted"><?= (int) $u['Broj'] ?>×</div></th><?php endforeach; ?>
+<div class="matrica" id="mat-prava"><table class="table table-sm align-middle">
+    <thead><tr><th class="prvi">Pravo</th>
+        <?php foreach ($uloge as $u): ?><th class="stup" data-u="<?= (int) $u['Id'] ?>"><?= e($u['Naziv']) ?><div class="fw-normal text-muted"><?= (int) $u['Broj'] ?>×</div></th><?php endforeach; ?>
     </tr></thead>
     <tbody>
     <?php foreach ($grupe as $g => $pp): ?>
-        <tr class="grupa"><td class="pravo"><?= e($g) ?></td><?php foreach ($uloge as $u): ?><td data-u="<?= (int) $u['Id'] ?>"></td><?php endforeach; ?></tr>
+        <tr class="grupa"><td class="prvi"><?= e($g) ?></td><?php foreach ($uloge as $u): ?><td data-u="<?= (int) $u['Id'] ?>"></td><?php endforeach; ?></tr>
         <?php foreach ($pp as $p): ?>
-            <tr><td class="pravo"><span title="<?= e(PRAVA_OPIS[$p][1]) ?>"><?= e(PRAVA_OPIS[$p][0]) ?></span>
+            <tr><td class="prvi"><span title="<?= e(PRAVA_OPIS[$p][1]) ?>"><?= e(PRAVA_OPIS[$p][0]) ?></span>
                     <div class="small text-muted d-none d-md-block text-truncate" style="max-width:300px" title="<?= e(PRAVA_OPIS[$p][1]) ?>"><?= e(PRAVA_OPIS[$p][1]) ?></div></td>
                 <?php foreach ($uloge as $u): $i = (int) $u['Id']; ?>
-                    <td class="ul-stup" data-u="<?= $i ?>"><input type="checkbox" class="form-check-input" name="u[<?= $i ?>][p][]" value="<?= $p ?>" title="<?= e($u['Naziv'] . ' – ' . PRAVA_OPIS[$p][0]) ?>"<?= chk(((int) $u['Prava'] & $p) === $p) . ($u['Sustavna'] ? ' disabled' : '') ?>></td>
+                    <td class="stup" data-u="<?= $i ?>"><input type="checkbox" class="form-check-input" name="u[<?= $i ?>][p][]" value="<?= $p ?>" title="<?= e($u['Naziv'] . ' – ' . PRAVA_OPIS[$p][0]) ?>"<?= chk(((int) $u['Prava'] & $p) === $p) . ($u['Sustavna'] ? ' disabled' : '') ?>></td>
                 <?php endforeach; ?></tr>
         <?php endforeach; ?>
         <?php if ($g === array_key_last($grupe)): ?>
-            <tr><td class="pravo">Smije sve sekcije<div class="small text-muted d-none d-md-block">uloga vrijedi za sve sekcije, ne samo za sekciju člana</div></td>
+            <tr><td class="prvi">Smije sve sekcije<div class="small text-muted d-none d-md-block">uloga vrijedi za sve sekcije, ne samo za sekciju člana</div></td>
                 <?php foreach ($uloge as $u): $i = (int) $u['Id']; ?>
-                    <td class="ul-stup" data-u="<?= $i ?>"><input type="checkbox" class="form-check-input" name="u[<?= $i ?>][SveSekcije]" value="1" title="<?= e($u['Naziv'] . ' – smije sve sekcije') ?>"<?= chk($u['SveSekcije']) . ($u['Sustavna'] ? ' disabled' : '') ?>></td>
+                    <td class="stup" data-u="<?= $i ?>"><input type="checkbox" class="form-check-input" name="u[<?= $i ?>][SveSekcije]" value="1" title="<?= e($u['Naziv'] . ' – smije sve sekcije') ?>"<?= chk($u['SveSekcije']) . ($u['Sustavna'] ? ' disabled' : '') ?>></td>
                 <?php endforeach; ?></tr>
         <?php endif; ?>
     <?php endforeach; ?>
     </tbody>
 </table></div>
-<div class="uloge-spremi"><button class="btn btn-primary">Spremi</button> <span class="small text-muted ms-2">Ne zaboravite spremiti nakon promjene.</span></div>
+<div class="matrica-spremi"><button class="btn btn-primary">Spremi</button> <span class="small text-muted ms-2">Ne zaboravite spremiti nakon promjene.</span></div>
 </form>
-<script>
-(function () {
-    var mat = document.querySelector('.uloge-mat');
-    function oznaci(id, da) { mat.querySelectorAll('[data-u="' + id + '"]').forEach(function (c) { c.classList.toggle('hl', da); }); }
-    mat.addEventListener('mouseover', function (e) { var c = e.target.closest('[data-u]'); if (c) oznaci(c.dataset.u, true); });
-    mat.addEventListener('mouseout', function (e) { var c = e.target.closest('[data-u]'); if (c) oznaci(c.dataset.u, false); });
-    document.getElementById('ulogaFilter').addEventListener('change', function () {
-        var v = this.value;
-        mat.querySelectorAll('[data-u]').forEach(function (c) { c.style.display = (!v || c.dataset.u === v) ? '' : 'none'; });
-    });
-})();
-</script>
 <?php foreach ($uloge as $u): if ($u['Sustavna']) continue; ?>
     <form method="post" action="<?= e(url('sustav/uloge')) ?>" id="obrisi<?= (int) $u['Id'] ?>"><?= csrf() ?><input type="hidden" name="radnja" value="obrisi"><input type="hidden" name="id" value="<?= (int) $u['Id'] ?>"></form>
 <?php endforeach; ?>
