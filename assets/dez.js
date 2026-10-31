@@ -2,6 +2,18 @@
  * 1) upis na stanici (lokacija, obrazac, slanje),
  * 2) bez interneta: upis se sprema na mobitelu (vrijeme mobitela) i šalje automatski kad ima signala,
  * 3) stranice stanica se spremaju na mobitel (service worker) da rade i bez signala. */
+/* http:// → https:// (npr. ikona na početnom zaslonu dodana s http adrese): bez https nema lokacije (GPS), rada bez signala ni obavijesti.
+ * Prebacuje se samo ako https na istoj adresi stvarno odgovara – inače ništa (lokalna mreža bez certifikata). */
+(function () {
+    if (window.evHttps || location.protocol !== 'http:') return;
+    window.evHttps = 1;
+    var h = location.hostname;
+    if (h === 'localhost' || /^[\d.]+$/.test(h) || h.indexOf(':') !== -1 || /\.(local|lan|home)$/i.test(h)) return;
+    var baza = 'https://' + location.host + location.pathname.replace(/[^\/]*$/, '');
+    fetch(baza + 'index.php?p=manifest', { mode: 'no-cors', cache: 'no-store', credentials: 'omit' })
+        .then(function () { location.replace('https://' + location.host + location.pathname + location.search + location.hash); })
+        .catch(function () { /* https ne radi – ostaje http */ });
+})();
 (function () {
     'use strict';
     var skripta = document.currentScript;

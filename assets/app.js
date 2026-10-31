@@ -1,4 +1,16 @@
 /* Lovačka evidencija – mali pomoćnici u pregledniku (bez okvira). */
+/* http:// → https:// (npr. ikona na početnom zaslonu dodana s http adrese): bez https nema lokacije (GPS), rada bez signala ni obavijesti.
+ * Prebacuje se samo ako https na istoj adresi stvarno odgovara – inače ništa (lokalna mreža bez certifikata). */
+(function () {
+    if (window.evHttps || location.protocol !== 'http:') return;
+    window.evHttps = 1;
+    var h = location.hostname;
+    if (h === 'localhost' || /^[\d.]+$/.test(h) || h.indexOf(':') !== -1 || /\.(local|lan|home)$/i.test(h)) return;
+    var baza = 'https://' + location.host + location.pathname.replace(/[^\/]*$/, '');
+    fetch(baza + 'index.php?p=manifest', { mode: 'no-cors', cache: 'no-store', credentials: 'omit' })
+        .then(function () { location.replace('https://' + location.host + location.pathname + location.search + location.hash); })
+        .catch(function () { /* https ne radi – ostaje http */ });
+})();
 window.kopirajTekst = function (t) {
     if (navigator.clipboard && window.isSecureContext) { return navigator.clipboard.writeText(t).catch(function () {}); }
     var ta = document.createElement('textarea'); ta.value = t; document.body.appendChild(ta); ta.select();
