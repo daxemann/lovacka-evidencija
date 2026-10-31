@@ -5,7 +5,7 @@
  */
 declare(strict_types=1);
 
-const VERZIJA = '1.62.4';
+const VERZIJA = '1.63.0';
 const KONTAKT_EMAIL = 'daxemann@googlemail.com';
 const PODRSKA_PAYPAL = 'darko.bakic@freenet.de'; // dobrovoljna podrška razvoju (Pomoć i kontakt)
 const PROJEKT_URL = 'https://github.com/daxemann/lovacka-evidencija';
@@ -71,6 +71,29 @@ const PRAVA_OPIS = [
     P_ODSTREL => ['Odstrel – upis', 'upisuje, mijenja i briše odstrel (s brojem markice) i plan odstrela za sekcije u svom opsegu'],
     P_REVIR_DNEVNIK => ['Lovište – lovački dnevnik', 'vidi lovački dnevnik (tko, kada, gdje) za sekcije u svom opsegu, ispis i PDF; bez ovog prava dnevnik se ne prikazuje'],
 ];
+
+/** Prava grupirana po područjima (Uloge i prava, Pregled prava). */
+const PRAVA_GRUPE = [
+    '👥 Članovi i udruga' => [P_CLANOVI_CITAJ, P_CLANOVI_UREDI, P_IMENIK_SVI, P_CLANARINA_CITAJ, P_CLANARINA_UREDI, P_AKCIJE_CITAJ, P_AKCIJE_ODOBRI],
+    '📢 Kalendar, obavijesti, izvještaji' => [P_KALENDAR, P_OBAVIJESTI, P_IZVJESTAJI],
+    '🧴 Dezinfekcija' => [P_DEZ_PREGLED, P_DEZ_UREDI, P_DEZ_POSTAVKE, P_DEZ_MOBILNA, P_DEZ_ZA_DRUGE],
+    '🌲 Lovište i lov' => [P_REVIR_UREDI, P_REVIR_NADZOR, P_REVIR_DNEVNIK, P_GRUPNI_LOV, P_ODSTREL_CITAJ, P_ODSTREL],
+    '📦 Inventura, domovi, popusti' => [P_INVENTURA, P_INVENTURA_UREDI, P_DOMOVI, P_POPUSTI],
+    '⚙️ Administracija' => [P_SUSTAV],
+];
+/** PRAVA_GRUPE bez prava isključenih modula (prazne skupine izostavljene). */
+function prava_grupe(): array
+{
+    $skriveno = moduli_iskljucena_prava();
+    $g = [];
+    foreach (PRAVA_GRUPE as $naz => $pp) {
+        $pp = array_values(array_filter($pp, fn($p) => !($p & $skriveno)));
+        if ($pp) {
+            $g[$naz] = $pp;
+        }
+    }
+    return $g;
+}
 
 // Statusi (enum vrijednosti kao u .NET verziji)
 const CLAN_AKTIVAN = 0, CLAN_ARHIVIRAN = 1;

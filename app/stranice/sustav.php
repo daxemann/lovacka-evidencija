@@ -20,6 +20,7 @@ $skupine = [
         ['sustav/korisnici', '🧑‍💻', 'Korisnici', 'Računi, odobravanje, zaključavanje.', $cekaju, null],
         ['sustav/samoprijava', '📝', 'Samoprijava', 'Registracije bez pozivnice.', $samoprijave, null],
         ['sustav/uloge', '🛡️', 'Uloge i prava', 'Što koja uloga smije i za koje sekcije.', 0, null],
+        ['sustav/pregled-prava', '🔎', 'Tko ima koja prava', 'Svi članovi s ulogama i pravima – filtar po imenu, ulozi, pravu, sekciji.', 0, null],
     ]],
     ['Komunikacija', [
         ['sustav/postavke', '📧', 'E-pošta i adresa', 'Javna adresa programa, SMTP za e-poštu.', 0, null],

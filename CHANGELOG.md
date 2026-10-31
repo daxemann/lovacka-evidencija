@@ -1,5 +1,10 @@
 # Promjene
 
+## 1.63.0 – 2026-10
+- **🔎 Tko ima koja prava** (*Sustav → Korisnici i prava*, poveznica i u *Uloge i prava*): svi računi s **ulogama** i **pravima** koja iz njih proizlaze na jednoj stranici – bez otvaranja svakog člana.
+  Filtar po **imenu**, **ulozi**, **pravu** (traženo pravo je istaknuto) i **sekciji** za koju pravo vrijedi; po želji i računi bez uloge.
+  Prava su složena po područjima, uz sekciju za koju vrijede (*vrijedi za: …*). Klik na ime otvara karticu člana (Pristup i uloge). Na mobitelu jedan član ispod drugoga.
+
 ## 1.62.4 – 2026-10
 - **Sustav → Početna stranica – preglednije:** blokovi su podijeljeni u tri skupine: **🟩 Veliki gumbi (lov)**, **📋 Blokovi s podacima**, **🔘 Gumbi iz izbornika**.
   Nazivi uloga (gore) i blokova (lijevo) **ostaju vidljivi pri pomicanju**; stupac i redak se ističu.

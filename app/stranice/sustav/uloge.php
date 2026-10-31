@@ -75,26 +75,11 @@ if (je_post()) {
 }
 $uloge = redovi('SELECT u.*, (SELECT COUNT(*) FROM KorisnikUloge ku WHERE ku.UlogaId=u.Id) AS Broj FROM Uloge u ORDER BY u.Id');
 $funkcije = redovi('SELECT f.*, (SELECT COUNT(*) FROM ClanFunkcije cf WHERE cf.FunkcijaId=f.Id AND cf.Do IS NULL) AS Broj FROM Funkcije f ORDER BY f.Redoslijed, f.Naziv');
-// prava grupirana po područjima – redovi tablice (uloge su stupci)
-$grupe = [
-    '👥 Članovi i udruga' => [P_CLANOVI_CITAJ, P_CLANOVI_UREDI, P_IMENIK_SVI, P_CLANARINA_CITAJ, P_CLANARINA_UREDI, P_AKCIJE_CITAJ, P_AKCIJE_ODOBRI],
-    '📢 Kalendar, obavijesti, izvještaji' => [P_KALENDAR, P_OBAVIJESTI, P_IZVJESTAJI],
-    '🧴 Dezinfekcija' => [P_DEZ_PREGLED, P_DEZ_UREDI, P_DEZ_POSTAVKE, P_DEZ_MOBILNA, P_DEZ_ZA_DRUGE],
-    '🌲 Lovište i lov' => [P_REVIR_UREDI, P_REVIR_NADZOR, P_REVIR_DNEVNIK, P_GRUPNI_LOV, P_ODSTREL_CITAJ, P_ODSTREL],
-    '📦 Inventura, domovi, popusti' => [P_INVENTURA, P_INVENTURA_UREDI, P_DOMOVI, P_POPUSTI],
-    '⚙️ Administracija' => [P_SUSTAV],
-];
-$skriveno = moduli_iskljucena_prava(); // isključeni moduli – redovi skriveni
-foreach ($grupe as $g => $pp) {
-    $grupe[$g] = array_values(array_filter($pp, fn($p) => !($p & $skriveno)));
-    if (!$grupe[$g]) {
-        unset($grupe[$g]);
-    }
-}
+$grupe = prava_grupe();
 $brojPrava = fn(array $u) => count(array_filter(array_merge(...array_values($grupe)), fn($p) => ((int) $u['Prava'] & $p) === $p));
 ob_start(); ?>
 <h1 class="h3 mb-1">Uloge i prava</h1>
-<p class="text-muted">Uloge se dodjeljuju na kartici člana (Članovi → član → Pristup i uloge). Sekcije su odvojene: uloga vrijedi samo za odabranu sekciju, osim ako je označeno „Smije sve sekcije“ (npr. Glavni admin, Blagajnik). Obični član bez uloge vidi samo svoje podatke.</p>
+<p class="text-muted"><a class="float-end ms-3" href="<?= e(url('sustav/pregled-prava')) ?>">🔎 Tko ima koja prava</a>Uloge se dodjeljuju na kartici člana (Članovi → član → Pristup i uloge). Sekcije su odvojene: uloga vrijedi samo za odabranu sekciju, osim ako je označeno „Smije sve sekcije“ (npr. Glavni admin, Blagajnik). Obični član bez uloge vidi samo svoje podatke.</p>
 <form method="post" action="<?= e(url('sustav/uloge')) ?>"><?= csrf() ?><input type="hidden" name="radnja" value="spremi">
 
 <h2 class="h5 mt-4">1. Uloge</h2>
