@@ -1028,7 +1028,7 @@ function dez_prenesi_stare_potpise(): int
             copy($f, podaci('foto/' . $novo));
             spremi_postavku('Potpis.K' . $kid, $novo);
             spremi_postavku('Potpis.Datum.K' . $kid, sada());
-            dnevnik('Potpis prenesen u osobni profil', 'Korisnik', $kid, (string) $ime);
+            dnevnik('Potpis prenesen u osobni profil (automatski)', 'Korisnik', $kid, (string) $ime, ['Id' => null, 'KorisnickoIme' => 'sustav']);
             $n++;
         }
         obrisi_sliku(postavka('Dez.Potpis.' . $kl));
