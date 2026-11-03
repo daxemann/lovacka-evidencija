@@ -235,7 +235,7 @@ function pocetna_meni(string $b, array $k): string
         'm_dokumenti' => ['dokumenti', '📜', 'Statut i pravilnici', 'dokumenti udruge', modul('dokumenti'), null],
         'm_clanovi' => ['clanovi', '👥', 'Članovi', 'evidencija članova', ima(P_CLANOVI_CITAJ), null],
         'm_clanarina' => ['clanarina', '💶', 'Članarina', 'uplate i dugovanja', modul('clanarina') && ima(P_CLANARINA_CITAJ), null],
-        'm_akcija_nova' => ['akcije/nova', '➕', 'Nova radna akcija', 'upis akcije', modul('akcije') && ima(P_AKCIJE_ODOBRI), null],
+        'm_akcija_nova' => ['akcije/nova', '➕', 'Nova radna akcija', 'upis akcije', modul('akcije') && smije_upis_akcija(), null],
         'm_akcije' => ['akcije', '🔨', 'Radne akcije', 'popis i odobravanje', modul('akcije') && ima(P_AKCIJE_CITAJ), fn() => broj_akcija_na_cekanju()],
         'm_izvjestaj' => ['izvjestaji/akcije', '📊', 'Izvještaj', 'radne akcije', modul('akcije') && ima(P_IZVJESTAJI), null],
         'm_inventura' => ['inventura', '📦', 'Inventura', 'stanje opreme', modul('inventura') && (ima(P_INVENTURA) || ima(P_INVENTURA_UREDI)), null],
@@ -316,7 +316,7 @@ function pocetna_uprava(): string
     $cekaju = ima(P_SUSTAV) ? (int) vrijednost('SELECT COUNT(*) FROM Korisnici WHERE Odobren=0 AND Aktivan=1') : 0;
     $dupl = ima(P_SUSTAV) ? count(pronadji_duplikate()) : 0;
     $o = '<div class="d-flex flex-wrap align-items-center gap-2 mb-3 pt-2 border-top"><h2 class="h5 mb-0 me-auto">🗂️ Uprava</h2>'
-        . (ima(P_AKCIJE_ODOBRI) ? '<a href="' . e(url('akcije/nova')) . '" class="btn btn-sm btn-primary">+ Nova radna akcija</a>' : '') . '</div>';
+        . (smije_upis_akcija() ? '<a href="' . e(url('akcije/nova')) . '" class="btn btn-sm btn-primary">+ Nova radna akcija</a>' : '') . '</div>';
     if (ima(P_SUSTAV) && str_starts_with(str_replace('\\', '/', realpath(podaci()) ?: ''), str_replace('\\', '/', realpath(KORIJEN) ?: '-'))) {
         $o .= '<div class="alert alert-danger d-none" id="izlozeno"><b>Upozorenje – baza je javno dostupna!</b> Poslužitelj ne poštuje datoteku .htaccess (npr. nginx), pa se mapa <code>podaci</code> može preuzeti s interneta.
             Premjestite mapu s podacima izvan javne mape weba (config.php → \'podaci\') ili zabranite pristup mapi <code>podaci</code> u postavkama poslužitelja. Upute: README.</div>'

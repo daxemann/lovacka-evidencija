@@ -3,22 +3,25 @@ trazi(P_CLANOVI_CITAJ);
 $k = korisnik();
 $sekcija = (string) ($_GET['sekcija'] ?? '');
 $moze = ima(P_CLANOVI_UREDI);
+$brise = ima(P_CLANOVI_BRISI);
+$sekUredi = sekcije_prava(P_CLANOVI_UREDI);
+$uredSve = opseg_prava(P_CLANOVI_UREDI)['sve'];
 
-if (je_post() && $moze) {
+if (je_post() && ($moze || $brise)) {
     $ids = array_map('intval', (array) ($_POST['odabrani'] ?? []));
     $radnja = (string) ($_POST['radnja'] ?? '');
     if (!$ids) {
         poruka('Niste odabrali nijednog člana.', 'warning');
-    } elseif ($radnja === 'premjesti') {
+    } elseif ($radnja === 'premjesti' && $moze) {
         $cilj = (int) ($_POST['cilj'] ?? -1);
         $ciljId = $cilj > 0 ? $cilj : null;
-        if ($cilj < 0 || ($ciljId === null && !$k['SveSekcije']) || ($ciljId !== null && !moze_sekciju($ciljId))) {
+        if ($cilj < 0 || !moze_sekciju_pravo(P_CLANOVI_UREDI, $ciljId)) {
             poruka('Odaberite sekciju.', 'warning');
         } else {
             $n = 0;
             foreach ($ids as $id) {
                 $c = clan($id);
-                if ($c && u_opsegu($c)) {
+                if ($c && moze_clana(P_CLANOVI_UREDI, $c)) {
                     azuriraj('Clanovi', $id, ['SekcijaId' => $ciljId, 'Azurirano' => sada()]);
                     $n++;
                 }
@@ -27,9 +30,26 @@ if (je_post() && $moze) {
             dnevnik('Premještanje članova u sekciju', 'Sekcija', $ciljId, "$n → $naziv");
             poruka(e("$n članova premješteno u „{$naziv}“."));
         }
-    } elseif ($radnja === 'obrisi' && ima(P_SUSTAV)) {
-        [$n, $presk] = obrisi_pogresne($ids);
-        poruka(e("Obrisano: $n.") . ($presk ? ' Nije obrisano jer imaju podatke (njih arhivirajte): ' . e(implode('; ', $presk)) : ''), $presk ? 'warning' : 'success');
+    } elseif ($radnja === 'arhiviraj' && $moze) {
+        $datum = u_datum(ul_str('DatumIzlaska')) ?? danas();
+        $razlog = ul_null('RazlogIzlaska');
+        $imena = [];
+        foreach ($ids as $id) {
+            $c = clan($id);
+            if ($c && (int) $c['Status'] === CLAN_AKTIVAN && moze_clana(P_CLANOVI_UREDI, $c) && (korisnik()['ClanId'] ?? null) !== $id
+                && !(je_demo() && vrijednost('SELECT 1 FROM Korisnici WHERE ClanId=?', [$id]))) {
+                arhiviraj_clana($id, $datum, $razlog);
+                $imena[] = puno_ime($c);
+            }
+        }
+        poruka(e('Arhivirano: ' . count($imena) . ($imena ? ' (' . implode(', ', $imena) . ')' : '') . '. Pristup je zaključan, podaci ostaju.'), $imena ? 'success' : 'warning');
+    } elseif ($radnja === 'obrisi' && $brise) {
+        if (je_demo()) {
+            $ids = array_values(array_filter($ids, fn($id) => !vrijednost('SELECT 1 FROM Korisnici WHERE ClanId=?', [$id])));
+        }
+        [$obr, $presk] = obrisi_clanove($ids);
+        poruka(e('Trajno obrisano: ' . count($obr) . ($obr ? ' (' . implode(', ', $obr) . ')' : '') . '.')
+            . ($presk ? ' Nije obrisano: ' . e(implode('; ', $presk)) : ''), $presk ? 'warning' : 'success');
     }
     preusmjeri('clanovi', ['sekcija' => $sekcija]);
 }
@@ -60,7 +80,7 @@ ob_start(); ?>
     <input id="trazi" class="form-control" style="max-width:260px" placeholder="Traži (ime, mjesto, telefon…)" autocomplete="off">
     <?php if ($moze && $sekcija !== 'arhiva' && modul('iskaznice')): ?><a href="<?= e(url('izvoz/iskaznice', ['sve' => 1, 'sekcija' => $sekcija])) ?>" target="_blank" class="btn btn-outline-primary"
         title="Članske iskaznice s QR kodom za sve članove na ovoj kartici (PDF, 10 na A4)">🪪 Iskaznice</a><?php endif; ?>
-    <?php if ($moze): ?><a href="<?= e(url('clanovi/uredi')) ?>" class="btn btn-primary">+ Novi član</a><?php endif; ?>
+    <?php if ($moze && ($sekUredi || $uredSve)): ?><a href="<?= e(url('clanovi/uredi')) ?>" class="btn btn-primary">+ Novi član</a><?php endif; ?>
 </div>
 <ul class="nav nav-tabs mb-3">
     <?= $tab('', 'Svi', count($aktivni)) ?>
@@ -74,29 +94,43 @@ ob_start(); ?>
 </ul>
 <form method="post" action="<?= e(url('clanovi', ['sekcija' => $sekcija])) ?>" id="obrazac">
 <?= csrf() ?>
-<?php if ($moze): ?>
+<?php if ($moze || $brise): ?>
 <div class="alert alert-secondary d-flex flex-wrap align-items-center gap-2" id="traka" style="display:none!important">
     <span>Odabrano: <b id="brojOdabranih">0</b></span>
+    <?php if ($moze): ?>
     <span class="ms-3">Premjesti u sekciju:</span>
     <select name="cilj" class="form-select form-select-sm" style="max-width:200px">
         <option value="-1">— odaberi —</option>
-        <?php foreach ($sek as $s): ?><option value="<?= (int) $s['Id'] ?>"><?= e($s['Naziv']) ?></option><?php endforeach; ?>
-        <?php if ($k['SveSekcije']): ?><option value="0">Nije raspoređeno</option><?php endif; ?>
+        <?php foreach ($sekUredi as $s): ?><option value="<?= (int) $s['Id'] ?>"><?= e($s['Naziv']) ?></option><?php endforeach; ?>
+        <?php if ($uredSve): ?><option value="0">Nije raspoređeno</option><?php endif; ?>
     </select>
     <button class="btn btn-sm btn-primary" name="radnja" value="premjesti">Premjesti</button>
-    <?php if ($sekcija !== 'arhiva' && modul('iskaznice')): ?>
+    <?php endif; ?>
+    <?php if ($sekcija !== 'arhiva' && modul('iskaznice') && $moze): ?>
     <button class="btn btn-sm btn-outline-primary ms-2" formaction="<?= e(url('izvoz/iskaznice')) ?>" formtarget="_blank" title="10 iskaznica na A4 – izrezati">🪪 Iskaznice (PDF)</button>
     <?php endif; ?>
     <button type="button" class="btn btn-sm btn-link" onclick="document.querySelectorAll('input[name=\'odabrani[]\']').forEach(c=>c.checked=false);document.dispatchEvent(new Event('ev-oznaceno'))">Poništi odabir</button>
-    <?php if (ima(P_SUSTAV)): ?>
-        <button class="btn btn-sm btn-outline-danger ms-auto" name="radnja" value="obrisi" data-potvrda="Trajno obrisati odabrane? Brišu se samo unosi bez radnih akcija, uplata i računa (ostale arhivirajte).">Obriši – nisu članovi (pogrešan unos)</button>
+    <span class="ms-auto"></span>
+    <?php if ($moze && $sekcija !== 'arhiva'): ?>
+        <button type="button" class="btn btn-sm btn-outline-warning" onclick="document.getElementById('arhivSkupno').classList.toggle('d-none')">Arhiviraj…</button>
+    <?php endif; ?>
+    <?php if ($brise): ?>
+        <button class="btn btn-sm btn-outline-danger" name="radnja" value="obrisi" data-potvrda="Trajno obrisati odabrane članove sa SVIM podacima (članarina i uplate, radne akcije, korisnički račun, fotografije)? Prije brisanja radi se sigurnosna kopija. Ako su samo izašli iz udruge – bolje Arhiviraj.">🗑 Obriši trajno</button>
+    <?php endif; ?>
+    <?php if ($moze && $sekcija !== 'arhiva'): ?>
+    <div class="w-100 d-none row g-2 align-items-end mt-1" id="arhivSkupno">
+        <div class="col-sm-3"><label class="form-label small mb-0">Datum izlaska</label><input type="date" name="DatumIzlaska" class="form-control form-control-sm" value="<?= danas() ?>"></div>
+        <div class="col-sm-5"><label class="form-label small mb-0">Razlog</label><input name="RazlogIzlaska" class="form-control form-control-sm" list="razloziSk" placeholder="npr. istupio, preminuo, isključen">
+            <datalist id="razloziSk"><option value="Istupio"></option><option value="Preminuo"></option><option value="Isključen"></option><option value="Preselio"></option></datalist></div>
+        <div class="col-sm-4"><button class="btn btn-sm btn-warning" name="radnja" value="arhiviraj" data-potvrda="Arhivirati odabrane članove? Pristup se zaključava, podaci (i plaćena članarina) ostaju.">Arhiviraj odabrane</button></div>
+    </div>
     <?php endif; ?>
 </div>
 <?php endif; ?>
 <div class="table-responsive">
 <table class="table table-hover align-middle" id="tablica">
     <thead><tr>
-        <?php if ($moze): ?><th style="width:2rem"><input type="checkbox" class="form-check-input" data-sve="odabrani[]"></th><?php endif; ?>
+        <?php if ($moze || $brise): ?><th style="width:2rem"><input type="checkbox" class="form-check-input" data-sve="odabrani[]"></th><?php endif; ?>
         <th style="width:3rem"></th><th>Prezime i ime</th><th>Sekcija</th><th>Mobitel</th>
         <th class="d-none d-md-table-cell">E-mail</th><th class="d-none d-lg-table-cell">Funkcije / uloge</th><th class="d-none d-lg-table-cell">Iskaznica do</th>
     </tr></thead>
@@ -106,7 +140,7 @@ ob_start(); ?>
         $kljucTr = kljuc("{$c['Ime']} {$c['Prezime']} {$c['Nadimak']} {$c['Mjesto']} {$c['MobilniTelefon']} {$c['FiksniTelefon']} {$c['Email']} {$c['Oib']}");
         $istekla = $c['IskaznicaVrijediDo'] && substr($c['IskaznicaVrijediDo'], 0, 10) < date('Y-m-d'); ?>
         <tr class="klikabilno" data-trazi="<?= e($kljucTr) ?>" data-href="<?= $href ?>">
-            <?php if ($moze): ?><td><input type="checkbox" class="form-check-input" name="odabrani[]" value="<?= (int) $c['Id'] ?>"></td><?php endif; ?>
+            <?php if ($moze || $brise): ?><td><input type="checkbox" class="form-check-input" name="odabrani[]" value="<?= (int) $c['Id'] ?>"></td><?php endif; ?>
             <td><?= avatar($c) ?></td>
             <td><b><?= e($c['Prezime']) ?></b> <?= e($c['Ime']) ?><?php if ($c['Nadimak']): ?> <span class="text-muted">(<?= e($c['Nadimak']) ?>)</span><?php endif; ?></td>
             <td><?= e($c['SekcijaNaziv'] ?? '—') ?></td>

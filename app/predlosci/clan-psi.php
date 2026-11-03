@@ -108,7 +108,7 @@ $polja = function (?array $p) { ob_start(); ?>
         </form>
     </div></div>
     <?php $nema = array_filter($psi, fn($p) => $p['Aktivan'] && $p['Bodovanje'] && !isset($p['Bodovano'][$god]));
-    if ($nema && !$psiProfil && ima(P_AKCIJE_ODOBRI)): ?>
+    if ($nema && !$psiProfil && smije_upis_akcija()): ?>
         <div class="no-print"><?= $gumb('pas-bodovi', [], 'Upiši bodove za ' . $god . '. sada (' . count($nema) . ' ' . (count($nema) === 1 ? 'pas' : 'psa') . ', na čekanju)', 'btn-outline-success',
             'Upisati radnu akciju „Lovački pas“ za ' . $god . '. (na čekanju odobrenja)?') ?>
             <div class="form-text">Npr. za psa dodanog tijekom godine – automatski upis je samo 1. siječnja.</div></div>

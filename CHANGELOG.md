@@ -1,5 +1,16 @@
 # Promjene
 
+## 1.64.0 – 2026-11
+- **Članovi po sekcijama – upis, uređivanje i brisanje preko uloga:** prava *Članovi – upis i uređivanje* i novo **Članovi – brisanje** vrijede samo za **sekcije za koje je uloga dodijeljena** (npr. *Admin sekcije · Špišić Bukovica* upisuje, uređuje, arhivira i briše samo članove svoje sekcije, druge ne vidi).
+  Novo pravo „Članovi – brisanje“ dobivaju Glavni admin i *Admin sekcije*; ostalima se uključuje u *Sustav → Uloge i prava*.
+- **Brisanje i arhiviranje više ne ovise o članarini:** član s **plaćenom članarinom**, radnim akcijama ili računom može se odmah **arhivirati** ili **trajno obrisati** (prije: samo „pogrešan unos“ bez uplata, ostalo samo admin nakon arhiviranja).
+  Potvrda prije brisanja navodi što se briše (npr. *1 uplata članarine*); prije brisanja uvijek se radi sigurnosna kopija. Sebe se ne može obrisati ni arhivirati; administratora briše samo administrator.
+- **Članovi → odabir (kvačice):** uz *Premjesti* sada i **Arhiviraj…** (datum i razlog) i **🗑 Obriši trajno** za sve odabrane.
+- **Funkcije člana** uređuje tko ima *Članovi – upis i uređivanje* za njegovu sekciju (prije samo admin).
+- **Novo pravo „Radne akcije – upis za druge“:** upis radne akcije (bodova) drugim članovima i **cijeloj grupi** (*Nova radna akcija*, iz kalendara, bodovi za pse) – bez prava odobravanja; upis ide **na odobrenje**.
+  Dobivaju ga sve uloge koje su dosad smjele upisivati te *Lovnik* i *Domar*. Članovi za upis samo iz sekcija za koje je pravo dodijeljeno.
+- Dnevnik: automatski prijenos potpisa bilježi se kao „sustav“.
+
 ## 1.63.2 – 2026-10
 - **iPhone – ikona na početnom zaslonu: „Lokacija nije dostupna“**, a u Chromeu radi: aplikacija s početnog zaslona koristi dopuštenje **„Safari web-stranice“**, ne ono od Chromea.
   Karta i dezinfekcija sada točno pišu što uključiti: *Postavke → Privatnost i sigurnost → Lokacijske usluge → Safari web-stranice → Tijekom upotrebe aplikacije + Precizna lokacija*.

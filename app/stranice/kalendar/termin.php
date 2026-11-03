@@ -226,7 +226,7 @@ document.getElementById('gost-slika').addEventListener('click', function () {
         : 'upisuju se automatski dan nakon lova za svakog prijavljenog psa (radna akcija „Pas na lovu“, na čekanju odobrenja).' ?>
 </div></div>
 <?php endif; ?>
-<?php if ($v['akcija'] && ima(P_AKCIJE_ODOBRI) && substr($d['Pocetak'], 0, 10) <= danas()): ?>
+<?php if ($v['akcija'] && smije_upis_akcija() && substr($d['Pocetak'], 0, 10) <= danas()): ?>
 <div class="card mb-3 border-success"><div class="card-body">
     <b>Radna akcija je održana?</b>
     <?php if ($d['AkcijeUpisane']): ?><span class="badge bg-success ms-1">upisano <?= e(datum($d['AkcijeUpisane'])) ?></span><?php endif; ?>

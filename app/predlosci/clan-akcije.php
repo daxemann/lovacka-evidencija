@@ -13,7 +13,7 @@ foreach ($akcije as $a) {
 ?>
 <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
     <div>Bodovi u tekućoj lovnoj godini (<?= $lg->format('d.m.Y.') ?> – <?= $kraj->format('d.m.Y.') ?>): <b class="fs-5"><?= broj($bodovi, 2) ?></b></div>
-    <?php if (ima(P_AKCIJE_ODOBRI)): ?><a href="<?= e(url('akcije/nova', ['clan' => $id])) ?>" class="btn btn-sm btn-primary ms-auto no-print">+ Upiši radnu akciju</a><?php endif; ?>
+    <?php if (moze_clana(P_AKCIJE_UNOS, $clan) || moze_clana(P_AKCIJE_ODOBRI, $clan)): ?><a href="<?= e(url('akcije/nova', ['clan' => $id])) ?>" class="btn btn-sm btn-primary ms-auto no-print">+ Upiši radnu akciju</a><?php endif; ?>
 </div>
 <div class="table-responsive">
 <table class="table table-sm align-middle">

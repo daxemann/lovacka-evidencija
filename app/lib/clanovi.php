@@ -128,16 +128,81 @@ function povijest_clana(int $id): array
     return $r;
 }
 
-/** Trajno brisanje člana sa svim podacima i računima. */
-function obrisi_clana_trajno(int $id): void
+/** Što se briše uz člana – za potvrdu prije brisanja (prazno = nema povijesti). */
+function opis_brisanja(int $id): string
+{
+    $p = povijest_clana($id);
+    return $p ? 'Briše se i: ' . implode(', ', $p) . '. ' : '';
+}
+
+/**
+ * Smije li trenutni korisnik trajno obrisati člana? null = smije, inače razlog.
+ * Pravo „Članovi – brisanje“ za sekciju člana; svoj unos se ne briše; račun s pravom „Sustav“ (admin) briše samo admin.
+ * Plaćena članarina, radne akcije i sl. NISU zapreka.
+ */
+function zapreka_brisanja(array $c): ?string
+{
+    if (!moze_clana(P_CLANOVI_BRISI, $c)) {
+        return 'nemate pravo brisanja za ovu sekciju';
+    }
+    if ((korisnik()['ClanId'] ?? null) === (int) $c['Id']) {
+        return 'ne možete obrisati sami sebe';
+    }
+    if (!ima(P_SUSTAV)) {
+        foreach (redovi('SELECT Id FROM Korisnici WHERE ClanId=?', [(int) $c['Id']]) as $r) {
+            if (prava_korisnika((int) $r['Id']) & P_SUSTAV) {
+                return 'administratora može obrisati samo administrator';
+            }
+        }
+    }
+    return null;
+}
+
+/** Trajno brisanje više članova (s cijelom poviješću). Jedna sigurnosna kopija prije. Vraća [obrisani[], preskočeni[] s razlogom]. */
+function obrisi_clanove(array $ids): array
+{
+    $brisati = [];
+    $presk = [];
+    foreach (array_unique(array_map('intval', $ids)) as $id) {
+        $c = clan($id);
+        if (!$c) {
+            continue;
+        }
+        $z = zapreka_brisanja($c);
+        if ($z !== null) {
+            $presk[] = puno_ime($c) . ' (' . $z . ')';
+        } else {
+            $brisati[] = $c;
+        }
+    }
+    if ($brisati) {
+        try {
+            napravi_kopiju('prije-brisanja');
+        } catch (Throwable) {
+        }
+        foreach ($brisati as $c) {
+            obrisi_clana_trajno((int) $c['Id'], false);
+        }
+    }
+    return [array_map('puno_ime', $brisati), $presk];
+}
+
+/** Trajno brisanje člana sa svim podacima i računima (i plaćenom članarinom, radnim akcijama …). */
+function obrisi_clana_trajno(int $id, bool $kopija = true): void
 {
     $c = clan($id);
     if (!$c) {
         return;
     }
-    try {
-        napravi_kopiju('prije-brisanja');
-    } catch (Throwable) {
+    if ($kopija) {
+        try {
+            napravi_kopiju('prije-brisanja');
+        } catch (Throwable) {
+        }
+    }
+    foreach (redovi('SELECT Foto1, Foto2 FROM ClanDokumenti WHERE ClanId=?', [$id]) as $d) {
+        obrisi_sliku($d['Foto1']);
+        obrisi_sliku($d['Foto2']);
     }
     $racuni = array_map('intval', array_column(redovi('SELECT Id FROM Korisnici WHERE ClanId=?', [$id]), 'Id'));
     foreach ($racuni as $kid) {

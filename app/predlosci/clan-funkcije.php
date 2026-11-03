@@ -1,6 +1,6 @@
 <?php
 /** Kartica Funkcije. Varijable iz uredi.php: $id, $clan */
-$moze = ima(P_CLANOVI_UREDI) && ima(P_SUSTAV);
+$moze = $uredi; // Članovi – upis i uređivanje za sekciju člana
 $fun = redovi('SELECT cf.*, f.Naziv, f.OslobodjenClanarine, s.Naziv AS Sekcija FROM ClanFunkcije cf JOIN Funkcije f ON f.Id=cf.FunkcijaId
                LEFT JOIN Sekcije s ON s.Id=cf.SekcijaId WHERE cf.ClanId=? ORDER BY (cf.Do IS NOT NULL), f.Redoslijed, cf.Od DESC', [$id]);
 $akcija = fn(string $r, int $fid, string $tekst, string $klasa, string $potvrda = '') =>
@@ -35,8 +35,8 @@ $akcija = fn(string $r, int $fid, string $tekst, string $klasa, string $potvrda 
             <?php foreach (redovi('SELECT * FROM Funkcije ORDER BY Redoslijed, Naziv') as $f): ?><option value="<?= (int) $f['Id'] ?>"><?= e($f['Naziv']) ?></option><?php endforeach; ?>
         </select></div>
     <div class="col-md-3"><label class="form-label">Jedinica / sekcija</label>
-        <select name="SekcijaId" class="form-select"><option value="0">— (cijela udruga)</option>
-            <?php foreach (moje_sekcije() as $s): ?><option value="<?= (int) $s['Id'] ?>"<?= sel($s['Id'], $clan['SekcijaId']) ?>><?= e($s['Naziv']) ?></option><?php endforeach; ?>
+        <select name="SekcijaId" class="form-select"><?php if ($uredSve): ?><option value="0">— (cijela udruga)</option><?php endif; ?>
+            <?php foreach ($sekUredi as $s): ?><option value="<?= (int) $s['Id'] ?>"<?= sel($s['Id'], $clan['SekcijaId']) ?>><?= e($s['Naziv']) ?></option><?php endforeach; ?>
         </select></div>
     <div class="col-md-3"><label class="form-label">Od</label><input type="date" name="Od" class="form-control" value="<?= danas() ?>"></div>
     <div class="col-md-2"><button class="btn btn-primary w-100">Dodaj</button></div>

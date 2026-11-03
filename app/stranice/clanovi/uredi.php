@@ -3,8 +3,12 @@
 trazi(P_CLANOVI_CITAJ);
 $k = korisnik();
 $id = ul_int('id');
-$uredi = ima(P_CLANOVI_UREDI);
 $clan = $id ? clan_ili_kraj($id) : null;
+// uređivanje i brisanje vrijede samo za sekcije za koje je uloga s tim pravom dodijeljena (npr. Admin sekcije → svoja sekcija)
+$sekUredi = sekcije_prava(P_CLANOVI_UREDI);
+$uredSve = opseg_prava(P_CLANOVI_UREDI)['sve'];
+$uredi = $id ? moze_clana(P_CLANOVI_UREDI, $clan) : (ima(P_CLANOVI_UREDI) && ($sekUredi || $uredSve));
+$brisi = $id && zapreka_brisanja($clan) === null;
 if (!$id && !$uredi) {
     zabranjeno();
 }
@@ -27,7 +31,7 @@ $natrag = fn(string $kar = '', array $dod = []) => preusmjeri('clanovi/uredi', [
 // ======================= POST radnje =======================
 if (je_post()) {
     $radnja = (string) ($_POST['radnja'] ?? '');
-    $treba = fn(int $p) => ima($p) || zabranjeno();
+    $treba = fn(int $p) => (in_array($p, [P_CLANOVI_UREDI, P_CLANOVI_BRISI], true) ? ($id ? moze_clana($p, $clan) : ima($p)) : ima($p)) || zabranjeno();
     // demo: pristup i uloge zaključani; član s demo računom se ne može arhivirati ni obrisati
     if (je_demo() && (in_array($radnja, ['uloga-dodaj', 'uloga-ukloni', 'odobri', 'odbij', 'obrisi-racun', 'nova-pocetna', 'poveznica-lozinka'], true)
         || (in_array($radnja, ['arhiviraj', 'obrisi-trajno', 'obrisi-pogresan'], true) && vrijednost('SELECT 1 FROM Korisnici WHERE ClanId=?', [$id])))) {
@@ -37,10 +41,17 @@ if (je_post()) {
     switch ($radnja) {
         case 'spremi':
             $treba(P_CLANOVI_UREDI);
-            if (!$k['SveSekcije'] && ($_POST['SekcijaId'] ?? '') === '') {
-                $_POST['SekcijaId'] = $clan['SekcijaId'] ?? ($k['Sekcije'][0] ?? '');
+            if (!$uredSve && ($_POST['SekcijaId'] ?? '') === '') {
+                $_POST['SekcijaId'] = $clan['SekcijaId'] ?? ($sekUredi[0]['Id'] ?? '');
             }
-            [$novi, $g] = spremi_clana($id, $_POST);
+            $ciljSek = ($_POST['SekcijaId'] ?? '') === '' || ($_POST['SekcijaId'] ?? '') === '0' ? null : (int) $_POST['SekcijaId'];
+            $g = null;
+            if ((!$id || $ciljSek !== ($clan['SekcijaId'] !== null ? (int) $clan['SekcijaId'] : null)) && !moze_sekciju_pravo(P_CLANOVI_UREDI, $ciljSek)) {
+                $g = 'Ne možete člana staviti u tu sekciju (nemate pravo uređivanja za nju).';
+                $novi = null;
+            } else {
+                [$novi, $g] = spremi_clana($id, $_POST);
+            }
             if ($g) {
                 $_SESSION['obrazac_clan'] = $_POST;
                 poruka(e($g), 'danger');
@@ -72,6 +83,10 @@ if (je_post()) {
             $natrag('podaci');
         case 'arhiviraj':
             $treba(P_CLANOVI_UREDI);
+            if (($k['ClanId'] ?? null) === $id) {
+                poruka('Ne možete arhivirati sami sebe.', 'warning');
+                $natrag('podaci');
+            }
             arhiviraj_clana($id, u_datum(ul_str('DatumIzlaska')) ?? danas(), ul_null('RazlogIzlaska'));
             poruka('Član je arhiviran, pristup je zaključan.');
             $natrag('podaci');
@@ -81,36 +96,31 @@ if (je_post()) {
             poruka('Član je vraćen u aktivne. Ako treba pristup, pošaljite novu pozivnicu (Pristup i uloge).');
             $natrag('podaci');
         case 'obrisi-trajno':
-            $treba(P_SUSTAV);
+        case 'obrisi-pogresan':
+            if (($z = zapreka_brisanja($clan)) !== null) {
+                poruka(e('Nije obrisano: ' . $z . '.'), 'warning');
+                $natrag('podaci');
+            }
             obrisi_clana_trajno($id);
             poruka(e('Član „' . puno_ime($clan) . '“ je trajno obrisan.'));
-            preusmjeri('clanovi', ['sekcija' => 'arhiva']);
-        case 'obrisi-pogresan':
-            $treba(P_SUSTAV);
-            [$n, $presk] = obrisi_pogresne([$id]);
-            if ($n) {
-                poruka(e('Obrisano: „' . puno_ime($clan) . '“.'));
-                preusmjeri('clanovi');
-            }
-            poruka('Nije obrisano jer član ima podatke – arhivirajte ga: ' . e(implode('; ', $presk)), 'warning');
-            $natrag('podaci');
+            preusmjeri('clanovi', ['sekcija' => (int) $clan['Status'] === CLAN_ARHIVIRAN ? 'arhiva' : '']);
 
         // ---------- funkcije ----------
         case 'funkcija-dodaj':
-            $treba(P_SUSTAV);
+            $treba(P_CLANOVI_UREDI);
             $fid = (int) ($_POST['FunkcijaId'] ?? 0);
-            if ($fid) {
-                $sid = (int) ($_POST['SekcijaId'] ?? 0) ?: null;
+            $sid = (int) ($_POST['SekcijaId'] ?? 0) ?: null;
+            if ($fid && moze_sekciju_pravo(P_CLANOVI_UREDI, $sid)) {
                 umetni('ClanFunkcije', ['ClanId' => $id, 'FunkcijaId' => $fid, 'SekcijaId' => $sid, 'Od' => u_datum(ul_str('Od')) ?? danas(), 'Do' => null]);
                 dnevnik('Dodana funkcija', 'Clan', $id, puno_ime($clan) . ': ' . vrijednost('SELECT Naziv FROM Funkcije WHERE Id=?', [$fid]));
             }
             $natrag('funkcije');
         case 'funkcija-zavrsi':
-            $treba(P_SUSTAV);
+            $treba(P_CLANOVI_UREDI);
             q('UPDATE ClanFunkcije SET Do=? WHERE Id=? AND ClanId=?', [danas(), (int) $_POST['fid'], $id]);
             $natrag('funkcije');
         case 'funkcija-obrisi':
-            $treba(P_SUSTAV);
+            $treba(P_CLANOVI_UREDI);
             q('DELETE FROM ClanFunkcije WHERE Id=? AND ClanId=?', [(int) $_POST['fid'], $id]);
             $natrag('funkcije');
 
@@ -265,8 +275,9 @@ if (je_post()) {
             psi_obradi($id, $radnja, puno_ime($clan));
             $natrag('psi');
         case 'pas-bodovi':
-            $treba(P_CLANOVI_UREDI);
-            $treba(P_AKCIJE_ODOBRI);
+            if (!moze_clana(P_AKCIJE_UNOS, $clan) && !moze_clana(P_AKCIJE_ODOBRI, $clan)) {
+                zabranjeno();
+            }
             $n = upisi_bodove_psa((int) date('Y'), $id, $k);
             dnevnik('Bodovi za lovačke pse upisani ručno', 'Clan', $id, puno_ime($clan) . ': ' . $n);
             poruka($n ? "Upisano: $n × radna akcija „Lovački pas“ – čekaju odobrenje (Radne akcije)." : 'Nema novih upisa.');
@@ -370,8 +381,8 @@ if (je_post()) {
 
 // ======================= prikaz =======================
 $c = $clan ?? array_fill_keys(array_merge(POLJA_CLANA, ['Id', 'FotoDatoteka', 'Status']), null);
-if (!$clan && $k['Sekcije'] && !$k['SveSekcije']) {
-    $c['SekcijaId'] = $k['Sekcije'][0];
+if (!$clan && $sekUredi && !$uredSve) {
+    $c['SekcijaId'] = $sekUredi[0]['Id'];
 }
 if (isset($_SESSION['obrazac_clan'])) {
     $c = array_merge($c, array_intersect_key($_SESSION['obrazac_clan'], array_flip(POLJA_CLANA)));
@@ -437,8 +448,12 @@ ob_start(); ?>
         <div class="mt-3 text-start">
             <label class="form-label">Sekcija / lovna jedinica</label>
             <select name="SekcijaId" class="form-select">
-                <?php if ($k['SveSekcije']): ?><option value="">Nije raspoređeno</option><?php endif; ?>
-                <?php foreach (moje_sekcije() as $s): ?><option value="<?= (int) $s['Id'] ?>"<?= sel($c['SekcijaId'], $s['Id']) ?>><?= e($s['Naziv']) ?></option><?php endforeach; ?>
+                <?php $izbor = $uredi ? $sekUredi : moje_sekcije();
+                if ($c['SekcijaId'] !== null && !in_array((int) $c['SekcijaId'], array_map('intval', array_column($izbor, 'Id')), true)) {
+                    $izbor[] = ['Id' => $c['SekcijaId'], 'Naziv' => naziv_sekcije((int) $c['SekcijaId'])];
+                } ?>
+                <?php if ($uredi ? $uredSve : $k['SveSekcije']): ?><option value="">Nije raspoređeno</option><?php endif; ?>
+                <?php foreach ($izbor as $s): ?><option value="<?= (int) $s['Id'] ?>"<?= sel($c['SekcijaId'], $s['Id']) ?>><?= e($s['Naziv']) ?></option><?php endforeach; ?>
             </select>
         </div>
     </div>
@@ -483,8 +498,8 @@ ob_start(); ?>
         <div class="d-flex flex-wrap gap-2 no-print">
             <button type="submit" class="btn btn-primary">Spremi</button>
             <?php if ($id && !$arhiviran): ?>
-                <?php if (ima(P_SUSTAV) && !povijest_clana($id)): ?>
-                    <button type="submit" form="obrazacPogresan" class="btn btn-outline-danger" data-potvrda="Trajno obrisati ovaj unos (nije član)?">Obriši – nije član (pogrešan unos)</button>
+                <?php if ($brisi): ?>
+                    <button type="submit" form="obrazacPogresan" class="btn btn-outline-danger" data-potvrda="<?= e('Trajno obrisati „' . puno_ime($clan) . '“? ' . opis_brisanja($id) . 'Prije brisanja radi se sigurnosna kopija. Ako je član samo izašao iz udruge – bolje Arhiviraj (podaci ostaju).') ?>">🗑 Obriši člana</button>
                 <?php endif; ?>
                 <button type="button" class="btn btn-outline-secondary ms-auto" onclick="document.getElementById('arhivForma').classList.toggle('d-none')">Arhiviraj (izlazak iz udruge)</button>
             <?php elseif ($arhiviran): ?>
@@ -562,7 +577,7 @@ ob_start(); ?>
         <h2 class="h6">Arhiviran član</h2>
         <p class="small mb-2">Izlazak: <?= e(datum($clan['DatumIzlaska'])) ?> <?= $clan['RazlogIzlaska'] ? '– ' . e($clan['RazlogIzlaska']) : '' ?><br>
             Pristup je zaključan: prijava nije moguća, otvorene sesije su odjavljene, pozivnice ne vrijede.</p>
-        <?php if (ima(P_SUSTAV)): ?>
+        <?php if ($brisi): ?>
             <p class="small text-danger mb-2">Trajno brisanje uklanja člana i sve njegove podatke: korisnički račun, funkcije, članarinu, radne akcije i fotografije. Prije brisanja radi se sigurnosna kopija baze.</p>
             <form method="post" action="<?= e(url('clanovi/uredi', ['id' => $id])) ?>"><?= csrf() ?><input type="hidden" name="radnja" value="obrisi-trajno">
                 <button class="btn btn-danger btn-sm" data-potvrda="Sigurno? Član i svi njegovi podaci bit će trajno obrisani.">Trajno obriši člana i sve podatke</button></form>

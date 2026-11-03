@@ -1,9 +1,12 @@
 <?php
-/** Grupni unos radne akcije (admin / Domar): jedna akcija, više članova – ide na odobrenje. Bodovi samo iz postavki (Vrste radnih akcija), ovdje se ne upisuju. */
-trazi(P_AKCIJE_ODOBRI);
+/** Upis radne akcije za druge / grupu (pravo „Radne akcije – upis za druge“ ili „odobravanje“, npr. Domar, Lovnik): jedna akcija, više članova – ide na odobrenje.
+ *  Članovi samo iz sekcija za koje korisnik ima to pravo. Bodovi samo iz postavki (Vrste radnih akcija), ovdje se ne upisuju. */
+if (!smije_upis_akcija()) {
+    zabranjeno();
+}
 $k = korisnik();
 $vrste = redovi('SELECT * FROM VrsteAkcija WHERE Aktivna=1 ORDER BY Naziv');
-$clanovi = redovi('SELECT c.Id, c.Ime, c.Prezime, c.SekcijaId FROM Clanovi c WHERE c.Status=0 AND ' . opseg_sql('c'));
+$clanovi = redovi('SELECT c.Id, c.Ime, c.Prezime, c.SekcijaId FROM Clanovi c WHERE c.Status=0 AND ' . opseg_sql_prava([P_AKCIJE_UNOS, P_AKCIJE_ODOBRI], 'c'));
 $coll = class_exists('Collator') ? new Collator('hr_HR') : null;
 usort($clanovi, fn($a, $b) => $coll ? $coll->compare(prezime_ime($a), prezime_ime($b)) : strcmp(kljuc(prezime_ime($a)), kljuc(prezime_ime($b))));
 $v = ['datum' => danas(), 'vrsta' => '', 'naziv' => '', 'sati' => '', 'opis' => '', 'odabrani' => [], 'oprema' => []];
@@ -100,7 +103,8 @@ if (je_post()) {
     }
     poruka(e($g), 'danger');
 }
-$sekcije = moje_sekcije();
+$imaSek = array_flip(array_map('intval', array_filter(array_column($clanovi, 'SekcijaId'), fn($x) => $x !== null)));
+$sekcije = array_values(array_filter(sekcije(), fn($s) => isset($imaSek[(int) $s['Id']])));
 ob_start(); ?>
 <h1 class="h3 mb-1">Nova radna akcija</h1>
 <p class="text-muted">Upišite akciju jednom i označite sve koji su bili. Akcija ide <b>na odobrenje</b> s predloženim bodovima – bodovi vrijede tek kad se odobre (Radne akcije → Na čekanju).</p>

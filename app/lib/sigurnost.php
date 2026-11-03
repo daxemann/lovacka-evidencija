@@ -224,6 +224,50 @@ function moze_sekciju_pravo(int $pravo, ?int $sekcijaId): bool
     return $o['sve'] || ($sekcijaId !== null && in_array($sekcijaId, $o['s'], true));
 }
 
+/** Opseg jednog od više prava (unija): npr. upis radnih akcija = „upis za druge“ ILI „odobravanje“. @return array{sve: bool, s: int[]} */
+function opseg_prava_ili(array $prava): array
+{
+    $sve = false;
+    $s = [];
+    foreach ($prava as $p) {
+        $o = opseg_prava((int) $p);
+        $sve = $sve || $o['sve'];
+        $s = array_merge($s, $o['s']);
+    }
+    return ['sve' => $sve, 's' => array_values(array_unique($s))];
+}
+/** SQL uvjet: članovi u sekcijama za koje korisnik ima (jedno od) prava. */
+function opseg_sql_prava(int|array $prava, string $alias = 'c'): string
+{
+    $o = opseg_prava_ili((array) $prava);
+    if ($o['sve']) {
+        return '1=1';
+    }
+    if (!$o['s']) {
+        return '1=0';
+    }
+    return $alias . '.SekcijaId IN (' . implode(',', array_map('intval', $o['s'])) . ')';
+}
+/** Smije li korisnik s ovim članom raditi baš ovo pravo (sekcija člana je u opsegu tog prava)? */
+function moze_clana(int $pravo, ?array $clan): bool
+{
+    if (!$clan || !ima($pravo)) {
+        return false;
+    }
+    return moze_sekciju_pravo($pravo, $clan['SekcijaId'] !== null ? (int) $clan['SekcijaId'] : null);
+}
+/** Sekcije u kojima korisnik ima pravo (za izbornike sekcija). */
+function sekcije_prava(int $pravo): array
+{
+    $o = opseg_prava($pravo);
+    return array_values(array_filter(sekcije(), fn($s) => $o['sve'] || in_array((int) $s['Id'], $o['s'], true)));
+}
+/** Smije li upisivati radne akcije drugima (upis za druge ili odobravanje). */
+function smije_upis_akcija(): bool
+{
+    return ima(P_AKCIJE_UNOS) || ima(P_AKCIJE_ODOBRI);
+}
+
 function moze_sekciju(?int $sekcijaId): bool
 {
     $k = korisnik();
