@@ -1,7 +1,9 @@
 <?php
-/** 🦌 Upis / izmjena odstrela (pravo „Odstrel – upis“ za sekciju). */
+/** 🦌 Upis / izmjena odstrela (pravo „Odstrel – upis“ za evidenciju sekcije). Sekcija upisa = stvarna sekcija (lovca / mjesta odstrela). */
 $k = korisnik();
-$uredive = odstrel_sekcije(true);
+$uredive = odstrel_upis_sekcije();
+$poljaObr = odstrel_polja();
+$sle = odstrel_sle();
 if (!$uredive) {
     zabranjeno();
 }
@@ -54,8 +56,21 @@ if (je_post()) {
         'Udaljenost' => ($u = $broj('udaljenost', 0)) !== null ? (int) $u : null, 'Trofej' => $broj('trofej', 2),
         'Napomena' => mb_substr(ul_str('napomena'), 0, 500) ?: null, 'Azurirano' => sada(),
     ];
+    // podaci za obrasce – samo uključena polja (isključena ostaju kakva jesu)
+    foreach (['dopustenje' => ['BrojDopustenja', 'br_dopustenja'], 'zapisnik' => ['BrojZapisnika', 'br_zapisnika'], 'potvrda' => ['BrojPotvrde', 'br_potvrde']] as $pk => [$st, $ime]) {
+        if (in_array($pk, $poljaObr, true)) {
+            $polja[$st] = mb_substr(ul_str($ime), 0, 40) ?: null;
+        }
+    }
+    if (in_array('pregled', $poljaObr, true)) {
+        $polja['PregledOsoba'] = mb_substr(ul_str('pregled_osoba'), 0, 80) ?: null;
+        $polja['PregledNalaz'] = mb_substr(ul_str('pregled_nalaz'), 0, 200) ?: null;
+    }
+    if ($sle) {
+        $polja['SleDatum'] = isset($_POST['sle']) ? (preg_match('/^\d{4}-\d{2}-\d{2}$/', (string) ($_POST['sle_datum'] ?? '')) ? $_POST['sle_datum'] : danas()) : null;
+    }
     // ista markica dvaput u istoj godini i sekciji – upozorenje (ne zabrana: neke vrste nemaju markicu, mogući su ispravci)
-    if ($polja['Markica'] && vrijednost('SELECT 1 FROM Odstrel WHERE Markica=? AND LovnaGodina=? AND ' . ($sid ? 'SekcijaId=' . $sid : 'SekcijaId IS NULL') . ' AND Id<>?',
+    if ($polja['Markica'] && vrijednost('SELECT 1 FROM Odstrel WHERE Markica=? AND LovnaGodina=? AND ' . odstrel_sek_sql([odstrel_grupa($sid ?: null) => true]) . ' AND Id<>?',
             [$polja['Markica'], $polja['LovnaGodina'], (int) ($o['Id'] ?? 0)])) {
         poruka('Pažnja: markica <b>' . e($polja['Markica']) . '</b> je u ovoj lovnoj godini već upisana – provjerite.', 'warning');
     }
@@ -92,7 +107,8 @@ if (!array_key_exists($sid, $uredive)) {
     $sid = $moj && array_key_exists((int) $moj['SekcijaId'], $uredive) ? (int) $moj['SekcijaId'] : (int) array_key_first($uredive);
 }
 $v = $o ?? ['Datum' => (string) ul('datum', danas()), 'Vrijeme' => '', 'Vrsta' => '', 'Spol' => '', 'Dob' => '', 'Masa' => null, 'Markica' => '', 'ClanId' => $k['ClanId'], 'Lovac' => '',
-    'Gost' => 0, 'NapravaId' => null, 'Mjesto' => '', 'Oruzje' => '', 'Kalibar' => '', 'Udaljenost' => null, 'Trofej' => null, 'Napomena' => '', 'Foto' => null];
+    'Gost' => 0, 'NapravaId' => null, 'Mjesto' => '', 'Oruzje' => '', 'Kalibar' => '', 'Udaljenost' => null, 'Trofej' => null, 'Napomena' => '', 'Foto' => null,
+    'BrojDopustenja' => '', 'BrojZapisnika' => '', 'BrojPotvrde' => '', 'PregledOsoba' => '', 'PregledNalaz' => '', 'SleDatum' => null];
 $clanoviPoSek = [];
 foreach ($uredive as $id => $n) {
     $clanoviPoSek[$id] = array_map(fn($c) => ['id' => (int) $c['Id'], 'n' => trim($c['Prezime'] . ' ' . $c['Ime'])], odstrel_clanovi($id ?: null));
@@ -155,6 +171,34 @@ ob_start(); ?>
             <datalist id="od-kalibri"><?php foreach ($kalibri as $x): ?><option value="<?= e($x) ?>"><?php endforeach; ?></datalist></div>
         <div class="col-6 col-md-4"><label class="form-label small mb-0">Udaljenost (m)</label>
             <input name="udaljenost" class="form-control" inputmode="numeric" value="<?= e($v['Udaljenost'] !== null ? (string) $v['Udaljenost'] : '') ?>"></div>
+
+        <?php if ($poljaObr || $sle): ?>
+        <div class="col-12"><hr class="my-2"><b class="small text-uppercase text-muted">Obrasci<?= $sle ? ' i SLE' : '' ?></b>
+            <div class="small text-muted">Samo za evidenciju udruge – ne zamjenjuje SLE ni propisane obrasce.</div></div>
+        <?php if (in_array('dopustenje', $poljaObr, true)): ?>
+        <div class="col-6 col-md-4"><label class="form-label small mb-0">Broj dopuštenja za lov</label>
+            <input name="br_dopustenja" class="form-control" maxlength="40" value="<?= e((string) $v['BrojDopustenja']) ?>"></div>
+        <?php endif; if (in_array('zapisnik', $poljaObr, true)): ?>
+        <div class="col-6 col-md-4"><label class="form-label small mb-0">Broj zapisnika o obavljenom lovu</label>
+            <input name="br_zapisnika" class="form-control" maxlength="40" value="<?= e((string) $v['BrojZapisnika']) ?>"></div>
+        <?php endif; if (in_array('potvrda', $poljaObr, true)): ?>
+        <div class="col-6 col-md-4"><label class="form-label small mb-0">Broj potvrde o podrijetlu</label>
+            <input name="br_potvrde" class="form-control" maxlength="40" value="<?= e((string) $v['BrojPotvrde']) ?>" placeholder="npr. A 0000123"></div>
+        <?php endif; if (in_array('pregled', $poljaObr, true)): ?>
+        <div class="col-12 col-md-5"><label class="form-label small mb-0">Prvi pregled – pregledao</label>
+            <input name="pregled_osoba" class="form-control" maxlength="80" list="od-pregledali" value="<?= e((string) $v['PregledOsoba']) ?>" placeholder="osposobljena osoba">
+            <datalist id="od-pregledali"><?php foreach (array_column(redovi('SELECT DISTINCT PregledOsoba FROM Odstrel WHERE PregledOsoba IS NOT NULL ORDER BY PregledOsoba LIMIT 50'), 'PregledOsoba') as $x): ?><option value="<?= e($x) ?>"><?php endforeach; ?></datalist></div>
+        <div class="col-12 col-md-7"><label class="form-label small mb-0">Nalaz pregleda</label>
+            <input name="pregled_nalaz" class="form-control" maxlength="200" list="od-nalazi" value="<?= e((string) $v['PregledNalaz']) ?>">
+            <datalist id="od-nalazi"><option value="Bez promjena"><option value="Uočene promjene – upućeno veterinaru"></datalist></div>
+        <?php endif; if ($sle): ?>
+        <div class="col-12 d-flex flex-wrap align-items-center gap-2">
+            <div class="form-check mb-0"><input class="form-check-input" type="checkbox" name="sle" id="od-sle" value="1"<?= chk((bool) $v['SleDatum']) ?>>
+                <label class="form-check-label" for="od-sle"><b>Upisano u SLE</b> <span class="small text-muted">(rok 7 dana od odstrela)</span></label></div>
+            <input type="date" name="sle_datum" class="form-control form-control-sm" style="max-width:11rem" value="<?= e((string) ($v['SleDatum'] ?: danas())) ?>" max="<?= e(danas()) ?>">
+        </div>
+        <?php endif; ?>
+        <?php endif; ?>
 
         <div class="col-12"><label class="form-label small mb-0">Napomena</label>
             <textarea name="napomena" class="form-control" rows="2" maxlength="500" placeholder="pogodak, potraga, pas…"><?= e((string) $v['Napomena']) ?></textarea></div>

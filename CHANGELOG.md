@@ -1,5 +1,15 @@
 # Promjene
 
+## 1.65.0 – 2026-11
+- **Odstrel – vođenje evidencije** (*Sustav → Postavke modula → 🦌 Odstrel – evidencija*): svaka udruga bira kako vodi odstrel, markice i „papire“:
+  **po sekcijama** (svaka sekcija svoje – kao dosad), **zajednički** (jedna evidencija za cijelu udrugu) ili **mješovito** – sekcije po izboru spojene (npr. dvije sekcije s istim lovnikom: *„pridruži sekciji …“*).
+  Pridružena sekcija upisuje se pod svojim imenom, a plan odstrela, ostvarenje, provjera markice i PDF idu zajedno s vodećom sekcijom. Pravo za jednu sekciju evidencije vrijedi za cijelu evidenciju.
+- **Dodatna polja za obrasce** (uključuju se po želji): broj **dopuštenja za lov**, broj **zapisnika o obavljenom lovu**, broj **potvrde o podrijetlu divljači**, **prvi pregled** (tko je pregledao, nalaz). Vide se u popisu i u PDF-u.
+- **SLE (Središnja lovna evidencija):** prekidač *Udruga koristi SLE* – kod odstrela kvačica **„upisano u SLE“** (s datumom), brza oznaka **✓ SLE** iz popisa, filtar *nije / jest upisano u SLE*, oznaka ✗ SLE crveno nakon 7 dana.
+- **Novo pravo „Odstrel – upozorenja“** (kvačica u *Uloge i prava*, za sekcije uloge): na početnoj (*Uprava*) i na stranici Odstrel upozorenje kad odstrel **nije upisan u SLE** (rok 7 dana od odstrela) te od 15.4. do 31.5. **povrat neiskorištenih markica** (PPD-3) i izvršenje plana.
+  Dobivaju ga Glavni admin i uloge s pravom *Odstrel – upis* (npr. Lovnik) – ostalima se uključuje po potrebi.
+- **Napomena** na stranicama i u PDF-ovima odstrela: evidencija služi samo za interne potrebe udruge i **ne zamjenjuje SLE** ni propisane obrasce.
+
 ## 1.64.0 – 2026-11
 - **Članovi po sekcijama – upis, uređivanje i brisanje preko uloga:** prava *Članovi – upis i uređivanje* i novo **Članovi – brisanje** vrijede samo za **sekcije za koje je uloga dodijeljena** (npr. *Admin sekcije · Špišić Bukovica* upisuje, uređuje, arhivira i briše samo članove svoje sekcije, druge ne vidi).
   Novo pravo „Članovi – brisanje“ dobivaju Glavni admin i *Admin sekcije*; ostalima se uključuje u *Sustav → Uloge i prava*.

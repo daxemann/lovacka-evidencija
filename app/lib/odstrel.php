@@ -1,7 +1,8 @@
 <?php
 /**
  * Odstrel: upis odstrijeljene divljači (broj markice se upisuje), plan odstrela po sekciji i lovnoj godini (1.4.–31.3.).
- * Sve je strogo po sekcijama: vidi se i upisuje samo za sekcije u opsegu prava (Odstrel – pregled / upis).
+ * Evidencija je po sekcijama, zajednička ili sa spojenim sekcijama (Sustav → Odstrel); ključ evidencije = vodeća sekcija (0 = cijela udruga).
+ * Vidi se i upisuje samo za evidencije u opsegu prava (Odstrel – pregled / upis); pravo za jednu sekciju evidencije vrijedi za cijelu evidenciju.
  * Član bez tih prava vidi samo svoj odstrel. Udruga bez sekcija: ključ 0 (SekcijaId NULL).
  */
 declare(strict_types=1);
@@ -43,44 +44,183 @@ function odstrel_lg_naziv(int $g): string
     return $g . './' . substr((string) ($g + 1), -2) . '.';
 }
 
-/** Sekcije koje korisnik smije vidjeti / uređivati: [id => naziv] (0 = udruga bez sekcija). */
+/** Napomena na stranicama i PDF-ovima odstrela: interna evidencija, ne zamjenjuje SLE ni propisane obrasce. */
+const ODSTREL_SLE_NAPOMENA = 'Ova evidencija služi isključivo za interne potrebe udruge i ne zamjenjuje Središnju lovnu evidenciju (SLE) Ministarstva poljoprivrede ni propisane obrasce (dopuštenje za lov, zapisnik o obavljenom lovu, potvrda o podrijetlu divljači, evidencijske markice).';
+
+/** Dodatna polja upisa za propisane obrasce – svaka udruga uključuje ona koja koristi (Sustav → Odstrel). */
+const ODSTREL_POLJA = [
+    'dopustenje' => 'Broj dopuštenja za lov',
+    'zapisnik' => 'Broj zapisnika o obavljenom lovu',
+    'potvrda' => 'Broj potvrde o podrijetlu divljači',
+    'pregled' => 'Prvi pregled divljači (tko je pregledao, nalaz)',
+];
+const ODSTREL_VODJENJE = [
+    'sekcije' => 'Po sekcijama – svaka sekcija vodi svoju evidenciju (markice, plan, PDF)',
+    'zajednicki' => 'Zajednički – jedna evidencija za cijelu udrugu',
+    'mjesovito' => 'Mješovito – sekcije po izboru spojene (npr. dvije sekcije s istim lovnikom)',
+];
+
+/** Način vođenja evidencije: sekcije | zajednicki | mjesovito. */
+function odstrel_vodjenje(): string
+{
+    $v = (string) postavka('Odstrel.Vodjenje', 'sekcije');
+    return isset(ODSTREL_VODJENJE[$v]) ? $v : 'sekcije';
+}
+/** Uključena dodatna polja (ključevi iz ODSTREL_POLJA). */
+function odstrel_polja(): array
+{
+    return array_values(array_intersect(array_keys(ODSTREL_POLJA), explode(',', (string) postavka('Odstrel.Polja', ''))));
+}
+/** Udruga koristi SLE: oznaka „upisano u SLE“ i upozorenje za rok od 7 dana. */
+function odstrel_sle(): bool
+{
+    return postavka('Odstrel.Sle') === '1';
+}
+/** Aktivne sekcije [id => naziv]. */
+function odstrel_sve_sekcije(): array
+{
+    static $s = null;
+    if ($s === null) {
+        $s = [];
+        foreach (redovi('SELECT Id, Naziv FROM Sekcije WHERE Aktivna=1 ORDER BY Redoslijed, Naziv') as $r) {
+            $s[(int) $r['Id']] = $r['Naziv'];
+        }
+    }
+    return $s;
+}
+/** Mješovito: [sekcija => sekcija koja vodi evidenciju]; vodeća sekcija ne može i sama biti pridružena. */
+function odstrel_spajanja(): array
+{
+    if (odstrel_vodjenje() !== 'mjesovito') {
+        return [];
+    }
+    $sve = odstrel_sve_sekcije();
+    $m = [];
+    foreach ((array) json_decode((string) postavka('Odstrel.Spajanja', ''), true) as $sid => $vod) {
+        $sid = (int) $sid;
+        $vod = (int) $vod;
+        if ($sid !== $vod && isset($sve[$sid], $sve[$vod])) {
+            $m[$sid] = $vod;
+        }
+    }
+    foreach ($m as $sid => $vod) {
+        if (isset($m[$vod])) {
+            unset($m[$sid]);
+        }
+    }
+    return $m;
+}
+/** Ključ evidencije (grupe) za sekciju upisa: 0 = cijela udruga / udruga bez sekcija, inače id vodeće sekcije. */
+function odstrel_grupa(?int $sid): int
+{
+    if (!odstrel_sve_sekcije() || odstrel_vodjenje() === 'zajednicki' || !$sid) {
+        return 0;
+    }
+    return odstrel_spajanja()[$sid] ?? $sid;
+}
+/** Sve evidencije [ključ => naziv], npr. „Bušetina + Špišić Bukovica“. */
+function odstrel_grupe(): array
+{
+    $sve = odstrel_sve_sekcije();
+    if (!$sve) {
+        return [0 => udruga_kratko()];
+    }
+    if (odstrel_vodjenje() === 'zajednicki') {
+        return [0 => udruga_kratko() . ' (sve sekcije)'];
+    }
+    $g = [];
+    foreach ($sve as $sid => $n) {
+        $g[odstrel_grupa($sid)][] = $n;
+    }
+    $out = [];
+    foreach ($sve as $sid => $n) {
+        if (isset($g[$sid])) {
+            $out[$sid] = implode(' + ', $g[$sid]);
+        }
+    }
+    return $out;
+}
+/** Sekcije (stvarne) koje pripadaju evidenciji; 0 = upisi bez sekcije. */
+function odstrel_clanice(int $kljuc): array
+{
+    $sve = odstrel_sve_sekcije();
+    if (!$sve) {
+        return [0];
+    }
+    if (odstrel_vodjenje() === 'zajednicki') {
+        return array_merge(array_keys($sve), [0]);
+    }
+    return array_values(array_filter(array_keys($sve), fn($sid) => odstrel_grupa($sid) === $kljuc));
+}
+/**
+ * Evidencije koje korisnik smije vidjeti / uređivati: [ključ => naziv].
+ * Pravo za jednu sekciju evidencije vrijedi za cijelu evidenciju (spojene sekcije, zajednička evidencija).
+ */
+function odstrel_grupe_za(array $prava): array
+{
+    $o = opseg_prava_ili($prava);
+    $grupe = odstrel_grupe();
+    if (!odstrel_sve_sekcije()) {
+        return $o['sve'] || $o['s'] ? $grupe : [];
+    }
+    if ($o['sve']) {
+        return $grupe;
+    }
+    $k = [];
+    foreach ($o['s'] as $sid) {
+        $k[odstrel_grupa((int) $sid)] = true;
+    }
+    return array_intersect_key($grupe, $k);
+}
 function odstrel_sekcije(bool $uredjivanje = false): array
 {
-    $sve = [];
-    foreach (redovi('SELECT Id, Naziv FROM Sekcije WHERE Aktivna=1 ORDER BY Redoslijed, Naziv') as $s) {
-        $sve[(int) $s['Id']] = $s['Naziv'];
-    }
-    $op = ['sve' => false, 's' => []];
-    foreach ($uredjivanje ? [P_ODSTREL] : [P_ODSTREL, P_ODSTREL_CITAJ] as $pr) {
-        $o = opseg_prava($pr);
-        $op['sve'] = $op['sve'] || $o['sve'];
-        $op['s'] = array_merge($op['s'], $o['s']);
-    }
+    return odstrel_grupe_za($uredjivanje ? [P_ODSTREL] : [P_ODSTREL, P_ODSTREL_CITAJ]);
+}
+/** Stvarne sekcije za upis (sekcija lovca) unutar evidencija koje korisnik smije uređivati: [id => naziv]. */
+function odstrel_upis_sekcije(): array
+{
+    $sve = odstrel_sve_sekcije();
+    $grupe = odstrel_sekcije(true);
     if (!$sve) {
-        return $op['sve'] || $op['s'] ? [0 => udruga_kratko()] : [];
+        return $grupe;
     }
-    if ($op['sve']) {
-        return $sve;
+    $out = [];
+    foreach ($sve as $sid => $n) {
+        if (array_key_exists(odstrel_grupa($sid), $grupe)) {
+            $out[$sid] = $n;
+        }
     }
-    return array_intersect_key($sve, array_flip(array_unique($op['s'])));
+    return $out;
+}
+/** Naziv stvarne sekcije upisa. */
+function odstrel_sekcija_naziv(?int $sid): string
+{
+    return $sid ? (odstrel_sve_sekcije()[$sid] ?? (string) vrijednost('SELECT Naziv FROM Sekcije WHERE Id=?', [$sid])) : '';
 }
 function odstrel_sid(?int $sid): int
 {
     return $sid ?? 0;
 }
+/** Smije li korisnik uređivati upis s ovom (stvarnom) sekcijom. */
 function odstrel_moze_urediti(?int $sid): bool
 {
-    return array_key_exists(odstrel_sid($sid), odstrel_sekcije(true));
+    return array_key_exists(odstrel_grupa($sid), odstrel_sekcije(true));
 }
-/** SQL uvjet za sekcije (ključ 0 = SekcijaId IS NULL). */
-function odstrel_sek_sql(array $sekcije, string $stupac = 'SekcijaId'): string
+/** SQL uvjet za evidencije [ključ => …] – proširuje na sve sekcije evidencije (0 = SekcijaId IS NULL). */
+function odstrel_sek_sql(array $grupe, string $stupac = 'SekcijaId'): string
 {
-    $uv = [];
-    $ids = array_filter(array_keys($sekcije));
-    if ($ids) {
-        $uv[] = $stupac . ' IN (' . implode(',', array_map('intval', $ids)) . ')';
+    $ids = [];
+    $null = false;
+    foreach (array_keys($grupe) as $kl) {
+        foreach (odstrel_clanice((int) $kl) as $sid) {
+            $sid ? $ids[$sid] = true : $null = true;
+        }
     }
-    if (array_key_exists(0, $sekcije)) {
+    $uv = [];
+    if ($ids) {
+        $uv[] = $stupac . ' IN (' . implode(',', array_map('intval', array_keys($ids))) . ')';
+    }
+    if ($null) {
         $uv[] = $stupac . ' IS NULL';
     }
     return $uv ? '(' . implode(' OR ', $uv) . ')' : '1=0';
@@ -100,10 +240,56 @@ function odstrel_red(int $id): ?array
 function odstrel_vidljiv(array $o): bool
 {
     $k = korisnik();
-    if (array_key_exists(odstrel_sid($o['SekcijaId'] !== null ? (int) $o['SekcijaId'] : null), odstrel_sekcije())) {
+    if (array_key_exists(odstrel_grupa($o['SekcijaId'] !== null ? (int) $o['SekcijaId'] : null), odstrel_sekcije())) {
         return true;
     }
     return $k['ClanId'] && (int) $o['ClanId'] === (int) $k['ClanId'];
+}
+
+/**
+ * Upozorenja za korisnika s pravom „Odstrel – upozorenja“ (za evidencije u opsegu):
+ * odstrel nije označen kao upisan u SLE (rok 7 dana) te od 15.4. do 31.5. povrat markica i izvršenje plana.
+ * @return array<array{0:string,1:string,2:string,3:string}> [boja, tekst (HTML), poveznica, gumb]
+ */
+function odstrel_upozorenja(): array
+{
+    if (!modul('odstrel') || !korisnik()) {
+        return [];
+    }
+    $grupe = odstrel_grupe_za([P_ODSTREL_UPOZ]);
+    if (!$grupe) {
+        return [];
+    }
+    $out = [];
+    $kome = count(odstrel_grupe()) > 1 ? ' <span class="small text-muted">(' . e(implode(', ', $grupe)) . ')</span>' : '';
+    if (odstrel_sle()) {
+        $od = (string) postavka('Odstrel.SleOd', '2000-01-01');
+        $uv = odstrel_sek_sql($grupe) . ' AND SleDatum IS NULL AND Datum>=?';
+        $n = (int) vrijednost("SELECT COUNT(*) FROM Odstrel WHERE $uv", [$od]);
+        if ($n) {
+            $kasni = (int) vrijednost("SELECT COUNT(*) FROM Odstrel WHERE $uv AND Datum<?", [$od, date('Y-m-d', strtotime('-7 days'))]);
+            $m = $n % 10 === 1 && $n % 100 !== 11 ? 'odstrel nije označen kao upisan' : (in_array($n % 10, [2, 3, 4], true) && !in_array($n % 100, [12, 13, 14], true) ? 'odstrela nisu označena kao upisana' : 'odstrela nije označeno kao upisano');
+            $out[] = [$kasni ? 'danger' : 'warning', '🦌 <b>' . $n . '</b> ' . $m . ' u SLE'
+                . ($kasni ? ' – od toga <b>' . $kasni . '</b> prekoračilo rok od 7 dana' : ' (rok 7 dana od odstrela)') . '.' . $kome, url('odstrel', ['sle' => 0]), 'Pregledaj'];
+        }
+    }
+    $md = date('m-d');
+    if ($md >= '04-15' && $md <= '05-31') {
+        $pr = odstrel_lovna_godina() - 1;
+        $out[] = ['info', '🦌 Do <b>31. svibnja</b>: neiskorištene markice za lovnu godinu ' . e(odstrel_lg_naziv($pr)) . ' vratiti Ministarstvu (obrazac PPD-3)'
+            . (odstrel_sle() ? ' i upisati izvršenje plana odstrela u SLE' : '') . '.' . $kome, url('odstrel/plan', ['g' => $pr]), 'Plan ' . odstrel_lg_naziv($pr)];
+    }
+    return $out;
+}
+/** Upozorenja kao HTML (alert redovi). */
+function odstrel_upozorenja_html(): string
+{
+    $o = '';
+    foreach (odstrel_upozorenja() as [$boja, $tekst, $link, $gumb]) {
+        $o .= '<div class="alert alert-' . $boja . ' d-flex flex-wrap align-items-center gap-2 py-2"><span class="me-auto">' . $tekst . '</span>'
+            . '<a href="' . e($link) . '" class="btn btn-sm btn-' . ($boja === 'info' ? 'outline-primary' : $boja) . '">' . e($gumb) . '</a></div>';
+    }
+    return $o;
 }
 
 /** Lovne godine koje postoje u odstrelu / planu + tekuća, novije prve. */
@@ -117,7 +303,7 @@ function odstrel_godine(): array
 }
 
 /**
- * Plan i ostvarenje: [['vrsta','kategorija','plan','ostvareno','id'], …] za sekciju i godinu.
+ * Plan i ostvarenje: [['vrsta','kategorija','plan','ostvareno','id'], …] za evidenciju (ključ: vodeća sekcija / 0) i godinu.
  * Ostvareno za kategoriju broji upise iste vrste s tim spolom/kategorijom; prazna kategorija = sva grla vrste.
  * Vrste koje su odstrijeljene, a nisu u planu, dolaze s planom null.
  */
@@ -126,7 +312,8 @@ function odstrel_plan(int $sid, int $godina): array
     $sekSql = $sid ? 'SekcijaId=' . $sid : 'SekcijaId IS NULL';
     $plan = redovi("SELECT * FROM OdstrelPlan WHERE $sekSql AND LovnaGodina=? ORDER BY Id", [$godina]);
     $ost = [];
-    foreach (redovi("SELECT Vrsta, COALESCE(Spol,'') AS Spol, COUNT(*) AS N FROM Odstrel WHERE $sekSql AND LovnaGodina=? GROUP BY Vrsta, COALESCE(Spol,'')", [$godina]) as $r) {
+    $uvOdstrel = odstrel_sek_sql([$sid => true]);
+    foreach (redovi("SELECT Vrsta, COALESCE(Spol,'') AS Spol, COUNT(*) AS N FROM Odstrel WHERE $uvOdstrel AND LovnaGodina=? GROUP BY Vrsta, COALESCE(Spol,'')", [$godina]) as $r) {
         $ost[$r['Vrsta']][$r['Spol']] = (int) $r['N'];
     }
     $out = [];

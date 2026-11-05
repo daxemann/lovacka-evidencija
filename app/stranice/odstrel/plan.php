@@ -70,7 +70,7 @@ ob_start(); ?>
             <?php foreach (array_unique(array_merge([$g + 1], $godine)) as $x): ?><option value="<?= $x ?>"<?= sel($x, $g) ?>><?= e(odstrel_lg_naziv($x)) ?></option><?php endforeach; ?>
         </select></div>
     <?php if (count($sekcije) > 1): ?>
-    <div class="col-6 col-md-3"><label class="form-label small mb-0">Sekcija</label>
+    <div class="col-6 col-md-3"><label class="form-label small mb-0"><?= odstrel_vodjenje() === 'mjesovito' ? 'Evidencija' : 'Sekcija' ?></label>
         <select name="s" class="form-select form-select-sm" onchange="this.form.submit()">
             <?php foreach ($sekcije as $id => $n): ?><option value="<?= (int) $id ?>"<?= sel($id, $sid) ?>><?= e($n) ?></option><?php endforeach; ?>
         </select></div>
@@ -122,4 +122,5 @@ ob_start(); ?>
 })();
 </script>
 <?php endif; ?>
+<p class="small text-muted mt-3 border-top pt-2">ℹ️ <?= e(ODSTREL_SLE_NAPOMENA) ?></p>
 <?php stranica('Plan odstrela', ob_get_clean());

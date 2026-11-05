@@ -17,7 +17,7 @@ if (ima_logo()) {
     $mime = str_ends_with($l, '.png') ? 'image/png' : 'image/jpeg';
     $logo = '<img src="data:' . $mime . ';base64,' . base64_encode((string) file_get_contents($l)) . '" style="height:46px;float:left;margin-right:10px">';
 }
-$opsegNaziv = $samoMoje ? 'moj odstrel' : (count($opseg) === 1 ? reset($opseg) : 'sve sekcije');
+$opsegNaziv = $samoMoje ? 'moj odstrel' : (count($opseg) === 1 ? reset($opseg) : (odstrel_vodjenje() === 'mjesovito' ? 'sve evidencije' : 'sve sekcije'));
 
 if ($jePlan) {
     $tijelo = '';
@@ -47,6 +47,9 @@ if ($jePlan) {
         $w[] = 'Vrsta=?';
         $par[] = $v;
     }
+    if (odstrel_sle() && ($sl = (string) ul('sle', '')) !== '') {
+        $w[] = $sl === '0' ? 'SleDatum IS NULL' : 'SleDatum IS NOT NULL';
+    }
     if (($q = trim((string) ul('q', ''))) !== '') {
         $w[] = '(Markica LIKE ? OR Lovac LIKE ?)';
         $par[] = "%$q%";
@@ -56,17 +59,30 @@ if ($jePlan) {
     $lista = redovi('SELECT * FROM Odstrel WHERE ' . implode(' AND ', $w) . ' ORDER BY ' . $order . ' LIMIT 3000', $par);
     $naprave = modul('revir') ? array_column(redovi('SELECT Id, Broj, Naziv FROM RevirNaprave'), null, 'Id') : [];
     $redovi = '';
+    $viseSekcija = count(odstrel_sve_sekcije()) > 1;
+    $pp = odstrel_polja();
+    $obrStupac = array_intersect($pp, ['dopustenje', 'zapisnik', 'potvrda', 'pregled']) || odstrel_sle();
     foreach ($lista as $i => $o) {
+        $obr = '';
+        if ($obrStupac) {
+            $obr = '<td>' . implode('<br>', array_filter([
+                in_array('dopustenje', $pp, true) && $o['BrojDopustenja'] ? 'dop. ' . e($o['BrojDopustenja']) : '',
+                in_array('zapisnik', $pp, true) && $o['BrojZapisnika'] ? 'zap. ' . e($o['BrojZapisnika']) : '',
+                in_array('potvrda', $pp, true) && $o['BrojPotvrde'] ? 'potv. ' . e($o['BrojPotvrde']) : '',
+                in_array('pregled', $pp, true) && ($o['PregledOsoba'] || $o['PregledNalaz']) ? '<small>pregled: ' . e(trim($o['PregledOsoba'] . ($o['PregledNalaz'] ? ' – ' . $o['PregledNalaz'] : ''))) . '</small>' : '',
+                odstrel_sle() ? ($o['SleDatum'] ? '<small>SLE ✓ ' . e(datum($o['SleDatum'])) . '</small>' : '<small>SLE ✗</small>') : '',
+            ])) . '</td>';
+        }
         $n = $o['NapravaId'] ? ($naprave[(int) $o['NapravaId']] ?? null) : null;
         $redovi .= '<tr><td>' . ($i + 1) . '.</td><td>' . e(datum($o['Datum'])) . '</td><td><b>' . e((string) $o['Markica']) . '</b></td>'
             . '<td>' . e($o['Vrsta']) . ($o['Spol'] || $o['Dob'] ? '<br><small>' . e(odstrel_opis($o)) . '</small>' : '') . '</td>'
             . '<td class="b">' . ($o['Masa'] !== null ? e(broj((float) $o['Masa'], 1)) : '') . '</td>'
             . '<td>' . e($o['Lovac']) . ($o['Gost'] ? ' <small>(gost)</small>' : '') . '</td>'
-            . '<td>' . e($n ? ($n['Broj'] ? $n['Broj'] . ' · ' : '') . $n['Naziv'] : (string) $o['Mjesto']) . (count($opseg) > 1 ? '<br><small>' . e($sekcije[odstrel_sid($o['SekcijaId'] !== null ? (int) $o['SekcijaId'] : null)] ?? '') . '</small>' : '') . '</td>'
-            . '<td>' . e(trim($o['Oruzje'] . ' ' . $o['Kalibar'])) . '</td></tr>';
+            . '<td>' . e($n ? ($n['Broj'] ? $n['Broj'] . ' · ' : '') . $n['Naziv'] : (string) $o['Mjesto']) . ($viseSekcija ? '<br><small>' . e(odstrel_sekcija_naziv($o['SekcijaId'] !== null ? (int) $o['SekcijaId'] : null)) . '</small>' : '') . '</td>'
+            . '<td>' . e(trim($o['Oruzje'] . ' ' . $o['Kalibar'])) . '</td>' . $obr . '</tr>';
     }
-    $tijelo = '<table class="t"><thead><tr><th style="width:7mm">Rb.</th><th style="width:19mm">Datum</th><th style="width:28mm">Markica</th><th>Divljač</th><th class="b" style="width:12mm">kg</th><th>Lovac</th><th>Mjesto</th><th>Oružje</th></tr></thead><tbody>'
-        . ($redovi ?: '<tr><td colspan="8" style="color:#888">Nema upisa.</td></tr>') . '</tbody></table>';
+    $tijelo = '<table class="t"><thead><tr><th style="width:7mm">Rb.</th><th style="width:19mm">Datum</th><th style="width:28mm">Markica</th><th>Divljač</th><th class="b" style="width:12mm">kg</th><th>Lovac</th><th>Mjesto</th><th>Oružje</th>' . ($obrStupac ? '<th>Obrasci' . (odstrel_sle() ? ' / SLE' : '') . '</th>' : '') . '</tr></thead><tbody>'
+        . ($redovi ?: '<tr><td colspan="' . ($obrStupac ? 9 : 8) . '" style="color:#888">Nema upisa.</td></tr>') . '</tbody></table>';
     $podnaslov = 'Odstrel · lovna godina ' . odstrel_lg_naziv($g) . ' · ' . $opsegNaziv . ' · ' . count($lista) . ' grla';
     $ime = 'odstrel';
 }
@@ -79,9 +95,9 @@ $html = '<html><head><meta charset="utf-8"><style>
     table.t { width: 100%; border-collapse: collapse; } .t th { background: #e9efe5; text-align: left; }
     .t th, .t td { border: 0.5pt solid #999; padding: 3px 4px; vertical-align: top; } .t small { color: #666; } .t .b { text-align: right; }
     .t tr.uk td { font-weight: bold; background: #f6f8f4; }
-    .podnozje { position: fixed; bottom: -8mm; left: 0; right: 0; font-size: 7.5pt; color: #888; }
+    .podnozje { position: fixed; bottom: -12mm; left: 0; right: 22mm; font-size: 7pt; color: #888; }
 </style></head><body>
-<div class="podnozje">' . e(udruga_naziv()) . ' · ispisano ' . date('d.m.Y. H:i') . '</div>
+<div class="podnozje">' . e(udruga_naziv()) . ' · ispisano ' . date('d.m.Y. H:i') . '<br>' . e(ODSTREL_SLE_NAPOMENA) . '</div>
 <div class="zag">' . $logo . '<div class="n">' . e(udruga_naziv()) . '</div><div class="p">' . e($podnaslov) . '</div></div>' . $tijelo . '</body></html>';
 
 $opt = new Dompdf\Options();

@@ -19,7 +19,7 @@ const POCETNA_BLOKOVI = [
     'vrijeme' => ['🌤️ Vrijeme i Mjesec', 'Zora, izlazak/zalazak, Mjesec, temperatura, kiša i „Kad u lov?“ danas i sutra (modul Vrijeme i Mjesec).', false],
     'vjetar' => ['💨 Vjetar – kompas', 'Trenutni vjetar, sljedećih 12 sati i čeke koje odgovaraju vjetru (modul Vjetar).', false],
     'danas_popis' => ['🌲 Danas u lovištu – popis', 'Popis zauzetih naprava odmah na početnoj (osvježava se).', false],
-    'uprava' => ['🗂️ Uprava – upozorenja', 'Naslov „Uprava“, + Nova radna akcija, članovi čekaju odobrenje, duplikati.', false],
+    'uprava' => ['🗂️ Uprava – upozorenja', 'Naslov „Uprava“, + Nova radna akcija, članovi čekaju odobrenje, duplikati, upozorenja odstrela (SLE, markice).', false],
     'termini' => ['📅 Nadolazeći termini', 'Kalendar – sljedeći termini.', false],
     'moje_akcije' => ['🪓 Moje radne akcije', 'Bodovi u lovnoj godini i zadnje akcije.', false],
     'clanarina' => ['💶 Moja članarina', 'Stanje članarine člana.', false],
@@ -329,6 +329,8 @@ function pocetna_uprava(): string
     if ($cekaju > 0) {
         $o .= '<div class="alert alert-warning d-flex align-items-center"><span><b>' . $cekaju . '</b> ' . ($cekaju === 1 ? 'član čeka' : 'članova čeka') . ' odobrenje pristupa.</span><a href="' . e(url('sustav/korisnici')) . '" class="btn btn-sm btn-warning ms-auto">Pregledaj</a></div>';
     }
+    // odstrel: SLE (rok 7 dana), povrat markica i izvršenje plana do 31.5. – samo uz pravo „Odstrel – upozorenja“
+    $o .= odstrel_upozorenja_html();
     return $o;
 }
 
