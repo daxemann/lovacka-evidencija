@@ -313,7 +313,7 @@ function odstrel_upozorenja(): array
             $kasni = (int) vrijednost("SELECT COUNT(*) FROM Odstrel WHERE $uv AND Datum<?", [$od, date('Y-m-d', strtotime('-7 days'))]);
             $m = $n % 10 === 1 && $n % 100 !== 11 ? 'odstrel nije označen kao upisan' : (in_array($n % 10, [2, 3, 4], true) && !in_array($n % 100, [12, 13, 14], true) ? 'odstrela nisu označena kao upisana' : 'odstrela nije označeno kao upisano');
             $out[] = [$kasni ? 'danger' : 'warning', '🦌 <b>' . $n . '</b> ' . $m . ' u SLE'
-                . ($kasni ? ' – od toga <b>' . $kasni . '</b> prekoračilo rok od 7 dana' : ' (rok 7 dana od odstrela)') . '.' . $kome, url('odstrel', ['sle' => 0]), 'Pregledaj'];
+                . ($kasni ? ' – od toga <b>' . $kasni . '</b> s prekoračenim rokom od 7 dana' : ' (rok 7 dana od odstrela)') . '.' . $kome, url('odstrel', ['sle' => 0]), 'Pregledaj'];
         }
     }
     $md = date('m-d');
