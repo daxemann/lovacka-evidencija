@@ -32,7 +32,7 @@ $skupine = [
         ['sustav/uplatnica', '🏦', 'Uplatnica (IBAN)', 'Primatelj, model, poziv na broj.', 0, 'clanarina'],
         ['sustav/kalendar', '🗓️', 'Kalendar – vrste', 'Vrste termina i boje.', 0, 'kalendar'],
         ['sustav/skupni-lov', '🎯', 'Skupni lov – PDF', 'Popis sudionika, dodatni zapisnik, broj lova.', 0, 'grupni'],
-        ['sustav/odstrel', '🦌', 'Odstrel – evidencija', 'Po sekcijama / zajednički / spojene sekcije, polja za obrasce, SLE.', 0, 'odstrel'],
+        ['sustav/odstrel', '🦌', 'Odstrel – evidencija', 'Po sekcijama / zajednički / spojene sekcije, vrste divljači, markice, polja za obrasce, SLE.', 0, 'odstrel'],
         ['revir/lovista', '🌲', 'Lovišta', 'Podaci, granice (KML ili crtanje), putevi i prosjeke.', 0, 'revir'],
         ['revir/postavke', '🗺️', 'Postavke lovišta', 'Vrste naprava, početni prikaz, istek zauzeća.', 0, 'revir'],
         ['popusti', '🏷️', 'Popusti u trgovinama', 'Trgovine s popustom za članove.', 0, 'popusti'],

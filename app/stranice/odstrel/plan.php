@@ -98,7 +98,7 @@ ob_start(); ?>
     </tbody>
     <?php if ($moze): ?>
     <tfoot><tr class="table-light"><td><input name="nova_vrsta" class="form-control form-control-sm" list="od-vrste" placeholder="+ vrsta" autocomplete="off" data-plan-vrsta>
-            <datalist id="od-vrste"><?php foreach (array_keys(ODSTREL_VRSTE) as $x): ?><option value="<?= e($x) ?>"><?php endforeach; ?></datalist></td>
+            <datalist id="od-vrste"><?php foreach (array_keys(odstrel_vrste()) as $x): ?><option value="<?= e($x) ?>"><?php endforeach; ?></datalist></td>
         <td><select name="nova_kategorija" class="form-select form-select-sm" data-plan-kat><option value="">ukupno (sva grla)</option></select></td>
         <td><input type="number" min="0" name="novi_broj" class="form-control form-control-sm text-end" placeholder="0"></td><td colspan="3"></td></tr></tfoot>
     <?php endif; ?>
@@ -116,7 +116,7 @@ ob_start(); ?>
 <?php if ($moze): ?>
 <script>
 (function () {
-    var vrste = <?= json_encode(ODSTREL_VRSTE, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG) ?>, v = document.querySelector('[data-plan-vrsta]'), k = document.querySelector('[data-plan-kat]');
+    var vrste = <?= json_encode(odstrel_vrste(), JSON_UNESCAPED_UNICODE | JSON_HEX_TAG) ?>, v = document.querySelector('[data-plan-vrsta]'), k = document.querySelector('[data-plan-kat]');
     function puni() { var cur = k.value; k.innerHTML = '<option value="">ukupno (sva grla)</option>'; (vrste[v.value] || []).forEach(function (x) { var o = document.createElement('option'); o.value = o.textContent = x; o.selected = x === cur; k.appendChild(o); }); }
     v.addEventListener('input', puni); v.addEventListener('change', puni);
 })();

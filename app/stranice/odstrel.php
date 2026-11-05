@@ -69,6 +69,7 @@ ob_start(); ?>
     <h1 class="h3 mb-0 me-auto">🦌 <?= $samoMoje ? 'Moj odstrel' : 'Odstrel' ?></h1>
     <?php if ($uredive): ?><a class="btn btn-success" href="<?= e(url('odstrel/uredi', ['s' => $sF])) ?>">➕ Upiši odstrel</a><?php endif; ?>
     <?php if (!$samoMoje): ?><a class="btn btn-outline-primary" href="<?= e(url('odstrel/plan', ['g' => $g, 's' => $sF])) ?>">📋 Plan odstrela</a><?php endif; ?>
+    <?php if (odstrel_markice_ukljucene() && ($sekcije || odstrel_markice_uredive())): ?><a class="btn btn-outline-primary" href="<?= e(url('odstrel/markice', ['g' => $g, 's' => $sF])) ?>">🏷️ Markice</a><?php endif; ?>
     <a class="btn btn-outline-secondary" target="_blank" href="<?= e(url('izvoz/odstrel-pdf', array_filter(['g' => $g, 's' => $sF, 'vrsta' => $vrstaF, 'q' => $trazi, 'sort' => $sort, 'sle' => $sleF]))) ?>">📄 PDF</a>
     <?php if (ima(P_SUSTAV)): ?><a class="btn btn-outline-secondary" href="<?= e(url('sustav/odstrel')) ?>" title="Postavke odstrela">⚙️</a><?php endif; ?>
 </div>

@@ -25,6 +25,24 @@ if (je_post()) {
     spremi_postavku('Odstrel.Spajanja', $sp ? json_encode($sp) : null);
     $polja = array_values(array_intersect(array_keys(ODSTREL_POLJA), array_keys((array) ($_POST['polja'] ?? []))));
     spremi_postavku('Odstrel.Polja', $polja ? implode(',', $polja) : null);
+    spremi_postavku('Odstrel.Markice', isset($_POST['markice']) ? '1' : null);
+    // vrste divljači: naziv, kategorije (zarezom), markica, aktivna; prazan naziv = red se briše
+    $vrste = [];
+    $vidjeno = [];
+    foreach ((array) ($_POST['vrste'] ?? []) as $r) {
+        $n = mb_substr(trim((string) ($r['naziv'] ?? '')), 0, 60);
+        if ($n === '' || isset($vidjeno[mb_strtolower($n)])) {
+            continue;
+        }
+        $vidjeno[mb_strtolower($n)] = true;
+        $kat = array_slice(array_values(array_unique(array_filter(array_map(fn($x) => mb_substr(trim($x), 0, 30), explode(',', (string) ($r['kategorije'] ?? ''))), 'strlen'))), 0, 12);
+        $vrste[] = ['naziv' => $n, 'kategorije' => $kat, 'markica' => !empty($r['markica']), 'aktivna' => !empty($r['aktivna'])];
+    }
+    if (isset($_POST['vrste_zadano'])) {
+        spremi_postavku('Odstrel.Vrste', null);
+    } elseif ($vrste) {
+        spremi_postavku('Odstrel.Vrste', json_encode($vrste, JSON_UNESCAPED_UNICODE));
+    }
     $sleBilo = odstrel_sle();
     $sle = isset($_POST['sle']);
     spremi_postavku('Odstrel.Sle', $sle ? '1' : null);
@@ -85,6 +103,29 @@ ob_start(); ?>
         <div class="form-check"><input class="form-check-input" type="checkbox" name="polja[<?= $kl ?>]" id="po-<?= $kl ?>" value="1"<?= chk(in_array($kl, $polja, true)) ?>>
             <label class="form-check-label" for="po-<?= $kl ?>"><?= e($n) ?></label></div>
     <?php endforeach; ?>
+</div></div>
+<div class="card mb-3"><div class="card-body">
+    <h2 class="h5">🦌 Vrste divljači</h2>
+    <p class="small text-muted">Druga područja – druge vrste: dodajte svoje, a one kojih u lovištu nema isključite (<i>aktivna</i>). Kategorije (spol / dob) odvojite zarezom.
+        <i>Markica</i> = vrsta s evidencijskom markicom (krupna divljač) – nudi se u zalihi markica. Prazan naziv briše red.</p>
+    <div class="table-responsive"><table class="table table-sm align-middle mb-2">
+        <thead><tr><th>Vrsta</th><th>Kategorije</th><th class="text-center">Markica</th><th class="text-center">Aktivna</th></tr></thead><tbody>
+        <?php $vp = odstrel_vrste_popis(); foreach (array_merge($vp, array_fill(0, 3, ['naziv' => '', 'kategorije' => [], 'markica' => false, 'aktivna' => true])) as $i => $vr): ?>
+        <tr><td><input class="form-control form-control-sm" name="vrste[<?= $i ?>][naziv]" maxlength="60" value="<?= e($vr['naziv']) ?>"<?= $vr['naziv'] === '' ? ' placeholder="+ nova vrsta"' : '' ?>></td>
+            <td><input class="form-control form-control-sm" name="vrste[<?= $i ?>][kategorije]" value="<?= e(implode(', ', $vr['kategorije'])) ?>" placeholder="npr. Mužjak, Ženka, Mlado"></td>
+            <td class="text-center"><input class="form-check-input" type="checkbox" name="vrste[<?= $i ?>][markica]" value="1"<?= chk($vr['markica']) ?>></td>
+            <td class="text-center"><input class="form-check-input" type="checkbox" name="vrste[<?= $i ?>][aktivna]" value="1"<?= chk($vr['aktivna']) ?>></td></tr>
+        <?php endforeach; ?>
+        </tbody></table></div>
+    <div class="form-check"><input class="form-check-input" type="checkbox" name="vrste_zadano" id="vrste-zadano" value="1">
+        <label class="form-check-label small" for="vrste-zadano">Vrati zadani popis vrsta</label></div>
+    <div class="small text-muted mt-1">Već upisani odstrel i plan zadržavaju naziv vrste i kad je vrsta isključena ili preimenovana.</div>
+</div></div>
+<div class="card mb-3"><div class="card-body">
+    <h2 class="h5">🏷️ Zaliha markica</h2>
+    <div class="form-check"><input class="form-check-input" type="checkbox" name="markice" id="markice" value="1"<?= chk(odstrel_markice_ukljucene()) ?>>
+        <label class="form-check-label" for="markice"><b>Vodi zalihu markica</b> – originalni brojevi s izdatnice po evidenciji i lovnoj godini, zaduženje lovcu, povrat Ministarstvu, PDF (PPD-3)</label></div>
+    <div class="small text-muted mt-1">Kod upisa odstrela nude se slobodne markice; s upisom odstrela markica je sama <i>iskorištena</i>. Tko vodi zalihu: pravo <b>Odstrel – markice</b>.</div>
 </div></div>
 <div class="card mb-3"><div class="card-body">
     <h2 class="h5">🏛️ Središnja lovna evidencija (SLE)</h2>

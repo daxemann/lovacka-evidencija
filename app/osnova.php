@@ -5,7 +5,7 @@
  */
 declare(strict_types=1);
 
-const VERZIJA = '1.65.0';
+const VERZIJA = '1.66.0';
 const KONTAKT_EMAIL = 'daxemann@googlemail.com';
 const PODRSKA_PAYPAL = 'darko.bakic@freenet.de'; // dobrovoljna podrška razvoju (Pomoć i kontakt)
 const PROJEKT_URL = 'https://github.com/daxemann/lovacka-evidencija';
@@ -42,8 +42,9 @@ const P_ODSTREL = 67108864;
 const P_AKCIJE_UNOS = 134217728;
 const P_CLANOVI_BRISI = 268435456;
 const P_ODSTREL_UPOZ = 536870912;
+const P_ODSTREL_MARKICE = 1073741824;
 const P_OSNOVNA = 255; // prava iz .NET verzije
-const P_SVE = 1073741823;
+const P_SVE = 2147483647;
 
 const PRAVA_OPIS = [
     P_CLANOVI_CITAJ => ['Članovi – pregled', 'vidi popis članova i njihove podatke'],
@@ -74,6 +75,7 @@ const PRAVA_OPIS = [
     P_POPUSTI => ['Popusti u trgovinama – uređivanje', 'dodaje, mijenja i briše trgovine s popustom za članove (popust, uvjeti, kontakt, logo, rok); članovi bez ovog prava vide samo važeće ponude'],
     P_ODSTREL_CITAJ => ['Odstrel – pregled', 'vidi odstrel i plan odstrela (ostvarenje) za sekcije u svom opsegu, PDF; bez ovog prava član vidi samo svoj odstrel'],
     P_ODSTREL => ['Odstrel – upis', 'upisuje, mijenja i briše odstrel (s brojem markice) i plan odstrela za sekcije u svom opsegu'],
+    P_ODSTREL_MARKICE => ['Odstrel – markice', 'vodi zalihu evidencijskih markica za sekcije u svom opsegu: upis originalnih brojeva (izdatnica, raspon od–do), zaduženje lovcu, povrat Ministarstvu, PDF (PPD-3)'],
     P_ODSTREL_UPOZ => ['Odstrel – upozorenja', 'na početnoj (Uprava) i u odstrelu prima upozorenja za svoje sekcije: odstrel još nije upisan u SLE (rok 7 dana), povrat neiskorištenih markica i izvršenje plana do 31. svibnja'],
     P_REVIR_DNEVNIK => ['Lovište – lovački dnevnik', 'vidi lovački dnevnik (tko, kada, gdje) za sekcije u svom opsegu, ispis i PDF; bez ovog prava dnevnik se ne prikazuje'],
 ];
@@ -83,7 +85,7 @@ const PRAVA_GRUPE = [
     '👥 Članovi i udruga' => [P_CLANOVI_CITAJ, P_CLANOVI_UREDI, P_CLANOVI_BRISI, P_IMENIK_SVI, P_CLANARINA_CITAJ, P_CLANARINA_UREDI, P_AKCIJE_CITAJ, P_AKCIJE_UNOS, P_AKCIJE_ODOBRI],
     '📢 Kalendar, obavijesti, izvještaji' => [P_KALENDAR, P_OBAVIJESTI, P_IZVJESTAJI],
     '🧴 Dezinfekcija' => [P_DEZ_PREGLED, P_DEZ_UREDI, P_DEZ_POSTAVKE, P_DEZ_MOBILNA, P_DEZ_ZA_DRUGE],
-    '🌲 Lovište i lov' => [P_REVIR_UREDI, P_REVIR_NADZOR, P_REVIR_DNEVNIK, P_GRUPNI_LOV, P_ODSTREL_CITAJ, P_ODSTREL, P_ODSTREL_UPOZ],
+    '🌲 Lovište i lov' => [P_REVIR_UREDI, P_REVIR_NADZOR, P_REVIR_DNEVNIK, P_GRUPNI_LOV, P_ODSTREL_CITAJ, P_ODSTREL, P_ODSTREL_MARKICE, P_ODSTREL_UPOZ],
     '📦 Inventura, domovi, popusti' => [P_INVENTURA, P_INVENTURA_UREDI, P_DOMOVI, P_POPUSTI],
     '⚙️ Administracija' => [P_SUSTAV],
 ];
@@ -186,7 +188,7 @@ function db(bool $novo = false): PDO
  * Dodatne tablice PHP verzije (PRAGMA user_version). .NET verzija ih ne poznaje i zanemaruje,
  * pa baza i dalje radi u oba smjera.
  */
-const SHEMA_PHP = 43;
+const SHEMA_PHP = 44;
 function nadogradi_bazu(PDO $pdo): void
 {
     if ((int) $pdo->query('PRAGMA user_version')->fetchColumn() >= SHEMA_PHP) {
@@ -1007,6 +1009,30 @@ SQL);
         }
         // novo pravo „Odstrel – upozorenja“: tko ima sva dosadašnja prava i tko upisuje odstrel (lovnik)
         $pdo->exec('UPDATE "Uloge" SET "Prava" = "Prava" | 536870912 WHERE ("Prava" & 536870911) = 536870911 OR ("Prava" & 67108864) = 67108864');
+    }
+    if ($v < 44) {
+        // zaliha evidencijskih markica (originalni brojevi) po evidenciji (vodeća sekcija, NULL = cijela udruga) i lovnoj godini
+        $pdo->exec('CREATE TABLE IF NOT EXISTS "OdstrelMarkice" (
+                "Id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                "Grupa" INTEGER NULL,
+                "LovnaGodina" INTEGER NOT NULL,
+                "Vrsta" TEXT NOT NULL,
+                "Broj" TEXT NOT NULL,
+                "Izdatnica" TEXT NULL,
+                "Status" INTEGER NOT NULL DEFAULT 0,
+                "OdstrelId" INTEGER NULL REFERENCES "Odstrel" ("Id") ON DELETE SET NULL,
+                "ZaduzenClanId" INTEGER NULL REFERENCES "Clanovi" ("Id") ON DELETE SET NULL,
+                "ZaduzenIme" TEXT NULL,
+                "ZaduzenDatum" TEXT NULL,
+                "VracenoDatum" TEXT NULL,
+                "Napomena" TEXT NULL,
+                "Upisao" TEXT NULL,
+                "Kreirano" TEXT NOT NULL)');
+        $pdo->exec('CREATE INDEX IF NOT EXISTS "IX_OdstrelMarkice_Godina" ON "OdstrelMarkice" ("LovnaGodina", "Grupa", "Vrsta")');
+        $pdo->exec('CREATE INDEX IF NOT EXISTS "IX_OdstrelMarkice_Broj" ON "OdstrelMarkice" ("Broj")');
+        $pdo->exec('CREATE INDEX IF NOT EXISTS "IX_OdstrelMarkice_Odstrel" ON "OdstrelMarkice" ("OdstrelId")');
+        // pravo „Odstrel – markice“: tko ima sva dosadašnja prava i tko upisuje odstrel (lovnik)
+        $pdo->exec('UPDATE "Uloge" SET "Prava" = "Prava" | 1073741824 WHERE ("Prava" & 1073741823) = 1073741823 OR ("Prava" & 67108864) = 67108864');
     }
 }
 

@@ -1,5 +1,15 @@
 # Promjene
 
+## 1.66.0 – 2026-11
+- **🏷️ Zaliha markica** (uključuje se u *Sustav → 🦌 Odstrel – evidencija*): **originalni brojevi s izdatnice** po evidenciji (sekcija / spojene sekcije / udruga) i lovnoj godini – upis **rasponom od–do** (npr. 000101 – 000150, vodeće nule ostaju) ili jedne markice, s brojem izdatnice.
+  Pregled po vrsti: zaliha, slobodne, zadužene, iskorištene, vraćene. Odabrane markice: **zaduži lovcu** (član ili ime), razduži, **vraćeno Ministarstvu** (datum), poništi povrat, obriši pogrešno upisane.
+- **Upis odstrela nudi slobodne markice** iz zalihe (za sekciju i vrstu); spremanjem je markica sama **iskorištena** (poveznica na odstrel), brisanjem odstrela opet slobodna.
+  Upozorenje ako broj nije u zalihi, ako je već iskorišten, vraćen ili je u zalihi za drugu vrstu.
+- **PDF „Evidencija o izdanim i iskorištenim evidencijskim markicama“ (PPD-3)**: po vrsti i izdatnici iskorištene / vraćene, brojevi neiskorištenih markica kao rasponi, ovlaštenik, lovište, lovna godina, datum i potpis.
+  Od 15.4. do 31.5. upozorenje pokazuje koliko markica prošle godine još nije označeno kao vraćeno.
+- **Novo pravo „Odstrel – markice“** (zaliha, zaduženje, povrat) – dobivaju ga Glavni admin i uloge s *Odstrel – upis* (npr. Lovnik).
+- **Vrste divljači po udruzi:** popis vrsta (kategorije spola/dobi, *s markicom*, *aktivna*) uređuje se u *Sustav → Odstrel – evidencija* – druga područja dodaju svoje vrste, nepostojeće se isključuju. Upisani odstrel i plan zadržavaju naziv vrste.
+
 ## 1.65.0 – 2026-11
 - **Odstrel – vođenje evidencije** (*Sustav → Postavke modula → 🦌 Odstrel – evidencija*): svaka udruga bira kako vodi odstrel, markice i „papire“:
   **po sekcijama** (svaka sekcija svoje – kao dosad), **zajednički** (jedna evidencija za cijelu udrugu) ili **mješovito** – sekcije po izboru spojene (npr. dvije sekcije s istim lovnikom: *„pridruži sekciji …“*).

@@ -11,7 +11,7 @@ const RESET_SKUPINE = [
         'lovne naprave, granice, vrste i idealni vjetar ostaju'],
     'kvarovi' => ['🔧', 'Kvarovi na napravama', 'sve prijave kvarova', ['RevirKvarovi'], true, ''],
     'akcije' => ['🔨', 'Radne akcije i bodovi', 'sve radne akcije, bodovi (i bodovi za pse)', ['PsiBodovi', 'RadneAkcije'], true, 'vrste akcija, bodovi i dodatna oprema u postavkama ostaju'],
-    'odstrel' => ['🦌', 'Odstrel i plan odstrela', 'svi upisi odstrela i planovi', ['Odstrel', 'OdstrelPlan'], true, ''],
+    'odstrel' => ['🦌', 'Odstrel i plan odstrela', 'svi upisi odstrela, planovi i zaliha markica', ['OdstrelMarkice', 'Odstrel', 'OdstrelPlan'], true, ''],
     'skupni' => ['🎯', 'Skupni lov', 'lovovi, popisi sudionika, dodatni zapisnici (brojevi lova kreću od 0001)', ['GrupniLovZapisnik', 'GrupniLovPopis', 'GrupniLovSudionici', 'GrupniLov'], true, ''],
     'kalendar' => ['📅', 'Kalendar', 'termini, odgovori „Dolazim“ i pozvani gosti', ['DogadjajGosti', 'DogadjajOdgovori', 'DogadjajSekcije', 'Dogadjaji'], true, 'vrste termina ostaju'],
     'domovi' => ['🏡', 'Rezervacije lovačkih domova', 'sve rezervacije i zahtjevi', ['DomRezervacije'], true, 'domovi ostaju'],

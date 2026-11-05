@@ -33,6 +33,49 @@ const ODSTREL_VRSTE = [
     'Šojka' => [],
 ];
 const ODSTREL_DOBI = ['Mlado (0 god.)', 'Mlado (1 god.)', 'Srednjodobno', 'Zrelo', 'Staro'];
+/** Krupna divljač – zadano s evidencijskom markicom. */
+const ODSTREL_KRUPNA = ['Srna obična', 'Jelen obični', 'Jelen lopatar', 'Divlja svinja', 'Muflon', 'Divokoza', 'Smeđi medvjed'];
+
+/**
+ * Vrste divljači udruge (Sustav → Odstrel – evidencija): [['naziv', 'kategorije' => [], 'markica' => bool, 'aktivna' => bool], …].
+ * Zadano popis ODSTREL_VRSTE; svaka udruga dodaje svoje (druga područja, druge vrste) ili skriva one kojih nema.
+ */
+function odstrel_vrste_popis(): array
+{
+    $j = json_decode((string) postavka('Odstrel.Vrste', ''), true);
+    if (is_array($j) && $j) {
+        $out = [];
+        foreach ($j as $v) {
+            $n = trim((string) ($v['naziv'] ?? ''));
+            if ($n !== '') {
+                $out[] = ['naziv' => $n, 'kategorije' => array_values(array_filter(array_map('trim', (array) ($v['kategorije'] ?? [])), 'strlen')),
+                    'markica' => !empty($v['markica']), 'aktivna' => !isset($v['aktivna']) || !empty($v['aktivna'])];
+            }
+        }
+        return $out;
+    }
+    $out = [];
+    foreach (ODSTREL_VRSTE as $n => $k) {
+        $out[] = ['naziv' => $n, 'kategorije' => $k, 'markica' => in_array($n, ODSTREL_KRUPNA, true), 'aktivna' => true];
+    }
+    return $out;
+}
+/** Aktivne vrste: [naziv => kategorije] (za upis, plan, redoslijed). */
+function odstrel_vrste(): array
+{
+    $o = [];
+    foreach (odstrel_vrste_popis() as $v) {
+        if ($v['aktivna']) {
+            $o[$v['naziv']] = $v['kategorije'];
+        }
+    }
+    return $o;
+}
+/** Vrste s evidencijskom markicom (aktivne). */
+function odstrel_vrste_markica(): array
+{
+    return array_values(array_map(fn($v) => $v['naziv'], array_filter(odstrel_vrste_popis(), fn($v) => $v['aktivna'] && $v['markica'])));
+}
 
 /** Lovna godina (godina početka) za datum 'Y-m-d': 2026-10-30 → 2026, 2027-02-01 → 2026. */
 function odstrel_lovna_godina(?string $datum = null): int
@@ -276,8 +319,15 @@ function odstrel_upozorenja(): array
     $md = date('m-d');
     if ($md >= '04-15' && $md <= '05-31') {
         $pr = odstrel_lovna_godina() - 1;
-        $out[] = ['info', '🦌 Do <b>31. svibnja</b>: neiskorištene markice za lovnu godinu ' . e(odstrel_lg_naziv($pr)) . ' vratiti Ministarstvu (obrazac PPD-3)'
-            . (odstrel_sle() ? ' i upisati izvršenje plana odstrela u SLE' : '') . '.' . $kome, url('odstrel/plan', ['g' => $pr]), 'Plan ' . odstrel_lg_naziv($pr)];
+        $slob = 0;
+        if (odstrel_markice_ukljucene()) {
+            foreach (array_keys($grupe) as $kl) {
+                $slob += (int) vrijednost('SELECT COUNT(*) FROM OdstrelMarkice WHERE ' . odstrel_grupa_sql((int) $kl) . ' AND LovnaGodina=? AND Status=?', [$pr, MARKICA_SLOBODNA]);
+            }
+        }
+        $out[] = [$slob ? 'warning' : 'info', '🦌 Do <b>31. svibnja</b>: neiskorištene markice za lovnu godinu ' . e(odstrel_lg_naziv($pr))
+            . ($slob ? ' (<b>' . $slob . '</b> još nije označeno kao vraćeno)' : '') . ' vratiti Ministarstvu (obrazac PPD-3)'
+            . (odstrel_sle() ? ' i upisati izvršenje plana odstrela u SLE' : '') . '.' . $kome, odstrel_markice_ukljucene() ? url('odstrel/markice', ['g' => $pr]) : url('odstrel/plan', ['g' => $pr]), odstrel_markice_ukljucene() ? 'Markice ' . odstrel_lg_naziv($pr) : 'Plan ' . odstrel_lg_naziv($pr)];
     }
     return $out;
 }
@@ -329,7 +379,7 @@ function odstrel_plan(int $sid, int $godina): array
             $out[] = ['id' => 0, 'vrsta' => $vrsta, 'kategorija' => '', 'plan' => null, 'ostvareno' => array_sum($po)];
         }
     }
-    $red = array_flip(array_keys(ODSTREL_VRSTE));
+    $red = array_flip(array_keys(odstrel_vrste()));
     usort($out, fn($a, $b) => [$red[$a['vrsta']] ?? 99, $a['vrsta'], $a['kategorija'] === '' ? 0 : 1, $a['kategorija']]
         <=> [$red[$b['vrsta']] ?? 99, $b['vrsta'], $b['kategorija'] === '' ? 0 : 1, $b['kategorija']]);
     return $out;
@@ -346,4 +396,113 @@ function odstrel_clanovi(?int $sid): array
 function odstrel_opis(array $o): string
 {
     return implode(' · ', array_filter([(string) $o['Spol'], (string) $o['Dob']]));
+}
+
+
+// ---------- Markice (zaliha evidencijskih markica po evidenciji i lovnoj godini) ----------
+const MARKICA_SLOBODNA = 0, MARKICA_ISKORISTENA = 1, MARKICA_VRACENA = 2;
+const MARKICA_STATUSI = [0 => 'slobodna', 1 => 'iskorištena', 2 => 'vraćena'];
+
+/** Uključena zaliha markica (Sustav → Odstrel – evidencija). */
+function odstrel_markice_ukljucene(): bool
+{
+    return postavka('Odstrel.Markice') === '1';
+}
+/** Evidencije u kojima korisnik smije upisivati zalihu, zaduživati i vraćati markice. */
+function odstrel_markice_uredive(): array
+{
+    return odstrel_grupe_za([P_ODSTREL_MARKICE]);
+}
+/** SQL za stupac Grupa (ključ evidencije; 0 = NULL). */
+function odstrel_grupa_sql(int $kljuc): string
+{
+    return $kljuc ? 'Grupa=' . $kljuc : 'Grupa IS NULL';
+}
+/**
+ * Brojevi markica iz raspona „od“ – „do“ (isti prefiks, zadnji niz znamenki se broji, vodeće nule ostaju):
+ * HR-SR-000101 … HR-SR-000150 → 50 brojeva. Ili jedan broj ako je „do“ prazno. @return string[]|string greška
+ */
+function odstrel_markice_raspon(string $od, string $do): array|string
+{
+    $od = trim($od);
+    $do = trim($do);
+    if ($od === '') {
+        return 'Upišite broj markice (od).';
+    }
+    if ($do === '' || $do === $od) {
+        return [$od];
+    }
+    if (!preg_match('/^(.*?)(\d+)$/', $od, $a) || !preg_match('/^(.*?)(\d+)$/', $do, $b)) {
+        return 'Raspon: broj mora završavati znamenkama (npr. 000101 – 000150).';
+    }
+    // „do“ smije biti i samo kraj broja (npr. od HR-SR-000101 do 150)
+    if ($b[1] === '' && $a[1] !== '') {
+        $b[1] = $a[1];
+    }
+    if ($a[1] !== $b[1]) {
+        return 'Raspon: početak i kraj moraju imati isti prefiks (' . $a[1] . ' ≠ ' . $b[1] . ').';
+    }
+    $x = (int) $a[2];
+    $y = (int) $b[2];
+    if ($y < $x) {
+        return 'Raspon: „do“ je manji od „od“.';
+    }
+    if ($y - $x >= 2000) {
+        return 'Raspon je prevelik (najviše 2000 markica odjednom).';
+    }
+    $duz = max(strlen($a[2]), strlen($b[2]));
+    $out = [];
+    for ($i = $x; $i <= $y; $i++) {
+        $out[] = $a[1] . str_pad((string) $i, $duz, '0', STR_PAD_LEFT);
+    }
+    return $out;
+}
+/** Markica iz zalihe u evidenciji i lovnoj godini (po broju). */
+function odstrel_markica_red(int $grupa, int $godina, string $broj): ?array
+{
+    return red('SELECT * FROM OdstrelMarkice WHERE ' . odstrel_grupa_sql($grupa) . ' AND LovnaGodina=? AND Broj=?', [$godina, $broj]);
+}
+/**
+ * Nakon spremanja / brisanja odstrela: markica iz zalihe → iskorištena (i povezana s upisom), prethodna → opet slobodna.
+ * @return string|null upozorenje (markica nije u zalihi, već iskorištena, druga vrsta …)
+ */
+function odstrel_markica_povezi(?int $odstrelId, ?string $stara, ?array $novi): ?string
+{
+    if (!odstrel_markice_ukljucene()) {
+        return null;
+    }
+    if ($odstrelId) {
+        q('UPDATE OdstrelMarkice SET Status=?, OdstrelId=NULL WHERE OdstrelId=? AND Status=?', [MARKICA_SLOBODNA, $odstrelId, MARKICA_ISKORISTENA]);
+    }
+    if (!$novi || !$novi['Markica']) {
+        return null;
+    }
+    $grupa = odstrel_grupa($novi['SekcijaId'] !== null ? (int) $novi['SekcijaId'] : null);
+    $m = odstrel_markica_red($grupa, (int) $novi['LovnaGodina'], (string) $novi['Markica']);
+    if (!$m) {
+        $ima = (bool) vrijednost('SELECT 1 FROM OdstrelMarkice WHERE ' . odstrel_grupa_sql($grupa) . ' AND LovnaGodina=? AND Vrsta=? LIMIT 1', [(int) $novi['LovnaGodina'], $novi['Vrsta']]);
+        return $ima ? 'Markica <b>' . e($novi['Markica']) . '</b> nije u zalihi markica ove evidencije za ' . e(odstrel_lg_naziv((int) $novi['LovnaGodina'])) . ' – provjerite broj.' : null;
+    }
+    if ((int) $m['Status'] === MARKICA_ISKORISTENA && (int) $m['OdstrelId'] !== $odstrelId) {
+        return 'Markica <b>' . e($novi['Markica']) . '</b> je već iskorištena za drugi odstrel – provjerite.';
+    }
+    if ((int) $m['Status'] === MARKICA_VRACENA) {
+        return 'Markica <b>' . e($novi['Markica']) . '</b> je označena kao vraćena Ministarstvu – provjerite.';
+    }
+    q('UPDATE OdstrelMarkice SET Status=?, OdstrelId=? WHERE Id=?', [MARKICA_ISKORISTENA, $odstrelId, $m['Id']]);
+    return $m['Vrsta'] !== $novi['Vrsta'] ? 'Markica <b>' . e($novi['Markica']) . '</b> je u zalihi za vrstu <b>' . e($m['Vrsta']) . '</b>, a upisano je ' . e($novi['Vrsta']) . '.' : null;
+}
+/** Slobodne markice za upis: [ključ evidencije => [vrsta => [brojevi]]] za lovnu godinu. */
+function odstrel_slobodne_markice(array $grupe, int $godina): array
+{
+    $out = [];
+    if (!odstrel_markice_ukljucene()) {
+        return $out;
+    }
+    foreach (array_keys($grupe) as $kl) {
+        foreach (redovi('SELECT Vrsta, Broj, ZaduzenIme FROM OdstrelMarkice WHERE ' . odstrel_grupa_sql((int) $kl) . ' AND LovnaGodina=? AND Status=? ORDER BY Vrsta, Broj', [$godina, MARKICA_SLOBODNA]) as $r) {
+            $out[(int) $kl][$r['Vrsta']][] = [$r['Broj'], (string) $r['ZaduzenIme']];
+        }
+    }
+    return $out;
 }

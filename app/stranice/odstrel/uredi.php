@@ -17,6 +17,7 @@ if ($id = (int) ul('id', 0)) {
 if (je_post()) {
     $radnja = (string) ($_POST['radnja'] ?? 'spremi');
     if ($radnja === 'obrisi' && $o) {
+        odstrel_markica_povezi((int) $o['Id'], $o['Markica'], null); // markica iz zalihe opet slobodna
         obrisi_sliku($o['Foto']);
         q('DELETE FROM Odstrel WHERE Id=?', [$o['Id']]);
         dnevnik('Odstrel obrisan', 'Odstrel', (int) $o['Id'], $o['Vrsta'] . ($o['Markica'] ? ', markica ' . $o['Markica'] : ''));
@@ -96,6 +97,9 @@ if (je_post()) {
         $nid = umetni('Odstrel', $polja + ['Upisao' => $k['Naziv'], 'Kreirano' => sada()]);
         dnevnik('Odstrel upisan', 'Odstrel', $nid, $vrsta . ($polja['Markica'] ? ', markica ' . $polja['Markica'] : ''));
     }
+    if ($upoz = odstrel_markica_povezi($nid, $o['Markica'] ?? null, $polja)) {
+        poruka($upoz, 'warning');
+    }
     poruka('Spremljeno: ' . e($vrsta) . ($polja['Markica'] ? ', markica ' . e($polja['Markica']) : '') . '.');
     preusmjeri(isset($_POST['jos']) ? 'odstrel/uredi' : 'odstrel', isset($_POST['jos']) ? ['s' => $sid, 'datum' => $datum] : ['g' => $polja['LovnaGodina']]);
 }
@@ -121,7 +125,8 @@ if (modul('revir')) {
 }
 $oruzje = array_column(redovi('SELECT DISTINCT Oruzje FROM ClanOruzniListovi WHERE Oruzje IS NOT NULL AND Oruzje<>\'\' UNION SELECT DISTINCT Oruzje FROM Odstrel WHERE Oruzje IS NOT NULL'), 'Oruzje');
 $kalibri = array_column(redovi('SELECT DISTINCT Kalibar FROM Odstrel WHERE Kalibar IS NOT NULL ORDER BY Kalibar'), 'Kalibar');
-$cfg = ['vrste' => ODSTREL_VRSTE, 'clanovi' => $clanoviPoSek, 'naprave' => $napravePoSek, 'clan' => $v['ClanId'] !== null ? (int) $v['ClanId'] : 0, 'naprava' => (int) $v['NapravaId'], 'spol' => (string) $v['Spol']];
+$cfg = ['vrste' => odstrel_vrste(), 'grupe' => array_combine(array_map('strval', array_keys($uredive)), array_map(fn($x) => odstrel_grupa($x ?: null), array_keys($uredive))),
+    'markice' => odstrel_slobodne_markice(odstrel_sekcije(true), odstrel_lovna_godina((string) $v['Datum'])), 'markicaSad' => (string) $v['Markica'], 'clanovi' => $clanoviPoSek, 'naprave' => $napravePoSek, 'clan' => $v['ClanId'] !== null ? (int) $v['ClanId'] : 0, 'naprava' => (int) $v['NapravaId'], 'spol' => (string) $v['Spol']];
 ob_start(); ?>
 <div class="d-flex align-items-center gap-2 mb-3">
     <a class="btn btn-sm btn-outline-secondary" href="<?= e(url('odstrel')) ?>">← Odstrel</a>
@@ -140,13 +145,15 @@ ob_start(); ?>
         <div class="col-12"><hr class="my-2"><b class="small text-uppercase text-muted">Divljač</b></div>
         <div class="col-12 col-md-5"><label class="form-label small mb-0">Vrsta *</label>
             <input name="vrsta" class="form-control" required list="od-vrste" autocomplete="off" value="<?= e($v['Vrsta']) ?>" data-od-vrsta placeholder="npr. Divlja svinja">
-            <datalist id="od-vrste"><?php foreach (array_keys(ODSTREL_VRSTE) as $x): ?><option value="<?= e($x) ?>"><?php endforeach; ?></datalist></div>
+            <datalist id="od-vrste"><?php foreach (array_keys(odstrel_vrste()) as $x): ?><option value="<?= e($x) ?>"><?php endforeach; ?></datalist></div>
         <div class="col-6 col-md-4"><label class="form-label small mb-0">Spol / kategorija</label>
             <select name="spol" class="form-select" data-od-spol><option value=""></option></select></div>
         <div class="col-6 col-md-3"><label class="form-label small mb-0">Dob</label>
             <select name="dob" class="form-select"><option value=""></option><?php foreach (ODSTREL_DOBI as $x): ?><option<?= sel($x, $v['Dob']) ?>><?= e($x) ?></option><?php endforeach; ?></select></div>
         <div class="col-6 col-md-4"><label class="form-label small mb-0">Broj markice</label>
-            <input name="markica" class="form-control fw-semibold" maxlength="40" value="<?= e((string) $v['Markica']) ?>" placeholder="npr. HR-DS-001234"></div>
+            <input name="markica" class="form-control fw-semibold" maxlength="40" value="<?= e((string) $v['Markica']) ?>" placeholder="npr. HR-DS-001234" list="od-markice" autocomplete="off" data-od-markica>
+            <datalist id="od-markice"></datalist>
+            <?php if (odstrel_markice_ukljucene()): ?><div class="small text-muted" data-od-markice-info></div><?php endif; ?></div>
         <div class="col-6 col-md-3"><label class="form-label small mb-0">Masa (kg)</label>
             <input name="masa" class="form-control" inputmode="decimal" value="<?= e($v['Masa'] !== null ? broj((float) $v['Masa'], 1) : '') ?>" placeholder="u koži / perju"></div>
         <div class="col-6 col-md-3"><label class="form-label small mb-0">Trofej (CIC)</label>
@@ -241,11 +248,20 @@ ob_start(); ?>
             (cfg.naprave[s] || []).forEach(function (n) { napEl.appendChild(opt(n.id, n.n, n.id === nc)); });
         }
     }
+    var mEl = f.querySelector('[data-od-markica]'), mList = document.getElementById('od-markice'), mInfo = f.querySelector('[data-od-markice-info]');
+    function markice() {
+        var g = cfg.grupe[sekEl.value], po = (cfg.markice[g] || {}), l = po[vrstaEl.value] || [];
+        mList.innerHTML = '';
+        l.forEach(function (m) { var o = document.createElement('option'); o.value = m[0]; if (m[1]) o.label = 'zadužena: ' + m[1]; mList.appendChild(o); });
+        if (mInfo) mInfo.textContent = vrstaEl.value && po && Object.keys(po).length ? (l.length ? 'Slobodnih markica u zalihi: ' + l.length : 'Nema slobodnih markica za ovu vrstu u zalihi.') : '';
+    }
+    vrstaEl.addEventListener('change', markice); vrstaEl.addEventListener('input', markice);
+    if (sekEl.tagName === 'SELECT') sekEl.addEventListener('change', markice);
     function gost() { var g = clanEl.value === '0'; gostPolje.hidden = !g; f.gost.required = g; clanEl.required = !g; }
     vrstaEl.addEventListener('input', spol); vrstaEl.addEventListener('change', spol);
     if (sekEl.tagName === 'SELECT') sekEl.addEventListener('change', sekcija);
     clanEl.addEventListener('change', gost);
-    spol(); sekcija();
+    spol(); sekcija(); markice();
 })();
 </script>
 <?php stranica($o ? 'Izmjena odstrela' : 'Upis odstrela', ob_get_clean());
