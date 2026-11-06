@@ -1,5 +1,14 @@
 # Promjene
 
+## 1.68.0 – 2026-11
+- **Skupni lov – Lovnik / voditelj lova se bira:** pri pokretanju lova (novi lov i *🎯 Počni lov* iz kalendara) obavezno polje **👤 Lovnik / voditelj lova**.
+  Ponuđeni su članovi s **funkcijom ili ulogom** lovnika / lovočuvara (Lovnik, Pomoćni lovnik, Lovočuvar …) iz sekcija lova, a ispod *Ostali članovi* (ako udruga funkcije zove drukčije). Organizator koji je i sam lovnik je predodabran.
+- Lov smije pokrenuti **admin, admin sekcije ili tko ima pravo** – voditelj ostaje lovnik: on je na **popisu sudionika**, kao **ovlaštenik prava lova** u PDF-u popisa i dodatnog zapisnika, sa **svojim spremljenim potpisom** (i lovnik bez korisničkog računa, ako se jednom potpisao na popisu), njemu ide **PDF e-poštom** nakon lova, a na karti lova je njegov telefon.
+  Tko je samo pokrenuo lov, više se ne upisuje sam na popis.
+- Lovnik s računom dobiva lov kao organizator (karta, SOS, popis, *Lov završen*) – i kad je iz druge sekcije.
+- **👤 Lovnik / voditelj lova – promijeni** (popis sudionika i završeni lov): i naknadno, npr. za već održane lovove. Dosadašnji lovovi: voditelj = tko je pokrenuo.
+- Uz *broj po sekciji* niz broja lova ide u sekciji voditelja lova.
+
 ## 1.67.0 – 2026-11
 - **Skupni lov – broj lova ručno (prema HLS papiru):** na popisu sudionika i kod završenog lova *🔢 Broj lova – promijeni* – upišite broj s dopuštenja / bloka (npr. *0123* ili *12/2026*).
   Sljedeći lovovi bez ručnog broja **nastavljaju od njega** (+1, vodeće nule i oznaka ostaju: 0123 → 0124, 12/2026 → 13/2026); prazno polje = opet automatski. Broj se može mijenjati i kasnije.

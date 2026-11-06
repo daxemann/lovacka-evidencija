@@ -5,7 +5,7 @@
  */
 declare(strict_types=1);
 
-const VERZIJA = '1.67.0';
+const VERZIJA = '1.68.0';
 const KONTAKT_EMAIL = 'daxemann@googlemail.com';
 const PODRSKA_PAYPAL = 'darko.bakic@freenet.de'; // dobrovoljna podrška razvoju (Pomoć i kontakt)
 const PROJEKT_URL = 'https://github.com/daxemann/lovacka-evidencija';
@@ -188,7 +188,7 @@ function db(bool $novo = false): PDO
  * Dodatne tablice PHP verzije (PRAGMA user_version). .NET verzija ih ne poznaje i zanemaruje,
  * pa baza i dalje radi u oba smjera.
  */
-const SHEMA_PHP = 45;
+const SHEMA_PHP = 46;
 function nadogradi_bazu(PDO $pdo): void
 {
     if ((int) $pdo->query('PRAGMA user_version')->fetchColumn() >= SHEMA_PHP) {
@@ -1038,6 +1038,13 @@ SQL);
         // skupni lov: broj lova ručno (prema HLS dopuštenju/bloku) i poseban broj dodatnog zapisnika ako se razlikuje
         $pdo->exec('ALTER TABLE "GrupniLov" ADD COLUMN "BrojLova" TEXT NULL');
         $pdo->exec('ALTER TABLE "GrupniLov" ADD COLUMN "BrojZapisnika" TEXT NULL');
+    }
+    if ($v < 46) {
+        // skupni lov: Lovnik / voditelj lova se bira pri pokretanju (pokrenuti smije i admin – on nije voditelj); dosadašnji lovovi: voditelj = tko je pokrenuo
+        $pdo->exec('ALTER TABLE "GrupniLov" ADD COLUMN "VoditeljClanId" INTEGER NULL');
+        $pdo->exec('ALTER TABLE "GrupniLov" ADD COLUMN "VoditeljKorisnikId" INTEGER NULL');
+        $pdo->exec('ALTER TABLE "GrupniLov" ADD COLUMN "VoditeljIme" TEXT NULL');
+        $pdo->exec('UPDATE "GrupniLov" SET "VoditeljClanId" = "KreiraoClanId", "VoditeljKorisnikId" = "KreiraoKorisnikId", "VoditeljIme" = "KreiraoIme"');
     }
 }
 

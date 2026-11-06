@@ -103,6 +103,7 @@ if ($d['Vrsta'] === 'Skupni lov' && modul('grupni') && gl_sekcije_organizator())
     <?php elseif ($danasT && gl_kraj_danas()): ?>
         <span class="me-auto small">🎯 Na dan lova: pokrenite lov – <b>bez novog poziva</b>, vrijede odgovori iz ovog termina.</span>
         <form method="post" action="<?= e(url('grupni-lov')) ?>"><?= csrf() ?><input type="hidden" name="radnja" value="pokreni-termin"><input type="hidden" name="dogadjaj" value="<?= $id ?>">
+            <div class="mb-2"><?= gl_voditelj_polje('voditelj-termin') ?></div>
             <button class="btn btn-success" data-potvrda="Početi skupni lov „<?= e($d['Naslov']) ?>“? Novi poziv se ne šalje – tko je potvrdio dolazak, dobiva obavijest da otvori kartu.">🎯 Počni skupni lov</button></form>
     <?php elseif (!$prosao): ?>
         <span class="small text-muted">🎯 Na dan lova ovdje se pojavi gumb <b>Počni skupni lov</b> (karta uživo, SOS, popis) – bez novog poziva.</span>

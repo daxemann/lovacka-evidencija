@@ -63,6 +63,7 @@ ob_start(); ?>
     <?= $aktivan ? '<span class="badge bg-danger">u tijeku</span>' : '<span class="badge bg-secondary">završen</span>' ?></p>
 
 <?= gl_broj_obrazac($lov, 'popis') ?>
+<?= gl_voditelj_obrazac($lov, 'popis') ?>
 
 <div class="gp-raspored">
     <div>

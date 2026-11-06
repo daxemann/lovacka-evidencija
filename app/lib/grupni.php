@@ -44,7 +44,7 @@ function gl_moze_upravljati(array $lov): bool
     if (!$k) {
         return false;
     }
-    if ((int) $lov['KreiraoKorisnikId'] === (int) $k['Id']) {
+    if ((int) $lov['KreiraoKorisnikId'] === (int) $k['Id'] || ((int) ($lov['VoditeljKorisnikId'] ?? 0) && (int) $lov['VoditeljKorisnikId'] === (int) $k['Id'])) {
         return true;
     }
     if (!ima(P_GRUPNI_LOV)) {
@@ -110,6 +110,146 @@ function gl_vidljivo(): bool
     return ima(P_GRUPNI_LOV) || gl_moj_aktivni() !== null;
 }
 
+// ---------- Lovnik / voditelj lova ----------
+/** Naziv funkcije / uloge koji označava lovnika (Lovnik, Pomoćni lovnik, Lovočuvar, Lovovođa, Voditelj lova …). */
+function gl_je_lovnik_naziv(string $n): bool
+{
+    return (bool) preg_match('/lovnik|lovo[čc]uvar|lovovo[đd]|voditelj lova/iu', $n);
+}
+
+/** Mogući voditelji lova u sekcijama organizatora: ['lovnici' => [clanId => opis], 'ostali' => [clanId => opis]].
+ *  Lovnici = aktivni članovi s funkcijom ili ulogom lovnika / lovočuvara; ostali = svi aktivni članovi tih sekcija (kad udruga funkcije zove drukčije). */
+function gl_kandidati_voditelja(?array $sekcije = null): array
+{
+    $sekcije ??= array_keys(gl_sekcije_organizator());
+    $sekcije = array_map('intval', $sekcije);
+    $sve = !$sekcije || $sekcije === [0] || (korisnik()['SveSekcije'] ?? false);
+    $ids = array_filter($sekcije);
+    $uSek = fn($sid) => $sve || $sid === null || in_array((int) $sid, $ids, true);
+    $clanovi = [];
+    foreach (redovi('SELECT c.Id, c.Ime, c.Prezime, c.SekcijaId, s.Naziv AS Sek FROM Clanovi c LEFT JOIN Sekcije s ON s.Id=c.SekcijaId
+            WHERE c.Status=' . CLAN_AKTIVAN . ' ORDER BY c.Prezime, c.Ime') as $c) {
+        $clanovi[(int) $c['Id']] = $c;
+    }
+    $oznake = [];
+    // funkcije (Članovi → Funkcije), vrijede za sekciju funkcije ili člana
+    foreach (redovi('SELECT cf.ClanId, cf.SekcijaId, f.Naziv FROM ClanFunkcije cf JOIN Funkcije f ON f.Id=cf.FunkcijaId WHERE cf.Do IS NULL') as $x) {
+        $c = $clanovi[(int) $x['ClanId']] ?? null;
+        if ($c && gl_je_lovnik_naziv($x['Naziv']) && $uSek($x['SekcijaId'] ?? $c['SekcijaId'])) {
+            $oznake[(int) $c['Id']][$x['Naziv']] = true;
+        }
+    }
+    // uloge (Sustav → Uloge i prava)
+    foreach (redovi('SELECT k.ClanId, ku.SekcijaId, u.Naziv FROM KorisnikUloge ku JOIN Korisnici k ON k.Id=ku.KorisnikId JOIN Uloge u ON u.Id=ku.UlogaId
+            WHERE k.Aktivan=1 AND k.ClanId IS NOT NULL') as $x) {
+        $c = $clanovi[(int) $x['ClanId']] ?? null;
+        if ($c && gl_je_lovnik_naziv($x['Naziv']) && $uSek($x['SekcijaId'] ?? $c['SekcijaId'])) {
+            $oznake[(int) $c['Id']][$x['Naziv']] = true;
+        }
+    }
+    $out = ['lovnici' => [], 'ostali' => []];
+    foreach ($clanovi as $id => $c) {
+        $opis = prezime_ime($c) . ($c['Sek'] ? ' · ' . $c['Sek'] : '');
+        if (isset($oznake[$id])) {
+            $out['lovnici'][$id] = $opis . ' – ' . implode(', ', array_keys($oznake[$id]));
+        } elseif ($uSek($c['SekcijaId'])) {
+            $out['ostali'][$id] = $opis;
+        }
+    }
+    return $out;
+}
+
+/** Polje „Lovnik / voditelj lova“ za obrazac pokretanja (obavezno). Predodabir: sam organizator ako je lovnik, inače jedini lovnik. */
+function gl_voditelj_polje(string $idPolja = 'voditelj'): string
+{
+    $kan = gl_kandidati_voditelja();
+    $ja = (int) (korisnik()['ClanId'] ?? 0);
+    $odabran = isset($kan['lovnici'][$ja]) ? $ja : (count($kan['lovnici']) === 1 ? (int) array_key_first($kan['lovnici']) : 0);
+    $opc = fn(array $l) => implode('', array_map(fn($id, $n) => '<option value="' . (int) $id . '"' . ((int) $id === $odabran ? ' selected' : '') . '>' . e($n) . '</option>', array_keys($l), $l));
+    return '<label class="form-label" for="' . e($idPolja) . '">👤 Lovnik / voditelj lova <span class="text-danger">*</span></label>'
+        . '<select class="form-select" id="' . e($idPolja) . '" name="voditelj" required><option value="">— odaberite lovnika —</option>'
+        . ($kan['lovnici'] ? '<optgroup label="Lovnici / lovočuvari">' . $opc($kan['lovnici']) . '</optgroup>' : '')
+        . ($kan['ostali'] ? '<optgroup label="Ostali članovi">' . $opc($kan['ostali']) . '</optgroup>' : '') . '</select>'
+        . '<div class="form-text">Upisuje se kao <b>ovlaštenik / voditelj lova</b> na popisu i u zapisniku (njegov spremljeni potpis). Lov smije pokrenuti i admin – voditelj ostaje lovnik.'
+        . ' Lovnik s računom može lov voditi i završiti i sam.</div>';
+}
+
+/** Ime voditelja lova (stari lovovi: tko je pokrenuo). */
+function gl_voditelj_ime(array $lov): string
+{
+    return (string) (($lov['VoditeljIme'] ?? '') ?: $lov['KreiraoIme']);
+}
+
+/** Provjera odabranog voditelja: aktivni član. Vraća red člana ili null. */
+function gl_voditelj_clan(int $clanId): ?array
+{
+    return $clanId ? red('SELECT c.*, s.Naziv AS SekcijaNaziv FROM Clanovi c LEFT JOIN Sekcije s ON s.Id=c.SekcijaId WHERE c.Id=? AND c.Status=' . CLAN_AKTIVAN, [$clanId]) : null;
+}
+
+/** Promjena voditelja lova (i kasnije, npr. kad je pogrešno odabran). Novi voditelj dolazi na popis, prethodni ostaje kao ručni upis (može se ukloniti). */
+function gl_promijeni_voditelja(array $lov, int $clanId): ?string
+{
+    $c = gl_voditelj_clan($clanId);
+    if (!$c) {
+        return 'Odaberite lovnika / voditelja lova.';
+    }
+    $kid = korisnik_clana((int) $c['Id']);
+    transakcija(function () use ($lov, $c, $kid) {
+        q('UPDATE GrupniLov SET VoditeljClanId=?, VoditeljKorisnikId=?, VoditeljIme=? WHERE Id=?', [$c['Id'], $kid, puno_ime($c), $lov['Id']]);
+        q("UPDATE GrupniLovPopis SET Nacin='rucno' WHERE LovId=? AND Nacin='voditelj' AND (ClanId IS NULL OR ClanId<>?)", [$lov['Id'], $c['Id']]);
+        gl_voditelj_na_popis((int) $lov['Id'], $c);
+        if ($kid && gl_aktivan($lov)) {
+            gl_voditelj_sudionik((int) $lov['Id'], $c, $kid);
+        }
+    });
+    dnevnik('Skupni lov – voditelj lova', 'GrupniLov', (int) $lov['Id'], puno_ime($c));
+    return null;
+}
+
+/** Voditelj na popis sudionika (ako već nije). */
+function gl_voditelj_na_popis(int $lovId, array $c): void
+{
+    if (red('SELECT Id FROM GrupniLovPopis WHERE LovId=? AND ClanId=?', [$lovId, $c['Id']])) {
+        q("UPDATE GrupniLovPopis SET Nacin='voditelj' WHERE LovId=? AND ClanId=?", [$lovId, $c['Id']]);
+        return;
+    }
+    umetni('GrupniLovPopis', ['LovId' => $lovId, 'ClanId' => (int) $c['Id'], 'Ime' => prezime_ime($c), 'Sekcija' => $c['SekcijaNaziv'] ?: null, 'Gost' => 0,
+        'Nacin' => 'voditelj', 'Vrijeme' => sada(), 'Upisao' => korisnik()['Naziv'] ?? 'sustav', 'Kreirano' => sada()]);
+}
+
+/** Voditelj s računom je sudionik koji dolazi (vidi kartu, prima SOS). */
+function gl_voditelj_sudionik(int $lovId, array $c, int $kid): void
+{
+    if ($s = gl_sudionik($lovId, $kid)) {
+        if ($s['Odgovor'] === null) {
+            q('UPDATE GrupniLovSudionici SET Odgovor=1, Odgovoreno=? WHERE Id=?', [sada(), $s['Id']]);
+        }
+        return;
+    }
+    umetni('GrupniLovSudionici', ['LovId' => $lovId, 'KorisnikId' => $kid, 'ClanId' => (int) $c['Id'], 'Ime' => puno_ime($c),
+        'SekcijaId' => $c['SekcijaId'], 'Token' => bin2hex(random_bytes(16)), 'Odgovor' => 1, 'Odgovoreno' => sada()]);
+}
+
+/** Obrazac „Lovnik / voditelj lova – promijeni“. */
+function gl_voditelj_obrazac(array $lov, string $povratak = ''): string
+{
+    $kan = gl_kandidati_voditelja(gl_sekcije_lova($lov));
+    $tren = (int) ($lov['VoditeljClanId'] ?? 0);
+    if ($tren && !isset($kan['lovnici'][$tren]) && !isset($kan['ostali'][$tren]) && ($c = gl_voditelj_clan($tren))) {
+        $kan['ostali'] = [$tren => prezime_ime($c)] + $kan['ostali'];
+    }
+    $opc = fn(array $l) => implode('', array_map(fn($id, $n) => '<option value="' . (int) $id . '"' . ((int) $id === $tren ? ' selected' : '') . '>' . e($n) . '</option>', array_keys($l), $l));
+    $pokrenuo = (int) $lov['KreiraoClanId'] !== $tren ? ' <span class="text-muted">(pokrenuo ' . e((string) $lov['KreiraoIme']) . ')</span>' : '';
+    return '<details class="mb-3"><summary class="small">👤 Lovnik / voditelj lova: <b>' . e(gl_voditelj_ime($lov)) . '</b>' . $pokrenuo . ' – promijeni</summary>'
+        . '<form method="post" action="' . e(url('grupni-lov')) . '" class="row g-2 align-items-end mt-1">' . csrf()
+        . '<input type="hidden" name="radnja" value="voditelj"><input type="hidden" name="id" value="' . (int) $lov['Id'] . '"><input type="hidden" name="povratak" value="' . e($povratak) . '">'
+        . '<div class="col-auto"><select class="form-select form-select-sm" name="voditelj" required aria-label="Lovnik / voditelj lova"><option value="">— odaberite —</option>'
+        . ($kan['lovnici'] ? '<optgroup label="Lovnici / lovočuvari">' . $opc($kan['lovnici']) . '</optgroup>' : '')
+        . ($kan['ostali'] ? '<optgroup label="Ostali članovi">' . $opc($kan['ostali']) . '</optgroup>' : '') . '</select></div>'
+        . '<div class="col-auto"><button class="btn btn-sm btn-outline-success">💾 Spremi</button></div>'
+        . '<div class="col-12 small text-muted">Voditelj se upisuje na popis i kao ovlaštenik u PDF-u (s njegovim spremljenim potpisom). Prethodni voditelj ostaje na popisu kao ručni upis – po potrebi ga uklonite.</div></form></details>';
+}
+
 // ---------- Pokretanje ----------
 /** Vrijeme automatskog kraja (danas 23:00) ili null ako je već prošlo. */
 function gl_kraj_danas(): ?string
@@ -119,9 +259,15 @@ function gl_kraj_danas(): ?string
 }
 
 /** Pokreće lov i šalje poziv. Vraća [id, null] ili [null, greška]. */
-function gl_pokreni(string $naziv, string $mjesto, string $napomena, array $sekcije, ?array $termin = null): array
+function gl_pokreni(string $naziv, string $mjesto, string $napomena, array $sekcije, ?array $termin = null, int $voditeljClanId = 0): array
 {
     $k = korisnik();
+    // Lovnik / voditelj lova je obavezan (bez odabira: sam organizator, ako je član)
+    $vod = gl_voditelj_clan($voditeljClanId ?: (int) ($k['ClanId'] ?? 0));
+    if (!$vod) {
+        return [null, 'Odaberite lovnika / voditelja lova.'];
+    }
+    $vodKid = korisnik_clana((int) $vod['Id']);
     $dozvoljene = gl_sekcije_organizator();
     if ($termin) {
         // sekcije iz termina (cijela udruga = sve sekcije organizatora)
@@ -174,19 +320,20 @@ function gl_pokreni(string $naziv, string $mjesto, string $napomena, array $sekc
     if (!$lovci) {
         return [null, 'U odabranim sekcijama nema lovaca s korisničkim računom – nema koga pozvati.'];
     }
-    $id = transakcija(function () use ($k, $naziv, $mjesto, $napomena, $sekcije, $kraj, $lovci, $termin, $kal) {
+    $id = transakcija(function () use ($k, $naziv, $mjesto, $napomena, $sekcije, $kraj, $lovci, $termin, $kal, $vod, $vodKid) {
         $id = umetni('GrupniLov', [
             'Naziv' => $naziv, 'Mjesto' => mb_substr(trim($mjesto), 0, 120) ?: null, 'Napomena' => mb_substr(trim($napomena), 0, 500) ?: null,
             'Sekcije' => implode(',', $sekcije), 'Pocetak' => sada(), 'Kraj' => $kraj,
             'KreiraoKorisnikId' => $k['Id'], 'KreiraoClanId' => $k['ClanId'], 'KreiraoIme' => $k['Naziv'], 'Kreirano' => sada(),
+            'VoditeljClanId' => (int) $vod['Id'], 'VoditeljKorisnikId' => $vodKid, 'VoditeljIme' => puno_ime($vod),
             'DogadjajId' => $termin ? (int) $termin['Id'] : null,
-            // broj lova po sekciji: sekcija organizatora; bez nje – jedina sekcija lova
-            'SekcijaBroja' => (int) ($k['ClanId'] ? vrijednost('SELECT SekcijaId FROM Clanovi WHERE Id=?', [$k['ClanId']]) : 0)
+            // broj lova po sekciji: sekcija voditelja lova (lovnika); bez nje – jedina sekcija lova
+            'SekcijaBroja' => (int) ($vod['SekcijaId'] ?? 0)
                 ?: (count(array_filter($sekcije)) === 1 ? (int) array_values(array_filter($sekcije))[0] : null),
         ]);
         foreach ($lovci as $l) {
-            $ja = (int) $l['KorisnikId'] === (int) $k['Id'];
-            // organizator dolazi (on je pokrenuo lov); iz termina vrijedi odgovor iz kalendara
+            $ja = $vodKid && (int) $l['KorisnikId'] === $vodKid;
+            // voditelj lova dolazi; ostali (i admin koji je samo pokrenuo lov) – iz termina vrijedi odgovor iz kalendara
             $odg = $ja ? 1 : ($kal[(int) $l['ClanId']] ?? null);
             umetni('GrupniLovSudionici', [
                 'LovId' => $id, 'KorisnikId' => $l['KorisnikId'], 'ClanId' => $l['ClanId'], 'Ime' => trim($l['Ime'] . ' ' . $l['Prezime']),
@@ -194,14 +341,14 @@ function gl_pokreni(string $naziv, string $mjesto, string $napomena, array $sekc
                 'Odgovor' => $odg, 'Odgovoreno' => $odg !== null ? sada() : null,
             ]);
         }
-        // voditelj lova (ako je član) odmah je na popisu sudionika
-        if ($k['ClanId'] && ($c = red('SELECT c.*, s.Naziv AS SekcijaNaziv FROM Clanovi c LEFT JOIN Sekcije s ON s.Id=c.SekcijaId WHERE c.Id=?', [$k['ClanId']]))) {
-            umetni('GrupniLovPopis', ['LovId' => $id, 'ClanId' => (int) $c['Id'], 'Ime' => prezime_ime($c), 'Sekcija' => $c['SekcijaNaziv'] ?: null, 'Gost' => 0,
-                'Nacin' => 'voditelj', 'Vrijeme' => sada(), 'Upisao' => $k['Naziv'], 'Kreirano' => sada()]);
+        // voditelj lova (lovnik) odmah je na popisu sudionika; s računom je i sudionik (iz druge sekcije se dodaje)
+        gl_voditelj_na_popis($id, $vod);
+        if ($vodKid) {
+            gl_voditelj_sudionik($id, $vod, $vodKid);
         }
         return $id;
     });
-    dnevnik('Skupni lov – pokrenut', 'GrupniLov', $id, $naziv . ($termin ? ' · iz termina ' . datum($termin['Pocetak']) : '') . ' · lovaca ' . count($lovci));
+    dnevnik('Skupni lov – pokrenut', 'GrupniLov', $id, $naziv . ($termin ? ' · iz termina ' . datum($termin['Pocetak']) : '') . ' · voditelj ' . puno_ime($vod) . ' · lovaca ' . count($lovci));
     $termin ? gl_javi_pocetak($id) : gl_posalji_poziv($id);
     return [$id, null];
 }
@@ -252,7 +399,7 @@ function gl_posalji_poziv(int $lovId): void
             ['a' => 'ne', 't' => '✖ Ne dolazim', 'url' => apsolutni_url('grupni-odgovor', ['t' => $s['Token'], 'o' => 0])],
         ], 'u' => apsolutni_url('grupni-lov', ['id' => $lovId])];
     }
-    $tekst = trim(($lov['Mjesto'] ? '📍 ' . $lov['Mjesto'] . ' · ' : '') . 'Organizator: ' . $lov['KreiraoIme'] . ($lov['Napomena'] ? ' · ' . $lov['Napomena'] : ''));
+    $tekst = trim(($lov['Mjesto'] ? '📍 ' . $lov['Mjesto'] . ' · ' : '') . 'Voditelj lova: ' . gl_voditelj_ime($lov) . ($lov['Napomena'] ? ' · ' . $lov['Napomena'] : ''));
     push_posalji($ids, 'grupni', '🎯 ' . $lov['Naziv'] . ' – dolazite?', $tekst, 'grupni-lov', ['id' => $lovId], 'gl-' . $lovId,
         ['ostaje' => true, 'vibracija' => [300, 150, 300], 'poKorisniku' => $po]);
 }
@@ -321,7 +468,7 @@ function gl_provjeri_signal(array $lov): void
 /** Organizatori lova: tko ga je pokrenuo + svi s pravom „Skupni lov – organizacija“ za njegove sekcije (npr. Lovnik na licu mjesta). */
 function gl_organizatori(array $lov): array
 {
-    $ids = [(int) $lov['KreiraoKorisnikId']];
+    $ids = [(int) $lov['KreiraoKorisnikId'], (int) ($lov['VoditeljKorisnikId'] ?? 0)];
     foreach (gl_sekcije_lova($lov) as $sid) {
         $ids = array_merge($ids, push_korisnici_s_pravom(P_GRUPNI_LOV, $sid === 0 ? null : $sid));
     }
@@ -405,11 +552,16 @@ function gl_zavrsi(array $lov, string $tko): void
     }
 }
 
-/** E-pošta voditelja lova (član koji je pokrenuo lov). */
+/** E-pošta voditelja lova (lovnik), inače onoga tko je pokrenuo lov. */
 function gl_email_voditelja(array $lov): ?string
 {
-    $m = $lov['KreiraoClanId'] ? trim((string) vrijednost('SELECT Email FROM Clanovi WHERE Id=?', [$lov['KreiraoClanId']])) : '';
-    return filter_var($m, FILTER_VALIDATE_EMAIL) ? $m : null;
+    foreach (array_unique(array_filter([(int) ($lov['VoditeljClanId'] ?? 0), (int) $lov['KreiraoClanId']])) as $cid) {
+        $m = trim((string) vrijednost('SELECT Email FROM Clanovi WHERE Id=?', [$cid]));
+        if (filter_var($m, FILTER_VALIDATE_EMAIL)) {
+            return $m;
+        }
+    }
+    return null;
 }
 /** E-pošta administratora (pravo Sustav), inače adresa pošiljatelja iz postavki e-pošte. */
 function gl_emailovi_admina(): array
@@ -433,8 +585,12 @@ function gl_primatelji_popisa(array $lov): array
     if ($lov['KreiraoKorisnikId']) {
         $ids[] = (int) $lov['KreiraoKorisnikId'];
     }
-    $ids = array_values(array_unique(array_map('intval', $ids)));
     $out = [];
+    // voditelj lova (i bez korisničkog računa) prvi
+    if (($m = gl_email_voditelja($lov)) && ($c = red('SELECT Ime, Prezime FROM Clanovi WHERE Email=? LIMIT 1', [$m]))) {
+        $out[$m] = puno_ime($c);
+    }
+    $ids = array_values(array_unique(array_filter(array_map('intval', $ids))));
     if ($ids) {
         foreach (redovi('SELECT c.Ime, c.Prezime, c.Email FROM Korisnici k JOIN Clanovi c ON c.Id=k.ClanId WHERE k.Id IN (' . implode(',', $ids) . ") AND c.Email IS NOT NULL AND c.Email<>'' ORDER BY c.Prezime, c.Ime") as $r) {
             if (filter_var(trim($r['Email']), FILTER_VALIDATE_EMAIL)) {
@@ -464,7 +620,7 @@ function gl_posalji_popis(array $lov, array $primatelji, ?string $poslao = null,
     $n = (int) vrijednost('SELECT COUNT(*) FROM GrupniLovPopis WHERE LovId=?', [$lov['Id']]);
     $sto = implode(' i ', array_filter([$popis ? 'popis sudionika' : null, isset($privitci["zapisnik-$brojZ-$dat.pdf"]) ? 'dodatni zapisnik o obavljenom lovu' : null]));
     $tijelo = '<p>U privitku: ' . e($sto) . ' – skupni lov <b>' . e($lov['Naziv']) . '</b> br. ' . e(gl_broj($lov)) . ($zapisnik && $nz && gl_broj($lov, true) !== gl_broj($lov) ? ', dodatni zapisnik br. ' . e(gl_broj($lov, true)) : '') . ' (' . e(datum($lov['Pocetak'])) . ($lov['Mjesto'] ? ', ' . e($lov['Mjesto']) : '') . ').</p>'
-        . '<p>Voditelj lova: ' . e((string) $lov['KreiraoIme']) . ($popis ? ' · sudionika: ' . $n : '') . ($zapisnik && $nz ? ' · upisano divljači: ' . $nz : '')
+        . '<p>Voditelj lova: ' . e(gl_voditelj_ime($lov)) . ($popis ? ' · sudionika: ' . $n : '') . ($zapisnik && $nz ? ' · upisano divljači: ' . $nz : '')
         . ($lov['Zavrseno'] ? ' · lov završen ' . e(date('H:i', strtotime($lov['Zavrseno']))) : '') . '</p>'
         . '<p style="color:#888;font-size:12px">' . e(udruga_naziv()) . ' – Lovačka evidencija</p>';
     $naslov = ($popis && count($privitci) > 1 ? 'Popis sudionika i dodatni zapisnik' : ($popis ? 'Popis sudionika' : 'Dodatni zapisnik')) . ' – ' . $lov['Naziv'] . ' br. ' . gl_broj($lov) . ' (' . datum($lov['Pocetak']) . ')';
@@ -546,10 +702,11 @@ function gl_stanje(array $lov): array
         ];
     }
     $ja = gl_sudionik((int) $lov['Id'], (int) $k['Id']);
-    $orgTel = $lov['KreiraoClanId'] ? vrijednost('SELECT MobilniTelefon FROM Clanovi WHERE Id=?', [$lov['KreiraoClanId']]) : null;
+    $tc = (int) (($lov['VoditeljClanId'] ?? 0) ?: $lov['KreiraoClanId']);
+    $orgTel = $tc ? vrijednost('SELECT MobilniTelefon FROM Clanovi WHERE Id=?', [$tc]) : null;
     return [
         'id' => (int) $lov['Id'], 'naziv' => $lov['Naziv'], 'aktivan' => gl_aktivan($lov), 'org' => $org,
-        'kraj' => date('H:i', strtotime($lov['Kraj'])), 'organizator' => $lov['KreiraoIme'], 'orgTel' => $orgTel ?: null,
+        'kraj' => date('H:i', strtotime($lov['Kraj'])), 'organizator' => gl_voditelj_ime($lov), 'orgTel' => $orgTel ?: null,
         'broj' => $broj, 'naPopisu' => $org ? (int) vrijednost('SELECT COUNT(*) FROM GrupniLovPopis WHERE LovId=?', [$lov['Id']]) : null, 'sudionici' => $sudionici, 'vrijeme' => date('H:i:s'),
         'ja' => $ja ? ['odgovor' => $ja['Odgovor'] === null ? null : (int) $ja['Odgovor'], 'otisao' => $ja['Otisao'] !== null, 'sos' => $ja['SosOd'] !== null,
             'preuzeo' => $ja['SosPreuzeoIme']] : null,
@@ -823,7 +980,7 @@ function gl_pdf_postavke(): array
 /** Broj lova (popis) i dodatnog zapisnika.
  *  Ručno upisan broj (npr. s HLS dopuštenja / bloka) vrijedi kako je upisan; lov bez ručnog broja nastavlja od prethodnog lova (+1, vodeće nule i
  *  oznaka ostaju: 0012 → 0013, 12/2026 → 13/2026). Prvi lov u lovnoj godini (od 1.4.) bez ručnog broja = 0001. Obrisani lov bez ručnog broja ne ostavlja rupu.
- *  Uz „broj po sekciji“ niz ide u sekciji organizatora (tko je pokrenuo lov), i kad je lov za više sekcija: „0003 (Bušetina)“.
+ *  Uz „broj po sekciji“ niz ide u sekciji voditelja lova (lovnika), i kad je lov za više sekcija: „0003 (Bušetina)“.
  *  $zapisnik = broj dodatnog zapisnika: ručno upisan broj zapisnika, inače isti kao broj lova. */
 function gl_broj(array $lov, bool $zapisnik = false): string
 {
@@ -938,10 +1095,16 @@ function gl_pdf_render(string $tijelo): string
 /** Potpis voditelja lova (tek kad je lov završen) – crta za potpis inače. */
 function gl_pdf_potpis_voditelja(array $lov): string
 {
-    $pot = !gl_aktivan($lov) && $lov['KreiraoKorisnikId'] ? potpis_datauri((int) $lov['KreiraoKorisnikId']) : null;
+    $pot = null;
+    if (!gl_aktivan($lov)) {
+        // spremljeni potpis voditelja (Moj profil ili potpisan pri skupnom lovu); stari lovovi bez voditelja-člana: tko je pokrenuo
+        $f = ($vc = (int) ($lov['VoditeljClanId'] ?? 0)) ? potpis_clana($vc) : null;
+        $pot = $f ? 'data:image/png;base64,' . base64_encode((string) file_get_contents(podaci('foto/' . $f)))
+            : (!$vc && $lov['KreiraoKorisnikId'] ? potpis_datauri((int) $lov['KreiraoKorisnikId']) : null);
+    }
     $potpis = $pot ? '<img src="' . $pot . '" style="height:14mm;vertical-align:middle"><br><span style="font-size:7pt;color:#777">elektronički generirano iz evidencije</span>'
         : '____________________';
-    return '<table class="potpis"><tr><td>Lovnik / voditelj lova: <b>' . e((string) $lov['KreiraoIme']) . '</b></td><td>Potpis: ' . $potpis . '</td></tr></table>';
+    return '<table class="potpis"><tr><td>Lovnik / voditelj lova: <b>' . e(gl_voditelj_ime($lov)) . '</b></td><td>Potpis: ' . $potpis . '</td></tr></table>';
 }
 
 /** Stupci dodatnog zapisnika (iz postavki, RB je uvijek prvi). */
@@ -971,7 +1134,7 @@ function gl_zapisnik_pdf(array $lov): string
         $redovi .= '<tr><td class="d">' . (++$i) . '.</td>' . str_repeat('<td></td>', count($stupci)) . '</tr>';
     }
     return gl_pdf_render('<h2>' . e($p['zapisnik_naslov']) . ' ' . e(gl_broj($lov, true)) . '</h2>
-        <div class="info">' . e($p['ovlastenik']) . ' <b>' . e((string) $lov['KreiraoIme']) . '</b></div>
+        <div class="info">' . e($p['ovlastenik']) . ' <b>' . e(gl_voditelj_ime($lov)) . '</b></div>
         <table class="t"><thead><tr>' . $th . '</tr></thead><tbody>'
         . ($redovi ?: '<tr><td colspan="' . (count($stupci) + 1) . '">Nije upisana divljač.</td></tr>') . '</tbody></table>'
         . ($p['potpis_voditelja'] ? gl_pdf_potpis_voditelja($lov) : ''));
@@ -1002,7 +1165,7 @@ function gl_popis_pdf(array $lov): string
             . ($p['st_potpis'] ? '<td class="potpis-polje">' . gl_potpis_img(($x['Potpis'] ?? null) ?: ($cid ? potpis_clana($cid) : null)) . '</td>' : '') . '</tr>';
     }
     return gl_pdf_render('<h2>' . e($p['popis_naslov']) . ' ' . e(gl_broj($lov)) . '</h2>
-        <div class="info">' . e($p['ovlastenik']) . ' <b>' . e((string) $lov['KreiraoIme']) . '</b></div>
+        <div class="info">' . e($p['ovlastenik']) . ' <b>' . e(gl_voditelj_ime($lov)) . '</b></div>
         <table class="t"><thead><tr>' . $th . '</tr></thead>
         <tbody>' . ($redovi ?: '<tr><td colspan="' . $stupaca . '">Popis je prazan.</td></tr>') . '</tbody></table>'
         . ($p['potpis_voditelja'] ? gl_pdf_potpis_voditelja($lov) : ''));

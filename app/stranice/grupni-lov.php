@@ -18,7 +18,7 @@ if (je_post()) {
     $radnja = (string) ($_POST['radnja'] ?? '');
     $povratak = (string) ($_POST['povratak'] ?? '');
     if ($radnja === 'pokreni') {
-        [$id, $g] = gl_pokreni(ul_str('naziv'), ul_str('mjesto'), ul_str('napomena'), (array) ($_POST['sekcije'] ?? []));
+        [$id, $g] = gl_pokreni(ul_str('naziv'), ul_str('mjesto'), ul_str('napomena'), (array) ($_POST['sekcije'] ?? []), null, (int) ($_POST['voditelj'] ?? 0));
         if ($g) {
             poruka(e($g), 'danger');
             preusmjeri('grupni-lov');
@@ -41,12 +41,12 @@ if (je_post()) {
             preusmjeri('kalendar/termin', ['id' => $t['Id']]);
         }
         $mjesto = preg_match('#^https?://#i', (string) $t['Mjesto']) ? '' : (string) $t['Mjesto'];
-        [$id, $g] = gl_pokreni($t['Naslov'], $mjesto, ul_str('napomena'), [], $t);
+        [$id, $g] = gl_pokreni($t['Naslov'], $mjesto, ul_str('napomena'), [], $t, (int) ($_POST['voditelj'] ?? 0));
         if ($g) {
             poruka(e($g), 'danger');
             preusmjeri('kalendar/termin', ['id' => $t['Id']]);
         }
-        $n = (int) vrijednost('SELECT COUNT(*) FROM GrupniLovSudionici WHERE LovId=? AND Odgovor=1 AND KorisnikId<>?', [$id, $k['Id']]);
+        $n = (int) vrijednost('SELECT COUNT(*) FROM GrupniLovSudionici WHERE LovId=? AND Odgovor=1', [$id]);
         poruka("🎯 Skupni lov počeo – bez novog poziva. Potvrdili dolazak u kalendaru: $n (dobili su obavijest da otvore kartu).");
         preusmjeri('grupni-lov', ['id' => $id]);
     }
@@ -95,6 +95,14 @@ if (je_post()) {
         dnevnik('Skupni lov – broj lova', 'GrupniLov', (int) $lov['Id'], $b ?? 'automatski');
         poruka($b === null ? 'Broj lova je opet automatski: ' . e(gl_broj_jezgra($lov)) . '.' : 'Broj lova: ' . e($b) . ' – sljedeći lov nastavlja od ' . e(gl_broj_sljedeci($b)) . '.');
         preusmjeri($povratak === 'popis' ? 'grupni-popis' : 'grupni-lov', ['id' => $lov['Id']]);
+    }
+    if ($radnja === 'voditelj') {
+        if (!gl_moze_upravljati($lov)) {
+            zabranjeno();
+        }
+        $g = gl_promijeni_voditelja($lov, (int) ($_POST['voditelj'] ?? 0));
+        $g ? poruka(e($g), 'warning') : poruka('👤 Lovnik / voditelj lova: ' . e(gl_voditelj_ime(gl_lov((int) $lov['Id']) ?? $lov)) . '.');
+        preusmjeri($povratak === 'popis' ? 'grupni-popis' : ($povratak === 'zapisnik' ? 'grupni-zapisnik' : 'grupni-lov'), ['id' => $lov['Id']]);
     }
     if ($radnja === 'zavrsi') {
         if (!gl_moze_upravljati($lov)) {
@@ -166,6 +174,7 @@ if (!$lov) {
             </div>
         </div>
         <form method="post" class="mt-2"><?= csrf() ?><input type="hidden" name="radnja" value="pokreni-termin"><input type="hidden" name="dogadjaj" value="<?= (int) $t['Id'] ?>">
+            <div class="mb-2"><?= gl_voditelj_polje('voditelj-t' . (int) $t['Id']) ?></div>
             <input class="form-control mb-2" name="napomena" maxlength="500" placeholder="Napomena (nije obavezno)">
             <button class="btn btn-success btn-lg" data-potvrda="Početi lov „<?= e($t['Naslov']) ?>“? Poziv je već bio u kalendaru – novi se ne šalje. Tko je potvrdio dolazak, dobiva obavijest da otvori kartu.">🎯 Počni lov</button>
             <div class="small text-muted mt-1">Bez novog poziva – vrijede odgovori iz kalendara. Gosti s QR pozivnicom skeniraju se na popisu.</div>
@@ -184,7 +193,8 @@ if (!$lov) {
             <div class="row g-2">
                 <div class="col-md-6"><label class="form-label">Naziv</label><input class="form-control" name="naziv" maxlength="80" value="Skupni lov" required></div>
                 <div class="col-md-6"><label class="form-label">Mjesto okupljanja</label><input class="form-control" name="mjesto" maxlength="120" placeholder="npr. Lovački dom"></div>
-                <div class="col-12"><label class="form-label">Napomena</label><input class="form-control" name="napomena" maxlength="500" placeholder="npr. okupljanje 7:30, prsluk obavezan"></div>
+                <div class="col-md-6"><?= gl_voditelj_polje() ?></div>
+                <div class="col-md-6"><label class="form-label">Napomena</label><input class="form-control" name="napomena" maxlength="500" placeholder="npr. okupljanje 7:30, prsluk obavezan"></div>
                 <div class="col-12"><label class="form-label d-block">Sekcije</label>
                     <?php foreach ($organizatorSek as $id => $n): ?>
                         <label class="form-check form-check-inline"><input class="form-check-input" type="checkbox" name="sekcije[]" value="<?= (int) $id ?>"<?= count($organizatorSek) === 1 ? ' checked' : '' ?>> <?= e($n) ?></label>
@@ -204,9 +214,9 @@ if (!$lov) {
         </form>
     </div>
     <div class="table-responsive"><table class="table table-sm align-middle">
-        <thead><tr><th>Br.</th><th>Datum</th><th>Naziv</th><th>Organizator</th><th class="text-end">Došli / pozvani</th><th class="text-end">Na popisu</th><th></th></tr></thead><tbody>
+        <thead><tr><th>Br.</th><th>Datum</th><th>Naziv</th><th>Voditelj lova</th><th class="text-end">Došli / pozvani</th><th class="text-end">Na popisu</th><th></th></tr></thead><tbody>
         <?php foreach ($prosli as $p): ?>
-            <tr><td class="text-muted"><?= e(gl_broj($p)) ?></td><td><?= e(datum($p['Pocetak'])) ?></td><td><?= e($p['Naziv']) ?></td><td><?= e($p['KreiraoIme']) ?></td>
+            <tr><td class="text-muted"><?= e(gl_broj($p)) ?></td><td><?= e(datum($p['Pocetak'])) ?></td><td><?= e($p['Naziv']) ?></td><td><?= e(gl_voditelj_ime($p)) ?></td>
                 <td class="text-end"><?= (int) $p['Dosli'] ?> / <?= (int) $p['Pozvani'] ?></td>
                 <td class="text-end"><?= (int) $p['NaPopisu'] ?: '' ?></td>
                 <td class="text-end text-nowrap"><a class="btn btn-sm btn-outline-secondary" href="<?= e(url('grupni-lov', ['id' => $p['Id']])) ?>">Sudionici</a>
@@ -230,7 +240,7 @@ if (!gl_aktivan($lov)) {
     $sud = redovi('SELECT * FROM GrupniLovSudionici WHERE LovId=? ORDER BY Odgovor DESC, Ime', [$lov['Id']]);
     ob_start(); ?>
     <h1 class="h3">🎯 <?= e($lov['Naziv']) ?> <span class="badge bg-secondary align-middle">završen</span></h1>
-    <p class="text-muted"><?= e(datum_vrijeme($lov['Pocetak'])) ?> – <?= e(date('H:i', strtotime((string) $lov['Zavrseno']))) ?> · organizator <?= e($lov['KreiraoIme']) ?> · završio: <?= e($lov['ZavrsioIme']) ?>
+    <p class="text-muted"><?= e(datum_vrijeme($lov['Pocetak'])) ?> – <?= e(date('H:i', strtotime((string) $lov['Zavrseno']))) ?> · voditelj lova <?= e(gl_voditelj_ime($lov)) ?> · završio: <?= e($lov['ZavrsioIme']) ?>
         <?= $lov['Mjesto'] ? '· 📍 ' . e($lov['Mjesto']) : '' ?></p>
     <p class="small text-muted">Položaji su obrisani pri završetku lova – ostaje samo tko je sudjelovao.</p>
     <?php $naPopisu = (int) vrijednost('SELECT COUNT(*) FROM GrupniLovPopis WHERE LovId=?', [$lov['Id']]); ?>
@@ -241,6 +251,7 @@ if (!gl_aktivan($lov)) {
         <a class="btn btn-outline-primary" href="<?= e(url('grupni-popis', ['id' => $lov['Id'], 'posalji' => 1])) ?>#gp-posalji">📧 Pošalji e-poštom</a><?php endif; ?>
     </div>
     <?= gl_broj_obrazac($lov) ?>
+    <?= gl_voditelj_obrazac($lov) ?>
     <h2 class="h6">Odgovori na poziv</h2>
     <table class="table table-sm"><thead><tr><th>Lovac</th><th>Odgovor</th><th>Napomena</th></tr></thead><tbody>
     <?php foreach ($sud as $s): ?>
@@ -261,7 +272,7 @@ if (!gl_aktivan($lov)) {
 // ---------- aktivan lov ----------
 $naslov = '<div class="d-flex flex-wrap align-items-center gap-2 mb-2"><h1 class="h4 mb-0 me-auto">🎯 ' . e($lov['Naziv']) . ' <span class="badge bg-danger align-middle">u tijeku</span></h1>'
     . (count($orgAktivni) > 1 ? implode('', array_map(fn($l) => (int) $l['Id'] !== (int) $lov['Id'] ? '<a class="btn btn-sm btn-outline-secondary" href="' . e(url('grupni-lov', ['id' => $l['Id']])) . '">' . e($l['Naziv']) . '</a>' : '', $orgAktivni)) : '')
-    . '</div><p class="small text-muted mb-2">Organizator ' . e($lov['KreiraoIme']) . ($lov['Mjesto'] ? ' · 📍 ' . e($lov['Mjesto']) : '') . ($lov['Napomena'] ? ' · ' . e($lov['Napomena']) : '')
+    . '</div><p class="small text-muted mb-2">👤 Voditelj lova ' . e(gl_voditelj_ime($lov)) . ((int) $lov['KreiraoClanId'] !== (int) ($lov['VoditeljClanId'] ?? 0) ? ' (pokrenuo ' . e($lov['KreiraoIme']) . ')' : '') . ($lov['Mjesto'] ? ' · 📍 ' . e($lov['Mjesto']) : '') . ($lov['Napomena'] ? ' · ' . e($lov['Napomena']) : '')
     . ' · završava sam u ' . e(date('H:i', strtotime($lov['Kraj']))) . '</p>';
 
 // pozvan, još nije odgovorio / ne dolazi / otišao – bez karte
