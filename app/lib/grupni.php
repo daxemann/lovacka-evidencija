@@ -449,20 +449,21 @@ function gl_posalji_popis(array $lov, array $primatelji, ?string $poslao = null,
 {
     $dat = substr($lov['Pocetak'], 0, 10);
     $broj = gl_broj_datoteka($lov);
+    $brojZ = gl_broj_datoteka($lov, true);
     $privitci = [];
     if ($popis) {
         $privitci["popis-$broj-$dat.pdf"] = gl_popis_pdf($lov);
     }
     $nz = (int) vrijednost('SELECT COUNT(*) FROM GrupniLovZapisnik WHERE LovId=?', [$lov['Id']]);
     if ($zapisnik && $nz) {
-        $privitci["zapisnik-$broj-$dat.pdf"] = gl_zapisnik_pdf($lov);
+        $privitci["zapisnik-$brojZ-$dat.pdf"] = gl_zapisnik_pdf($lov);
     }
     if (!$privitci) {
         return 'Nema što poslati – dodatni zapisnik je prazan.';
     }
     $n = (int) vrijednost('SELECT COUNT(*) FROM GrupniLovPopis WHERE LovId=?', [$lov['Id']]);
-    $sto = implode(' i ', array_filter([$popis ? 'popis sudionika' : null, isset($privitci["zapisnik-$broj-$dat.pdf"]) ? 'dodatni zapisnik o obavljenom lovu' : null]));
-    $tijelo = '<p>U privitku: ' . e($sto) . ' – skupni lov <b>' . e($lov['Naziv']) . '</b> br. ' . e(gl_broj($lov)) . ' (' . e(datum($lov['Pocetak'])) . ($lov['Mjesto'] ? ', ' . e($lov['Mjesto']) : '') . ').</p>'
+    $sto = implode(' i ', array_filter([$popis ? 'popis sudionika' : null, isset($privitci["zapisnik-$brojZ-$dat.pdf"]) ? 'dodatni zapisnik o obavljenom lovu' : null]));
+    $tijelo = '<p>U privitku: ' . e($sto) . ' – skupni lov <b>' . e($lov['Naziv']) . '</b> br. ' . e(gl_broj($lov)) . ($zapisnik && $nz && gl_broj($lov, true) !== gl_broj($lov) ? ', dodatni zapisnik br. ' . e(gl_broj($lov, true)) : '') . ' (' . e(datum($lov['Pocetak'])) . ($lov['Mjesto'] ? ', ' . e($lov['Mjesto']) : '') . ').</p>'
         . '<p>Voditelj lova: ' . e((string) $lov['KreiraoIme']) . ($popis ? ' · sudionika: ' . $n : '') . ($zapisnik && $nz ? ' · upisano divljači: ' . $nz : '')
         . ($lov['Zavrseno'] ? ' · lov završen ' . e(date('H:i', strtotime($lov['Zavrseno']))) : '') . '</p>'
         . '<p style="color:#888;font-size:12px">' . e(udruga_naziv()) . ' – Lovačka evidencija</p>';
@@ -819,29 +820,89 @@ function gl_pdf_postavke(): array
     return is_array($p) ? array_merge($z, array_intersect_key($p, $z)) : $z;
 }
 
-/** Redni broj lova u lovnoj godini (od 1.4.) – 0001, 0002 … Računa se iz postojećih lovova: obrisani lov ne ostavlja rupu.
- *  Uz „broj po sekciji“ broji se u sekciji organizatora (tko je pokrenuo lov), i kad je lov za više sekcija: „0003 (Bušetina)“. */
-function gl_broj(array $lov): string
+/** Broj lova (popis) i dodatnog zapisnika.
+ *  Ručno upisan broj (npr. s HLS dopuštenja / bloka) vrijedi kako je upisan; lov bez ručnog broja nastavlja od prethodnog lova (+1, vodeće nule i
+ *  oznaka ostaju: 0012 → 0013, 12/2026 → 13/2026). Prvi lov u lovnoj godini (od 1.4.) bez ručnog broja = 0001. Obrisani lov bez ručnog broja ne ostavlja rupu.
+ *  Uz „broj po sekciji“ niz ide u sekciji organizatora (tko je pokrenuo lov), i kad je lov za više sekcija: „0003 (Bušetina)“.
+ *  $zapisnik = broj dodatnog zapisnika: ručno upisan broj zapisnika, inače isti kao broj lova. */
+function gl_broj(array $lov, bool $zapisnik = false): string
 {
-    $od = pocetak_lovne_godine(new DateTimeImmutable(substr($lov['Pocetak'], 0, 10)));
-    $sql = 'SELECT COUNT(*) FROM GrupniLov WHERE Pocetak>=? AND Pocetak<? AND (Pocetak<? OR (Pocetak=? AND Id<=?))';
-    $par = [$od->format('Y-m-d'), $od->modify('+1 year')->format('Y-m-d'), $lov['Pocetak'], $lov['Pocetak'], $lov['Id']];
-    if (!gl_pdf_postavke()['broj_po_sekciji']) {
-        return sprintf('%04d', max(1, (int) vrijednost($sql, $par)));
-    }
-    $sid = (int) ($lov['SekcijaBroja'] ?? 0);
+    $jezgra = $zapisnik && trim((string) ($lov['BrojZapisnika'] ?? '')) !== '' ? trim((string) $lov['BrojZapisnika']) : gl_broj_jezgra($lov);
+    $sid = gl_pdf_postavke()['broj_po_sekciji'] ? (int) ($lov['SekcijaBroja'] ?? 0) : 0;
     if (!$sid) {
-        return sprintf('%04d', max(1, (int) vrijednost($sql . ' AND SekcijaBroja IS NULL', $par)));
+        return $jezgra;
     }
     static $imena = null;
     $imena ??= array_column(redovi('SELECT Id, Naziv FROM Sekcije'), 'Naziv', 'Id');
-    return sprintf('%04d', max(1, (int) vrijednost($sql . ' AND SekcijaBroja=?', array_merge($par, [$sid])))) . ' (' . ($imena[$sid] ?? '?') . ')';
+    return $jezgra . ' (' . ($imena[$sid] ?? '?') . ')';
+}
+
+/** Broj lova bez oznake sekcije. */
+function gl_broj_jezgra(array $lov, bool $samoAuto = false): string
+{
+    static $cache = [];
+    $od = pocetak_lovne_godine(new DateTimeImmutable(substr($lov['Pocetak'], 0, 10)));
+    $sql = 'SELECT Id, BrojLova FROM GrupniLov WHERE Pocetak>=? AND Pocetak<?';
+    $par = [$od->format('Y-m-d'), $od->modify('+1 year')->format('Y-m-d')];
+    if (gl_pdf_postavke()['broj_po_sekciji']) {
+        $sid = (int) ($lov['SekcijaBroja'] ?? 0);
+        $sql .= $sid ? ' AND SekcijaBroja=?' : ' AND SekcijaBroja IS NULL';
+        if ($sid) {
+            $par[] = $sid;
+        }
+    }
+    $k = $sql . '|' . implode('|', $par);
+    if (!isset($cache[$k])) {
+        $niz = [];
+        $zadnji = null;
+        foreach (redovi($sql . ' ORDER BY Pocetak, Id', $par) as $r) {
+            $auto = $zadnji === null ? '0001' : gl_broj_sljedeci($zadnji);
+            $rucno = trim((string) ($r['BrojLova'] ?? ''));
+            $zadnji = $rucno !== '' ? $rucno : $auto;
+            $niz[(int) $r['Id']] = [$zadnji, $auto];
+        }
+        $cache[$k] = $niz;
+    }
+    $x = $cache[$k][(int) $lov['Id']] ?? [trim((string) ($lov['BrojLova'] ?? '')) ?: '0001', '0001'];
+    return $x[$samoAuto ? 1 : 0];
+}
+
+/** Sljedeći broj: zadnja skupina znamenki +1, širina i ostatak ostaju (0012 → 0013, 12/2026 → 13/2026, A-099 → A-100). */
+function gl_broj_sljedeci(string $b): string
+{
+    if (!preg_match('/^(.*?)(\d+)(\D*(?:\/\d{2,4}\.?)?)$/u', $b, $m)) {
+        return $b . '-2';
+    }
+    return $m[1] . str_pad((string) ((int) $m[2] + 1), strlen($m[2]), '0', STR_PAD_LEFT) . $m[3];
+}
+
+/** Ručni broj lova / zapisnika iz obrasca (prazno = automatski). */
+function gl_broj_ulaz(string $x): ?string
+{
+    $x = trim((string) preg_replace('/\s+/u', ' ', $x));
+    return $x === '' ? null : mb_substr($x, 0, 30);
+}
+
+/** Obrazac „Broj lova“ (popis) – ručni broj s papira ili automatski od prethodnog lova. */
+function gl_broj_obrazac(array $lov, string $povratak = ''): string
+{
+    $auto = gl_broj_jezgra($lov, true);
+    $rucno = trim((string) ($lov['BrojLova'] ?? ''));
+    return '<details class="mb-3"><summary class="small">🔢 Broj lova: <b>' . e(gl_broj($lov)) . '</b>'
+        . ($rucno !== '' ? ' <span class="badge text-bg-light border">ručno</span>' : ' <span class="text-muted">(automatski)</span>') . ' – promijeni</summary>'
+        . '<form method="post" action="' . e(url('grupni-lov')) . '" class="row g-2 align-items-end mt-1">' . csrf()
+        . '<input type="hidden" name="radnja" value="broj"><input type="hidden" name="id" value="' . (int) $lov['Id'] . '"><input type="hidden" name="povratak" value="' . e($povratak) . '">'
+        . '<div class="col-auto"><label class="form-label small mb-0" for="broj_lova">Broj lova (kao na HLS dopuštenju / papiru)</label>'
+        . '<input class="form-control form-control-sm" id="broj_lova" name="broj_lova" maxlength="30" style="width:11rem" value="' . e($rucno) . '" placeholder="' . e($auto) . '"></div>'
+        . '<div class="col-auto"><button class="btn btn-sm btn-outline-success">💾 Spremi broj</button></div>'
+        . '<div class="col-12 small text-muted">Prazno = automatski od prethodnog lova (' . e($auto) . '). Sljedeći lovovi bez ručnog broja nastavljaju od ovog broja (+1).'
+        . ' Dodatni zapisnik dobiva isti broj – drugačiji broj zapisnika upisuje se u dodatnom zapisniku.</div></form></details>';
 }
 
 /** Broj za naziv datoteke (bez razmaka i zagrada). */
-function gl_broj_datoteka(array $lov): string
+function gl_broj_datoteka(array $lov, bool $zapisnik = false): string
 {
-    return trim((string) preg_replace('/[^a-z0-9]+/', '-', kljuc(gl_broj($lov))), '-');
+    return trim((string) preg_replace('/[^a-z0-9]+/', '-', kljuc(gl_broj($lov, $zapisnik))), '-');
 }
 
 /** Zajednički CSS i render za PDF-ove skupnog lova. */
@@ -909,7 +970,7 @@ function gl_zapisnik_pdf(array $lov): string
     for ($k = 0; $k < max(0, min(100, (int) $p['zapisnik_redaka'])); $k++) {
         $redovi .= '<tr><td class="d">' . (++$i) . '.</td>' . str_repeat('<td></td>', count($stupci)) . '</tr>';
     }
-    return gl_pdf_render('<h2>' . e($p['zapisnik_naslov']) . ' ' . gl_broj($lov) . '</h2>
+    return gl_pdf_render('<h2>' . e($p['zapisnik_naslov']) . ' ' . e(gl_broj($lov, true)) . '</h2>
         <div class="info">' . e($p['ovlastenik']) . ' <b>' . e((string) $lov['KreiraoIme']) . '</b></div>
         <table class="t"><thead><tr>' . $th . '</tr></thead><tbody>'
         . ($redovi ?: '<tr><td colspan="' . (count($stupci) + 1) . '">Nije upisana divljač.</td></tr>') . '</tbody></table>'
@@ -940,7 +1001,7 @@ function gl_popis_pdf(array $lov): string
             . ($p['st_upis'] ? '<td>' . ($x['Nacin'] === 'qr' ? ($x['Gost'] ? 'pozivnica' : 'iskaznica') : ($x['Nacin'] === 'voditelj' ? 'voditelj lova' : 'ručno')) . '</td>' : '')
             . ($p['st_potpis'] ? '<td class="potpis-polje">' . gl_potpis_img(($x['Potpis'] ?? null) ?: ($cid ? potpis_clana($cid) : null)) . '</td>' : '') . '</tr>';
     }
-    return gl_pdf_render('<h2>' . e($p['popis_naslov']) . ' ' . gl_broj($lov) . '</h2>
+    return gl_pdf_render('<h2>' . e($p['popis_naslov']) . ' ' . e(gl_broj($lov)) . '</h2>
         <div class="info">' . e($p['ovlastenik']) . ' <b>' . e((string) $lov['KreiraoIme']) . '</b></div>
         <table class="t"><thead><tr>' . $th . '</tr></thead>
         <tbody>' . ($redovi ?: '<tr><td colspan="' . $stupaca . '">Popis je prazan.</td></tr>') . '</tbody></table>'

@@ -86,6 +86,16 @@ if (je_post()) {
         poruka('🗑 Lov „' . e($lov['Naziv']) . '“ i njegov popis sudionika su obrisani.');
         preusmjeri('grupni-lov');
     }
+    if ($radnja === 'broj') {
+        if (!gl_moze_upravljati($lov)) {
+            zabranjeno();
+        }
+        $b = gl_broj_ulaz((string) ($_POST['broj_lova'] ?? ''));
+        q('UPDATE GrupniLov SET BrojLova=? WHERE Id=?', [$b, $lov['Id']]);
+        dnevnik('Skupni lov – broj lova', 'GrupniLov', (int) $lov['Id'], $b ?? 'automatski');
+        poruka($b === null ? 'Broj lova je opet automatski: ' . e(gl_broj_jezgra($lov)) . '.' : 'Broj lova: ' . e($b) . ' – sljedeći lov nastavlja od ' . e(gl_broj_sljedeci($b)) . '.');
+        preusmjeri($povratak === 'popis' ? 'grupni-popis' : 'grupni-lov', ['id' => $lov['Id']]);
+    }
     if ($radnja === 'zavrsi') {
         if (!gl_moze_upravljati($lov)) {
             zabranjeno();
@@ -230,6 +240,7 @@ if (!gl_aktivan($lov)) {
         <?php if (!gl_aktivan($lov)): ?><a class="btn btn-outline-success" href="<?= e(url('grupni-zapisnik', ['id' => $lov['Id']])) ?>">📝 Dodatni zapisnik – upis divljači (br. <?= e(gl_broj($lov)) ?>)</a>
         <a class="btn btn-outline-primary" href="<?= e(url('grupni-popis', ['id' => $lov['Id'], 'posalji' => 1])) ?>#gp-posalji">📧 Pošalji e-poštom</a><?php endif; ?>
     </div>
+    <?= gl_broj_obrazac($lov) ?>
     <h2 class="h6">Odgovori na poziv</h2>
     <table class="table table-sm"><thead><tr><th>Lovac</th><th>Odgovor</th><th>Napomena</th></tr></thead><tbody>
     <?php foreach ($sud as $s): ?>

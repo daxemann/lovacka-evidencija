@@ -12,7 +12,7 @@ if (!gl_moze_upravljati($lov)) {
 }
 if (($_GET['pdf'] ?? '') === '1') {
     header('Content-Type: application/pdf');
-    header('Content-Disposition: inline; filename="zapisnik-' . gl_broj_datoteka($lov) . '-' . substr($lov['Pocetak'], 0, 10) . '.pdf"');
+    header('Content-Disposition: inline; filename="zapisnik-' . gl_broj_datoteka($lov, true) . '-' . substr($lov['Pocetak'], 0, 10) . '.pdf"');
     echo gl_zapisnik_pdf($lov);
     exit;
 }
@@ -29,6 +29,13 @@ $vrsta = function (string $s): string {
 };
 if (je_post()) {
     $radnja = (string) ($_POST['radnja'] ?? '');
+    if ($radnja === 'broj') {
+        $b = gl_broj_ulaz((string) ($_POST['broj_zapisnika'] ?? ''));
+        q('UPDATE GrupniLov SET BrojZapisnika=? WHERE Id=?', [$b, $lov['Id']]);
+        dnevnik('Skupni lov – broj dodatnog zapisnika', 'GrupniLov', (int) $lov['Id'], $b ?? 'isti kao broj lova');
+        poruka($b === null ? 'Broj zapisnika = broj lova (' . e(gl_broj($lov)) . ').' : 'Broj zapisnika: ' . e($b));
+        preusmjeri('grupni-zapisnik', ['id' => $lov['Id']]);
+    }
     if ($radnja === 'spremi') {
         $v = [];
         foreach ($stupci as $i => $s) {
@@ -74,12 +81,20 @@ $datumLova = substr($lov['Pocetak'], 0, 10);
 ob_start(); ?>
 <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
     <a class="btn btn-sm btn-outline-secondary" href="<?= e(url('grupni-lov', ['id' => $lov['Id']])) ?>">← Skupni lov</a>
-    <h1 class="h4 mb-0 me-auto">📝 Dodatni zapisnik <span class="text-muted small">br. <?= e(gl_broj($lov)) ?></span></h1>
+    <h1 class="h4 mb-0 me-auto">📝 Dodatni zapisnik <span class="text-muted small">br. <?= e(gl_broj($lov, true)) ?></span></h1>
     <a class="btn btn-sm btn-success<?= $redovi ? '' : ' disabled' ?>" href="<?= e(url('grupni-zapisnik', ['id' => $lov['Id'], 'pdf' => 1])) ?>" target="_blank">📄 PDF</a>
     <a class="btn btn-sm btn-outline-primary<?= $redovi ? '' : ' disabled' ?>" href="<?= e(url('grupni-popis', ['id' => $lov['Id'], 'posalji' => 1])) ?>#gp-posalji">📧 Pošalji</a>
 </div>
 <p class="small text-muted mb-3"><?= e($lov['Naziv']) ?> · <?= e(datum($lov['Pocetak'])) ?> · voditelj <?= e($lov['KreiraoIme']) ?> –
     upišite odstrijeljenu divljač (može i naknadno), zatim PDF.</p>
+
+<form method="post" class="row g-2 align-items-end mb-3"><?= csrf() ?><input type="hidden" name="radnja" value="broj">
+    <div class="col-auto"><label class="form-label small mb-0" for="broj_zapisnika">Broj zapisnika (kao na papiru)</label>
+        <input class="form-control form-control-sm" id="broj_zapisnika" name="broj_zapisnika" maxlength="30" style="width:11rem"
+            value="<?= e((string) ($lov['BrojZapisnika'] ?? '')) ?>" placeholder="<?= e(gl_broj_jezgra($lov)) ?>"></div>
+    <div class="col-auto"><button class="btn btn-sm btn-outline-success">💾 Spremi broj</button></div>
+    <div class="col-12 small text-muted">Prazno = isti broj kao lov / popis (<?= e(gl_broj_jezgra($lov)) ?>). Upišite drugi broj samo ako se broj zapisnika na papiru razlikuje.</div>
+</form>
 
 <div class="card mb-3 border-success" id="obrazac"><div class="card-body">
     <h2 class="h6"><?= $uredi ? '✏️ Izmjena reda' : '➕ Novi red' ?></h2>

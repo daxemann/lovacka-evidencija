@@ -62,6 +62,8 @@ ob_start(); ?>
 <p class="small text-muted mb-3"><?= e($lov['Naziv']) ?> · <?= e(datum($lov['Pocetak'])) ?><?= $lov['Mjesto'] ? ' · 📍 ' . e($lov['Mjesto']) : '' ?>
     <?= $aktivan ? '<span class="badge bg-danger">u tijeku</span>' : '<span class="badge bg-secondary">završen</span>' ?></p>
 
+<?= gl_broj_obrazac($lov, 'popis') ?>
+
 <div class="gp-raspored">
     <div>
         <button type="button" class="btn btn-success btn-lg w-100 py-3 mb-2" id="gp-start">📷 Skeniraj iskaznice</button>

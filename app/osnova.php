@@ -5,7 +5,7 @@
  */
 declare(strict_types=1);
 
-const VERZIJA = '1.66.1';
+const VERZIJA = '1.67.0';
 const KONTAKT_EMAIL = 'daxemann@googlemail.com';
 const PODRSKA_PAYPAL = 'darko.bakic@freenet.de'; // dobrovoljna podrška razvoju (Pomoć i kontakt)
 const PROJEKT_URL = 'https://github.com/daxemann/lovacka-evidencija';
@@ -188,7 +188,7 @@ function db(bool $novo = false): PDO
  * Dodatne tablice PHP verzije (PRAGMA user_version). .NET verzija ih ne poznaje i zanemaruje,
  * pa baza i dalje radi u oba smjera.
  */
-const SHEMA_PHP = 44;
+const SHEMA_PHP = 45;
 function nadogradi_bazu(PDO $pdo): void
 {
     if ((int) $pdo->query('PRAGMA user_version')->fetchColumn() >= SHEMA_PHP) {
@@ -1033,6 +1033,11 @@ SQL);
         $pdo->exec('CREATE INDEX IF NOT EXISTS "IX_OdstrelMarkice_Odstrel" ON "OdstrelMarkice" ("OdstrelId")');
         // pravo „Odstrel – markice“: tko ima sva dosadašnja prava i tko upisuje odstrel (lovnik)
         $pdo->exec('UPDATE "Uloge" SET "Prava" = "Prava" | 1073741824 WHERE ("Prava" & 1073741823) = 1073741823 OR ("Prava" & 67108864) = 67108864');
+    }
+    if ($v < 45) {
+        // skupni lov: broj lova ručno (prema HLS dopuštenju/bloku) i poseban broj dodatnog zapisnika ako se razlikuje
+        $pdo->exec('ALTER TABLE "GrupniLov" ADD COLUMN "BrojLova" TEXT NULL');
+        $pdo->exec('ALTER TABLE "GrupniLov" ADD COLUMN "BrojZapisnika" TEXT NULL');
     }
 }
 

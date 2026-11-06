@@ -1,5 +1,10 @@
 # Promjene
 
+## 1.67.0 – 2026-11
+- **Skupni lov – broj lova ručno (prema HLS papiru):** na popisu sudionika i kod završenog lova *🔢 Broj lova – promijeni* – upišite broj s dopuštenja / bloka (npr. *0123* ili *12/2026*).
+  Sljedeći lovovi bez ručnog broja **nastavljaju od njega** (+1, vodeće nule i oznaka ostaju: 0123 → 0124, 12/2026 → 13/2026); prazno polje = opet automatski. Broj se može mijenjati i kasnije.
+- **Dodatni zapisnik** preuzima broj lova; ako se broj zapisnika na papiru razlikuje, upisuje se posebno u dodatnom zapisniku (vrijedi za stranicu, PDF, naziv datoteke i e-poštu).
+
 ## 1.66.1 – 2026-11
 - Odstrel – upozorenje SLE: ispravljen tekst („od toga N s prekoračenim rokom od 7 dana“).
 

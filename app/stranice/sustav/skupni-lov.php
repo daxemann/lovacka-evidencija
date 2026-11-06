@@ -29,7 +29,8 @@ $kv = fn(string $k, string $t) => '<div class="form-check"><input class="form-ch
 ob_start(); ?>
 <h1 class="h3 mb-1">🎯 Skupni lov – PDF</h1>
 <p class="text-muted">Izgled popisa sudionika i dodatnog zapisnika. <b>Broj</b> je redni broj lova u lovnoj godini (od 1. travnja, 0001, 0002 …) –
-    obrišete li lov, brojevi se slažu bez rupe.</p>
+    obrišete li lov, brojevi se slažu bez rupe. Kod svakog lova broj se može <b>upisati ručno</b> (kao na HLS dopuštenju / papiru) – sljedeći lovovi nastavljaju od njega (+1).
+    Dodatni zapisnik dobiva isti broj, a po potrebi se u zapisniku upisuje drugačiji.</p>
 <form method="post" style="max-width:720px"><?= csrf() ?>
 <div class="card mb-3"><div class="card-body">
     <h2 class="h5">🔢 Broj lova</h2>
