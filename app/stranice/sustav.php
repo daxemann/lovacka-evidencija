@@ -29,6 +29,7 @@ $skupine = [
     ]],
     ['Postavke modula', [
         ['akcije/vrste', '🏷️', 'Vrste radnih akcija', 'Bodovi i dodatna oprema.', 0, 'akcije'],
+        ['sustav/bodovi', '🏅', 'Bodovi – godina i prijenos', 'Dan resetiranja, prijenos u novu godinu, arhiva, bodovi za funkcije.', 0, 'akcije'],
         ['sustav/uplatnica', '🏦', 'Uplatnica (IBAN)', 'Primatelj, model, poziv na broj.', 0, 'clanarina'],
         ['sustav/kalendar', '🗓️', 'Kalendar – vrste', 'Vrste termina i boje.', 0, 'kalendar'],
         ['sustav/skupni-lov', '🎯', 'Skupni lov – PDF', 'Popis sudionika, dodatni zapisnik, broj lova.', 0, 'grupni'],

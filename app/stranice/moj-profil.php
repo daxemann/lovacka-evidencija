@@ -74,7 +74,7 @@ if (je_post()) {
     preusmjeri('moj-profil');
 }
 $fun = array_column(redovi('SELECT f.Naziv FROM ClanFunkcije cf JOIN Funkcije f ON f.Id=cf.FunkcijaId WHERE cf.ClanId=? AND cf.Do IS NULL ORDER BY f.Redoslijed', [$c['Id']]), 'Naziv');
-$lg = pocetak_lovne_godine();
+$lg = pocetak_bodovne_godine();
 $bodovi = (float) vrijednost('SELECT COALESCE(SUM(CAST(Bodovi AS REAL)),0) FROM RadneAkcije WHERE ClanId=? AND Status=1 AND substr(Datum,1,10) BETWEEN ? AND ?', [$c['Id'], $lg->format('Y-m-d'), $lg->modify('+1 year -1 day')->format('Y-m-d')]);
 $ceka = (int) vrijednost('SELECT COUNT(*) FROM RadneAkcije WHERE ClanId=? AND Status=0', [$c['Id']]);
 $pv = fn($f) => e($c[$f] ?? '');
@@ -106,7 +106,7 @@ ob_start(); ?>
     </div></div></div>
     <div class="col-12"><div class="card"><div class="card-body d-flex flex-wrap align-items-center gap-3">
         <div><div class="kartica-broj"><?= e(broj($bodovi, 2)) ?></div>
-            <div class="text-muted small">bodova u tekućoj lovnoj godini · <?= $ceka ?> na čekanju</div></div>
+            <div class="text-muted small">bodova u tekućoj <?= bodovna_godina_rijec() ?> · <?= $ceka ?> na čekanju</div></div>
         <a href="<?= e(url('moje-akcije')) ?>" class="btn btn-primary ms-auto">Moje radne akcije</a>
     </div><div class="card-footer bg-white"><?= predlozak('moja-clanarina', ['clanId' => (int) $c['Id']]) ?></div></div></div>
     <div class="col-lg-6"><div class="card"><div class="card-header">Moji kontakt podaci</div><div class="card-body">

@@ -135,7 +135,7 @@ ob_start(); ?>
     <div class="row g-2">
         <div class="col-6 col-md-3"><label class="form-label small">Razdoblje</label>
             <select name="Razdoblje" class="form-select form-select-sm" data-auto>
-                <?php foreach (RAZDOBLJA as $kl => $t): ?><option value="<?= $kl ?>"<?= $sel($kl, $f['Razdoblje']) ?>><?= e($t) ?></option><?php endforeach; ?>
+                <?php foreach (RAZDOBLJA + (bodovi_dan() !== '04-01' ? ['BodovnaGodina' => 'Tekuća bodovna godina', 'ProslaBodovnaGodina' => 'Prošla bodovna godina'] : []) as $kl => $t): ?><option value="<?= $kl ?>"<?= $sel($kl, $f['Razdoblje']) ?>><?= e($t) ?></option><?php endforeach; ?>
             </select></div>
         <?php if ($f['Razdoblje'] === 'Mjeseci'): ?>
             <div class="col-6 col-md-2"><label class="form-label small">Od mjeseca</label><input type="month" name="Od" class="form-control form-control-sm" value="<?= e(substr($f['Od'] ?? date('Y-m'), 0, 7)) ?>"></div>

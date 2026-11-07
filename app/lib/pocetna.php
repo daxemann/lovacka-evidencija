@@ -363,11 +363,11 @@ function pocetna_termini(array $k): string
 
 function pocetna_moje_akcije(int $cid): string
 {
-    $lg = pocetak_lovne_godine();
+    $lg = pocetak_bodovne_godine();
     $bodovi = (float) vrijednost('SELECT COALESCE(SUM(CAST(Bodovi AS REAL)),0) FROM RadneAkcije WHERE ClanId=? AND Status=1 AND substr(Datum,1,10) BETWEEN ? AND ?', [$cid, $lg->format('Y-m-d'), $lg->modify('+1 year -1 day')->format('Y-m-d')]);
     $ceka = (int) vrijednost('SELECT COUNT(*) FROM RadneAkcije WHERE ClanId=? AND Status=0', [$cid]);
     $o = '<div class="card mb-3"><div class="card-header d-flex align-items-center"><b class="me-auto">🪓 Moje radne akcije</b><a class="small" href="' . e(url('moje-akcije')) . '">sve →</a></div>'
-        . '<div class="card-body pb-2"><div class="d-flex align-items-center gap-3 mb-2"><div><div class="kartica-broj lh-1">' . e(broj($bodovi, 2)) . '</div><div class="small text-muted">bodova u lovnoj godini' . ($ceka ? " · $ceka čeka odobrenje" : '') . '</div></div>'
+        . '<div class="card-body pb-2"><div class="d-flex align-items-center gap-3 mb-2"><div><div class="kartica-broj lh-1">' . e(broj($bodovi, 2)) . '</div><div class="small text-muted">bodova u ' . bodovna_godina_rijec() . ($ceka ? " · $ceka čeka odobrenje" : '') . '</div></div>'
         . '<a class="btn btn-primary ms-auto" href="' . e(url('moje-akcije')) . '#nova">+ Prijavi akciju</a></div>';
     foreach (redovi('SELECT a.*, v.Naziv AS Vrsta FROM RadneAkcije a LEFT JOIN VrsteAkcija v ON v.Id=a.VrstaAkcijeId WHERE a.ClanId=? ORDER BY a.Datum DESC, a.Id DESC LIMIT 3', [$cid]) as $a) {
         $o .= '<div class="small d-flex border-top py-1"><span class="text-muted me-2">' . e(date('d.m.', strtotime($a['Datum']))) . '</span><span class="flex-grow-1 text-truncate">'

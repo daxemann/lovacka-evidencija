@@ -53,7 +53,22 @@ if (je_post()) {
             foreach ((array) ($_POST['f'] ?? []) as $id => $f) {
                 $n = trim((string) ($f['Naziv'] ?? ''));
                 if ($n !== '') {
-                    azuriraj('Funkcije', (int) $id, ['Naziv' => mb_substr($n, 0, 60), 'Redoslijed' => (int) ($f['Redoslijed'] ?? 0), 'OslobodjenClanarine' => isset($f['Osl']) ? 1 : 0]);
+                    $polja = ['Naziv' => mb_substr($n, 0, 60), 'Redoslijed' => (int) ($f['Redoslijed'] ?? 0), 'OslobodjenClanarine' => isset($f['Osl']) ? 1 : 0];
+                    if (array_key_exists('Bodovi', $f)) {
+                        // bodovi za funkciju: jednom godišnje na zadani datum, odmah odobreni
+                        $staro = red('SELECT Bodovi, BodoviDatum FROM Funkcije WHERE Id=?', [(int) $id]);
+                        $b = u_broj($f['Bodovi'] ?? '');
+                        $dan = bodovi_dan_unos((string) ($f['BodoviDatum'] ?? ''));
+                        if ($b !== null && $b > 0 && !$dan) {
+                            poruka(e("„{$n}“: upišite datum (dan.mjesec.) kad se bodovi dodaju."), 'warning');
+                        }
+                        $polja['Bodovi'] = $b !== null && $b > 0 ? dec($b) : null;
+                        $polja['BodoviDatum'] = $polja['Bodovi'] ? $dan : null;
+                        if ($staro && ((float) $staro['Bodovi'] !== (float) $polja['Bodovi'] || (string) $staro['BodoviDatum'] !== (string) $polja['BodoviDatum'])) {
+                            $polja['BodoviOd'] = $polja['Bodovi'] ? danas() : null; // automatski tek od danas, ništa unatrag
+                        }
+                    }
+                    azuriraj('Funkcije', (int) $id, $polja);
                 }
             }
             if (ul_str('NovaFunkcija') !== '') {
@@ -61,6 +76,14 @@ if (je_post()) {
             }
             dnevnik('Uređene funkcije');
             poruka('Funkcije su spremljene.');
+            break;
+        case 'funkcija-bodovi-sada':
+            $f = red('SELECT * FROM Funkcije WHERE Id=?', [(int) $_POST['id']]);
+            $g = (int) date('Y');
+            if ($f && funkcija_dospjela($f, $g)) {
+                $n = upisi_bodove_funkcije($f, $g, korisnik());
+                poruka(e("{$f['Naziv']} – {$g}.: bodovi upisani za $n " . ($n === 1 ? 'člana' : 'članova') . '.'));
+            }
             break;
         case 'obrisi-funkciju':
             $n = (int) vrijednost('SELECT COUNT(*) FROM ClanFunkcije WHERE FunkcijaId=?', [(int) $_POST['id']]);
@@ -74,7 +97,9 @@ if (je_post()) {
     preusmjeri('sustav/uloge');
 }
 $uloge = redovi('SELECT u.*, (SELECT COUNT(*) FROM KorisnikUloge ku WHERE ku.UlogaId=u.Id) AS Broj FROM Uloge u ORDER BY u.Id');
-$funkcije = redovi('SELECT f.*, (SELECT COUNT(*) FROM ClanFunkcije cf WHERE cf.FunkcijaId=f.Id AND cf.Do IS NULL) AS Broj FROM Funkcije f ORDER BY f.Redoslijed, f.Naziv');
+$funkcije = redovi('SELECT f.*, (SELECT COUNT(*) FROM ClanFunkcije cf WHERE cf.FunkcijaId=f.Id AND cf.Do IS NULL) AS Broj,
+    (SELECT COUNT(*) FROM FunkcijaBodovi fb WHERE fb.FunkcijaId=f.Id AND fb.Godina=' . (int) date('Y') . ') AS Bodovano FROM Funkcije f ORDER BY f.Redoslijed, f.Naziv');
+$sBodovima = modul('akcije');
 $grupe = prava_grupe();
 $brojPrava = fn(array $u) => count(array_filter(array_merge(...array_values($grupe)), fn($p) => ((int) $u['Prava'] & $p) === $p));
 ob_start(); ?>
@@ -141,25 +166,42 @@ ob_start(); ?>
     <div class="col-4"><button class="btn btn-outline-primary w-100">Dodaj</button></div>
 </form>
 
-<h2 class="h4 mt-5 mb-1">Funkcije u udruzi</h2>
-<p class="text-muted">Funkcije se upisuju na kartici člana (Funkcije). „Oslobođen članarine“ npr. za počasne članove – takvi se ne zadužuju članarinom.</p>
-<form method="post" action="<?= e(url('sustav/uloge')) ?>" style="max-width:760px"><?= csrf() ?><input type="hidden" name="radnja" value="funkcije">
+<h2 class="h4 mt-5 mb-1" id="funkcije">Funkcije u udruzi</h2>
+<p class="text-muted">Funkcije se upisuju na kartici člana (Funkcije). „Oslobođen članarine“ npr. za počasne članove – takvi se ne zadužuju članarinom.<?php if ($sBodovima): ?>
+    <br>🏅 <b>Bodovi za funkciju</b> se dodaju <b>jednom godišnje</b> na upisani datum, svima koji tada imaju funkciju – <b>odmah odobreno</b>, bez odobravanja. Dan resetiranja i prijenos bodova: <a href="<?= e(url('sustav/bodovi')) ?>">Sustav → Bodovi</a>.<?php endif; ?></p>
+<form method="post" action="<?= e(url('sustav/uloge')) ?>" style="max-width:820px"><?= csrf() ?><input type="hidden" name="radnja" value="funkcije">
 <table class="table table-sm align-middle">
-    <thead><tr><th style="width:6rem">Redoslijed</th><th>Naziv</th><th class="text-center">Oslobođen članarine</th><th class="small text-muted">trenutno</th><th></th></tr></thead>
+    <thead><tr><th style="width:6rem">Redoslijed</th><th>Naziv</th><th class="text-center">Oslobođen članarine</th><?php if ($sBodovima): ?><th class="text-center">Bodovi</th><?php endif; ?><th class="small text-muted">trenutno</th><th></th></tr></thead>
     <tbody>
-    <?php foreach ($funkcije as $f): $i = (int) $f['Id']; ?>
+    <?php foreach ($funkcije as $f): $i = (int) $f['Id']; $imaB = (float) $f['Bodovi'] > 0 && $f['BodoviDatum']; ?>
         <tr><td><input name="f[<?= $i ?>][Redoslijed]" type="number" class="form-control form-control-sm" value="<?= (int) $f['Redoslijed'] ?>"></td>
             <td><input name="f[<?= $i ?>][Naziv]" class="form-control form-control-sm" value="<?= e($f['Naziv']) ?>"></td>
             <td class="text-center"><input type="checkbox" class="form-check-input" name="f[<?= $i ?>][Osl]" value="1"<?= chk($f['OslobodjenClanarine']) ?>></td>
+            <?php if ($sBodovima): ?><td class="text-center text-nowrap"><button type="button" class="btn btn-sm <?= $imaB ? 'btn-outline-success' : 'btn-outline-secondary' ?>"
+                onclick="var r=document.getElementById('fb<?= $i ?>');r.classList.toggle('d-none');if(!r.classList.contains('d-none'))r.querySelector('input').focus()">🏅 <?= $imaB ? e(broj((float) $f['Bodovi'], 2)) . ' · ' . e(bodovi_dan_prikaz($f['BodoviDatum'])) : 'bodovi' ?></button></td><?php endif; ?>
             <td class="small text-muted"><?= (int) $f['Broj'] ?></td>
             <td><button class="btn btn-sm btn-link text-danger" form="obrisiF<?= $i ?>" data-potvrda="Obrisati funkciju?">Obriši</button></td></tr>
+        <?php if ($sBodovima): $dosp = $imaB ? funkcija_dospjela($f, (int) date('Y')) : null; ?>
+        <tr id="fb<?= $i ?>" class="d-none"><td></td><td colspan="5" class="bg-body-tertiary">
+            <div class="d-flex flex-wrap align-items-end gap-2 py-1">
+                <div><label class="form-label small mb-0">Bodova godišnje</label>
+                    <input name="f[<?= $i ?>][Bodovi]" type="number" step="0.5" min="0" inputmode="decimal" class="form-control form-control-sm" style="width:7rem" value="<?= $f['Bodovi'] !== null ? e((string) (float) $f['Bodovi']) : '' ?>" placeholder="0"></div>
+                <div><label class="form-label small mb-0">Dodaje se svake godine</label>
+                    <input name="f[<?= $i ?>][BodoviDatum]" class="form-control form-control-sm" style="width:7rem" value="<?= e(bodovi_dan_prikaz($f['BodoviDatum'])) ?>" placeholder="dan.mjesec. npr. 1.1."></div>
+                <div class="small text-muted pb-1">prazno ili 0 = bez bodova · broje se u bodovnu godinu u kojoj je taj datum</div>
+                <?php if ($dosp && (int) $f['Bodovano'] < (int) $f['Broj']): ?>
+                    <button class="btn btn-sm btn-outline-success ms-auto" form="bodF<?= $i ?>" data-potvrda="Upisati bodove za <?= date('Y') ?>. (datum <?= e(datum($dosp)) ?>) svima koji su tada imali ovu funkciju?">Upiši sada za <?= date('Y') ?>.</button>
+                <?php elseif ($imaB && (int) $f['Bodovano']): ?><span class="small text-success ms-auto pb-1">✓ <?= date('Y') ?>.: upisano <?= (int) $f['Bodovano'] ?>×</span><?php endif; ?>
+            </div></td></tr>
+        <?php endif; ?>
     <?php endforeach; ?>
-    <tr><td></td><td><input name="NovaFunkcija" class="form-control form-control-sm" placeholder="+ nova funkcija"></td><td colspan="3"></td></tr>
+    <tr><td></td><td><input name="NovaFunkcija" class="form-control form-control-sm" placeholder="+ nova funkcija"></td><td colspan="<?= $sBodovima ? 4 : 3 ?>"></td></tr>
     </tbody>
 </table>
 <button class="btn btn-primary">Spremi funkcije</button>
 </form>
 <?php foreach ($funkcije as $f): ?>
     <form method="post" action="<?= e(url('sustav/uloge')) ?>" id="obrisiF<?= (int) $f['Id'] ?>"><?= csrf() ?><input type="hidden" name="radnja" value="obrisi-funkciju"><input type="hidden" name="id" value="<?= (int) $f['Id'] ?>"></form>
+    <form method="post" action="<?= e(url('sustav/uloge')) ?>" id="bodF<?= (int) $f['Id'] ?>"><?= csrf() ?><input type="hidden" name="radnja" value="funkcija-bodovi-sada"><input type="hidden" name="id" value="<?= (int) $f['Id'] ?>"></form>
 <?php endforeach; ?>
 <?php stranica('Uloge i prava', ob_get_clean());

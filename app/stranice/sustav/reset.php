@@ -10,7 +10,7 @@ const RESET_SKUPINE = [
     'loviste' => ['🗺️', 'Lovište – zauzeća i lovački dnevnik', 'zauzimanja čeka, lovački dnevnik, obavijesti lovočuvarima', ['LovackiDnevnik', 'RevirZauzeca', 'RevirObavijesti', 'RevirProcitano'], true,
         'lovne naprave, granice, vrste i idealni vjetar ostaju'],
     'kvarovi' => ['🔧', 'Kvarovi na napravama', 'sve prijave kvarova', ['RevirKvarovi'], true, ''],
-    'akcije' => ['🔨', 'Radne akcije i bodovi', 'sve radne akcije, bodovi (i bodovi za pse)', ['PsiBodovi', 'RadneAkcije'], true, 'vrste akcija, bodovi i dodatna oprema u postavkama ostaju'],
+    'akcije' => ['🔨', 'Radne akcije i bodovi', 'sve radne akcije, bodovi (i bodovi za pse)', ['PsiBodovi', 'FunkcijaBodovi', 'BodoviPrijenos', 'RadneAkcije'], true, 'vrste akcija, bodovi i dodatna oprema u postavkama ostaju'],
     'odstrel' => ['🦌', 'Odstrel i plan odstrela', 'svi upisi odstrela, planovi i zaliha markica', ['OdstrelMarkice', 'Odstrel', 'OdstrelPlan'], true, ''],
     'skupni' => ['🎯', 'Skupni lov', 'lovovi, popisi sudionika, dodatni zapisnici (brojevi lova kreću od 0001)', ['GrupniLovZapisnik', 'GrupniLovPopis', 'GrupniLovSudionici', 'GrupniLov'], true, ''],
     'kalendar' => ['📅', 'Kalendar', 'termini, odgovori „Dolazim“ i pozvani gosti', ['DogadjajGosti', 'DogadjajOdgovori', 'DogadjajSekcije', 'Dogadjaji'], true, 'vrste termina ostaju'],
@@ -21,7 +21,7 @@ const RESET_SKUPINE = [
     'dnevnik' => ['🧾', 'Dnevnik promjena', 'zapis tko je što mijenjao (ostaje samo zapis o ovom resetu)', ['Dnevnik'], false, ''],
 ];
 // pomoćne tablice (oznake pročitanog, veze) – brišu se, ali se ne broje kao upisi
-const RESET_POMOCNE = ['RevirProcitano', 'DezSkeneri', 'PsiBodovi', 'GrupniLovSudionici', 'DogadjajSekcije', 'SkriveniRazgovori', 'ObavijestPrimatelji', 'OglasSlike', 'ClanarinaRate'];
+const RESET_POMOCNE = ['RevirProcitano', 'DezSkeneri', 'PsiBodovi', 'FunkcijaBodovi', 'BodoviPrijenos', 'GrupniLovSudionici', 'DogadjajSekcije', 'SkriveniRazgovori', 'ObavijestPrimatelji', 'OglasSlike', 'ClanarinaRate'];
 if (je_post()) {
     if (je_demo()) {
         poruka('U demo verziji reset nije moguć (sve se ionako vraća svake noći).', 'warning');

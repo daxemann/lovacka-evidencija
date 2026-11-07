@@ -91,7 +91,7 @@ if (je_post()) {
 }
 
 $lista = redovi('SELECT a.*, v.Naziv AS VrstaNaziv, p.Ime AS PasIme FROM RadneAkcije a LEFT JOIN VrsteAkcija v ON v.Id=a.VrstaAkcijeId LEFT JOIN LovniPsi p ON p.Id=a.PasId WHERE a.ClanId=? ORDER BY a.Datum DESC, a.Id DESC', [$cid]);
-$lg = pocetak_lovne_godine();
+$lg = pocetak_bodovne_godine();
 $lgKraj = $lg->modify('+1 year -1 day')->format('Y-m-d');
 $bodoviLg = array_sum(array_map(fn($a) => (int) $a['Status'] === AKCIJA_ODOBRENO && substr($a['Datum'], 0, 10) >= $lg->format('Y-m-d') && substr($a['Datum'], 0, 10) <= $lgKraj ? (float) $a['Bodovi'] : 0, $lista));
 $v = ['datum' => danas(), 'vrsta' => '', 'naziv' => '', 'sati' => '', 'opis' => '', 'pas' => '', 'oprema' => []];
@@ -165,7 +165,7 @@ ob_start(); ?>
     </div>
 </div>
 <p class="small text-muted">Ti upisuješ što si napravio – bodove dodjeljuje i akciju odobrava administrator.</p>
-<p class="mb-2">Bodovi u tekućoj lovnoj godini: <b class="fs-5"><?= e(broj($bodoviLg, 2)) ?></b></p>
+<p class="mb-2">Bodovi u tekućoj <?= bodovna_godina_rijec() ?>: <b class="fs-5"><?= e(broj($bodoviLg, 2)) ?></b> <a class="small ms-2" href="<?= e(url('akcije/bodovi')) ?>">📚 po godinama</a></p>
 <?php foreach ($lista as $a): ?>
     <div class="card mb-2"><div class="card-body py-2">
         <div class="d-flex align-items-center gap-2 flex-wrap">

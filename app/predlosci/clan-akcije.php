@@ -1,6 +1,6 @@
 <?php
 /** Kartica Radne akcije. Varijable: $id, $clan */
-$lg = pocetak_lovne_godine();
+$lg = pocetak_bodovne_godine();
 $kraj = $lg->modify('+1 year -1 day');
 $akcije = redovi('SELECT a.*, v.Naziv AS VrstaNaziv FROM RadneAkcije a LEFT JOIN VrsteAkcija v ON v.Id=a.VrstaAkcijeId WHERE a.ClanId=? ORDER BY a.Datum DESC, a.Id DESC', [$id]);
 $bodovi = 0.0;
@@ -12,7 +12,8 @@ foreach ($akcije as $a) {
 }
 ?>
 <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
-    <div>Bodovi u tekućoj lovnoj godini (<?= $lg->format('d.m.Y.') ?> – <?= $kraj->format('d.m.Y.') ?>): <b class="fs-5"><?= broj($bodovi, 2) ?></b></div>
+    <div>Bodovi u tekućoj <?= bodovna_godina_rijec() ?> (<?= $lg->format('d.m.Y.') ?> – <?= $kraj->format('d.m.Y.') ?>): <b class="fs-5"><?= broj($bodovi, 2) ?></b>
+        <a class="small ms-2 no-print" href="<?= e(url('akcije/bodovi', ['clan' => $id])) ?>">📚 po godinama</a></div>
     <?php if (moze_clana(P_AKCIJE_UNOS, $clan) || moze_clana(P_AKCIJE_ODOBRI, $clan)): ?><a href="<?= e(url('akcije/nova', ['clan' => $id])) ?>" class="btn btn-sm btn-primary ms-auto no-print">+ Upiši radnu akciju</a><?php endif; ?>
 </div>
 <div class="table-responsive">

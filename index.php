@@ -80,6 +80,9 @@ if (!in_array($p, $javne, true)) {
     if (modul('psi') && modul('akcije')) {
         psi_godisnji_bodovi();
     }
+    if (modul('akcije')) {
+        bodovi_dnevno(); // bodovi za funkcije (jednom godišnje) i automatski prijenos u novu bodovnu godinu
+    }
 }
 
 provjeri_modul($p); // isključeni dijelovi programa (Sustav → Moduli)

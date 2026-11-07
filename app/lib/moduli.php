@@ -12,7 +12,7 @@ function moduli(): array
 {
     return [
         'akcije' => ['🔨', 'Radne akcije i bodovi', 'Prijava radnih akcija, odobravanje, bodovi (i oprema), izvještaji.',
-            P_AKCIJE_CITAJ | P_AKCIJE_UNOS | P_AKCIJE_ODOBRI | P_IZVJESTAJI, ['akcije', 'akcije/', 'moje-akcije', 'izvjestaji/', 'izvoz/akcije-csv', 'izvoz/akcije-pdf']],
+            P_AKCIJE_CITAJ | P_AKCIJE_UNOS | P_AKCIJE_ODOBRI | P_IZVJESTAJI, ['akcije', 'akcije/', 'moje-akcije', 'izvjestaji/', 'izvoz/akcije-csv', 'izvoz/akcije-pdf', 'sustav/bodovi']],
         'clanarina' => ['💶', 'Članarina i uplatnice', 'Članarina po godinama, rate, uplate, HUB-3 uplatnica za članove.',
             P_CLANARINA_CITAJ | P_CLANARINA_UREDI, ['clanarina', 'clanarina/', 'uplatnica', 'izvoz/uplatnica', 'sustav/uplatnica']],
         'kalendar' => ['📅', 'Kalendar', 'Termini udruge, prijave na termine, pretplata na kalendar.',

@@ -5,7 +5,7 @@
  */
 declare(strict_types=1);
 
-const VERZIJA = '1.68.0';
+const VERZIJA = '1.69.0';
 const KONTAKT_EMAIL = 'daxemann@googlemail.com';
 const PODRSKA_PAYPAL = 'darko.bakic@freenet.de'; // dobrovoljna podrška razvoju (Pomoć i kontakt)
 const PROJEKT_URL = 'https://github.com/daxemann/lovacka-evidencija';
@@ -188,7 +188,7 @@ function db(bool $novo = false): PDO
  * Dodatne tablice PHP verzije (PRAGMA user_version). .NET verzija ih ne poznaje i zanemaruje,
  * pa baza i dalje radi u oba smjera.
  */
-const SHEMA_PHP = 46;
+const SHEMA_PHP = 47;
 function nadogradi_bazu(PDO $pdo): void
 {
     if ((int) $pdo->query('PRAGMA user_version')->fetchColumn() >= SHEMA_PHP) {
@@ -1045,6 +1045,30 @@ SQL);
         $pdo->exec('ALTER TABLE "GrupniLov" ADD COLUMN "VoditeljKorisnikId" INTEGER NULL');
         $pdo->exec('ALTER TABLE "GrupniLov" ADD COLUMN "VoditeljIme" TEXT NULL');
         $pdo->exec('UPDATE "GrupniLov" SET "VoditeljClanId" = "KreiraoClanId", "VoditeljKorisnikId" = "KreiraoKorisnikId", "VoditeljIme" = "KreiraoIme"');
+    }
+    if ($v < 47) {
+        // bodovi za funkciju (jednom godišnje na zadani datum, odmah odobreni) i prijenos bodova u novu bodovnu godinu
+        $pdo->exec('ALTER TABLE "Funkcije" ADD COLUMN "Bodovi" TEXT NULL');
+        $pdo->exec('ALTER TABLE "Funkcije" ADD COLUMN "BodoviDatum" TEXT NULL');
+        $pdo->exec('ALTER TABLE "Funkcije" ADD COLUMN "BodoviOd" TEXT NULL');
+        $pdo->exec(<<<'SQL'
+CREATE TABLE IF NOT EXISTS "FunkcijaBodovi" (
+    "ClanId" INTEGER NOT NULL REFERENCES "Clanovi" ("Id") ON DELETE CASCADE,
+    "FunkcijaId" INTEGER NOT NULL REFERENCES "Funkcije" ("Id") ON DELETE CASCADE,
+    "Godina" INTEGER NOT NULL,
+    "AkcijaId" INTEGER NULL,
+    PRIMARY KEY ("ClanId", "FunkcijaId", "Godina")
+);
+CREATE TABLE IF NOT EXISTS "BodoviPrijenos" (
+    "ClanId" INTEGER NOT NULL REFERENCES "Clanovi" ("Id") ON DELETE CASCADE,
+    "Godina" INTEGER NOT NULL,
+    "Bodovi" TEXT NOT NULL,
+    "AkcijaId" INTEGER NULL,
+    "Kreirano" TEXT NOT NULL,
+    "UnioIme" TEXT NULL,
+    PRIMARY KEY ("ClanId", "Godina")
+);
+SQL);
     }
 }
 

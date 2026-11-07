@@ -1,5 +1,12 @@
 # Promjene
 
+## 1.69.0 – 2026-11
+- **🏅 Bodovi za funkciju** (*Sustav → Uloge i prava → Funkcije u udruzi*, gumb **🏅** u retku funkcije): broj bodova i **datum** (dan.mjesec.) kad se svake godine dodaju.
+  Na taj dan svaki član koji tada ima funkciju dobiva bodove **jednom godišnje, odmah odobreno** (bez odobravanja). Postavljeno usred godine računa se od sljedećeg datuma; za već prošli datum gumb *Upiši sada za 2026.*
+- **📅 Dan resetiranja bodova** (*Sustav → 🏅 Bodovi – godina i prijenos*): bodovna godina može početi na lovnu godinu (1.4.), 1.1., 1.8. ili bilo koji dan. Zbroj bodova (Početna, Moj profil, Moje radne akcije, kartica člana) ide po tom danu; u izvještaju radnih akcija razdoblje *Tekuća / Prošla bodovna godina*.
+- **↪️ Prijenos bodova u novu godinu:** pravilo *bez prijenosa*, *sve*, *najviše N* ili *fiksno N* (tko nije dosegao N → 0); **ručno** (stranica *Prijenos* – prijedlog po pravilu, iznos po članu promjenjiv, ponovljivo) ili **automatski** na dan resetiranja. Preneseno se upisuje kao odobrena stavka na prvi dan nove godine.
+- **📚 Arhiva bodova** (*Radne akcije → Arhiva bodova*): svi članovi po bodovnoj godini i sekciji (preneseno / funkcije / radne akcije / ukupno) ili jedan član kroz sve godine; PDF. Član bez prava vidi svoje godine (*Moje radne akcije → po godinama*).
+
 ## 1.68.0 – 2026-11
 - **Skupni lov – Lovnik / voditelj lova se bira:** pri pokretanju lova (novi lov i *🎯 Počni lov* iz kalendara) obavezno polje **👤 Lovnik / voditelj lova**.
   Ponuđeni su članovi s **funkcijom ili ulogom** lovnika / lovočuvara (Lovnik, Pomoćni lovnik, Lovočuvar …) iz sekcija lova, a ispod *Ostali članovi* (ako udruga funkcije zove drukčije). Organizator koji je i sam lovnik je predodabran.

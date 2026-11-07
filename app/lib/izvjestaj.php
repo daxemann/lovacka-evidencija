@@ -20,7 +20,7 @@ function filtar_iz_upita(array $q): array
     $dat = fn($k) => isset($q[$k]) && $q[$k] !== '' ? u_datum((string) $q[$k]) : null;
     $st = $q['Status'] ?? '';
     return [
-        'Razdoblje' => isset(RAZDOBLJA[$q['Razdoblje'] ?? '']) ? $q['Razdoblje'] : 'OvaGodina',
+        'Razdoblje' => isset(RAZDOBLJA[$q['Razdoblje'] ?? '']) || in_array($q['Razdoblje'] ?? '', ['BodovnaGodina', 'ProslaBodovnaGodina'], true) ? $q['Razdoblje'] : 'OvaGodina',
         'Od' => $dat('Od'),
         'Do' => $dat('Do'),
         'SekcijaId' => $int('SekcijaId'),
@@ -62,6 +62,8 @@ function raspon(array $f): array
         'ProslaGodina' => [new DateTimeImmutable(($g - 1) . '-01-01'), new DateTimeImmutable(($g - 1) . '-12-31')],
         'LovnaGodina' => [$lg, $lg->modify('+1 year -1 day')],
         'ProslaLovnaGodina' => [$lg->modify('-1 year'), $lg->modify('-1 day')],
+        'BodovnaGodina' => [($bg = pocetak_bodovne_godine($danas)), $bg->modify('+1 year -1 day')],
+        'ProslaBodovnaGodina' => [($bg = pocetak_bodovne_godine($danas))->modify('-1 year'), $bg->modify('-1 day')],
         'Mjeseci' => [
             $f['Od'] ? (new DateTimeImmutable($f['Od']))->modify('first day of this month') : $mj,
             ($f['Do'] ? new DateTimeImmutable($f['Do']) : $danas)->modify('last day of this month'),
