@@ -4,6 +4,10 @@ trazi(P_SUSTAV);
 if (!je_post()) {
     preusmjeri('sustav/kopije');
 }
+if ($zk = kopija_zakljucano_do()) {
+    poruka('Lozinka kopije je nedavno promijenjena – preuzimanje je zaključano do ' . date('d.m.Y. H:i', $zk) . '.', 'warning');
+    preusmjeri('sustav/kopije');
+}
 $lozinka = (string) ($_POST['lozinka_kopije'] ?? '');
 if (!kopija_lozinka_postavljena()) {
     poruka('Prvo postavite lozinku kopije.', 'warning');

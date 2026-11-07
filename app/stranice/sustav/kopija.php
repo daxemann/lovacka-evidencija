@@ -4,6 +4,10 @@ trazi(P_SUSTAV);
 if (!je_post()) {
     preusmjeri('sustav/kopije');
 }
+if ($zk = kopija_zakljucano_do()) {
+    poruka('Lozinka kopije je nedavno promijenjena – preuzimanje je zaključano do ' . date('d.m.Y. H:i', $zk) . '.', 'warning');
+    preusmjeri('sustav/kopije');
+}
 $ime = basename((string) ($_POST['ime'] ?? ''));
 $put = podaci('kopije/' . $ime);
 if (!preg_match('/^evidencija-.*\.db$/', $ime) || !is_file($put)) {

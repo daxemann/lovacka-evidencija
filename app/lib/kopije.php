@@ -36,6 +36,142 @@ function kopija_postavi_lozinku(string $lozinka): void
 {
     spremi_postavku('Kopije.Provjera', password_hash($lozinka, PASSWORD_DEFAULT));
 }
+// ---------- Promjena / reset lozinke kopije: lozinka za prijavu + 2FA + kod e-poštom ----------
+// Postavljanje i promjena idu u 2 koraka: (1) lozinka za prijavu + 2FA kod (+ nova lozinka kopije),
+// (2) 6-znamenkasti kod poslan na e-mail korisnika. Nakon PROMJENE (ne prvog postavljanja) preuzimanje je
+// 24 h zaključano, svi s pravom „Sustav“ dobivaju e-mail i svaki od njih može promjenu poništiti.
+
+const KOPIJA_KOD_MINUTA = 15;
+const KOPIJA_ZAKLJUCANO_SATI = 24;
+
+/** E-mail adresa korisničkog računa (preko povezanog člana). */
+function kopija_email_korisnika(int $korisnikId): string
+{
+    return trim((string) vrijednost('SELECT c.Email FROM Korisnici k LEFT JOIN Clanovi c ON c.Id=k.ClanId WHERE k.Id=?', [$korisnikId]));
+}
+function kopija_ime_korisnika(array $k): string
+{
+    $r = red('SELECT k.KorisnickoIme, k.PrikaznoIme, c.Ime, c.Prezime FROM Korisnici k LEFT JOIN Clanovi c ON c.Id=k.ClanId WHERE k.Id=?', [(int) $k['Id']]);
+    if (!$r) {
+        return (string) ($k['KorisnickoIme'] ?? '');
+    }
+    $ime = trim((string) $r['Ime'] . ' ' . (string) $r['Prezime']);
+    return $ime !== '' ? $ime : ((string) $r['PrikaznoIme'] ?: (string) $r['KorisnickoIme']);
+}
+/** Aktivni korisnici s pravom „Sustav“ koji imaju e-mail: [korisnikId => email]. */
+function kopija_admini_emailovi(): array
+{
+    $o = [];
+    foreach (redovi('SELECT k.Id, c.Email FROM Korisnici k LEFT JOIN Clanovi c ON c.Id=k.ClanId WHERE k.Aktivan=1') as $r) {
+        $em = trim((string) $r['Email']);
+        if ($em !== '' && (prava_korisnika((int) $r['Id']) & P_SUSTAV) === P_SUSTAV) {
+            $o[(int) $r['Id']] = $em;
+        }
+    }
+    return $o;
+}
+/** Mora li se korak 2 (kod e-poštom) obaviti? Kod prve lozinke bez e-pošte na poslužitelju – ne. */
+function kopija_treba_email(): bool
+{
+    if (je_demo()) {
+        return false;
+    }
+    return kopija_lozinka_postavljena() || posta_dostupna();
+}
+/** Provjera 2FA koda (TOTP ili rezervni). Bez uključene 2FA (config / demo) → true. */
+function kopija_provjeri_2fa(array $racun, string $kod): bool
+{
+    if (!dvofaktor_ukljucen()) {
+        return true;
+    }
+    if (!ima_2fa($racun)) {
+        return false;
+    }
+    $tajna = totp_tajna($racun);
+    $korak = $tajna ? totp_provjeri($tajna, $kod, (int) $racun['TotpZadnji']) : null;
+    if ($korak !== null) {
+        azuriraj('Korisnici', (int) $racun['Id'], ['TotpZadnji' => $korak]);
+        return true;
+    }
+    return strlen((string) preg_replace('/[^0-9a-fA-F]/', '', $kod)) === 8 && rezervni_kod_iskoristi($racun, $kod);
+}
+/** Do kada je preuzimanje zaključano nakon promjene (timestamp) ili null. */
+function kopija_zakljucano_do(): ?int
+{
+    $do = (int) postavka('Kopije.ZakljucanoDo', '0');
+    if ($do > time() && (string) postavka('Kopije.Stara', '') !== '') {
+        return $do;
+    }
+    return null;
+}
+/** Tko je zadnji promijenio lozinku kopije (Id korisnika) – iz zaključavanja. */
+function kopija_promijenio(): int
+{
+    return (int) postavka('Kopije.Promijenio', '0');
+}
+/** Sprema novu lozinku kopije (hash je već izračunat u koraku 1) + zaključavanje i obavijest. */
+function kopija_primijeni_novu(string $noviHash, array $tko): void
+{
+    $stari = (string) postavka('Kopije.Provjera', '');
+    spremi_postavku('Kopije.Provjera', $noviHash);
+    $ime = kopija_ime_korisnika($tko);
+    $ip = (string) ($_SERVER['REMOTE_ADDR'] ?? '');
+    if ($stari !== '') {
+        spremi_postavku('Kopije.Stara', $stari);
+        spremi_postavku('Kopije.ZakljucanoDo', (string) (time() + KOPIJA_ZAKLJUCANO_SATI * 3600));
+        spremi_postavku('Kopije.Promijenio', (string) (int) $tko['Id']);
+        dnevnik('Promijenjena lozinka kopije (2FA + e-mail), preuzimanje zaključano ' . KOPIJA_ZAKLJUCANO_SATI . ' h', null, null, 'IP ' . $ip);
+    } else {
+        dnevnik('Postavljena lozinka kopije', null, null, 'IP ' . $ip);
+    }
+    $kad = date('d.m.Y. H:i');
+    $put = 'Sustav → Sigurnosne kopije';
+    $tijelo = '<p>Lozinku kopije za <b>' . e(udruga_kratko()) . '</b> ' . ($stari !== '' ? 'je <b>promijenio/la</b>' : 'je <b>postavio/la</b>')
+        . ' <b>' . e($ime) . '</b> (' . e($kad) . ', IP ' . e($ip) . ').</p>'
+        . ($stari !== '' ? '<p>Preuzimanje kopija je <b>zaključano ' . KOPIJA_ZAKLJUCANO_SATI . ' sata</b>. Ako to niste bili vi ili ne znate za tu promjenu, '
+            . 'prijavite se i u <b>' . e($put) . '</b> kliknite <b>„Poništi promjenu“</b> – vraća se prethodna lozinka kopije. Zatim promijenite lozinke za prijavu.</p>' : '')
+        . '<p>Ako je sve u redu, ne trebate ništa raditi.</p>';
+    foreach (kopija_admini_emailovi() as $em) {
+        try {
+            posalji_mail($em, '🔒 Lozinka kopije ' . ($stari !== '' ? 'promijenjena' : 'postavljena') . ' – ' . udruga_kratko(), $tijelo);
+        } catch (Throwable $e) {
+            error_log('Obavijest o lozinki kopije nije poslana: ' . $e->getMessage());
+        }
+    }
+}
+/** Poništava zadnju promjenu: vraća prethodnu lozinku kopije. */
+function kopija_ponisti_promjenu(array $tko): bool
+{
+    $stari = (string) postavka('Kopije.Stara', '');
+    if ($stari === '' || kopija_zakljucano_do() === null) {
+        return false;
+    }
+    spremi_postavku('Kopije.Provjera', $stari);
+    foreach (['Kopije.Stara', 'Kopije.ZakljucanoDo', 'Kopije.Promijenio'] as $kl) {
+        spremi_postavku($kl, null);
+    }
+    dnevnik('Poništena promjena lozinke kopije – vraćena prethodna');
+    $tijelo = '<p><b>' . e(kopija_ime_korisnika($tko)) . '</b> je ' . e(date('d.m.Y. H:i')) . ' <b>poništio/la</b> zadnju promjenu lozinke kopije za <b>'
+        . e(udruga_kratko()) . '</b>. Vrijedi opet prethodna lozinka kopije.</p>';
+    foreach (kopija_admini_emailovi() as $em) {
+        try {
+            posalji_mail($em, '🔒 Promjena lozinke kopije poništena – ' . udruga_kratko(), $tijelo);
+        } catch (Throwable $e) {
+            error_log('Obavijest o poništenju nije poslana: ' . $e->getMessage());
+        }
+    }
+    return true;
+}
+/** Nakon isteka zaključavanja – očisti staru lozinku. */
+function kopija_pocisti_zakljucavanje(): void
+{
+    if ((string) postavka('Kopije.Stara', '') !== '' && kopija_zakljucano_do() === null) {
+        foreach (['Kopije.Stara', 'Kopije.ZakljucanoDo', 'Kopije.Promijenio'] as $kl) {
+            spremi_postavku($kl, null);
+        }
+    }
+}
+
 /** Podržava li PHP na ovom poslužitelju AES-256 ZIP (otvara se i 7-Zipom)? */
 function kopija_aes_zip(): bool
 {

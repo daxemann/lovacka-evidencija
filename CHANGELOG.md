@@ -1,5 +1,13 @@
 # Promjene
 
+## 1.70.0 – 2026-11
+- **🔒 Lozinka kopije – promjena i zaboravljena lozinka, sigurno:** *Sustav → Sigurnosne kopije → Promijeni lozinku kopije (i ako je zaboravljena)*. Stara lozinka kopije nije potrebna, ali potvrda ide u **2 koraka**:
+  1. lozinka za prijavu + **2FA kod** (aplikacija ili rezervni kod) + nova lozinka kopije,
+  2. **6-znamenkasti kod e-poštom** na e-mail vašeg računa (vrijedi 15 min, najviše 5 pokušaja).
+- Nakon **promjene** preuzimanje kopija je **24 h zaključano**, a **svi s pravom „Sustav“ dobivaju e-mail** (tko, kada, IP). Svaki od njih može na istoj stranici kliknuti **Poništi promjenu** – vraća se prethodna lozinka kopije.
+- Promjena zahtijeva podešenu e-poštu (*Sustav → E-pošta i adresa*) i e-mail adresu na računu. Prvo postavljanje lozinke kopije na poslužitelju bez e-pošte ide samo s lozinkom za prijavu + 2FA.
+- Već preuzete kopije i dalje se otvaraju samo lozinkom kojom su šifrirane – kopije na poslužitelju se nakon promjene preuzimaju s novom lozinkom.
+
 ## 1.69.0 – 2026-11
 - **🏅 Bodovi za funkciju** (*Sustav → Uloge i prava → Funkcije u udruzi*, gumb **🏅** u retku funkcije): broj bodova i **datum** (dan.mjesec.) kad se svake godine dodaju.
   Na taj dan svaki član koji tada ima funkciju dobiva bodove **jednom godišnje, odmah odobreno** (bez odobravanja). Postavljeno usred godine računa se od sljedećeg datuma; za već prošli datum gumb *Upiši sada za 2026.*
