@@ -1,5 +1,8 @@
 # Promjene
 
+## 1.73.1 – 2026-11
+- **📅 Godišnje obveze na kartici člana** (Funkcije): ovlaštena osoba dodaje obvezu s napomenom, uključuje ✅ / isključuje ⏸️ ili uklanja – isto kao u Radne akcije → Godišnje obveze.
+
 ## 1.73.0 – 2026-11
 - **📅 Godišnji bodovi za obveze** (univerzalno, ne samo psi): dodjela bodova za razne obveze jednom godišnje – npr. držanje lovačkog psa, briga o hranilištu, održavanje čeke. **Odmah odobreno.**
 - **Sustav → Bodovi → 📅**: admin dodaje obveze s bodovima i danom (aktivna / isključena / obriši). Lovački pas ostaje ugrađena obveza (po psu).

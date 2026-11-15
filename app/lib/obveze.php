@@ -74,3 +74,44 @@ function obveze_dnevno(): void
         }
     }
 }
+
+/**
+ * Radnje nad obvezom člana (kartica člana → Funkcije i Radne akcije → Godišnje obveze). Prava provjerava pozivatelj.
+ * $radnja: dodaj (obveza, opis) | ukljuci | iskljuci | ukloni (id upisa). Postavlja poruku.
+ */
+function obveza_clan_radnja(int $clanId, string $radnja, array $post, ?array $k = null): void
+{
+    $g = (int) date('Y');
+    $c = red('SELECT * FROM Clanovi WHERE Id=?', [$clanId]);
+    if (!$c) {
+        return;
+    }
+    if ($radnja === 'dodaj') {
+        $o = red('SELECT * FROM GodisnjeObveze WHERE Id=?', [(int) ($post['obveza'] ?? 0)]);
+        if (!$o || (int) $c['Status'] !== 0) {
+            return;
+        }
+        $id = umetni('ObvezaClanovi', ['ObvezaId' => (int) $o['Id'], 'ClanId' => $clanId, 'Opis' => mb_substr(trim((string) ($post['opis'] ?? '')), 0, 120) ?: null,
+            'Aktivan' => 1, 'AktivnoOd' => danas(), 'Kreirano' => sada()]);
+        dnevnik('Obveza – član uključen', 'Clan', $clanId, $o['Naziv'] . ': ' . puno_ime($c));
+        $n = upisi_bodove_obveze($o, $g, $k, $id);
+        poruka('Uključeno: ' . $o['Naziv'] . ($n ? " – bodovi za $g. upisani (odobreno)." : ' – bodovi se upisuju sami ' . bodovi_dan_prikaz($o['Dan']) . '.'));
+        return;
+    }
+    $u = red('SELECT * FROM ObvezaClanovi WHERE Id=? AND ClanId=?', [(int) ($post['id'] ?? 0), $clanId]);
+    $o = $u ? red('SELECT * FROM GodisnjeObveze WHERE Id=?', [(int) $u['ObvezaId']]) : null;
+    if (!$u || !$o) {
+        return;
+    }
+    if ($radnja === 'ukloni') {
+        q('DELETE FROM ObvezaClanovi WHERE Id=?', [(int) $u['Id']]); // već upisani bodovi ostaju
+        dnevnik('Obveza – član uklonjen', 'Clan', $clanId, $o['Naziv'] . ': ' . puno_ime($c));
+        poruka('Uklonjeno. Već upisani bodovi ostaju.');
+    } elseif ($radnja === 'ukljuci' || $radnja === 'iskljuci') {
+        $da = $radnja === 'ukljuci';
+        azuriraj('ObvezaClanovi', (int) $u['Id'], $da ? ['Aktivan' => 1, 'AktivnoOd' => danas()] : ['Aktivan' => 0]);
+        dnevnik($da ? 'Obveza – član uključen' : 'Obveza – član isključen', 'Clan', $clanId, $o['Naziv'] . ': ' . puno_ime($c));
+        $n = $da ? upisi_bodove_obveze($o, $g, $k, (int) $u['Id']) : 0;
+        poruka($da ? 'Uključeno' . ($n ? " – bodovi za $g. upisani (odobreno)." : '.') : 'Isključeno – od iduće godine nema bodova.');
+    }
+}

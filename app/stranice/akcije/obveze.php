@@ -9,29 +9,9 @@ $upis = fn(int $id) => red('SELECT oc.*, c.Ime, c.Prezime, c.SekcijaId FROM Obve
 
 if (je_post()) {
     $radnja = (string) ($_POST['radnja'] ?? '');
-    if ($radnja === 'dodaj') {
-        $o = red('SELECT * FROM GodisnjeObveze WHERE Id=?', [(int) ($_POST['obveza'] ?? 0)]);
-        $c = red('SELECT * FROM Clanovi c WHERE c.Id=? AND c.Status=0 AND ' . $opseg, [(int) ($_POST['clan'] ?? 0)]);
-        if ($o && $c) {
-            $id = umetni('ObvezaClanovi', ['ObvezaId' => (int) $o['Id'], 'ClanId' => (int) $c['Id'], 'Opis' => mb_substr(ul_str('opis'), 0, 120) ?: null,
-                'Aktivan' => 1, 'AktivnoOd' => danas(), 'Kreirano' => sada()]);
-            dnevnik('Obveza – član uključen', 'Clan', (int) $c['Id'], $o['Naziv'] . ': ' . puno_ime($c));
-            $n = upisi_bodove_obveze($o, $g, $k, $id);
-            poruka('Uključeno: ' . puno_ime($c) . ($n ? " – bodovi za $g. upisani (odobreno)." : ' – bodovi se upisuju sami ' . bodovi_dan_prikaz($o['Dan']) . '.'));
-        }
-    } elseif (in_array($radnja, ['ukljuci', 'iskljuci', 'ukloni'], true) && ($u = $upis((int) ($_POST['id'] ?? 0)))) {
-        $o = red('SELECT * FROM GodisnjeObveze WHERE Id=?', [(int) $u['ObvezaId']]);
-        if ($radnja === 'ukloni') {
-            q('DELETE FROM ObvezaClanovi WHERE Id=?', [(int) $u['Id']]); // već upisani bodovi ostaju
-            dnevnik('Obveza – član uklonjen', 'Clan', (int) $u['ClanId'], $o['Naziv'] . ': ' . prezime_ime($u));
-            poruka('Uklonjeno. Već upisani bodovi ostaju.');
-        } else {
-            $da = $radnja === 'ukljuci';
-            azuriraj('ObvezaClanovi', (int) $u['Id'], $da ? ['Aktivan' => 1, 'AktivnoOd' => danas()] : ['Aktivan' => 0]);
-            dnevnik($da ? 'Obveza – član uključen' : 'Obveza – član isključen', 'Clan', (int) $u['ClanId'], $o['Naziv'] . ': ' . prezime_ime($u));
-            $n = $da ? upisi_bodove_obveze($o, $g, $k, (int) $u['Id']) : 0;
-            poruka($da ? 'Uključeno' . ($n ? " – bodovi za $g. upisani (odobreno)." : '.') : 'Isključeno – od iduće godine nema bodova.');
-        }
+    $cid = $radnja === 'dodaj' ? (int) ($_POST['clan'] ?? 0) : (int) (($u = $upis((int) ($_POST['id'] ?? 0))) ? $u['ClanId'] : 0);
+    if ($cid && vrijednost('SELECT 1 FROM Clanovi c WHERE c.Id=? AND ' . $opseg, [$cid])) {
+        obveza_clan_radnja($cid, $radnja, $_POST, $k);
     }
     preusmjeri('akcije/obveze');
 }

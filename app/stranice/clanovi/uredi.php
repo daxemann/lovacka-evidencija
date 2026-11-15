@@ -123,6 +123,14 @@ if (je_post()) {
             $treba(P_CLANOVI_UREDI);
             q('DELETE FROM ClanFunkcije WHERE Id=? AND ClanId=?', [(int) $_POST['fid'], $id]);
             $natrag('funkcije');
+        // ---------- godišnje obveze (bodovi 1× godišnje) ----------
+        case 'obveza-dodaj':
+        case 'obveza-ukljuci':
+        case 'obveza-iskljuci':
+        case 'obveza-ukloni':
+            $treba(P_CLANOVI_UREDI);
+            obveza_clan_radnja($id, substr($radnja, 7), $_POST, $k);
+            $natrag('funkcije');
 
         // ---------- članarina ----------
         case 'clanarina-dodaj':
