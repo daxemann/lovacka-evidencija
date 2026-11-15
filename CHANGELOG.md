@@ -1,5 +1,10 @@
 # Promjene
 
+## 1.71.0 – 2026-11
+- **✏️ Radne akcije – ispravak prije odobrenja**: tko odobrava (pravo *odobri*) kod akcije **na čekanju** klikne **✏️ Uredi** i može ispraviti datum, sate, opis, vrstu i **dodatnu opremu** (traktor, motorna pila, trimer …) koju je član zaboravio označiti ili pogrešno označio.
+- **💾 Spremi izmjene** (akcija ostaje na čekanju) ili **Spremi i odobri**. Bodovi se i dalje računaju sami iz postavki (osnovni + oprema); ručno ih mijenja samo admin.
+- Već upisana oprema zadržava svoje bodove, novo dodana uzima bodove iz Sustav → Vrste radnih akcija. Svaka izmjena se bilježi u dnevnik.
+
 ## 1.70.0 – 2026-11
 - **🔒 Lozinka kopije – promjena i zaboravljena lozinka, sigurno:** *Sustav → Sigurnosne kopije → Promijeni lozinku kopije (i ako je zaboravljena)*. Stara lozinka kopije nije potrebna, ali potvrda ide u **2 koraka**:
   1. lozinka za prijavu + **2FA kod** (aplikacija ili rezervni kod) + nova lozinka kopije,

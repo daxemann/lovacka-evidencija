@@ -16,6 +16,59 @@ $vrstaPoId = array_column($vrste, null, 'Id');
 $akcija = function (int $id) {
     return red('SELECT a.*, c.SekcijaId, c.Ime, c.Prezime FROM RadneAkcije a JOIN Clanovi c ON c.Id=a.ClanId WHERE a.Id=? AND ' . opseg_sql('c'), [$id]);
 };
+/**
+ * Izmjene odobravatelja prije odobrenja (samo akcija na čekanju): datum, sati, opis, vrsta i dodatna oprema.
+ * Bodovi opreme: već upisana oprema zadržava svoje bodove, novo dodana uzima bodove iz postavki vrste.
+ * Vraća ažurirani redak ili null ako su podaci neispravni (poruka je već postavljena).
+ */
+$primijeni = function (array $a) use ($vrstaPoId): ?array {
+    $aid = (int) $a['Id'];
+    if ((int) $a['Status'] !== AKCIJA_CEKA || !isset($_POST['izm'][$aid])) {
+        return $a;
+    }
+    $u = (array) $_POST['izm'][$aid];
+    $vrstaId = $a['VrstaAkcijeId'] !== null ? (int) $a['VrstaAkcijeId'] : null;
+    $vU = $_POST['vrsta'][$aid] ?? null;
+    if ($vU !== null && $vU !== '') {
+        $vrstaId = (int) $vU ?: null;
+    }
+    $datum = u_datum((string) ($u['datum'] ?? '')) ?? substr((string) $a['Datum'], 0, 10);
+    if ($datum > danas()) {
+        poruka(prezime_ime($a) . ': datum ne može biti u budućnosti.', 'warning');
+        return null;
+    }
+    $stara = [];
+    foreach (oprema_lista($a['Oprema']) as $x) {
+        $stara[(int) $x['id']] = $x['b'];
+    }
+    $opr = $vrstaId ? oprema_odabir($vrstaId, (array) ($u['oprema'] ?? [])) : [];
+    foreach ($opr as &$x) {
+        if (isset($stara[$x['id']])) {
+            $x['b'] = (float) $stara[$x['id']];
+        }
+    }
+    unset($x);
+    $opis = trim((string) ($u['opis'] ?? ''));
+    $nova = [
+        'Datum' => $datum, 'Sati' => dec(u_broj($u['sati'] ?? '')), 'Opis' => $opis !== '' ? $opis : null,
+        'VrstaAkcijeId' => $vrstaId, 'Oprema' => oprema_json($opr),
+    ];
+    if ($vrstaId && isset($vrstaPoId[$vrstaId])) {
+        $nova['Bodovi'] = dec((float) $vrstaPoId[$vrstaId]['StandardniBodovi'] + oprema_zbroj($opr));
+    }
+    $promjene = [];
+    foreach ($nova as $kljuc => $v) {
+        if ((string) ($a[$kljuc] ?? '') !== (string) ($v ?? '')) {
+            $promjene[$kljuc] = $v;
+        }
+    }
+    if ($promjene) {
+        azuriraj('RadneAkcije', $aid, $promjene);
+        dnevnik('Izmijenjena radna akcija (prije odobrenja)', 'RadnaAkcija', $aid, prezime_ime($a) . ': ' . implode(', ', array_keys($promjene)));
+        $a = array_merge($a, $promjene);
+    }
+    return $a;
+};
 $odobri = function (array $a, ?string $bodUnos, ?string $vrstaUnos) use ($k, $vrstaPoId, $smijeBodove): bool {
     $vrstaId = $a['VrstaAkcijeId'];
     if ($vrstaUnos !== null && $vrstaUnos !== '') {
@@ -44,6 +97,7 @@ if (je_post() && $moze) {
     $vrstaU = (array) ($_POST['vrsta'] ?? []);
     if (isset($_POST['odobri'])) {
         $a = $akcija((int) $_POST['odobri']);
+        $a = $a ? $primijeni($a) : null;
         if ($a && !$odobri($a, $bodovi[$a['Id']] ?? null, $vrstaU[$a['Id']] ?? null)) {
             poruka($smijeBodove ? 'Za vlastitu akciju upišite bodove.' : 'Akciju bez vrste boduje admin – odaberite vrstu ili je ostavite adminu.', 'warning');
         }
@@ -56,6 +110,11 @@ if (je_post() && $moze) {
             dnevnik('Odbijena radna akcija', 'RadnaAkcija', (int) $a['Id'], prezime_ime($a) . ' ' . datum($a['Datum']) . ($razlog ? ": $razlog" : ''));
             push_posalji(push_korisnici_clanova([(int) $a['ClanId']]), 'akcije', '❌ Radna akcija odbijena', datum($a['Datum']) . ($razlog !== '' ? ' · ' . $razlog : ''), 'moje-akcije', [], 'akcija-' . $a['Id']);
         }
+    } elseif (isset($_POST['spremi'])) {
+        $a = $akcija((int) $_POST['spremi']);
+        if ($a && (int) $a['Status'] === AKCIJA_CEKA && $primijeni($a)) {
+            poruka('Izmjene spremljene – akcija je i dalje na čekanju.', 'success');
+        }
     } elseif (isset($_POST['vrati'])) {
         $a = $akcija((int) $_POST['vrati']);
         if ($a) {
@@ -67,7 +126,7 @@ if (je_post() && $moze) {
         $presk = 0;
         foreach ((array) ($_POST['odabrani'] ?? []) as $id) {
             $a = $akcija((int) $id);
-            if ($a && (int) $a['Status'] === AKCIJA_CEKA) {
+            if ($a && (int) $a['Status'] === AKCIJA_CEKA && ($a = $primijeni($a))) {
                 $odobri($a, $bodovi[$a['Id']] ?? null, $vrstaU[$a['Id']] ?? null) ? $n++ : $presk++;
             }
         }
@@ -151,6 +210,7 @@ ob_start(); ?>
             <td class="text-end text-nowrap">
                 <?php if ($uredi): ?>
                     <button class="btn btn-sm btn-success" name="odobri" value="<?= $aid ?>">Odobri</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary ms-1" title="Ispravi prije odobrenja" onclick="document.getElementById('izm<?= $aid ?>').classList.toggle('d-none')">✏️ Uredi</button>
                     <button type="button" class="btn btn-sm btn-outline-danger ms-1" onclick="var d=document.getElementById('odb<?= $aid ?>');d.classList.toggle('d-none');d.querySelector('input').focus()">Odbij</button>
                     <div class="input-group input-group-sm mt-1 d-none" id="odb<?= $aid ?>">
                         <input name="razlog[<?= $aid ?>]" class="form-control" placeholder="Razlog odbijanja">
@@ -161,6 +221,24 @@ ob_start(); ?>
                 <?php endif; ?>
             </td>
         </tr>
+        <?php if ($uredi):
+            $oprIds = array_map(fn($x) => (int) $x['id'], oprema_lista($a['Oprema'])); ?>
+        <tr class="d-none izmjena" id="izm<?= $aid ?>"><td colspan="9" class="bg-light">
+            <div class="row g-2 align-items-end">
+                <div class="col-6 col-md-2"><label class="form-label small mb-0">Datum</label><input type="date" name="izm[<?= $aid ?>][datum]" class="form-control form-control-sm" value="<?= e(substr((string) $a['Datum'], 0, 10)) ?>" max="<?= danas() ?>"></div>
+                <div class="col-6 col-md-2"><label class="form-label small mb-0">Sati</label><input type="number" step="0.5" min="0" name="izm[<?= $aid ?>][sati]" class="form-control form-control-sm" value="<?= e($a['Sati'] !== null ? (string) (float) $a['Sati'] : '') ?>"></div>
+                <div class="col-12 col-md-8"><label class="form-label small mb-0">Opis</label><input name="izm[<?= $aid ?>][opis]" class="form-control form-control-sm" value="<?= e((string) $a['Opis']) ?>"></div>
+                <div class="col-12">
+                    <div class="small fw-semibold">🧰 Dodatna oprema <span class="fw-normal text-muted">(bodovi iz postavki)</span></div>
+                    <div class="d-flex flex-wrap gap-1 izm-oprema" data-id="<?= $aid ?>" data-odabrano="<?= e(json_encode($oprIds)) ?>" data-stara="<?= e(json_encode(array_column(oprema_lista($a['Oprema']), 'b', 'id'))) ?>"></div>
+                </div>
+                <div class="col-12 d-flex gap-2">
+                    <button class="btn btn-sm btn-primary" name="spremi" value="<?= $aid ?>">💾 Spremi izmjene</button>
+                    <button class="btn btn-sm btn-success" name="odobri" value="<?= $aid ?>">Spremi i odobri</button>
+                </div>
+            </div>
+        </td></tr>
+        <?php endif; ?>
     <?php endforeach; ?>
     <?php if (!$lista): ?><tr><td colspan="9" class="text-muted text-center py-4">Nema zapisa.</td></tr><?php endif; ?>
     </tbody>
@@ -168,6 +246,7 @@ ob_start(); ?>
 </div>
 </form>
 <?php if ($prikaz !== AKCIJA_CEKA): ?><p class="small text-muted">Prikazano zadnjih 300 zapisa. Za odabir razdoblja koristite izvještaj.</p><?php endif; ?>
+<?php if ($uredi): ?><script id="oprema-cfg" type="application/json"><?= json_encode(oprema_js(), JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP) ?></script><?php endif; ?>
 <script>
 (function () {
     var osvj = function () {
@@ -175,9 +254,40 @@ ob_start(); ?>
         if (!b) return; b.disabled = n === 0; document.getElementById('brojOdabranih').textContent = n;
     };
     document.addEventListener('change', osvj); document.addEventListener('ev-oznaceno', osvj);
+    var cfg = document.getElementById('oprema-cfg'), OPR = cfg ? JSON.parse(cfg.textContent) : {};
+    var esc = function (t) { var d = document.createElement('div'); d.textContent = t; return d.innerHTML; };
+    var oprBod = function (id) {
+        var d = document.querySelector('.izm-oprema[data-id="' + id + '"]'), st = d ? JSON.parse(d.dataset.stara || '{}') : {}, z = 0;
+        if (!d) return null;
+        d.querySelectorAll('input:checked').forEach(function (c) { z += st[c.value] !== undefined ? parseFloat(st[c.value]) : parseFloat(c.dataset.b) || 0; });
+        return z;
+    };
+    var bodovi = function (id) {
+        var s = document.querySelector('.vrsta-izbor[data-id="' + id + '"]'), o = s ? s.options[s.selectedIndex] : null, z = oprBod(id);
+        if (!o || !o.dataset.bodovi) return;
+        document.getElementById('bod' + id).value = Math.round((parseFloat(o.dataset.bodovi) + (z === null ? (parseFloat(s.dataset.oprema) || 0) : z)) * 100) / 100;
+    };
+    var crtaj = function (id) {
+        var d = document.querySelector('.izm-oprema[data-id="' + id + '"]'), s = document.querySelector('.vrsta-izbor[data-id="' + id + '"]');
+        if (!d || !s) return;
+        var odab = d.querySelectorAll('input').length ? Array.prototype.map.call(d.querySelectorAll('input:checked'), function (c) { return +c.value; }) : JSON.parse(d.dataset.odabrano || '[]');
+        var l = OPR[s.value] || [];
+        d.innerHTML = l.length ? l.map(function (o) {
+            var on = odab.indexOf(o.id) >= 0;
+            return '<label class="btn btn-sm py-0 px-2 ' + (on ? 'btn-warning' : 'btn-outline-secondary') + '"><input type="checkbox" class="d-none" name="izm[' + id + '][oprema][]" value="' + o.id + '" data-b="' + o.b + '"' + (on ? ' checked' : '') + '>🧰 ' + esc(o.n) + ' +' + o.b + '</label>';
+        }).join('') : '<span class="small text-muted">Ova vrsta nema dodatne opreme.</span>';
+    };
+    document.querySelectorAll('.izm-oprema').forEach(function (d) { crtaj(d.dataset.id); });
+    document.addEventListener('change', function (ev) {
+        var t = ev.target;
+        if (t.closest && t.closest('.izm-oprema')) {
+            var l = t.closest('label'); l.classList.toggle('btn-warning', t.checked); l.classList.toggle('btn-outline-secondary', !t.checked);
+            bodovi(t.closest('.izm-oprema').dataset.id);
+        }
+    });
     document.querySelectorAll('.vrsta-izbor').forEach(function (s) {
-        // nova vrsta: standardni bodovi + bodovi opreme koju je član donio
-        s.addEventListener('change', function () { var o = s.options[s.selectedIndex]; if (o.dataset.bodovi) document.getElementById('bod' + s.dataset.id).value = Math.round((parseFloat(o.dataset.bodovi) + (parseFloat(s.dataset.oprema) || 0)) * 100) / 100; });
+        // nova vrsta: standardni bodovi + bodovi opreme (oprema se nudi prema vrsti)
+        s.addEventListener('change', function () { crtaj(s.dataset.id); bodovi(s.dataset.id); });
     });
 })();
 </script>
