@@ -5,7 +5,9 @@ if (!smije_upis_akcija()) {
     zabranjeno();
 }
 $k = korisnik();
-$vrste = redovi('SELECT * FROM VrsteAkcija WHERE Aktivna=1 ORDER BY Naziv');
+// držanje psa se upisuje samo automatski (jednom godišnje po psu) – ne nudi se za ručni upis
+$vrstaDrzanje = modul('psi') ? vrsta_akcije_psi() : 0;
+$vrste = array_values(array_filter(redovi('SELECT * FROM VrsteAkcija WHERE Aktivna=1 ORDER BY Naziv'), fn($x) => (int) $x['Id'] !== $vrstaDrzanje));
 $clanovi = redovi('SELECT c.Id, c.Ime, c.Prezime, c.SekcijaId FROM Clanovi c WHERE c.Status=0 AND ' . opseg_sql_prava([P_AKCIJE_UNOS, P_AKCIJE_ODOBRI], 'c'));
 $coll = class_exists('Collator') ? new Collator('hr_HR') : null;
 usort($clanovi, fn($a, $b) => $coll ? $coll->compare(prezime_ime($a), prezime_ime($b)) : strcmp(kljuc(prezime_ime($a)), kljuc(prezime_ime($b))));
@@ -45,8 +47,8 @@ if (je_post()) {
         $g = 'Označite barem jednog člana.';
     } elseif ($v['datum'] > danas()) {
         $g = 'Datum ne može biti u budućnosti.';
-    } elseif ($vrstaId > 0 && !vrijednost('SELECT 1 FROM VrsteAkcija WHERE Id=? AND Aktivna=1', [$vrstaId])) {
-        $g = 'Odaberite vrstu akcije.';
+    } elseif ($vrstaId > 0 && (!vrijednost('SELECT 1 FROM VrsteAkcija WHERE Id=? AND Aktivna=1', [$vrstaId]) || $vrstaId === $vrstaDrzanje)) {
+        $g = $vrstaId === $vrstaDrzanje ? 'Bodovi za držanje psa upisuju se sami jednom godišnje (Lovački psi kod člana).' : 'Odaberite vrstu akcije.';
     }
     if (!$g) {
         $dozvoljeni = array_flip(array_map('intval', array_column($clanovi, 'Id')));

@@ -1,5 +1,13 @@
 # Promjene
 
+## 1.72.0 – 2026-11
+- **🐕 Bodovi za držanje lovačkog psa – automatski, kao bodovi za funkciju**: jednom godišnje na zadani dan, **odmah odobreno**, bodovi iz Vrste radnih akcija.
+- **Sustav → Bodovi → 🐕**: odaberite vrstu (npr. „Držanje lovačkog psa (uz ugovor sa udrugom)“) i dan upisa (zadano 1.1.).
+- Upisuje se samo za psa koji je **aktivan** i ima **uključene bodove**. Uključuje / isključuje **ovlaštena osoba** (pravo uređivanja članova) gumbom ✅ / ⏸️ na kartici psa – član sam to ne može; pas koji član sam doda čeka uključenje.
+- Pas uključen nakon tog dana dobiva bodove **odmah** (s današnjim datumom). Svaki pas najviše **jednom godišnje**.
+- **Nema dvostrukih bodova**: ta se vrsta više ne nudi za ručni upis (Nova radna akcija, Moje radne akcije, odobravanje), a već ručno upisana akcija te vrste u istoj godini se samo poveže sa psom.
+- Upozorenje „bodovi za pse su 0“ samo još za vrstu držanja psa.
+
 ## 1.71.0 – 2026-11
 - **✏️ Radne akcije – ispravak prije odobrenja**: tko odobrava (pravo *odobri*) kod akcije **na čekanju** klikne **✏️ Uredi** i može ispraviti datum, sate, opis, vrstu i **dodatnu opremu** (traktor, motorna pila, trimer …) koju je član zaboravio označiti ili pogrešno označio.
 - **💾 Spremi izmjene** (akcija ostaje na čekanju) ili **Spremi i odobri**. Bodovi se i dalje računaju sami iz postavki (osnovni + oprema); ručno ih mijenja samo admin.

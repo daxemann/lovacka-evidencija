@@ -10,6 +10,7 @@ if (!isset(STATUSI_AKCIJE[$prikaz])) {
     $prikaz = AKCIJA_CEKA;
 }
 $vrste = redovi('SELECT * FROM VrsteAkcija ORDER BY Naziv');
+$vrstaDrzanje = modul('psi') ? vrsta_akcije_psi() : 0; // držanje psa: samo automatski, ne bira se ručno
 $vrstaPoId = array_column($vrste, null, 'Id');
 
 /** Akcija u opsegu ili null. */
@@ -21,7 +22,7 @@ $akcija = function (int $id) {
  * Bodovi opreme: već upisana oprema zadržava svoje bodove, novo dodana uzima bodove iz postavki vrste.
  * Vraća ažurirani redak ili null ako su podaci neispravni (poruka je već postavljena).
  */
-$primijeni = function (array $a) use ($vrstaPoId): ?array {
+$primijeni = function (array $a) use ($vrstaPoId, $vrstaDrzanje): ?array {
     $aid = (int) $a['Id'];
     if ((int) $a['Status'] !== AKCIJA_CEKA || !isset($_POST['izm'][$aid])) {
         return $a;
@@ -29,7 +30,7 @@ $primijeni = function (array $a) use ($vrstaPoId): ?array {
     $u = (array) $_POST['izm'][$aid];
     $vrstaId = $a['VrstaAkcijeId'] !== null ? (int) $a['VrstaAkcijeId'] : null;
     $vU = $_POST['vrsta'][$aid] ?? null;
-    if ($vU !== null && $vU !== '') {
+    if ($vU !== null && $vU !== '' && ((int) $vU !== $vrstaDrzanje || $vrstaId === $vrstaDrzanje)) {
         $vrstaId = (int) $vU ?: null;
     }
     $datum = u_datum((string) ($u['datum'] ?? '')) ?? substr((string) $a['Datum'], 0, 10);
@@ -69,9 +70,9 @@ $primijeni = function (array $a) use ($vrstaPoId): ?array {
     }
     return $a;
 };
-$odobri = function (array $a, ?string $bodUnos, ?string $vrstaUnos) use ($k, $vrstaPoId, $smijeBodove): bool {
+$odobri = function (array $a, ?string $bodUnos, ?string $vrstaUnos) use ($k, $vrstaPoId, $smijeBodove, $vrstaDrzanje): bool {
     $vrstaId = $a['VrstaAkcijeId'];
-    if ($vrstaUnos !== null && $vrstaUnos !== '') {
+    if ($vrstaUnos !== null && $vrstaUnos !== '' && ((int) $vrstaUnos !== $vrstaDrzanje || (int) $vrstaId === $vrstaDrzanje)) {
         $vrstaId = (int) $vrstaUnos ?: null;
     }
     $izPostavki = $vrstaId && isset($vrstaPoId[$vrstaId]) ? (float) $vrstaPoId[$vrstaId]['StandardniBodovi'] + oprema_zbroj($a['Oprema']) : null;
@@ -185,7 +186,7 @@ ob_start(); ?>
                 <?php if ($uredi): ?>
                     <select name="vrsta[<?= $aid ?>]" class="form-select form-select-sm vrsta-izbor" data-id="<?= $aid ?>" data-oprema="<?= e((string) $oprBod) ?>">
                         <?php if ($vlastita): ?><option value="0">Vlastita: <?= e($a['VrstaSlobodno']) ?></option><?php endif; ?>
-                        <?php foreach ($vrste as $v): if (!$v['Aktivna'] && $v['Id'] != $a['VrstaAkcijeId']) continue; ?>
+                        <?php foreach ($vrste as $v): if ((!$v['Aktivna'] || (int) $v['Id'] === $vrstaDrzanje) && $v['Id'] != $a['VrstaAkcijeId']) continue; ?>
                             <option value="<?= (int) $v['Id'] ?>" data-bodovi="<?= e((string) (float) $v['StandardniBodovi']) ?>"<?= sel($v['Id'], $a['VrstaAkcijeId']) ?>><?= e($v['Naziv']) ?> (<?= e(broj($v['StandardniBodovi'], 1)) ?> b.)</option>
                         <?php endforeach; ?>
                     </select>

@@ -1,7 +1,8 @@
 <?php
 /**
- * Lovački psi članova. Za svakog aktivnog psa (uz uključeno bodovanje) 1. siječnja automatski nastaje
- * radna akcija „Lovački pas“ na čekanju – odobrava se kao i sve ostale (standardni bodovi iz Vrste radnih akcija).
+ * Lovački psi članova. Za svakog aktivnog psa s uključenim bodovanjem (uključuje ovlaštena osoba, npr. uz ugovor s udrugom)
+ * jednom godišnje na zadani datum (Sustav → Bodovi) automatski nastaje radna akcija za držanje psa – odmah odobrena,
+ * bodovi iz Vrste radnih akcija. Svaki pas najviše jednom godišnje (PsiBodovi), i ručni upis iste vrste se ne duplicira.
  */
 declare(strict_types=1);
 
@@ -81,6 +82,17 @@ function bodovna_lista_psi(): array
     }
     return $r;
 }
+/** Dan godišnjih bodova za pse 'MM-DD' (Sustav → Bodovi, zadano 01-01). */
+function psi_bodovi_dan(): string
+{
+    $d = (string) postavka('Psi.BodoviDan', '01-01');
+    return preg_match('/^(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/', $d) ? $d : '01-01';
+}
+/** Smije li trenutni korisnik uključiti / isključiti psa i bodovanje (ovlaštena osoba). */
+function smije_bodovanje_psa(?array $clan = null): bool
+{
+    return $clan ? moze_clana(P_CLANOVI_UREDI, $clan) : ima(P_CLANOVI_UREDI);
+}
 function bodovi_psa_standard(): float
 {
     return bodovna_lista_psi()['godisnje']['bodovi'];
@@ -128,28 +140,55 @@ function opis_psa(array $p): string
 }
 
 /**
- * Upisuje godišnje bodove za pse (radna akcija na čekanju, datum 1.1.) – svaki pas najviše jednom godišnje.
+ * Godišnji bodovi za držanje psa: za aktivne pse s uključenim bodovanjem, kad je dan (Sustav → Bodovi) u godini $godina prošao.
+ * Odmah odobreno, bodovi iz vrste. Datum upisa = zadani dan, ili kasnije ako je pas / bodovanje uključeno tek nakon tog dana.
+ * Svaki pas najviše jednom godišnje; postojeći (i ručni) upis iste vrste za tog člana u toj godini se samo poveže – nema duplikata.
  * $clanId = samo za jednog člana. Vraća broj novih upisa.
  */
 function upisi_bodove_psa(int $godina, ?int $clanId = null, ?array $k = null): int
 {
+    $dan = $godina . '-' . psi_bodovi_dan();
+    if ($dan > danas()) {
+        return 0;
+    }
     $vrsta = vrsta_akcije_psi();
+    $bod = (float) vrijednost('SELECT StandardniBodovi FROM VrsteAkcija WHERE Id=?', [$vrsta]);
+    if ($bod <= 0) {
+        return 0; // bez bodova u vrsti nema upisa (upozorenje na kartici psa i u Sustav → Bodovi)
+    }
     $uvjet = $clanId ? ' AND p.ClanId=' . (int) $clanId : '';
     $psi = redovi("SELECT p.* FROM LovniPsi p JOIN Clanovi c ON c.Id=p.ClanId
         WHERE p.Aktivan=1 AND p.Bodovanje=1 AND c.Status=0 $uvjet
-          AND NOT EXISTS (SELECT 1 FROM PsiBodovi b WHERE b.PasId=p.Id AND b.Godina=?)", [$godina]);
+          AND NOT EXISTS (SELECT 1 FROM PsiBodovi b WHERE b.PasId=p.Id AND b.Godina=?) ORDER BY p.ClanId, p.Id", [$godina]);
     $n = 0;
-    transakcija(function () use ($psi, $godina, $vrsta, $k, &$n) {
+    transakcija(function () use ($psi, $godina, $dan, $vrsta, $bod, $k, &$n) {
         foreach ($psi as $p) {
+            $pid = (int) $p['Id'];
+            $cid = (int) $p['ClanId'];
+            // već postoji upis te vrste u toj godini (npr. ručno upisan): za ovog psa ili bez psa i još nepovezan
+            $postoji = vrijednost('SELECT Id FROM RadneAkcije a WHERE a.ClanId=? AND a.VrstaAkcijeId=? AND a.Status<>? AND substr(a.Datum,1,4)=?
+                AND (a.PasId=? OR (a.PasId IS NULL AND NOT EXISTS (SELECT 1 FROM PsiBodovi b WHERE b.AkcijaId=a.Id))) ORDER BY (a.PasId IS NULL), a.Id LIMIT 1',
+                [$cid, $vrsta, AKCIJA_ODBIJENO, (string) $godina, $pid]);
+            if ($postoji) {
+                q('UPDATE RadneAkcije SET PasId=COALESCE(PasId, ?) WHERE Id=?', [$pid, (int) $postoji]);
+                umetni('PsiBodovi', ['PasId' => $pid, 'Godina' => $godina, 'AkcijaId' => (int) $postoji]);
+                continue;
+            }
+            $datum = max($dan, substr((string) ($p['BodovanjeOd'] ?? ''), 0, 10), substr((string) ($p['Kreirano'] ?? ''), 0, 10));
+            $datum = min($datum, danas());
             $aid = umetni('RadneAkcije', [
-                'ClanId' => (int) $p['ClanId'], 'Datum' => "$godina-01-01", 'VrstaAkcijeId' => $vrsta, 'VrstaSlobodno' => null, 'Sati' => null,
-                'Opis' => 'Lovački pas ' . $godina . '.: ' . opis_psa($p), 'Status' => AKCIJA_CEKA, 'Bodovi' => null, 'RazlogOdbijanja' => null,
-                'FotoDatoteka' => null, 'UnioKorisnikId' => $k['Id'] ?? null, 'Kreirano' => sada(), 'PasId' => (int) $p['Id'],
+                'ClanId' => $cid, 'Datum' => $datum, 'VrstaAkcijeId' => $vrsta, 'VrstaSlobodno' => null, 'Sati' => null,
+                'Opis' => '🐕 ' . opis_psa($p) . ' – ' . $godina . '.', 'Status' => AKCIJA_ODOBRENO, 'Bodovi' => dec($bod), 'RazlogOdbijanja' => null,
+                'FotoDatoteka' => null, 'UnioKorisnikId' => $k['Id'] ?? null, 'Kreirano' => sada(), 'PasId' => $pid,
+                'OdlucioKorisnikId' => $k['Id'] ?? null, 'OdlucioIme' => $k['Naziv'] ?? 'automatski', 'Odluceno' => sada(),
             ]);
-            umetni('PsiBodovi', ['PasId' => (int) $p['Id'], 'Godina' => $godina, 'AkcijaId' => $aid]);
+            umetni('PsiBodovi', ['PasId' => $pid, 'Godina' => $godina, 'AkcijaId' => $aid]);
             $n++;
         }
     });
+    if ($n) {
+        dnevnik('Bodovi za lovačke pse', null, null, "$godina.: $n × " . broj($bod, 2) . ' b. (odmah odobreno)');
+    }
     return $n;
 }
 
@@ -190,7 +229,7 @@ function psi_bodovi_lova(): int
     return $n;
 }
 
-/** Jednom dnevno: psi na prošlim zajedničkim lovovima + (pri prvom pozivu u godini) godišnji bodovi od 1. siječnja. */
+/** Jednom dnevno: psi na prošlim zajedničkim lovovima + godišnji bodovi za držanje psa (od zadanog dana). */
 function psi_godisnji_bodovi(): void
 {
     $oznaka = podaci('.psi-dan');
@@ -207,23 +246,19 @@ function psi_godisnji_bodovi(): void
     } catch (Throwable $e) {
         error_log('Psi na lovu: ' . $e->getMessage());
     }
-    $god = (int) date('Y');
-    if (postavka('Psi.Bodovano') === (string) $god) {
-        return;
-    }
     try {
-        $n = upisi_bodove_psa($god);
-        spremi_postavku('Psi.Bodovano', (string) $god);
-        if ($n) {
-            dnevnik('Godišnji bodovi za lovačke pse', null, null, "$god: $n upisa na čekanju");
-        }
+        // svaki dan nakon zadanog dana: novi / tek uključeni psi dobivaju bodove odmah (svaki pas jednom godišnje)
+        upisi_bodove_psa((int) date('Y'));
     } catch (Throwable $e) {
         error_log('Bodovi za pse: ' . $e->getMessage());
     }
 }
 
-/** Spremanje psa / ispita (kartica člana i Moj profil). Prava provjerava pozivatelj. */
-function psi_obradi(int $id, string $radnja, string $ime): void
+/**
+ * Spremanje psa / ispita (kartica člana i Moj profil). Prava provjerava pozivatelj.
+ * $ovlasten = smije uključiti / isključiti psa i bodovanje (član na Moj profil bez tog prava ne mijenja ta dva polja; novi pas čeka uključenje).
+ */
+function psi_obradi(int $id, string $radnja, string $ime, bool $ovlasten = true): void
 {
     if ($radnja === 'pas-spremi') {
         $pid = (int) ($_POST['pid'] ?? 0);
@@ -231,21 +266,46 @@ function psi_obradi(int $id, string $radnja, string $ime): void
             'Spol' => in_array(ul_str('Spol'), ['pas', 'kuja'], true) ? ul_str('Spol') : null, 'DatumRodjenja' => u_datum(ul_str('DatumRodjenja')),
             'Cip' => mb_substr(ul_str('Cip'), 0, 40) ?: null,
             'RodnaKnjiga' => mb_substr(ul_str('RodnaKnjiga'), 0, 40) ?: null, 'Boja' => mb_substr(ul_str('Boja'), 0, 60) ?: null, 'Dlaka' => mb_substr(ul_str('Dlaka'), 0, 40) ?: null,
-            'Napomena' => mb_substr(ul_str('Napomena'), 0, 200) ?: null, 'Bodovanje' => isset($_POST['Bodovanje']) ? 1 : 0, 'UPopisu' => isset($_POST['UPopisu']) ? 1 : 0];
+            'Napomena' => mb_substr(ul_str('Napomena'), 0, 200) ?: null, 'UPopisu' => isset($_POST['UPopisu']) ? 1 : 0];
+        if ($ovlasten) {
+            $pod['Bodovanje'] = isset($_POST['Bodovanje']) ? 1 : 0;
+        }
         $radovi = array_values(array_intersect(array_keys(RADOVI_PSA), (array) ($_POST['Radovi'] ?? [])));
         $pod['Radovi'] = $radovi ? implode(',', $radovi) : null;
         $pod['Potraga'] = in_array('potraga', $radovi, true) ? 1 : 0;
         if ($pod['Ime'] === '') {
             return;
         }
-        if ($pid && vrijednost('SELECT 1 FROM LovniPsi WHERE Id=? AND ClanId=?', [$pid, $id])) {
-            azuriraj('LovniPsi', $pid, $pod + ['Aktivan' => isset($_POST['Aktivan']) ? 1 : 0]);
-            dnevnik('Lovački pas uređen', 'Clan', $id, $ime . ': ' . $pod['Ime']);
+        $staro = $pid ? red('SELECT * FROM LovniPsi WHERE Id=? AND ClanId=?', [$pid, $id]) : null;
+        if ($staro) {
+            if ($ovlasten) {
+                $pod['Aktivan'] = isset($_POST['Aktivan']) ? 1 : 0;
+                if ($pod['Bodovanje'] && $pod['Aktivan'] && !($staro['Bodovanje'] && $staro['Aktivan'])) {
+                    $pod['BodovanjeOd'] = danas();
+                }
+            }
+            azuriraj('LovniPsi', $pid, $pod);
+            dnevnik('Lovački pas uređen', 'Clan', $id, $ime . ': ' . $pod['Ime'] . ($ovlasten ? ' (' . (($pod['Aktivan'] && $pod['Bodovanje']) ? 'bodovanje uključeno' : 'bez bodova') . ')' : ''));
             poruka('Spremljeno.');
         } elseif (!$pid) {
-            umetni('LovniPsi', $pod + ['ClanId' => $id, 'Aktivan' => 1, 'Kreirano' => sada()]);
+            $pod += ['Bodovanje' => 0]; // član sam dodaje psa – bodovanje uključuje ovlaštena osoba
+            umetni('LovniPsi', $pod + ['ClanId' => $id, 'Aktivan' => 1, 'Kreirano' => sada(), 'BodovanjeOd' => $pod['Bodovanje'] ? danas() : null]);
             dnevnik('Lovački pas dodan', 'Clan', $id, $ime . ': ' . $pod['Ime']);
-            poruka('Pas je dodan.');
+            poruka($ovlasten || $pod['Bodovanje'] ? 'Pas je dodan.' : 'Pas je dodan. Bodove za psa uključuje udruga (ovlaštena osoba).');
+        }
+        if ($ovlasten) {
+            upisi_bodove_psa((int) date('Y'), $id, korisnik()); // ako je dan već prošao – bodovi odmah
+        }
+    } elseif ($radnja === 'pas-bodovanje') {
+        // brzi gumb ovlaštene osobe: uključi / isključi psa za bodove
+        $pid = (int) ($_POST['pid'] ?? 0);
+        $p = red('SELECT * FROM LovniPsi WHERE Id=? AND ClanId=?', [$pid, $id]);
+        if ($p && $ovlasten) {
+            $ukljuci = ($_POST['ukljuci'] ?? '') === '1';
+            azuriraj('LovniPsi', $pid, $ukljuci ? ['Aktivan' => 1, 'Bodovanje' => 1, 'BodovanjeOd' => danas()] : ['Bodovanje' => 0]);
+            dnevnik($ukljuci ? 'Lovački pas – bodovanje uključeno' : 'Lovački pas – bodovanje isključeno', 'Clan', $id, $ime . ': ' . $p['Ime']);
+            $n = $ukljuci ? upisi_bodove_psa((int) date('Y'), $id, korisnik()) : 0;
+            poruka($ukljuci ? ($n ? 'Uključeno – bodovi za ' . date('Y') . '. su upisani (odobreno).' : 'Uključeno – bodovi se upisuju sami ' . bodovi_dan_prikaz(psi_bodovi_dan()) . ' (ili su već upisani ove godine).') : 'Bodovanje isključeno – od iduće godine nema bodova za tog psa.');
         }
     } elseif ($radnja === 'pas-obrisi') {
         q('DELETE FROM LovniPsi WHERE Id=? AND ClanId=?', [(int) ($_POST['pid'] ?? 0), $id]);

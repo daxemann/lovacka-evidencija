@@ -5,7 +5,7 @@
  */
 declare(strict_types=1);
 
-const VERZIJA = '1.71.0';
+const VERZIJA = '1.72.0';
 const KONTAKT_EMAIL = 'daxemann@googlemail.com';
 const PODRSKA_PAYPAL = 'darko.bakic@freenet.de'; // dobrovoljna podrška razvoju (Pomoć i kontakt)
 const PROJEKT_URL = 'https://github.com/daxemann/lovacka-evidencija';
@@ -188,7 +188,7 @@ function db(bool $novo = false): PDO
  * Dodatne tablice PHP verzije (PRAGMA user_version). .NET verzija ih ne poznaje i zanemaruje,
  * pa baza i dalje radi u oba smjera.
  */
-const SHEMA_PHP = 47;
+const SHEMA_PHP = 48;
 function nadogradi_bazu(PDO $pdo): void
 {
     if ((int) $pdo->query('PRAGMA user_version')->fetchColumn() >= SHEMA_PHP) {
@@ -1069,6 +1069,10 @@ CREATE TABLE IF NOT EXISTS "BodoviPrijenos" (
     PRIMARY KEY ("ClanId", "Godina")
 );
 SQL);
+    }
+    if ($v < 48) {
+        // lovački psi: bodovi za držanje psa – od kada je udruga uključila bodovanje (datum upisa)
+        $pdo->exec('ALTER TABLE "LovniPsi" ADD COLUMN "BodovanjeOd" TEXT NULL');
     }
 }
 

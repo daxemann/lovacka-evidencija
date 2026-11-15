@@ -271,6 +271,7 @@ if (je_post()) {
         case 'pas-obrisi':
         case 'pas-ispit':
         case 'pas-ispit-obrisi':
+        case 'pas-bodovanje':
             $treba(P_CLANOVI_UREDI);
             psi_obradi($id, $radnja, puno_ime($clan));
             $natrag('psi');
@@ -279,8 +280,7 @@ if (je_post()) {
                 zabranjeno();
             }
             $n = upisi_bodove_psa((int) date('Y'), $id, $k);
-            dnevnik('Bodovi za lovačke pse upisani ručno', 'Clan', $id, puno_ime($clan) . ': ' . $n);
-            poruka($n ? "Upisano: $n × radna akcija „Lovački pas“ – čekaju odobrenje (Radne akcije)." : 'Nema novih upisa.');
+            poruka($n ? "Upisano: $n × bodovi za psa (odobreno)." : 'Nema novih upisa.');
             $natrag('psi');
         case 'potpis-obrisi':
             $treba(P_CLANOVI_UREDI);

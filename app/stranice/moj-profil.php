@@ -37,7 +37,7 @@ if (je_post()) {
             q('UPDATE ClanVozila SET Zadano=(Id=?) WHERE ClanId=?', [(int) $_POST['id'], $c['Id']]);
         }
     } elseif (str_starts_with($radnja, 'pas-')) {
-        psi_obradi((int) $c['Id'], $radnja, puno_ime($c));
+        psi_obradi((int) $c['Id'], $radnja, puno_ime($c), smije_bodovanje_psa($c));
         preusmjeri('moj-profil', ['psi' => 1]);
     } elseif ($radnja === 'potpis' && ($k['Prava'] || potpis_korisnika((int) $k['Id']))) {
         try {

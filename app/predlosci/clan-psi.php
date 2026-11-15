@@ -2,6 +2,9 @@
 /** Kartica Lovački psi. Varijable: $id; iz Moj profil još $psiProfil = true (član uređuje svoje pse). */
 $psiProfil = !empty($psiProfil);
 $moze = $psiProfil || ima(P_CLANOVI_UREDI);
+// uključiti / isključiti psa i bodove za držanje psa smije samo ovlaštena osoba (ne član sam)
+$smijeBod = smije_bodovanje_psa(red('SELECT Id, SekcijaId FROM Clanovi WHERE Id=?', [$id]));
+$psiDan = bodovi_dan_prikaz(psi_bodovi_dan());
 $psi = psi_clana($id);
 $god = (int) date('Y');
 $std = bodovi_psa_standard();
@@ -10,7 +13,7 @@ $gumb = fn(string $r, array $skr, string $tekst, string $klasa, string $potvrda 
     '<form method="post" class="d-inline" action="' . $url . '">' . csrf() . '<input type="hidden" name="radnja" value="' . $r . '">'
     . implode('', array_map(fn($k, $v) => '<input type="hidden" name="' . $k . '" value="' . e((string) $v) . '">', array_keys($skr), $skr))
     . '<button class="btn btn-sm ' . $klasa . '"' . ($potvrda ? ' data-potvrda="' . e($potvrda) . '"' : '') . '>' . $tekst . '</button></form>';
-$polja = function (?array $p) { ob_start(); ?>
+$polja = function (?array $p) use ($smijeBod, $psiDan) { ob_start(); ?>
     <div class="col-sm-4"><label class="form-label small">Ime psa</label><input name="Ime" class="form-control form-control-sm" maxlength="60" required value="<?= e($p['Ime'] ?? '') ?>"></div>
     <div class="col-sm-4"><label class="form-label small">Pasmina</label><input name="Pasmina" class="form-control form-control-sm" maxlength="80" list="pasmine" value="<?= e($p['Pasmina'] ?? '') ?>"></div>
     <div class="col-sm-2"><label class="form-label small">Spol</label><select name="Spol" class="form-select form-select-sm"><option value=""></option><option<?= sel('pas', $p['Spol'] ?? '') ?> value="pas">pas (m)</option><option<?= sel('kuja', $p['Spol'] ?? '') ?> value="kuja">kuja (ž)</option></select></div>
@@ -28,9 +31,9 @@ $polja = function (?array $p) { ob_start(); ?>
         <?php endforeach; ?>
         </div></div>
     <div class="col-12 d-flex flex-wrap gap-3">
-        <div class="form-check"><input class="form-check-input" type="checkbox" name="Bodovanje" value="1" id="bod<?= (int) ($p['Id'] ?? 0) ?>"<?= chk($p ? $p['Bodovanje'] : 1) ?>><label class="form-check-label small" for="bod<?= (int) ($p['Id'] ?? 0) ?>">godišnji bodovi za psa (1.1.)</label></div>
+        <div class="form-check"><input class="form-check-input" type="checkbox" name="Bodovanje" value="1" id="bod<?= (int) ($p['Id'] ?? 0) ?>"<?= chk($p ? $p['Bodovanje'] : $smijeBod) ?><?= $smijeBod ? '' : ' disabled' ?>><label class="form-check-label small" for="bod<?= (int) ($p['Id'] ?? 0) ?>">bodovi za držanje psa (svake godine <?= e($psiDan) ?>, odmah odobreno)<?= $smijeBod ? '' : ' – <span class="text-muted">uključuje udruga</span>' ?></label></div>
         <div class="form-check"><input class="form-check-input" type="checkbox" name="UPopisu" value="1" id="pop<?= (int) ($p['Id'] ?? 0) ?>"<?= chk($p ? ($p['UPopisu'] ?? 1) : 1) ?>><label class="form-check-label small" for="pop<?= (int) ($p['Id'] ?? 0) ?>">prikaži u popisu „Vodiči pasa“ (lovci mogu pronaći psa i javiti se)</label></div>
-        <?php if ($p): ?><div class="form-check"><input class="form-check-input" type="checkbox" name="Aktivan" value="1" id="akt<?= (int) $p['Id'] ?>"<?= chk($p['Aktivan']) ?>><label class="form-check-label small" for="akt<?= (int) $p['Id'] ?>">pas je aktivan (isključite kad ugine / proda se)</label></div><?php endif; ?>
+        <?php if ($p): ?><div class="form-check"><input class="form-check-input" type="checkbox" name="Aktivan" value="1" id="akt<?= (int) $p['Id'] ?>"<?= chk($p['Aktivan']) ?><?= $smijeBod ? '' : ' disabled' ?>><label class="form-check-label small" for="akt<?= (int) $p['Id'] ?>">pas je aktivan (isključite kad ugine / proda se)<?= $smijeBod ? '' : ' – <span class="text-muted">mijenja udruga</span>' ?></label></div><?php endif; ?>
     </div>
 <?php return (string) ob_get_clean(); };
 ?>
@@ -41,13 +44,13 @@ $polja = function (?array $p) { ob_start(); ?>
 <div class="card mb-3"><div class="card-body py-2">
     <div class="fw-semibold small mb-1">Bodovna lista – psi <?php if (ima(P_SUSTAV)): ?><a class="fw-normal ms-1" href="<?= e(url('akcije/vrste')) ?>">promijeni bodove</a><?php endif; ?></div>
     <div class="d-flex flex-wrap gap-2 small">
-        <span class="badge text-bg-light border fw-normal">Posjedovanje psa (svake godine 1.1.): <b><?= broj($bl['godisnje']['bodovi']) ?></b></span>
+        <span class="badge text-bg-light border fw-normal">🐕 <?= e($bl['godisnje']['naziv']) ?> (svake godine <?= e($psiDan) ?>, odmah odobreno): <b><?= broj($bl['godisnje']['bodovi']) ?></b></span>
         <span class="badge text-bg-light border fw-normal">Pas na zajedničkom lovu (po lovu): <b><?= broj($bl['lov']['bodovi']) ?></b></span>
         <?php foreach (RADOVI_PSA as [$ri, $rn, $rv]): ?><span class="badge text-bg-light border fw-normal"><?= $ri ?> <?= e($rn) ?> (prijavi član): <b><?= broj($bl[$rv]['bodovi']) ?></b></span><?php endforeach; ?>
     </div>
-    <div class="small text-muted mt-1">Sve se upisuje kao radna akcija <b>na čekanju</b> i odobrava kao i ostali bodovi. Lov: član pri „Dolazim“ u kalendaru označi psa (vrsta termina „lov sa psima“).</div>
+    <div class="small text-muted mt-1">Držanje psa: upisuje se <b>samo</b> za aktivnog psa s uključenim bodovanjem (uključuje ovlaštena osoba), jednom godišnje, <b>odmah odobreno</b> – ne upisuje se ručno. Ostalo se upisuje <b>na čekanju</b> i odobrava kao i ostali bodovi. Lov: član pri „Dolazim“ u kalendaru označi psa (vrsta termina „lov sa psima“).</div>
 </div></div>
-<?php if (!$psiProfil && ima(P_SUSTAV) && array_filter($bl, fn($x) => $x['bodovi'] <= 0)): ?><div class="alert alert-warning small py-2">Neki bodovi za pse su 0 – upišite ih u <a href="<?= e(url('akcije/vrste')) ?>">Vrste radnih akcija</a>.</div><?php endif; ?>
+<?php if (!$psiProfil && ima(P_SUSTAV) && $bl['godisnje']['bodovi'] <= 0): ?><div class="alert alert-warning small py-2">Vrsta za držanje psa („<?= e($bl['godisnje']['naziv']) ?>“) ima 0 bodova – bez bodova se ništa ne upisuje. Odaberite vrstu u <a href="<?= e(url('sustav/bodovi')) ?>#psi">Sustav → Bodovi</a> ili upišite bodove u <a href="<?= e(url('akcije/vrste')) ?>">Vrste radnih akcija</a>.</div><?php endif; ?>
 
 <?php foreach ($psi as $p): $pid = (int) $p['Id']; ?>
     <div class="card mb-3<?= $p['Aktivan'] ? '' : ' opacity-75' ?>"><div class="card-body">
@@ -59,8 +62,13 @@ $polja = function (?array $p) { ob_start(); ?>
             <?php if (!$p['Aktivan']): ?><span class="badge bg-secondary">neaktivan</span><?php endif; ?>
             <span class="ms-auto small">
                 <?php if (isset($p['Bodovano'][$god])): ?><span class="badge bg-success-subtle text-success-emphasis border">bodovi <?= $god ?>. upisani</span>
-                <?php elseif ($p['Aktivan'] && $p['Bodovanje']): ?><span class="badge text-bg-light border">bodovi <?= $god ?>. još nisu upisani</span>
-                <?php elseif (!$p['Bodovanje']): ?><span class="badge text-bg-light border">bez bodovanja</span><?php endif; ?>
+                <?php elseif ($p['Aktivan'] && $p['Bodovanje']): ?><span class="badge text-bg-light border">bodovi <?= $god ?>. upisuju se sami <?= e($psiDan) ?></span>
+                <?php else: ?><span class="badge text-bg-light border">bez bodova<?= $smijeBod ? '' : ' (uključuje udruga)' ?></span><?php endif; ?>
+                <?php if ($smijeBod): ?>
+                    <?= ($p['Aktivan'] && $p['Bodovanje'])
+                        ? $gumb('pas-bodovanje', ['pid' => $pid, 'ukljuci' => 0], '⏸️ isključi bodove', 'btn-link p-0 ms-1', 'Isključiti bodove za psa ' . $p['Ime'] . '? (Već upisani bodovi ostaju.)')
+                        : $gumb('pas-bodovanje', ['pid' => $pid, 'ukljuci' => 1], '✅ uključi bodove', 'btn-outline-success py-0 ms-1', 'Uključiti psa ' . $p['Ime'] . ' za bodove? Ako je dan ' . $psiDan . ' već prošao, bodovi za ' . $god . '. upisuju se odmah (odobreno).') ?>
+                <?php endif; ?>
             </span>
         </div>
         <?php if ($p['Napomena']): ?><div class="small text-muted mb-1"><?= e($p['Napomena']) ?></div><?php endif; ?>
@@ -107,12 +115,6 @@ $polja = function (?array $p) { ob_start(); ?>
             <div class="col-12"><button class="btn btn-primary btn-sm">Dodaj psa</button></div>
         </form>
     </div></div>
-    <?php $nema = array_filter($psi, fn($p) => $p['Aktivan'] && $p['Bodovanje'] && !isset($p['Bodovano'][$god]));
-    if ($nema && !$psiProfil && smije_upis_akcija()): ?>
-        <div class="no-print"><?= $gumb('pas-bodovi', [], 'Upiši bodove za ' . $god . '. sada (' . count($nema) . ' ' . (count($nema) === 1 ? 'pas' : 'psa') . ', na čekanju)', 'btn-outline-success',
-            'Upisati radnu akciju „Lovački pas“ za ' . $god . '. (na čekanju odobrenja)?') ?>
-            <div class="form-text">Npr. za psa dodanog tijekom godine – automatski upis je samo 1. siječnja.</div></div>
-    <?php endif; ?>
 <?php endif; ?>
 
 <script>

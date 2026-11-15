@@ -13,8 +13,10 @@ $mojiRadovi = [];
 foreach ($mojiPsi as $p) {
     $mojiRadovi = array_merge($mojiRadovi, radovi_psa($p));
 }
+// držanje psa se upisuje samo automatski (jednom godišnje) – ručno ne, da ne bude dvaput
+$vrstaDrzanje = modul('psi') ? vrsta_akcije_psi() : 0;
 $vrste = array_values(array_filter(redovi('SELECT * FROM VrsteAkcija WHERE Aktivna=1 ORDER BY Naziv'),
-    fn($v) => !isset($vrsteRada[(int) $v['Id']]) || in_array($vrsteRada[(int) $v['Id']], $mojiRadovi, true)));
+    fn($v) => (int) $v['Id'] !== $vrstaDrzanje && (!isset($vrsteRada[(int) $v['Id']]) || in_array($vrsteRada[(int) $v['Id']], $mojiRadovi, true))));
 if (!modul('psi')) {
     $mojiPsi = [];
 }
@@ -43,6 +45,8 @@ if (je_post()) {
         $g = 'Upišite naziv akcije.';
     } elseif ($datum > danas()) {
         $g = 'Datum ne može biti u budućnosti.';
+    } elseif ($vrsta > 0 && $vrsta === $vrstaDrzanje) {
+        $g = 'Bodovi za držanje psa upisuju se sami jednom godišnje.';
     }
     if ($g) {
         poruka(e($g), 'danger');
