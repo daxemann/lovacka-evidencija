@@ -5,7 +5,7 @@
  */
 declare(strict_types=1);
 
-const VERZIJA = '1.73.1';
+const VERZIJA = '1.74.0';
 const KONTAKT_EMAIL = 'daxemann@googlemail.com';
 const PODRSKA_PAYPAL = 'darko.bakic@freenet.de'; // dobrovoljna podrška razvoju (Pomoć i kontakt)
 const PROJEKT_URL = 'https://github.com/daxemann/lovacka-evidencija';
@@ -43,8 +43,9 @@ const P_AKCIJE_UNOS = 134217728;
 const P_CLANOVI_BRISI = 268435456;
 const P_ODSTREL_UPOZ = 536870912;
 const P_ODSTREL_MARKICE = 1073741824;
+const P_OBVEZE = 2147483648;
 const P_OSNOVNA = 255; // prava iz .NET verzije
-const P_SVE = 2147483647;
+const P_SVE = 4294967295;
 
 const PRAVA_OPIS = [
     P_CLANOVI_CITAJ => ['Članovi – pregled', 'vidi popis članova i njihove podatke'],
@@ -54,6 +55,7 @@ const PRAVA_OPIS = [
     P_CLANARINA_UREDI => ['Članarina – uređivanje', 'zadužuje članarinu i upisuje uplate'],
     P_AKCIJE_CITAJ => ['Radne akcije – pregled', 'vidi radne akcije svih članova'],
     P_AKCIJE_UNOS => ['Radne akcije – upis za druge', 'upisuje radne akcije (bodove) drugim članovima i cijeloj grupi, npr. Lovnik ili Domar nakon akcije – upis ide na odobrenje'],
+    P_OBVEZE => ['Godišnje obveze – dodjela', 'uključuje i isključuje članove u godišnjim obvezama (npr. hranilište, čeka) i lovačke pse za godišnje bodove – bodovi 1× godišnje, odmah odobreno; samo u sekcijama za koje je uloga dodijeljena'],
     P_AKCIJE_ODOBRI => ['Radne akcije – odobravanje', 'odobrava i odbija radne akcije (prijave članova i grupne upise); uključuje i upis za druge'],
     P_IZVJESTAJI => ['Izvještaji i poruke', 'izvještaji, ispis, PDF, Excel, slanje poruka'],
     P_SUSTAV => ['Sustav', 'pristup članova (pozivnice, odobrenje, uloge), sekcije, uloge, uvoz, duplikati, sigurnosne kopije, dnevnik'],
@@ -82,7 +84,7 @@ const PRAVA_OPIS = [
 
 /** Prava grupirana po područjima (Uloge i prava, Pregled prava). */
 const PRAVA_GRUPE = [
-    '👥 Članovi i udruga' => [P_CLANOVI_CITAJ, P_CLANOVI_UREDI, P_CLANOVI_BRISI, P_IMENIK_SVI, P_CLANARINA_CITAJ, P_CLANARINA_UREDI, P_AKCIJE_CITAJ, P_AKCIJE_UNOS, P_AKCIJE_ODOBRI],
+    '👥 Članovi i udruga' => [P_CLANOVI_CITAJ, P_CLANOVI_UREDI, P_CLANOVI_BRISI, P_IMENIK_SVI, P_CLANARINA_CITAJ, P_CLANARINA_UREDI, P_AKCIJE_CITAJ, P_AKCIJE_UNOS, P_AKCIJE_ODOBRI, P_OBVEZE],
     '📢 Kalendar, obavijesti, izvještaji' => [P_KALENDAR, P_OBAVIJESTI, P_IZVJESTAJI],
     '🧴 Dezinfekcija' => [P_DEZ_PREGLED, P_DEZ_UREDI, P_DEZ_POSTAVKE, P_DEZ_MOBILNA, P_DEZ_ZA_DRUGE],
     '🌲 Lovište i lov' => [P_REVIR_UREDI, P_REVIR_NADZOR, P_REVIR_DNEVNIK, P_GRUPNI_LOV, P_ODSTREL_CITAJ, P_ODSTREL, P_ODSTREL_MARKICE, P_ODSTREL_UPOZ],
@@ -188,7 +190,7 @@ function db(bool $novo = false): PDO
  * Dodatne tablice PHP verzije (PRAGMA user_version). .NET verzija ih ne poznaje i zanemaruje,
  * pa baza i dalje radi u oba smjera.
  */
-const SHEMA_PHP = 49;
+const SHEMA_PHP = 50;
 function nadogradi_bazu(PDO $pdo): void
 {
     if ((int) $pdo->query('PRAGMA user_version')->fetchColumn() >= SHEMA_PHP) {
@@ -1073,6 +1075,10 @@ SQL);
     if ($v < 48) {
         // lovački psi: bodovi za držanje psa – od kada je udruga uključila bodovanje (datum upisa)
         $pdo->exec('ALTER TABLE "LovniPsi" ADD COLUMN "BodovanjeOd" TEXT NULL');
+    }
+    if ($v < 50) {
+        // pravo „Godišnje obveze – dodjela“ (bit 31): dobivaju ga uloge koje već imaju sva prava (Glavni admin)
+        $pdo->exec('UPDATE "Uloge" SET "Prava" = "Prava" | 2147483648 WHERE ("Prava" & 2147483647) = 2147483647;');
     }
     if ($v < 49) {
         // godišnji bodovi za obveze (npr. hranilište, čeka …): 1× godišnje, odmah odobreno, za uključene članove

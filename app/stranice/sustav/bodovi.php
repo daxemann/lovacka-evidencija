@@ -141,7 +141,7 @@ ob_start(); ?>
 <?php $obveze = redovi('SELECT o.*, (SELECT COUNT(*) FROM ObvezaClanovi oc JOIN Clanovi c ON c.Id=oc.ClanId WHERE oc.ObvezaId=o.Id AND oc.Aktivan=1 AND c.Status=0) AS Ukljuceno FROM GodisnjeObveze o ORDER BY o.Naziv'); ?>
 <h2 class="h5 mt-4 mb-1" id="obveze">📅 Godišnji bodovi za obveze <span class="fw-normal text-muted small">(1× godišnje, odmah odobreno)</span></h2>
 <p class="small text-muted mb-2" style="max-width:760px">Dodjela bodova za razne obveze jednom godišnje – npr. <b>držanje lovačkog psa</b> (uz ugovor s udrugom), briga o hranilištu, održavanje čeke … Bodove i dan određuje admin ovdje;
-    članove uključuje / isključuje ovlaštena osoba (pravo uređivanja članova) u <a href="<?= e(url('akcije/obveze')) ?>">Radne akcije → 📅 Godišnje obveze</a>. Uključeni član dobiva bodove na zadani dan – uključen kasnije: odmah. Svaki najviše jednom godišnje; te se obveze ne upisuju ručno.</p>
+    članove uključuje / isključuje ovlaštena osoba (pravo „Godišnje obveze – dodjela“, Sustav → Uloge i prava) na kartici člana → Funkcije ili u <a href="<?= e(url('akcije/obveze')) ?>">Radne akcije → 📅 Godišnje obveze</a>. Uključeni član dobiva bodove na zadani dan – uključen kasnije: odmah. Svaki najviše jednom godišnje; te se obveze ne upisuju ručno.</p>
 <?php if (modul('psi')):
     $psiV = vrsta_akcije_psi();
     $psiBod = (float) vrijednost('SELECT StandardniBodovi FROM VrsteAkcija WHERE Id=?', [$psiV]);
@@ -161,7 +161,7 @@ ob_start(); ?>
                 <input name="PsiDan" class="form-control" value="<?= e(bodovi_dan_prikaz(psi_bodovi_dan())) ?>" placeholder="dan.mjesec." required></div>
         </div>
         <?php if ($psiBod <= 0): ?><div class="alert alert-warning small py-2 mb-2">Bodovi su 0 – ništa se ne upisuje. Upišite bodove po psu i spremite.</div><?php endif; ?>
-        <div class="small text-muted">Upisuje se samo za psa koji je <b>aktivan</b> i ima <b>uključene bodove</b> (uključuje / isključuje ovlaštena osoba kod člana → Lovački psi; član sam ne može). Svaki pas najviše jednom godišnje.
+        <div class="small text-muted">Upisuje se samo za psa koji je <b>aktivan</b> i ima <b>uključene bodove</b> (uključuje / isključuje osoba s pravom „Godišnje obveze – dodjela“ kod člana → Lovački psi; član sam ne može). Svaki pas najviše jednom godišnje.
             Pas uključen nakon tog dana dobiva bodove odmah, s današnjim datumom. Ta se vrsta ne nudi za ručni upis, a već ručno upisana akcija te vrste u istoj godini se samo poveže – nema dvostrukih bodova.
             Promjena bodova vrijedi za nove upise – već upisani bodovi ostaju.
             Trenutno uključenih pasa: <b><?= $brPsa ?></b>.</div>

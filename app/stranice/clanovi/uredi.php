@@ -31,7 +31,7 @@ $natrag = fn(string $kar = '', array $dod = []) => preusmjeri('clanovi/uredi', [
 // ======================= POST radnje =======================
 if (je_post()) {
     $radnja = (string) ($_POST['radnja'] ?? '');
-    $treba = fn(int $p) => (in_array($p, [P_CLANOVI_UREDI, P_CLANOVI_BRISI], true) ? ($id ? moze_clana($p, $clan) : ima($p)) : ima($p)) || zabranjeno();
+    $treba = fn(int $p) => (in_array($p, [P_CLANOVI_UREDI, P_CLANOVI_BRISI, P_OBVEZE], true) ? ($id ? moze_clana($p, $clan) : ima($p)) : ima($p)) || zabranjeno();
     // demo: pristup i uloge zaključani; član s demo računom se ne može arhivirati ni obrisati
     if (je_demo() && (in_array($radnja, ['uloga-dodaj', 'uloga-ukloni', 'odobri', 'odbij', 'obrisi-racun', 'nova-pocetna', 'poveznica-lozinka'], true)
         || (in_array($radnja, ['arhiviraj', 'obrisi-trajno', 'obrisi-pogresan'], true) && vrijednost('SELECT 1 FROM Korisnici WHERE ClanId=?', [$id])))) {
@@ -128,7 +128,7 @@ if (je_post()) {
         case 'obveza-ukljuci':
         case 'obveza-iskljuci':
         case 'obveza-ukloni':
-            $treba(P_CLANOVI_UREDI);
+            $treba(P_OBVEZE);
             obveza_clan_radnja($id, substr($radnja, 7), $_POST, $k);
             $natrag('funkcije');
 
@@ -280,8 +280,8 @@ if (je_post()) {
         case 'pas-ispit':
         case 'pas-ispit-obrisi':
         case 'pas-bodovanje':
-            $treba(P_CLANOVI_UREDI);
-            psi_obradi($id, $radnja, puno_ime($clan));
+            $radnja === 'pas-bodovanje' ? $treba(P_OBVEZE) : $treba(P_CLANOVI_UREDI);
+            psi_obradi($id, $radnja, puno_ime($clan), smije_bodovanje_psa($clan));
             $natrag('psi');
         case 'pas-bodovi':
             if (!moze_clana(P_AKCIJE_UNOS, $clan) && !moze_clana(P_AKCIJE_ODOBRI, $clan)) {

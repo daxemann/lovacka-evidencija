@@ -1,5 +1,8 @@
 # Promjene
 
+## 1.74.0 – 2026-11
+- **🔐 Novo pravo „Godišnje obveze – dodjela“** (Sustav → Uloge i prava → Članovi i udruga): samo s tim pravom smiju se uključivati / isključivati članovi u godišnjim obvezama i lovački psi za godišnje bodove – po sekcijama uloge. Glavni admin ga dobiva automatski, ostalim ulogama ga dodijelite po potrebi.
+
 ## 1.73.1 – 2026-11
 - **📅 Godišnje obveze na kartici člana** (Funkcije): ovlaštena osoba dodaje obvezu s napomenom, uključuje ✅ / isključuje ⏸️ ili uklanja – isto kao u Radne akcije → Godišnje obveze.
 

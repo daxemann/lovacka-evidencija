@@ -1,7 +1,7 @@
 <?php
 /**
  * Godišnji bodovi za obveze (npr. držanje lovačkog psa uz ugovor s udrugom, hranilište, briga o čeki …).
- * Admin u Sustav → Bodovi određuje obvezu, bodove i dan; ovlaštena osoba (pravo uređivanja članova) uključuje /
+ * Admin u Sustav → Bodovi određuje obvezu, bodove i dan; ovlaštena osoba (pravo „Godišnje obveze – dodjela“) uključuje /
  * isključuje članove u Radne akcije → Godišnje obveze. Jednom godišnje na zadani dan svaki uključeni član dobiva
  * radnu akciju – odmah odobreno. Uključen nakon tog dana → bodovi odmah. Svaki upis najviše jednom godišnje.
  * Lovački psi su posebna, ugrađena obveza (lib/psi.php, upis po psu).
@@ -15,9 +15,9 @@ function obveza_oznaka(string $naziv): string
 }
 
 /** Smije li trenutni korisnik uključivati / isključivati članove u obvezama. */
-function smije_obveze(): bool
+function smije_obveze(?array $clan = null): bool
 {
-    return ima(P_CLANOVI_UREDI);
+    return $clan ? moze_clana(P_OBVEZE, $clan) : ima(P_OBVEZE);
 }
 
 /** Datum upisa obveze u godini $g ('Y-m-d'). */

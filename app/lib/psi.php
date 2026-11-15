@@ -91,7 +91,7 @@ function psi_bodovi_dan(): string
 /** Smije li trenutni korisnik uključiti / isključiti psa i bodovanje (ovlaštena osoba). */
 function smije_bodovanje_psa(?array $clan = null): bool
 {
-    return $clan ? moze_clana(P_CLANOVI_UREDI, $clan) : ima(P_CLANOVI_UREDI);
+    return $clan ? moze_clana(P_OBVEZE, $clan) : ima(P_OBVEZE);
 }
 function bodovi_psa_standard(): float
 {

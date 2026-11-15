@@ -1,9 +1,9 @@
 <?php
 /** 📅 Godišnje obveze: ovlaštena osoba uključuje / isključuje članove (bodovi 1× godišnje, odmah odobreno). */
-trazi(P_CLANOVI_UREDI);
+trazi(P_OBVEZE);
 $k = korisnik();
 $g = (int) date('Y');
-$opseg = opseg_sql_prava(P_CLANOVI_UREDI, 'c');
+$opseg = opseg_sql_prava(P_OBVEZE, 'c');
 /** Upis obveze člana u opsegu ili null. */
 $upis = fn(int $id) => red('SELECT oc.*, c.Ime, c.Prezime, c.SekcijaId FROM ObvezaClanovi oc JOIN Clanovi c ON c.Id=oc.ClanId WHERE oc.Id=? AND ' . $opseg, [$id]);
 

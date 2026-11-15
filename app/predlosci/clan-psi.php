@@ -48,7 +48,7 @@ $polja = function (?array $p) use ($smijeBod, $psiDan) { ob_start(); ?>
         <span class="badge text-bg-light border fw-normal">Pas na zajedničkom lovu (po lovu): <b><?= broj($bl['lov']['bodovi']) ?></b></span>
         <?php foreach (RADOVI_PSA as [$ri, $rn, $rv]): ?><span class="badge text-bg-light border fw-normal"><?= $ri ?> <?= e($rn) ?> (prijavi član): <b><?= broj($bl[$rv]['bodovi']) ?></b></span><?php endforeach; ?>
     </div>
-    <div class="small text-muted mt-1">Držanje psa: upisuje se <b>samo</b> za aktivnog psa s uključenim bodovanjem (uključuje ovlaštena osoba), jednom godišnje, <b>odmah odobreno</b> – ne upisuje se ručno. Ostalo se upisuje <b>na čekanju</b> i odobrava kao i ostali bodovi. Lov: član pri „Dolazim“ u kalendaru označi psa (vrsta termina „lov sa psima“).</div>
+    <div class="small text-muted mt-1">Držanje psa: upisuje se <b>samo</b> za aktivnog psa s uključenim bodovanjem (uključuje osoba s pravom „Godišnje obveze – dodjela“), jednom godišnje, <b>odmah odobreno</b> – ne upisuje se ručno. Ostalo se upisuje <b>na čekanju</b> i odobrava kao i ostali bodovi. Lov: član pri „Dolazim“ u kalendaru označi psa (vrsta termina „lov sa psima“).</div>
 </div></div>
 <?php if (!$psiProfil && ima(P_SUSTAV) && $bl['godisnje']['bodovi'] <= 0): ?><div class="alert alert-warning small py-2">Vrsta za držanje psa („<?= e($bl['godisnje']['naziv']) ?>“) ima 0 bodova – bez bodova se ništa ne upisuje. Upišite bodove u <a href="<?= e(url('sustav/bodovi')) ?>#psi">Sustav → Bodovi → 🐕</a>.</div><?php endif; ?>
 

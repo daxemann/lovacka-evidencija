@@ -50,6 +50,7 @@ $sveObveze = redovi('SELECT * FROM GodisnjeObveze WHERE Aktivna=1 ORDER BY Naziv
 $godO = (int) date('Y');
 $mojeObveze = redovi('SELECT oc.*, o.Naziv, o.Bodovi, o.Dan, o.Aktivna AS ObvezaAktivna, (SELECT 1 FROM ObvezaBodovi b WHERE b.ObvezaClanId=oc.Id AND b.Godina=?) AS Upisano
     FROM ObvezaClanovi oc JOIN GodisnjeObveze o ON o.Id=oc.ObvezaId WHERE oc.ClanId=? ORDER BY oc.Aktivan DESC, o.Naziv', [$godO, $id]);
+$mozeOb = smije_obveze($clan); // pravo „Godišnje obveze – dodjela“
 if ($sveObveze || $mojeObveze):
     $ob = fn(string $r, int $oid, string $t, string $kl, string $p = '') => '<form method="post" class="d-inline" action="' . e(url('clanovi/uredi', ['id' => $id])) . '">' . csrf()
         . '<input type="hidden" name="radnja" value="obveza-' . $r . '"><input type="hidden" name="id" value="' . $oid . '"><button class="btn btn-sm ' . $kl . '"' . ($p ? ' data-potvrda="' . e($p) . '"' : '') . '>' . $t . '</button></form>'; ?>
@@ -63,7 +64,7 @@ if ($sveObveze || $mojeObveze):
             <td><?= e($u['Naziv']) ?><?php if ($u['Opis']): ?> <span class="small text-muted">· <?= e($u['Opis']) ?></span><?php endif; ?></td>
             <td class="small text-nowrap"><?= e(broj((float) $u['Bodovi'], 2)) ?> b. · <?= e(bodovi_dan_prikaz($u['Dan'])) ?></td>
             <td class="small"><?= $u['Upisano'] ? '<span class="badge bg-success-subtle text-success-emphasis border">bodovi ' . $godO . '. upisani</span>' : ($u['Aktivan'] ? '<span class="badge text-bg-light border">upisuju se ' . e(bodovi_dan_prikaz($u['Dan'])) . '</span>' : '<span class="badge text-bg-light border">isključeno</span>') ?></td>
-            <td class="text-end text-nowrap"><?php if ($moze): ?>
+            <td class="text-end text-nowrap"><?php if ($mozeOb): ?>
                 <?= $u['Aktivan'] ? $ob('iskljuci', (int) $u['Id'], '⏸️ isključi', 'btn-link p-0', 'Isključiti? Već upisani bodovi ostaju.') : $ob('ukljuci', (int) $u['Id'], '✅ uključi', 'btn-outline-success py-0', 'Uključiti? Ako je dan već prošao, bodovi za ' . $godO . '. upisuju se odmah (odobreno).') ?>
                 <?= $ob('ukloni', (int) $u['Id'], 'Ukloni', 'btn-link text-danger ms-2', 'Ukloniti obvezu? Već upisani bodovi ostaju.') ?>
             <?php endif; ?></td>
@@ -73,7 +74,7 @@ if ($sveObveze || $mojeObveze):
     </tbody>
 </table>
 </div>
-<?php if ($moze && $sveObveze): ?>
+<?php if ($mozeOb && $sveObveze): ?>
 <form method="post" action="<?= e(url('clanovi/uredi', ['id' => $id])) ?>" class="row g-2 align-items-end"><?= csrf() ?>
     <input type="hidden" name="radnja" value="obveza-dodaj">
     <div class="col-md-4"><label class="form-label">Dodaj obvezu</label>
