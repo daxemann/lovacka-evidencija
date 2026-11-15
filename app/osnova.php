@@ -5,7 +5,7 @@
  */
 declare(strict_types=1);
 
-const VERZIJA = '1.75.0';
+const VERZIJA = '1.76.0';
 const KONTAKT_EMAIL = 'daxemann@googlemail.com';
 const PODRSKA_PAYPAL = 'darko.bakic@freenet.de'; // dobrovoljna podrška razvoju (Pomoć i kontakt)
 const PROJEKT_URL = 'https://github.com/daxemann/lovacka-evidencija';
@@ -44,8 +44,9 @@ const P_CLANOVI_BRISI = 268435456;
 const P_ODSTREL_UPOZ = 536870912;
 const P_ODSTREL_MARKICE = 1073741824;
 const P_OBVEZE = 2147483648;
+const P_REVIR_DNEVNIK_UREDI = 4294967296;
 const P_OSNOVNA = 255; // prava iz .NET verzije
-const P_SVE = 4294967295;
+const P_SVE = 8589934591;
 
 const PRAVA_OPIS = [
     P_CLANOVI_CITAJ => ['Članovi – pregled', 'vidi popis članova i njihove podatke'],
@@ -79,7 +80,8 @@ const PRAVA_OPIS = [
     P_ODSTREL => ['Odstrel – upis', 'upisuje, mijenja i briše odstrel (s brojem markice) i plan odstrela za sekcije u svom opsegu'],
     P_ODSTREL_MARKICE => ['Odstrel – markice', 'vodi zalihu evidencijskih markica za sekcije u svom opsegu: upis originalnih brojeva (izdatnica, raspon od–do), zaduženje lovcu, povrat Ministarstvu, PDF (PPD-3)'],
     P_ODSTREL_UPOZ => ['Odstrel – upozorenja', 'na početnoj (Uprava) i u odstrelu prima upozorenja za svoje sekcije: odstrel još nije upisan u SLE (rok 7 dana), povrat neiskorištenih markica i izvršenje plana do 31. svibnja'],
-    P_REVIR_DNEVNIK => ['Lovište – lovački dnevnik', 'vidi lovački dnevnik (tko, kada, gdje) za sekcije u svom opsegu, ispis i PDF; bez ovog prava dnevnik se ne prikazuje'],
+    P_REVIR_DNEVNIK => ['Lovište – lovački dnevnik', 'vidi cijeli lovački dnevnik (tko, kada, gdje) za sekcije u svom opsegu: pretraga po danu, mjesecu, lovnoj godini i aktivnosti, ispis i PDF; bez ovog prava lovac vidi najviše današnji dan (ako je uključeno u Postavkama lovišta)'],
+    P_REVIR_DNEVNIK_UREDI => ['Lovište – lovački dnevnik – uređivanje', 'dodaje, ispravlja i briše upise u lovačkom dnevniku za sekcije u svom opsegu (npr. zaboravljen ili pogrešan upis); svaka promjena bilježi se s imenom'],
 ];
 
 /** Prava grupirana po područjima (Uloge i prava, Pregled prava). */
@@ -87,7 +89,7 @@ const PRAVA_GRUPE = [
     '👥 Članovi i udruga' => [P_CLANOVI_CITAJ, P_CLANOVI_UREDI, P_CLANOVI_BRISI, P_IMENIK_SVI, P_CLANARINA_CITAJ, P_CLANARINA_UREDI, P_AKCIJE_CITAJ, P_AKCIJE_UNOS, P_AKCIJE_ODOBRI, P_OBVEZE],
     '📢 Kalendar, obavijesti, izvještaji' => [P_KALENDAR, P_OBAVIJESTI, P_IZVJESTAJI],
     '🧴 Dezinfekcija' => [P_DEZ_PREGLED, P_DEZ_UREDI, P_DEZ_POSTAVKE, P_DEZ_MOBILNA, P_DEZ_ZA_DRUGE],
-    '🌲 Lovište i lov' => [P_REVIR_UREDI, P_REVIR_NADZOR, P_REVIR_DNEVNIK, P_GRUPNI_LOV, P_ODSTREL_CITAJ, P_ODSTREL, P_ODSTREL_MARKICE, P_ODSTREL_UPOZ],
+    '🌲 Lovište i lov' => [P_REVIR_UREDI, P_REVIR_NADZOR, P_REVIR_DNEVNIK, P_REVIR_DNEVNIK_UREDI, P_GRUPNI_LOV, P_ODSTREL_CITAJ, P_ODSTREL, P_ODSTREL_MARKICE, P_ODSTREL_UPOZ],
     '📦 Inventura, domovi, popusti' => [P_INVENTURA, P_INVENTURA_UREDI, P_DOMOVI, P_POPUSTI],
     '⚙️ Administracija' => [P_SUSTAV],
 ];
@@ -190,7 +192,7 @@ function db(bool $novo = false): PDO
  * Dodatne tablice PHP verzije (PRAGMA user_version). .NET verzija ih ne poznaje i zanemaruje,
  * pa baza i dalje radi u oba smjera.
  */
-const SHEMA_PHP = 50;
+const SHEMA_PHP = 51;
 function nadogradi_bazu(PDO $pdo): void
 {
     if ((int) $pdo->query('PRAGMA user_version')->fetchColumn() >= SHEMA_PHP) {
@@ -1075,6 +1077,15 @@ SQL);
     if ($v < 48) {
         // lovački psi: bodovi za držanje psa – od kada je udruga uključila bodovanje (datum upisa)
         $pdo->exec('ALTER TABLE "LovniPsi" ADD COLUMN "BodovanjeOd" TEXT NULL');
+    }
+    if ($v < 51) {
+        // lovački dnevnik: ručni upisi i ispravci; pravo „Lovački dnevnik – uređivanje“ (bit 32) dobiva Glavni admin
+        $pdo->exec('ALTER TABLE "LovackiDnevnik" ADD COLUMN "Aktivnost" TEXT NULL');
+        $pdo->exec('ALTER TABLE "LovackiDnevnik" ADD COLUMN "Napomena" TEXT NULL');
+        $pdo->exec('ALTER TABLE "LovackiDnevnik" ADD COLUMN "Rucno" INTEGER NOT NULL DEFAULT 0');
+        $pdo->exec('ALTER TABLE "LovackiDnevnik" ADD COLUMN "Uredio" TEXT NULL');
+        $pdo->exec('ALTER TABLE "LovackiDnevnik" ADD COLUMN "Uredjeno" TEXT NULL');
+        $pdo->exec('UPDATE "Uloge" SET "Prava" = "Prava" | 6442450944 WHERE ("Prava" & 2147483647) = 2147483647;'); // bit 31 + 32 (redoslijed blokova)
     }
     if ($v < 50) {
         // pravo „Godišnje obveze – dodjela“ (bit 31): dobivaju ga uloge koje već imaju sva prava (Glavni admin)

@@ -225,7 +225,7 @@ function pocetna_meni(string $b, array $k): string
         'm_popusti' => ['popusti', '🏷️', 'Popusti', 'u trgovinama', modul('popusti') && pop_dostupno() && ($cid || ima(P_POPUSTI)), null],
         'm_push' => ['push', '🔔', 'Push obavijesti', 'obavijesti na mobitel', true, null],
         'm_prava' => ['moja-prava', '🔑', 'Moja prava', 'što smijem', (bool) $cid, null],
-        'm_dnevnik' => ['revir/dnevnik', '📓', 'Lovački dnevnik', 'lovište', modul('revir') && revir_sekcije() && ima(P_REVIR_DNEVNIK), null],
+        'm_dnevnik' => ['revir/dnevnik', '📓', 'Lovački dnevnik', 'lovište', revir_dnevnik_vidljiv(), null],
         'm_odstrel' => ['odstrel', '🦌', odstrel_sekcije() ? 'Odstrel' : 'Moj odstrel', 'markice · plan odstrela', odstrel_dostupno(), null],
         'm_revir_postavke' => ['revir/postavke', '⚙️', 'Postavke lovišta', 'naprave, granice', modul('revir') && (ima(P_SUSTAV) || ima(P_REVIR_UREDI)), null],
         'm_imenik' => ['imenik', '📒', 'Imenik', 'telefoni članova', true, null],

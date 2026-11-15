@@ -1,5 +1,10 @@
 # Promjene
 
+## 1.76.0 – 2026-11
+- **📓 Lovački dnevnik kao pravi dnevnik**: složen po **lovnoj godini → mjesecu → danu** (s danom u tjednu). Razdoblje: dan, mjesec, lovna godina (i prošle), od – do ili sve, sa strelicama ◀ ▶. Klik na dan otvara taj dan.
+- **Pretraga i sortiranje**: aktivnost (lov, radna akcija, hranjenje…), **izvor** (lovne naprave / knjiga dezinfekcije / ručni upisi), sekcija, lovac / mjesto / napomena; sortiranje po datumu, lovcu, aktivnosti, mjestu, trajanju (i klikom na naslov stupca). Prikaz dnevnik ili tablica; ispis i PDF u istom obliku.
+- **🔐 Novo pravo „Lovište – lovački dnevnik – uređivanje“**: **+ Novi upis** (zaboravljen izlazak, i bez naprave – npr. pirš), ✏️ ispravak i 🗑 brisanje upisa – samo u sekcijama uloge. Svaka promjena vidljiva je (oznaka *ručno* / *ispravljeno* s imenom) i bilježi se u dnevnik rada. Upisi iz knjige dezinfekcije ostaju nepromijenjeni (ispravljaju se samo u knjizi dezinfekcije). Glavni admin dobiva pravo automatski.
+- **Lovci bez prava dnevnika**: u Postavkama lovišta prekidač *„Lovci vide današnji lovački dnevnik svoje sekcije“* – tada vide **samo današnji dan** (bez pretrage i ispisa), i u **Danas u lovištu → 📓 Danas u dnevniku**.
 ## 1.75.0 – 2026-11
 - **🔎 Gdje je…?** – tražilica u izborniku (gore) i u Uputama: upišite npr. *bodovi* i dobijete popis gdje se to nalazi u programu (npr. 🏅 Sustav → Bodovi, 🏷️ Sustav → Vrste radnih akcija, 📚 Arhiva bodova) – klikom ravno tamo. Ispod su odgovarajuće upute i poveznica na Pomoć i kontakt. Svatko vidi samo ono što smije.
 - **⚙️ Sustav**: tražilica za kartice postavki (npr. *logo*, *bodovi*), s prijelazom na pretragu cijelog programa.

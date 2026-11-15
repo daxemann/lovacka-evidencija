@@ -21,7 +21,7 @@ function moduli(): array
             P_DEZ_PREGLED | P_DEZ_UREDI | P_DEZ_POSTAVKE | P_DEZ_MOBILNA | P_DEZ_ZA_DRUGE,
             ['dezinfekcija', 'dezinfekcija/', 'dez', 'dez/', 'dez-slika', 'api/dez-sync', 'inspekcija', 'izvoz/dez-pdf']],
         'revir' => ['🗺️', 'Lovište', 'Karta lovišta, čeke i zauzimanje, kvarovi na napravama, lovački dnevnik.',
-            P_REVIR_UREDI | P_REVIR_NADZOR | P_REVIR_DNEVNIK, ['revir', 'revir/', 'api/revir', 'izvoz/kvarovi-pdf']],
+            P_REVIR_UREDI | P_REVIR_NADZOR | P_REVIR_DNEVNIK | P_REVIR_DNEVNIK_UREDI, ['revir', 'revir/', 'api/revir', 'izvoz/kvarovi-pdf']],
         'vjetar' => ['💨', 'Vjetar', 'Trenutni vjetar za lovište (Open-Meteo, besplatno), idealni smjerovi vjetra za čeke na karti, kompas na početnoj. Treba modul Lovište.',
             0, []],
         'vrijeme' => ['🌤️', 'Vrijeme i Mjesec', 'Danas u lovištu: zora, izlazak i zalazak Sunca, Mjesec, temperatura, kiša i „Kad u lov?“ za danas i sutra. Treba modul Lovište.',

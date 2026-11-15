@@ -25,7 +25,7 @@ function kazalo_stavke(): array
         // ---------- Lovište ----------
         ['revir', '🗺️ Lovište → Karta lovišta', 'karta lovista ceka cake naprava zauzmi sjedim ovdje kvar mapa gps', 0, 'revir'],
         ['revir/danas', '🌲 Lovište → Danas u lovištu', 'danas lovište tko je u lovistu zauzeto', 0, 'revir'],
-        ['revir/dnevnik', '📓 Lovište → Lovački dnevnik', 'dnevnik lovacki tko kada gdje pirs obilazak', P_REVIR_DNEVNIK, 'revir'],
+        ['revir/dnevnik', '📓 Lovište → Lovački dnevnik', 'dnevnik lovacki tko kada gdje pirs obilazak lovna godina mjesec dan ispravak rucni upis', P_REVIR_DNEVNIK, 'revir'],
         ['revir/kvarovi', '🔧 Lovište → Kvarovi na napravama', 'kvar kvarovi popravak ceka ostecena naprava', 0, 'revir'],
         ['revir/postavke', '⚙️ Sustav → Postavke lovišta', 'postavke lovista vrste naprava istek zauzeca pocetni prikaz', P_REVIR_UREDI, 'revir'],
         ['revir/lovista', '🌲 Sustav → Lovišta', 'lovista granice kml putevi prosjeke vise lovista', P_SUSTAV, 'revir'],

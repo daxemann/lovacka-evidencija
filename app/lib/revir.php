@@ -59,7 +59,7 @@ function revir_sekcije(): array
     }
     // lovište je strogo po sekcijama: šire vidi samo onaj čija uloga daje pravo za lovište (nadzor / uređivanje / dnevnik) u tim sekcijama
     $op = ['sve' => false, 's' => []];
-    foreach ([P_REVIR_NADZOR, P_REVIR_UREDI, P_REVIR_DNEVNIK] as $pr) {
+    foreach ([P_REVIR_NADZOR, P_REVIR_UREDI, P_REVIR_DNEVNIK, P_REVIR_DNEVNIK_UREDI] as $pr) {
         $o = opseg_prava($pr);
         $op['sve'] = $op['sve'] || $o['sve'];
         $op['s'] = array_merge($op['s'], $o['s']);
@@ -576,6 +576,52 @@ function revir_koord(mixed $lat, mixed $lon): ?array
         return null;
     }
     return [round($lat, 7), round($lon, 7)];
+}
+
+// ---------- Lovački dnevnik: tko smije što ----------
+/** Lovac bez prava dnevnika vidi današnji dan (Postavke lovišta). */
+function revir_dnevnik_danas_za_sve(): bool
+{
+    return postavka('Revir.DnevnikDanas', '0') === '1';
+}
+/** Cijeli dnevnik (pretraga, ispis): pravo pregleda ili uređivanja. */
+function revir_dnevnik_pun(): bool
+{
+    return ima(P_REVIR_DNEVNIK) || ima(P_REVIR_DNEVNIK_UREDI);
+}
+/** Vidi li korisnik dnevnik uopće (cijeli ili samo današnji dan). */
+function revir_dnevnik_vidljiv(): bool
+{
+    return modul('revir') && revir_sekcije() && (revir_dnevnik_pun() || revir_dnevnik_danas_za_sve());
+}
+function revir_dnevnik_moze_urediti(?int $sid): bool
+{
+    return ima(P_REVIR_DNEVNIK_UREDI) && moze_sekciju_pravo(P_REVIR_DNEVNIK_UREDI, $sid);
+}
+/**
+ * Svi upisi dnevnika: zauzeća naprava, ručni upisi i posjeti iz knjige dezinfekcije (samo za čitanje).
+ * $uvjet je SQL uvjet nad aliasom d (ClanId, SekcijaId).
+ */
+function revir_dnevnik_upisi(string $uvjet, string $od, string $do, ?int $sekcija): array
+{
+    $w = [$uvjet, 'substr(d.Od,1,10) BETWEEN ? AND ?'];
+    $p = [$od, $do];
+    if ($sekcija !== null) {
+        $w[] = 'd.SekcijaId=?';
+        $p[] = $sekcija;
+    }
+    $out = [];
+    foreach (redovi('SELECT d.* FROM LovackiDnevnik d WHERE ' . implode(' AND ', $w) . ' ORDER BY d.Od DESC LIMIT 5000', $p) as $u) {
+        $u['Aktivnost'] = trim((string) $u['Aktivnost']) !== '' ? $u['Aktivnost'] : 'Lov';
+        $u['Mjesto'] = $u['Naprava'];
+        $u['Izvor'] = $u['Rucno'] ? 'rucno' : 'lov';
+        $u['Napomena'] = (string) $u['Napomena'];
+        $out[] = $u;
+    }
+    foreach (revir_dnevnik_dez($uvjet, $od, $do, $sekcija) as $u) {
+        $out[] = $u + ['Id' => null, 'Rucno' => 0, 'Uredio' => null, 'Uredjeno' => null];
+    }
+    return $out;
 }
 
 // ---------- Lovački dnevnik: posjeti iz knjige dezinfekcije (rad, hranjenje… – ne lov) ----------

@@ -44,6 +44,24 @@ ob_start(); ?>
     </ul>
 <?php endforeach; ?>
 
+<?php if (revir_dnevnik_vidljiv()):
+    $dnevnikDanas = revir_dnevnik_upisi(revir_kvar_sql($sekcije, 'd.SekcijaId'), danas(), danas(), null);
+    usort($dnevnikDanas, fn($a, $b) => strcmp($b['Od'], $a['Od'])); ?>
+<div class="d-flex align-items-center gap-2 mt-4 mb-1"><h2 class="h5 mb-0 me-auto">📓 Danas u dnevniku</h2>
+    <a class="btn btn-sm btn-outline-secondary" href="<?= e(url('revir/dnevnik', ['R' => 'Dan'])) ?>"><?= revir_dnevnik_pun() ? 'Cijeli dnevnik' : 'Otvori' ?></a></div>
+<?php if (!$dnevnikDanas): ?><p class="text-muted small">Danas još nema završenih izlazaka.</p><?php else: ?>
+<ul class="list-group list-group-flush small mb-3">
+    <?php foreach ($dnevnikDanas as $u): ?>
+        <li class="list-group-item px-0 d-flex gap-2">
+            <span class="text-muted text-nowrap"><?= e(date('H:i', strtotime($u['Od']))) ?>–<?= $u['Do'] ? e(date('H:i', strtotime($u['Do']))) : '…' ?></span>
+            <span class="flex-grow-1"><b><?= e($u['Ime']) ?></b> · <?= e($u['Mjesto']) ?><?= !revir_je_lov($u['Aktivnost']) ? ' <span class="badge bg-secondary">' . e($u['Aktivnost']) . '</span>' : '' ?></span>
+            <?php if (count($sekcije) > 1): ?><span class="text-muted text-nowrap"><?= e(naziv_sekcije($u['SekcijaId'] !== null ? (int) $u['SekcijaId'] : null)) ?></span><?php endif; ?>
+        </li>
+    <?php endforeach; ?>
+</ul>
+<?php endif; ?>
+<?php endif; ?>
+
 <?php if ($nadzor): ?>
 <h2 class="h5 mt-4">🔔 Obavijesti <span class="small text-muted fw-normal">(zadnja 3 dana)</span></h2>
 <?php if (!$obavijesti): ?><p class="text-muted small">Nema obavijesti.</p><?php else: ?>

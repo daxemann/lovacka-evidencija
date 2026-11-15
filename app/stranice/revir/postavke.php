@@ -123,6 +123,7 @@ if (je_post()) {
             spremi_postavku('Revir.Centar', $c && $zoom >= 5 && $zoom <= 19 ? $c[0] . ',' . $c[1] . ',' . $zoom : null);
             $sat = (int) ($_POST['sat'] ?? 3);
             spremi_postavku('Revir.SatIsteka', (string) max(0, min(23, $sat)));
+            spremi_postavku('Revir.DnevnikDanas', isset($_POST['dnevnik_danas']) ? '1' : '0');
             dnevnik('Lovište – postavke');
             poruka('Spremljeno.');
             break;
@@ -205,6 +206,9 @@ ob_start(); ?>
         <div class="col-12 mt-3"><label class="form-label small mb-0">Zauzeće automatski istječe u</label>
             <div class="input-group" style="max-width:200px"><input name="sat" type="number" min="0" max="23" class="form-control" value="<?= revir_sat_isteka() ?>"><span class="input-group-text">:00 h</span></div>
             <div class="form-text">ako lovac zaboravi „Odlazim“ (sljedeće jutro).</div></div>
+        <div class="col-12 mt-3"><div class="form-check form-switch"><input class="form-check-input" type="checkbox" role="switch" name="dnevnik_danas" id="dnDanas"<?= revir_dnevnik_danas_za_sve() ? ' checked' : '' ?>>
+            <label class="form-check-label" for="dnDanas">📓 Lovci vide <b>današnji</b> lovački dnevnik svoje sekcije</label></div>
+            <div class="form-text">Samo današnji dan, bez pretrage i ispisa. Cijeli dnevnik i uređivanje: Uloge i prava → „Lovište – lovački dnevnik“ / „… – uređivanje“.</div></div>
         <div class="col-12"><button class="btn btn-primary">Spremi</button></div>
     </form>
 </div></div>

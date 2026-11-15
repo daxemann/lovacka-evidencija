@@ -25,7 +25,7 @@ $cfg = [
     'vrste' => revir_vrste_js(),
     'clan' => $k['ClanId'] !== null,
     'istek' => sprintf('%02d:00', revir_sat_isteka()),
-    'dnevnik' => ima(P_REVIR_DNEVNIK) ? url('revir/dnevnik') : null,
+    'dnevnik' => revir_dnevnik_vidljiv() ? url('revir/dnevnik') : null,
     'danas' => url('revir/danas'),
     'kvarovi' => url('revir/kvarovi'),
     'odabir' => (string) ul('naprava', ''),
@@ -70,7 +70,7 @@ ob_start(); ?>
     <div id="revir-panel" class="revir-panel" hidden></div>
 </div>
 <p class="small text-muted mt-2 mb-0">Zauzeće vrijedi dok ne dodirnete „Odlazim“, najkasnije do <?= e($cfg['istek']) ?> sljedećeg jutra. Gost sjedi sam na drugoj napravi koju zauzmete za njega.
-    <?php if (ima(P_REVIR_DNEVNIK)): ?><a href="<?= e(url('revir/dnevnik')) ?>">Lovački dnevnik</a><?php endif; ?></p>
+    <?php if (revir_dnevnik_vidljiv()): ?><a href="<?= e(url('revir/dnevnik')) ?>">Lovački dnevnik</a><?php endif; ?></p>
 <script id="revir-cfg" type="application/json"><?= json_encode($cfg, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP) ?></script>
 <script src="<?= e(asset('assets/leaflet/leaflet.js')) ?>"></script>
 <script src="<?= e(asset('assets/revir-foto.js')) ?>"></script>

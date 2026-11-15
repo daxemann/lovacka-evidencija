@@ -122,8 +122,13 @@ if ($revir) {
 <li><b>Kvar na napravi</b> (slomljena prečka, krov, ljestve…): dodir na napravu → <b>🔧 Prijavi kvar</b>, kratki opis, po želji fotografija.
 Ako je opasno, označite <b>Nesigurno</b> – svi vide crveni ⚠ na karti. Popis svih prijava: <b>Lovište → Kvarovi na napravama</b>.
 Svoju prijavu možete označiti riješenom ili je povući dok je nitko nije preuzeo.</li>'
-    . (ima(P_REVIR_DNEVNIK) ? '
-<li><b>Lovački dnevnik</b> nastaje sam (tko, kada, gdje) iz zauzeća naprava i dolazaka iz knjige dezinfekcije; filtar po aktivnosti (lov, radna akcija, hranjenje…), ispis i PDF.</li>' : '')
+    . (revir_dnevnik_pun() ? '
+<li><b>Lovački dnevnik</b> nastaje sam (tko, kada, gdje) iz zauzeća naprava i dolazaka iz knjige dezinfekcije, složen po <b>lovnoj godini → mjesecu → danu</b>.
+Pretraga po danu, mjesecu ili lovnoj godini (strelice ◀ ▶), aktivnosti (lov, radna akcija…), izvoru (naprava / knjiga dezinfekcije / ručno) i lovcu; sortiranje, ispis i PDF.</li>'
+        . (ima(P_REVIR_DNEVNIK_UREDI) ? '
+<li><i>Uređivanje dnevnika:</i> <b>+ Novi upis</b> za zaboravljen izlazak, ✏️ ispravak ili brisanje pogrešnog upisa. Upisi iz knjige dezinfekcije ispravljaju se samo u knjizi dezinfekcije.</li>' : '')
+        : (revir_dnevnik_danas_za_sve() ? '
+<li><b>Lovački dnevnik</b>: vidite današnji dan vaše sekcije (tko je bio u lovištu, gdje i koliko).</li>' : ''))
     . (ima(P_REVIR_NADZOR) ? '
 <li><i>Nadzor:</i> 🔔 gore desno pokazuje zauzimanja i oslobađanja u vašoj sekciji; zauzeće možete obrisati.</li>' : '')
     . (ima(P_REVIR_NADZOR) || ima(P_REVIR_UREDI) ? '
