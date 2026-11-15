@@ -42,7 +42,7 @@ $polja = function (?array $p) use ($smijeBod, $psiDan) { ob_start(); ?>
 <datalist id="pasmine"><?php foreach (['Njemački kratkodlaki ptičar', 'Njemački oštrodlaki ptičar (Drahthaar)', 'Vižla', 'Jazavčar', 'Jagdterijer', 'Bavarski krvoslijednik', 'Hannoverski krvoslijednik', 'Istarski kratkodlaki gonič', 'Istarski oštrodlaki gonič', 'Posavski gonič', 'Brak jazavčar', 'Labrador retriver', 'Engleski seter', 'Irski seter', 'Weimaraner', 'Fox terijer', 'Prepeličar (njemački)', 'Brak'] as $x): ?><option value="<?= e($x) ?>"><?php endforeach; ?></datalist>
 <?php $bl = bodovna_lista_psi(); ?>
 <div class="card mb-3"><div class="card-body py-2">
-    <div class="fw-semibold small mb-1">Bodovna lista – psi <?php if (ima(P_SUSTAV)): ?><a class="fw-normal ms-1" href="<?= e(url('akcije/vrste')) ?>">promijeni bodove</a><?php endif; ?></div>
+    <div class="fw-semibold small mb-1">Bodovna lista – psi <?php if (ima(P_SUSTAV)): ?><a class="fw-normal ms-1" href="<?= e(url('sustav/bodovi')) ?>#psi">promijeni bodove za držanje psa</a> · <a class="fw-normal" href="<?= e(url('akcije/vrste')) ?>">ostali bodovi</a><?php endif; ?></div>
     <div class="d-flex flex-wrap gap-2 small">
         <span class="badge text-bg-light border fw-normal">🐕 <?= e($bl['godisnje']['naziv']) ?> (svake godine <?= e($psiDan) ?>, odmah odobreno): <b><?= broj($bl['godisnje']['bodovi']) ?></b></span>
         <span class="badge text-bg-light border fw-normal">Pas na zajedničkom lovu (po lovu): <b><?= broj($bl['lov']['bodovi']) ?></b></span>
@@ -50,7 +50,7 @@ $polja = function (?array $p) use ($smijeBod, $psiDan) { ob_start(); ?>
     </div>
     <div class="small text-muted mt-1">Držanje psa: upisuje se <b>samo</b> za aktivnog psa s uključenim bodovanjem (uključuje ovlaštena osoba), jednom godišnje, <b>odmah odobreno</b> – ne upisuje se ručno. Ostalo se upisuje <b>na čekanju</b> i odobrava kao i ostali bodovi. Lov: član pri „Dolazim“ u kalendaru označi psa (vrsta termina „lov sa psima“).</div>
 </div></div>
-<?php if (!$psiProfil && ima(P_SUSTAV) && $bl['godisnje']['bodovi'] <= 0): ?><div class="alert alert-warning small py-2">Vrsta za držanje psa („<?= e($bl['godisnje']['naziv']) ?>“) ima 0 bodova – bez bodova se ništa ne upisuje. Odaberite vrstu u <a href="<?= e(url('sustav/bodovi')) ?>#psi">Sustav → Bodovi</a> ili upišite bodove u <a href="<?= e(url('akcije/vrste')) ?>">Vrste radnih akcija</a>.</div><?php endif; ?>
+<?php if (!$psiProfil && ima(P_SUSTAV) && $bl['godisnje']['bodovi'] <= 0): ?><div class="alert alert-warning small py-2">Vrsta za držanje psa („<?= e($bl['godisnje']['naziv']) ?>“) ima 0 bodova – bez bodova se ništa ne upisuje. Upišite bodove u <a href="<?= e(url('sustav/bodovi')) ?>#psi">Sustav → Bodovi → 🐕</a>.</div><?php endif; ?>
 
 <?php foreach ($psi as $p): $pid = (int) $p['Id']; ?>
     <div class="card mb-3<?= $p['Aktivan'] ? '' : ' opacity-75' ?>"><div class="card-body">

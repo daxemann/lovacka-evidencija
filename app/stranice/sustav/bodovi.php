@@ -8,10 +8,19 @@ if (je_post() && ($_POST['radnja'] ?? '') === 'psi' && modul('psi')) {
         poruka('Upišite dan (dan.mjesec.) i odaberite vrstu.', 'warning');
         preusmjeri('sustav/bodovi');
     }
+    $bodNovi = u_broj($_POST['PsiBodovi'] ?? '');
+    if ($bodNovi !== null && $bodNovi >= 0) {
+        // bodovi vrijede od sada – već upisani bodovi za pse ostaju kakvi su bili
+        $stari = (float) vrijednost('SELECT StandardniBodovi FROM VrsteAkcija WHERE Id=?', [$vid]);
+        if (abs($stari - $bodNovi) > 0.0001) {
+            q('UPDATE VrsteAkcija SET StandardniBodovi=? WHERE Id=?', [dec($bodNovi), $vid]);
+            dnevnik('Bodovi za držanje psa promijenjeni', null, null, broj($stari, 2) . ' → ' . broj($bodNovi, 2) . ' b.');
+        }
+    }
     spremi_postavku('Psi.BodoviDan', $dan === '01-01' ? null : $dan);
     spremi_postavku('Psi.Vrsta.godisnje', (string) $vid);
     $n = upisi_bodove_psa((int) date('Y'), null, korisnik());
-    dnevnik('Bodovi za pse – postavke', null, null, 'dan ' . bodovi_dan_prikaz($dan) . ', vrsta ' . vrijednost('SELECT Naziv FROM VrsteAkcija WHERE Id=?', [$vid]));
+    dnevnik('Bodovi za pse – postavke', null, null, 'dan ' . bodovi_dan_prikaz($dan) . ', vrsta ' . vrijednost('SELECT Naziv FROM VrsteAkcija WHERE Id=?', [$vid]) . ', ' . broj((float) vrijednost('SELECT StandardniBodovi FROM VrsteAkcija WHERE Id=?', [$vid]), 2) . ' b.');
     poruka('Spremljeno.' . ($n ? " Upisano odmah: $n × bodovi za psa (odobreno)." : ''));
     preusmjeri('sustav/bodovi');
 }
@@ -101,16 +110,19 @@ ob_start(); ?>
     <div class="card-header">🐕 Bodovi za držanje lovačkog psa (jednom godišnje, odmah odobreno)</div>
     <div class="card-body">
         <div class="row g-2 align-items-end mb-2">
-            <div class="col-sm-8"><label class="form-label small">Vrsta radne akcije (bodovi iz Vrste radnih akcija)</label>
-                <select name="PsiVrsta" class="form-select">
-                    <?php foreach ($sve as $v): ?><option value="<?= (int) $v['Id'] ?>"<?= sel($v['Id'], $psiV) ?>><?= e($v['Naziv']) ?> (<?= e(broj((float) $v['StandardniBodovi'], 1)) ?> b.)</option><?php endforeach; ?>
+            <div class="col-sm-6"><label class="form-label small">Vrsta radne akcije</label>
+                <select name="PsiVrsta" class="form-select" onchange="var o=this.options[this.selectedIndex];this.form.PsiBodovi.value=o.dataset.b">
+                    <?php foreach ($sve as $v): ?><option value="<?= (int) $v['Id'] ?>" data-b="<?= e((string) (float) $v['StandardniBodovi']) ?>"<?= sel($v['Id'], $psiV) ?>><?= e($v['Naziv']) ?></option><?php endforeach; ?>
                 </select></div>
-            <div class="col-sm-4"><label class="form-label small">Dan upisa svake godine</label>
+            <div class="col-6 col-sm-3"><label class="form-label small">Bodovi po psu</label>
+                <input name="PsiBodovi" type="number" step="0.5" min="0" inputmode="decimal" class="form-control" value="<?= e((string) $psiBod) ?>" required></div>
+            <div class="col-6 col-sm-3"><label class="form-label small">Dan upisa svake godine</label>
                 <input name="PsiDan" class="form-control" value="<?= e(bodovi_dan_prikaz(psi_bodovi_dan())) ?>" placeholder="dan.mjesec." required></div>
         </div>
-        <?php if ($psiBod <= 0): ?><div class="alert alert-warning small py-2 mb-2">Odabrana vrsta ima 0 bodova – ništa se ne upisuje. Bodove upišite u <a href="<?= e(url('akcije/vrste')) ?>">Vrste radnih akcija</a>.</div><?php endif; ?>
+        <?php if ($psiBod <= 0): ?><div class="alert alert-warning small py-2 mb-2">Bodovi su 0 – ništa se ne upisuje. Upišite bodove po psu i spremite.</div><?php endif; ?>
         <div class="small text-muted">Upisuje se samo za psa koji je <b>aktivan</b> i ima <b>uključene bodove</b> (uključuje / isključuje ovlaštena osoba kod člana → Lovački psi; član sam ne može). Svaki pas najviše jednom godišnje.
             Pas uključen nakon tog dana dobiva bodove odmah, s današnjim datumom. Ta se vrsta ne nudi za ručni upis, a već ručno upisana akcija te vrste u istoj godini se samo poveže – nema dvostrukih bodova.
+            Promjena bodova vrijedi za nove upise – već upisani bodovi ostaju.
             Trenutno uključenih pasa: <b><?= $brPsa ?></b>.</div>
     </div>
     <div class="card-footer"><button class="btn btn-primary">Spremi</button></div>
