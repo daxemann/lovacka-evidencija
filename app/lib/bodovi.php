@@ -219,6 +219,11 @@ function bodovi_dnevno(): void
         error_log('Bodovi za funkcije: ' . $e->getMessage());
     }
     try {
+        obveze_dnevno(); // godišnji bodovi za obveze (hranilište, čeka …)
+    } catch (Throwable $e) {
+        error_log('Bodovi za obveze: ' . $e->getMessage());
+    }
+    try {
         $pr = bodovi_prijenos_pravilo();
         $bg = bodovna_godina();
         if ($pr['auto'] && $pr['nacin'] !== 'nista' && (int) postavka('Bodovi.Preneseno', '0') < $bg) {

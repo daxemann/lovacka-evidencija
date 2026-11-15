@@ -149,6 +149,7 @@ ob_start(); ?>
     <?php if ($moze): ?><a class="btn btn-primary" href="<?= e(url('akcije/nova')) ?>">+ Nova radna akcija</a><?php endif; ?>
     <?php if (ima(P_IZVJESTAJI)): ?><a href="<?= e(url('izvjestaji/akcije')) ?>" class="btn btn-outline-secondary">Izvještaj / ispis</a><?php endif; ?>
     <a href="<?= e(url('akcije/bodovi')) ?>" class="btn btn-outline-secondary">📚 Arhiva bodova</a>
+    <?php if (ima(P_CLANOVI_UREDI)): ?><a href="<?= e(url('akcije/obveze')) ?>" class="btn btn-outline-secondary">📅 Godišnje obveze</a><?php endif; ?>
     <?php if (ima(P_SUSTAV)): ?><a href="<?= e(url('akcije/prijenos')) ?>" class="btn btn-outline-secondary">↪️ Prijenos</a><?php endif; ?>
 </div>
 <ul class="nav nav-tabs mb-3">

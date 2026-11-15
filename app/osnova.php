@@ -5,7 +5,7 @@
  */
 declare(strict_types=1);
 
-const VERZIJA = '1.72.1';
+const VERZIJA = '1.73.0';
 const KONTAKT_EMAIL = 'daxemann@googlemail.com';
 const PODRSKA_PAYPAL = 'darko.bakic@freenet.de'; // dobrovoljna podrška razvoju (Pomoć i kontakt)
 const PROJEKT_URL = 'https://github.com/daxemann/lovacka-evidencija';
@@ -188,7 +188,7 @@ function db(bool $novo = false): PDO
  * Dodatne tablice PHP verzije (PRAGMA user_version). .NET verzija ih ne poznaje i zanemaruje,
  * pa baza i dalje radi u oba smjera.
  */
-const SHEMA_PHP = 48;
+const SHEMA_PHP = 49;
 function nadogradi_bazu(PDO $pdo): void
 {
     if ((int) $pdo->query('PRAGMA user_version')->fetchColumn() >= SHEMA_PHP) {
@@ -1073,6 +1073,36 @@ SQL);
     if ($v < 48) {
         // lovački psi: bodovi za držanje psa – od kada je udruga uključila bodovanje (datum upisa)
         $pdo->exec('ALTER TABLE "LovniPsi" ADD COLUMN "BodovanjeOd" TEXT NULL');
+    }
+    if ($v < 49) {
+        // godišnji bodovi za obveze (npr. hranilište, čeka …): 1× godišnje, odmah odobreno, za uključene članove
+        $pdo->exec(<<<'SQL'
+CREATE TABLE IF NOT EXISTS "GodisnjeObveze" (
+    "Id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "Naziv" TEXT NOT NULL,
+    "Bodovi" TEXT NOT NULL DEFAULT '0',
+    "Dan" TEXT NOT NULL DEFAULT '01-01',
+    "Aktivna" INTEGER NOT NULL DEFAULT 1,
+    "Napomena" TEXT NULL,
+    "Kreirano" TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS "ObvezaClanovi" (
+    "Id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "ObvezaId" INTEGER NOT NULL REFERENCES "GodisnjeObveze" ("Id") ON DELETE CASCADE,
+    "ClanId" INTEGER NOT NULL REFERENCES "Clanovi" ("Id") ON DELETE CASCADE,
+    "Opis" TEXT NULL,
+    "Aktivan" INTEGER NOT NULL DEFAULT 1,
+    "AktivnoOd" TEXT NULL,
+    "Kreirano" TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS "IX_ObvezaClanovi_Obveza" ON "ObvezaClanovi" ("ObvezaId");
+CREATE TABLE IF NOT EXISTS "ObvezaBodovi" (
+    "ObvezaClanId" INTEGER NOT NULL REFERENCES "ObvezaClanovi" ("Id") ON DELETE CASCADE,
+    "Godina" INTEGER NOT NULL,
+    "AkcijaId" INTEGER NULL,
+    PRIMARY KEY ("ObvezaClanId", "Godina")
+);
+SQL);
     }
 }
 

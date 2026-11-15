@@ -1,5 +1,11 @@
 # Promjene
 
+## 1.73.0 – 2026-11
+- **📅 Godišnji bodovi za obveze** (univerzalno, ne samo psi): dodjela bodova za razne obveze jednom godišnje – npr. držanje lovačkog psa, briga o hranilištu, održavanje čeke. **Odmah odobreno.**
+- **Sustav → Bodovi → 📅**: admin dodaje obveze s bodovima i danom (aktivna / isključena / obriši). Lovački pas ostaje ugrađena obveza (po psu).
+- **Radne akcije → 📅 Godišnje obveze**: ovlaštena osoba (pravo uređivanja članova) uključuje / isključuje članove (✅ / ⏸️, s napomenom). Uključen nakon dana → bodovi odmah. Svaki najviše jednom godišnje, ne upisuje se ručno.
+- Promjena bodova vrijedi za nove upise; brisanje obveze ili člana ne briše već upisane bodove. Reset (Sustav) briše i oznake upisa.
+
 ## 1.72.1 – 2026-11
 - **🐕 Sustav → Bodovi**: bodovi po psu upisuju se izravno uz vrstu i dan (bez odlaska u Vrste radnih akcija). Promjena vrijedi za nove upise – već upisani bodovi ostaju.
 

@@ -24,6 +24,43 @@ if (je_post() && ($_POST['radnja'] ?? '') === 'psi' && modul('psi')) {
     poruka('Spremljeno.' . ($n ? " Upisano odmah: $n × bodovi za psa (odobreno)." : ''));
     preusmjeri('sustav/bodovi');
 }
+if (je_post() && ($_POST['radnja'] ?? '') === 'obveze') {
+    $g = (int) date('Y');
+    $n = 0;
+    $greska = false;
+    foreach ((array) ($_POST['obveza'] ?? []) as $oid => $r) {
+        $o = red('SELECT * FROM GodisnjeObveze WHERE Id=?', [(int) $oid]);
+        if (!$o) {
+            continue;
+        }
+        if (!empty($r['obrisi'])) {
+            q('DELETE FROM GodisnjeObveze WHERE Id=?', [(int) $oid]); // već upisani bodovi (radne akcije) ostaju
+            dnevnik('Godišnja obveza obrisana', null, null, $o['Naziv']);
+            continue;
+        }
+        $naziv = mb_substr(trim((string) ($r['Naziv'] ?? '')), 0, 80);
+        $dan = bodovi_dan_unos((string) ($r['Dan'] ?? ''));
+        if ($naziv === '' || !$dan) {
+            $greska = true;
+            continue;
+        }
+        $pod = ['Naziv' => $naziv, 'Bodovi' => dec(max(0.0, u_broj($r['Bodovi'] ?? '') ?? 0.0)), 'Dan' => $dan, 'Aktivna' => !empty($r['Aktivna']) ? 1 : 0];
+        if ($pod['Naziv'] !== $o['Naziv'] || (float) $pod['Bodovi'] !== (float) $o['Bodovi'] || $pod['Dan'] !== $o['Dan'] || $pod['Aktivna'] !== (int) $o['Aktivna']) {
+            azuriraj('GodisnjeObveze', (int) $oid, $pod);
+            dnevnik('Godišnja obveza promijenjena', null, null, $naziv . ': ' . broj((float) $pod['Bodovi'], 2) . ' b., ' . bodovi_dan_prikaz($dan) . ($pod['Aktivna'] ? '' : ', isključena'));
+        }
+        $n += upisi_bodove_obveze(array_merge($o, $pod), $g, korisnik());
+    }
+    $nova = (array) ($_POST['nova'] ?? []);
+    $naziv = mb_substr(trim((string) ($nova['Naziv'] ?? '')), 0, 80);
+    if ($naziv !== '') {
+        $dan = bodovi_dan_unos((string) ($nova['Dan'] ?? '')) ?? '01-01';
+        umetni('GodisnjeObveze', ['Naziv' => $naziv, 'Bodovi' => dec(max(0.0, u_broj($nova['Bodovi'] ?? '') ?? 0.0)), 'Dan' => $dan, 'Aktivna' => 1, 'Kreirano' => sada()]);
+        dnevnik('Godišnja obveza dodana', null, null, $naziv);
+    }
+    poruka($greska ? 'Neke obveze nisu spremljene – naziv i dan (dan.mjesec.) su obavezni.' : 'Spremljeno.' . ($n ? " Upisano odmah: $n (odobreno)." : '') . ($naziv !== '' ? ' Članove uključite u Radne akcije → 📅 Godišnje obveze.' : ''), $greska ? 'warning' : 'success');
+    preusmjeri('sustav/bodovi');
+}
 if (je_post()) {
     $dan = bodovi_dan_unos(ul_str('Pocetak'));
     if (!$dan) {
@@ -101,13 +138,17 @@ ob_start(); ?>
         <a href="<?= e(url('sustav/uloge')) ?>#funkcije">Uredi u Uloge i prava → Funkcije u udruzi →</a>
     </div>
 </div>
+<?php $obveze = redovi('SELECT o.*, (SELECT COUNT(*) FROM ObvezaClanovi oc JOIN Clanovi c ON c.Id=oc.ClanId WHERE oc.ObvezaId=o.Id AND oc.Aktivan=1 AND c.Status=0) AS Ukljuceno FROM GodisnjeObveze o ORDER BY o.Naziv'); ?>
+<h2 class="h5 mt-4 mb-1" id="obveze">📅 Godišnji bodovi za obveze <span class="fw-normal text-muted small">(1× godišnje, odmah odobreno)</span></h2>
+<p class="small text-muted mb-2" style="max-width:760px">Dodjela bodova za razne obveze jednom godišnje – npr. <b>držanje lovačkog psa</b> (uz ugovor s udrugom), briga o hranilištu, održavanje čeke … Bodove i dan određuje admin ovdje;
+    članove uključuje / isključuje ovlaštena osoba (pravo uređivanja članova) u <a href="<?= e(url('akcije/obveze')) ?>">Radne akcije → 📅 Godišnje obveze</a>. Uključeni član dobiva bodove na zadani dan – uključen kasnije: odmah. Svaki najviše jednom godišnje; te se obveze ne upisuju ručno.</p>
 <?php if (modul('psi')):
     $psiV = vrsta_akcije_psi();
     $psiBod = (float) vrijednost('SELECT StandardniBodovi FROM VrsteAkcija WHERE Id=?', [$psiV]);
     $sve = redovi('SELECT Id, Naziv, StandardniBodovi, Aktivna FROM VrsteAkcija ORDER BY Naziv');
     $brPsa = (int) vrijednost('SELECT COUNT(*) FROM LovniPsi p JOIN Clanovi c ON c.Id=p.ClanId WHERE p.Aktivan=1 AND p.Bodovanje=1 AND c.Status=0'); ?>
-<form method="post" class="card mt-4" id="psi" style="max-width:760px"><?= csrf() ?><input type="hidden" name="radnja" value="psi">
-    <div class="card-header">🐕 Bodovi za držanje lovačkog psa (jednom godišnje, odmah odobreno)</div>
+<form method="post" class="card mb-3" id="psi" style="max-width:760px"><?= csrf() ?><input type="hidden" name="radnja" value="psi">
+    <div class="card-header">🐕 Držanje lovačkog psa <span class="text-muted small">(ugrađeno – po psu, uključuje se na kartici psa kod člana)</span></div>
     <div class="card-body">
         <div class="row g-2 align-items-end mb-2">
             <div class="col-sm-6"><label class="form-label small">Vrsta radne akcije</label>
@@ -128,4 +169,32 @@ ob_start(); ?>
     <div class="card-footer"><button class="btn btn-primary">Spremi</button></div>
 </form>
 <?php endif; ?>
+<form method="post" class="card" style="max-width:760px"><?= csrf() ?><input type="hidden" name="radnja" value="obveze">
+    <div class="card-header">📅 Ostale obveze</div>
+    <div class="card-body">
+        <div class="table-responsive"><table class="table table-sm align-middle mb-2">
+            <thead><tr class="small"><th>Obveza</th><th style="width:7rem">Bodovi</th><th style="width:7rem">Dan</th><th class="text-center">Aktivna</th><th class="text-center">Članova</th><th></th></tr></thead>
+            <tbody>
+            <?php foreach ($obveze as $o): $oid = (int) $o['Id']; ?>
+                <tr>
+                    <td><input name="obveza[<?= $oid ?>][Naziv]" class="form-control form-control-sm" maxlength="80" value="<?= e($o['Naziv']) ?>" required></td>
+                    <td><input name="obveza[<?= $oid ?>][Bodovi]" type="number" step="0.5" min="0" inputmode="decimal" class="form-control form-control-sm" value="<?= e((string) (float) $o['Bodovi']) ?>"></td>
+                    <td><input name="obveza[<?= $oid ?>][Dan]" class="form-control form-control-sm" value="<?= e(bodovi_dan_prikaz($o['Dan'])) ?>" placeholder="dan.mjesec."></td>
+                    <td class="text-center"><input type="checkbox" class="form-check-input" name="obveza[<?= $oid ?>][Aktivna]" value="1"<?= chk($o['Aktivna']) ?>></td>
+                    <td class="text-center"><a href="<?= e(url('akcije/obveze')) ?>#o<?= $oid ?>"><?= (int) $o['Ukljuceno'] ?></a></td>
+                    <td class="text-end"><label class="small text-danger text-nowrap"><input type="checkbox" class="form-check-input" name="obveza[<?= $oid ?>][obrisi]" value="1"> obriši</label></td>
+                </tr>
+            <?php endforeach; ?>
+            <tr class="table-light">
+                <td><input name="nova[Naziv]" class="form-control form-control-sm" maxlength="80" placeholder="+ nova obveza, npr. Briga o hranilištu"></td>
+                <td><input name="nova[Bodovi]" type="number" step="0.5" min="0" inputmode="decimal" class="form-control form-control-sm" placeholder="bodovi"></td>
+                <td><input name="nova[Dan]" class="form-control form-control-sm" placeholder="1.1."></td>
+                <td colspan="3"></td>
+            </tr>
+            </tbody>
+        </table></div>
+        <div class="small text-muted">Promjena bodova vrijedi za nove upise – već upisani bodovi ostaju. Brisanje obveze ne briše već upisane bodove.</div>
+    </div>
+    <div class="card-footer"><button class="btn btn-primary">Spremi</button></div>
+</form>
 <?php stranica('Bodovi', ob_get_clean());
