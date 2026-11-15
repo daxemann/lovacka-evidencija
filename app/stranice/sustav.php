@@ -49,7 +49,11 @@ $skupine = [
     ]],
 ];
 ob_start(); ?>
-<h1 class="h3 mb-3">⚙️ Sustav</h1>
+<div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+    <h1 class="h3 mb-0 me-auto">⚙️ Sustav</h1>
+    <input type="search" id="sustav-trazi" class="form-control" style="max-width:320px" placeholder="🔎 Traži postavku (npr. bodovi, logo)…" autocomplete="off">
+</div>
+<p class="small text-muted" id="sustav-nema" hidden>Ništa u Sustavu. <a href="#" id="sustav-upute">Traži u cijelom programu →</a></p>
 <?php foreach ($skupine as [$naslov, $kartice]):
     $kartice = array_filter($kartice, fn($x) => $x && ($x[5] === null || modul($x[5])));
     if (!$kartice) {
@@ -73,4 +77,23 @@ ob_start(); ?>
         <?php endforeach; ?>
     </div>
 <?php endforeach; ?>
+<script>
+(function () {
+    var p = document.getElementById('sustav-trazi'), nema = document.getElementById('sustav-nema'), link = document.getElementById('sustav-upute');
+    var norm = function (s) { return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd'); };
+    p.addEventListener('input', function () {
+        var q = norm(p.value.trim()), ima = 0;
+        document.querySelectorAll('.sustav-kartica').forEach(function (a) {
+            var da = !q || norm(a.textContent).indexOf(q) >= 0;
+            a.parentNode.hidden = !da; if (da) ima++;
+        });
+        document.querySelectorAll('.row.g-2').forEach(function (r) {
+            var h = r.previousElementSibling, vid = Array.prototype.some.call(r.children, function (c) { return !c.hidden; });
+            r.hidden = !vid; if (h && h.tagName === 'H2') h.hidden = !vid;
+        });
+        nema.hidden = !q || ima > 0;
+        link.href = <?= json_encode(url('upute')) ?> + '&q=' + encodeURIComponent(p.value.trim());
+    });
+})();
+</script>
 <?php stranica('Sustav', ob_get_clean());

@@ -1,5 +1,10 @@
 # Promjene
 
+## 1.75.0 – 2026-11
+- **🔎 Gdje je…?** – tražilica u izborniku (gore) i u Uputama: upišite npr. *bodovi* i dobijete popis gdje se to nalazi u programu (npr. 🏅 Sustav → Bodovi, 🏷️ Sustav → Vrste radnih akcija, 📚 Arhiva bodova) – klikom ravno tamo. Ispod su odgovarajuće upute i poveznica na Pomoć i kontakt. Svatko vidi samo ono što smije.
+- **⚙️ Sustav**: tražilica za kartice postavki (npr. *logo*, *bodovi*), s prijelazom na pretragu cijelog programa.
+- Upute dopunjene: godišnje obveze i ispravak akcije prije odobrenja.
+
 ## 1.74.0 – 2026-11
 - **🔐 Novo pravo „Godišnje obveze – dodjela“** (Sustav → Uloge i prava → Članovi i udruga): samo s tim pravom smiju se uključivati / isključivati članovi u godišnjim obvezama i lovački psi za godišnje bodove – po sekcijama uloge. Glavni admin ga dobiva automatski, ostalim ulogama ga dodijelite po potrebi.
 

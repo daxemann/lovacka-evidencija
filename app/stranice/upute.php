@@ -182,7 +182,9 @@ if (ima(P_CLANARINA_CITAJ)) {
     $udruga .= '<li><b>Članarina:</b> plan plaćanja po godini (jednokratno ili 1–12 rata), uplate se raspoređuju po ratama, filtar „Dospjela rata“. Odabranim članovima uplatnice šaljete e-poštom / WhatsAppom / Viberom ili ispisujete (3 po A4).</li>';
 }
 if (ima(P_AKCIJE_CITAJ) || ima(P_AKCIJE_ODOBRI)) {
-    $udruga .= '<li><b>Radne akcije:</b> prijave članova čekaju odobrenje (broj u izborniku). <b>Nova radna akcija</b> – upišete jednom i označite sve koji su bili; ide na odobrenje s predloženim bodovima (vrijede tek kad se odobre). Psi (posjed 1.1., pas na lovu) dolaze sami na odobrenje.</li>'
+    $udruga .= '<li><b>Radne akcije:</b> prijave članova čekaju odobrenje (broj u izborniku). <b>Nova radna akcija</b> – upišete jednom i označite sve koji su bili; ide na odobrenje s predloženim bodovima (vrijede tek kad se odobre). Pas na lovu dolazi sam na odobrenje.</li>'
+        . '<li><b>📅 Godišnje obveze</b> (npr. držanje lovačkog psa, hranilište, čeka): bodovi 1× godišnje na zadani dan, <b>odmah odobreno</b>. Obveze, bodove i dan određuje admin (Sustav → Bodovi). Članove uključuje / isključuje osoba s pravom „Godišnje obveze – dodjela“ – na kartici člana → Funkcije (psi: kartica Lovački psi → ✅ uključi bodove) ili u Radne akcije → 📅 Godišnje obveze. Uključen kasnije → bodovi odmah; svaki najviše jednom godišnje.</li>'
+        . '<li><b>✏️ Uredi</b> kod akcije na čekanju: tko odobrava može prije odobrenja ispraviti datum, sate, opis, vrstu i dodatnu opremu.</li>'
         . '<li><b>Dodatna oprema</b> (Sustav → Vrste radnih akcija): uz vrstu upišite opremu s bodovima (npr. Košnja: Traktor +5, Trimer +2). Kod nove akcije uz svakog člana kvačicom označite što je donio – bodovi se zbrajaju sami iz postavki i u akciji se ne mijenjaju. Kod odobravanja bodove ručno mijenja samo admin; ostali odobravaju bodove iz postavki.</li>';
 }
 if (ima(P_IZVJESTAJI)) {
@@ -260,7 +262,16 @@ $o('pitanja', '❓ Česta pitanja', '
 ob_start(); ?>
 <h1 class="h3 mb-1">Upute za korištenje</h1>
 <p class="text-muted mb-3">Kratke upute za dijelove programa koje koristite. Dodirnite naslov za otvaranje.</p>
-<input type="search" class="form-control mb-3 no-print" id="upute-trazi" placeholder="Traži u uputama (npr. lozinka, čeka, uplatnica)…" style="max-width:520px" autocomplete="off">
+<input type="search" class="form-control mb-2 no-print" id="upute-trazi" placeholder="🔎 Gdje je…? Traži (npr. bodovi, lozinka, čeka, uplatnica)…" style="max-width:520px" autocomplete="off" value="<?= e((string) ($_GET['q'] ?? '')) ?>">
+<div id="kazalo" class="card mb-3" style="max-width:720px" hidden>
+    <div class="card-header py-2 small fw-semibold">📍 Gdje se nalazi u programu</div>
+    <div class="list-group list-group-flush">
+        <?php foreach (kazalo_za_korisnika() as [$href, $put, $kljuc]): ?>
+            <a class="list-group-item list-group-item-action py-2 kazalo-stavka" href="<?= e($href) ?>" data-k="<?= e($put . ' ' . $kljuc) ?>" hidden><?= e($put) ?></a>
+        <?php endforeach; ?>
+    </div>
+    <div class="card-footer py-2 small text-muted">Ispod: odgovarajuće upute. Ne nalazite? <a href="<?= e(url('pomoc')) ?>">❓ Pomoć i kontakt</a></div>
+</div>
 <div id="upute"><?= implode("\n", $odjeljci) ?></div>
 <p class="text-muted small mt-2" id="upute-nema" hidden>Ništa nije pronađeno. Pitajte administratora udruge ili pogledajte <a href="<?= e(url('pomoc')) ?>">Pomoć i kontakt</a>.</p>
 <p class="small mt-3">Niste pronašli odgovor? <a href="<?= e(url('pomoc')) ?>">❓ Pomoć i kontakt</a> · verzija <?= e(VERZIJA) ?></p>
@@ -268,9 +279,17 @@ ob_start(); ?>
 (function () {
     var polje = document.getElementById('upute-trazi'), nema = document.getElementById('upute-nema');
     var dijelovi = Array.prototype.slice.call(document.querySelectorAll('.upute-odjeljak'));
+    var kazalo = document.getElementById('kazalo'), stavke = Array.prototype.slice.call(document.querySelectorAll('.kazalo-stavka'));
     var norm = function (s) { return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd'); };
-    polje.addEventListener('input', function () {
-        var q = norm(polje.value.trim()), ima = 0;
+    var trazi = function () {
+        var q = norm(polje.value.trim()), ima = 0, nk = 0;
+        // kazalo: svaka riječ upita mora se naći (npr. „bodovi pas“)
+        var rijeci = q.split(/\s+/).filter(Boolean);
+        stavke.forEach(function (a) {
+            var t = norm(a.dataset.k), da = rijeci.length > 0 && rijeci.every(function (r) { return t.indexOf(r) >= 0; });
+            a.hidden = !da; if (da) nk++;
+        });
+        kazalo.hidden = nk === 0;
         dijelovi.forEach(function (d) {
             var da = !q || norm(d.textContent).indexOf(q) >= 0;
             d.hidden = !da;
@@ -278,8 +297,10 @@ ob_start(); ?>
             if (da) ima++;
         });
         if (!q) dijelovi.forEach(function (d) { d.open = false; });
-        nema.hidden = ima > 0;
-    });
+        nema.hidden = ima > 0 || nk > 0;
+    };
+    polje.addEventListener('input', trazi);
+    if (polje.value) { trazi(); polje.focus(); }
     if (location.hash) { var c = document.querySelector('.upute-odjeljak' + location.hash); if (c) c.open = true; }
 })();
 </script>

@@ -72,6 +72,8 @@ $glUTijeku = $glMoj && (int) $glMoj['ja']['Odgovor'] === 1 && $glMoj['ja']['Otis
         <div class="nav-scrollable" onclick="if (event.target.closest('a')) document.querySelector('.navbar-toggler').click()">
             <nav class="nav flex-column">
                 <?php if ($k): ?>
+                    <form action="index.php" method="get" class="px-3 pt-2 pb-1 no-print" role="search"><input type="hidden" name="p" value="upute">
+                        <input type="search" name="q" class="form-control form-control-sm" placeholder="🔎 Gdje je…? (npr. bodovi)" aria-label="Traži u programu" autocomplete="off"></form>
                     <?= $stavka('pocetna', '🏠 Početna', 0, true) ?>
                     <?php if (modul('dezinfekcija')) echo $stavka('skeniraj', '📷 Skeniraj QR stanice', 0, true); ?>
                     <?php if (modul('kalendar')) echo $stavka('kalendar', '📅 Kalendar'); ?>
