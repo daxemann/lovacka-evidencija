@@ -338,3 +338,122 @@ function desifriraj(?string $s): ?string
     $r = openssl_decrypt(substr($b, 28), 'aes-256-gcm', tajni_kljuc(), OPENSSL_RAW_DATA, substr($b, 0, 12), substr($b, 12, 16));
     return $r === false ? null : $r;
 }
+
+// ---------- Zaštitna zaglavlja (HTTP) ----------
+/** Zaglavlja kojima preglednik zabranjuje opasne stvari – npr. ugradnju programa u tuđu stranicu (clickjacking). */
+function posalji_sigurnosna_zaglavlja(): void
+{
+    if (headers_sent()) {
+        return;
+    }
+    header('X-Frame-Options: SAMEORIGIN');
+    // namjerno bez pravila za skripte: program ima ugrađene skripte, stroža pravila bi ih blokirala
+    header("Content-Security-Policy: frame-ancestors 'self'; object-src 'none'; base-uri 'self'");
+    header('X-Content-Type-Options: nosniff');
+    header('Referrer-Policy: strict-origin-when-cross-origin'); // tokeni iz adrese ne odlaze drugim stranicama
+    header('Permissions-Policy: camera=(self), geolocation=(self), microphone=(), payment=(), usb=()');
+    if (je_https()) {
+        header('Strict-Transport-Security: max-age=15552000'); // 180 dana samo HTTPS
+    }
+}
+
+// ---------- Javno dostupna baza (npr. nginx ne poštuje .htaccess) ----------
+const IZLOZENOST_PROVJERA_SEKUNDI = 6 * 3600; // dok je sve u redu: provjera svakih 6 h
+const IZLOZENOST_PONOVNO_SEKUNDI = 30;        // dok je baza izložena: brzo otključavanje nakon popravka
+
+/** Put baze s interneta (npr. /evidencija/podaci/evidencija.db) ili null ako je mapa s podacima izvan javne mape. */
+function baza_javni_put(): ?string
+{
+    $korijen = str_replace('\\', '/', realpath(KORIJEN) ?: '');
+    $mapa = str_replace('\\', '/', realpath(podaci()) ?: '');
+    if ($korijen === '' || $mapa === '' || !str_starts_with($mapa . '/', rtrim($korijen, '/') . '/')) {
+        return null;
+    }
+    $rel = trim(substr($mapa, strlen(rtrim($korijen, '/'))), '/');
+    return bazni_put() . ($rel !== '' ? $rel . '/' : '') . 'evidencija.db';
+}
+
+/** Vraća li adresa početak SQLite baze? Čita najviše 16 bajtova; svaka greška ili tuđi odgovor = ne. */
+function adresa_vraca_bazu(string $url, ?string $ip = null): bool
+{
+    if (!function_exists('curl_init')) {
+        return false;
+    }
+    $primljeno = '';
+    $c = curl_init($url);
+    $opcije = [
+        CURLOPT_RANGE => '0-15',
+        CURLOPT_TIMEOUT => 3,
+        CURLOPT_CONNECTTIMEOUT => 2,
+        CURLOPT_FOLLOWLOCATION => false,
+        CURLOPT_SSL_VERIFYPEER => false, // samo provjera vlastitog poslužitelja, ništa se ne šalje
+        CURLOPT_SSL_VERIFYHOST => 0,
+        // prekid nakon 16 bajtova – i kad poslužitelj zanemari Range i šalje cijelu bazu
+        CURLOPT_WRITEFUNCTION => function ($c, string $dio) use (&$primljeno): int {
+            $primljeno .= $dio;
+            return strlen($primljeno) >= 16 ? -1 : strlen($dio);
+        },
+    ];
+    $host = (string) parse_url($url, PHP_URL_HOST);
+    $port = (int) (parse_url($url, PHP_URL_PORT) ?: 80);
+    if ($ip && !filter_var(trim($host, '[]'), FILTER_VALIDATE_IP)) {
+        // ravno na ovaj poslužitelj, bez zaobilaska preko interneta
+        $opcije[CURLOPT_RESOLVE] = [$host . ':' . $port . ':' . (str_contains($ip, ':') ? '[' . $ip . ']' : $ip)];
+    }
+    curl_setopt_array($c, $opcije);
+    curl_exec($c);
+    curl_close($c);
+    return str_starts_with($primljeno, 'SQLite format 3');
+}
+
+/** Provjeri sada: pokušaj preuzeti bazu s vlastitog poslužitelja, kao što bi to učinio netko s interneta. */
+function provjeri_izlozenost_sada(): bool
+{
+    $put = baza_javni_put();
+    if ($put === null) {
+        return false;
+    }
+    $https = !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off';
+    $host = (string) parse_url('http://' . ($_SERVER['HTTP_HOST'] ?? 'localhost'), PHP_URL_HOST);
+    $port = (int) ($_SERVER['SERVER_PORT'] ?? ($https ? 443 : 80));
+    return adresa_vraca_bazu(($https ? 'https' : 'http') . '://' . $host . ':' . $port . $put, $_SERVER['SERVER_ADDR'] ?? null);
+}
+
+/** Je li baza javno dostupna? Rezultat se pamti (Postavke), da se provjera ne radi kod svakog otvaranja stranice. */
+function baza_izlozena(): bool
+{
+    if (baza_javni_put() === null) {
+        return false;
+    }
+    $izlozena = postavka('Sigurnost.BazaIzlozena') === '1';
+    $zadnja = (int) postavka('Sigurnost.BazaProvjerena', '0');
+    if (time() - $zadnja < ($izlozena ? IZLOZENOST_PONOVNO_SEKUNDI : IZLOZENOST_PROVJERA_SEKUNDI)) {
+        return $izlozena;
+    }
+    spremi_postavku('Sigurnost.BazaProvjerena', (string) time()); // odmah – da istodobni zahtjevi ne provjeravaju svi
+    $sada = provjeri_izlozenost_sada();
+    if ($sada !== $izlozena) {
+        spremi_postavku('Sigurnost.BazaIzlozena', $sada ? '1' : null);
+        error_log($sada ? 'Evidencija: baza je javno dostupna – program zaključan.' : 'Evidencija: baza više nije javno dostupna – program otključan.');
+    }
+    return $sada;
+}
+
+/** Dok je baza javno dostupna, program je zaključan za sve – administrator to mora odmah primijetiti i popraviti. */
+function zakljucaj_ako_je_baza_izlozena(string $stranica): void
+{
+    if (in_array($stranica, ['logo', 'ikona', 'manifest'], true) || !baza_izlozena()) {
+        return;
+    }
+    http_response_code(503);
+    header('Retry-After: ' . IZLOZENOST_PONOVNO_SEKUNDI);
+    if (str_starts_with($stranica, 'api/')) {
+        json(['greska' => 'zakljucano']);
+    }
+    stranica('Program je zaključan', '<h1 class="h4 mb-3">🔒 Program je privremeno zaključan</h1>'
+        . '<p>Poslužitelj nije ispravno podešen, pa podaci udruge nisu zaštićeni. Program je zaključan dok administrator to ne popravi.</p>'
+        . '<p class="small text-muted">Za administratora: mapa <code>podaci</code> mora biti zaštićena na poslužitelju (nginx ne poštuje datoteku .htaccess) '
+        . 'ili premještena izvan javne mape weba (<code>config.php</code> → <code>\'podaci\'</code>). Upute: README, odjeljak „Zaštita podataka na nginxu“. '
+        . 'Nakon popravka pričekajte pola minute i osvježite stranicu.</p>'
+        . '<a href="' . e(url()) . '" class="btn btn-primary">Pokušaj ponovno</a>', 'prazno');
+}

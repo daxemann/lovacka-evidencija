@@ -18,6 +18,7 @@ foreach (['pdo_sqlite', 'mbstring', 'openssl'] as $ext) {
 
 require __DIR__ . '/vendor/autoload.php';
 require __DIR__ . '/app/osnova.php';
+posalji_sigurnosna_zaglavlja();
 
 date_default_timezone_set((string) cfg('vremenska_zona', 'Europe/Zagreb'));
 mb_internal_encoding('UTF-8');
@@ -38,6 +39,7 @@ if (!dopusti_trazilice()) {
     header('X-Robots-Tag: noindex, nofollow, noarchive'); // i za PDF-ove, slike i kalendar, ne samo HTML
 }
 pokreni_sesiju();
+zakljucaj_ako_je_baza_izlozena((string) ($_GET['p'] ?? '')); // nginx i sl.: baza se može preuzeti s interneta → program zaključan
 provjeri_csrf();
 if (je_demo()) {
     demo_odrzavanje();

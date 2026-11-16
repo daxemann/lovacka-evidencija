@@ -155,7 +155,7 @@ Mapa `podaci/` sadrži osobne podatke. Na Apacheu je zaštićena automatski. Na 
 location ~ ^/evidencija/(app|podaci|vendor)/ { deny all; }
 ```
 ili premjestite podatke izvan javne mape (`config.example.php` → `config.php`, `'podaci' => '/putanja/izvan/weba'`).
-Aplikacija sama upozorava ako je baza javno dostupna.
+Ako je baza javno dostupna, aplikacija se sama zaključa (za sve korisnike) dok se to ne popravi – nakon popravka otključa se za pola minute.
 
 </details>
 

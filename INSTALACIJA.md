@@ -55,4 +55,4 @@ Ručno:
 | „Nedostaje PHP proširenje: pdo_sqlite“ | uključite ga u postavkama PHP-a ili pitajte podršku hostinga |
 | „Došlo je do greške“ | pogledajte `podaci/greske.log` (preko FTP-a) |
 | Fotografija se ne učitava | prevelika datoteka – hosting ograničava `upload_max_filesize` |
-| Crveno upozorenje „baza je javno dostupna“ | poslužitelj je nginx – vidi README, odjeljak „Zaštita podataka“ |
+| „Program je privremeno zaključan“ ili crveno upozorenje „baza je javno dostupna“ | poslužitelj (npr. nginx) ne štiti mapu `podaci` – vidi README, odjeljak „Zaštita podataka na nginxu“; nakon popravka pričekajte pola minute i osvježite |

@@ -1,5 +1,9 @@
 # Promjene
 
+## 1.77.0 – 2026-11
+- **🔒 Javno dostupna baza – program se zaključava**: ako poslužitelj ne štiti mapu `podaci` (npr. nginx ne poštuje datoteku `.htaccess`) pa se baza može preuzeti s interneta, program se **zaključa za sve** i prikaže upute administratoru – umjesto dosadašnjeg upozorenja koje se moglo previdjeti. Program sam provjerava svakih 6 sati; nakon popravka otključa se za pola minute. Kad je mapa s podacima izvan javne mape weba, provjera se ne radi.
+- **🛡️ Zaštitna zaglavlja**: program se više ne može ugraditi u tuđu stranicu (zaštita od *clickjackinga* – lažnih gumba preko programa); preglednik ne pogađa vrstu datoteka; poveznice s tokenima ne odaju adresu drugim stranicama; kamera i GPS dopušteni samo programu, mikrofon nikome; uz HTTPS preglednik 180 dana koristi samo HTTPS.
+
 ## 1.76.0 – 2026-11
 - **📓 Lovački dnevnik kao pravi dnevnik**: složen po **lovnoj godini → mjesecu → danu** (s danom u tjednu). Razdoblje: dan, mjesec, lovna godina (i prošle), od – do ili sve, sa strelicama ◀ ▶. Klik na dan otvara taj dan.
 - **Pretraga i sortiranje**: aktivnost (lov, radna akcija, hranjenje…), **izvor** (lovne naprave / knjiga dezinfekcije / ručni upisi), sekcija, lovac / mjesto / napomena; sortiranje po datumu, lovcu, aktivnosti, mjestu, trajanju (i klikom na naslov stupca). Prikaz dnevnik ili tablica; ispis i PDF u istom obliku.

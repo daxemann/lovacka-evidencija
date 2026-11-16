@@ -317,10 +317,11 @@ function pocetna_uprava(): string
     $dupl = ima(P_SUSTAV) ? count(pronadji_duplikate()) : 0;
     $o = '<div class="d-flex flex-wrap align-items-center gap-2 mb-3 pt-2 border-top"><h2 class="h5 mb-0 me-auto">🗂️ Uprava</h2>'
         . (smije_upis_akcija() ? '<a href="' . e(url('akcije/nova')) . '" class="btn btn-sm btn-primary">+ Nova radna akcija</a>' : '') . '</div>';
-    if (ima(P_SUSTAV) && str_starts_with(str_replace('\\', '/', realpath(podaci()) ?: ''), str_replace('\\', '/', realpath(KORIJEN) ?: '-'))) {
+    // druga zaštita uz zaključavanje (sigurnost.php): preglednik sam provjeri, za slučaj da poslužitelj ne može provjeriti sebe
+    if (ima(P_SUSTAV) && ($putBaze = baza_javni_put()) !== null) {
         $o .= '<div class="alert alert-danger d-none" id="izlozeno"><b>Upozorenje – baza je javno dostupna!</b> Poslužitelj ne poštuje datoteku .htaccess (npr. nginx), pa se mapa <code>podaci</code> može preuzeti s interneta.
             Premjestite mapu s podacima izvan javne mape weba (config.php → \'podaci\') ili zabranite pristup mapi <code>podaci</code> u postavkama poslužitelja. Upute: README.</div>'
-            . '<script>fetch(' . json_encode(bazni_put() . substr(str_replace('\\', '/', realpath(podaci())), strlen(str_replace('\\', '/', realpath(KORIJEN))) + 1) . '/evidencija.db') . ', { cache: \'no-store\', headers: { Range: \'bytes=0-15\' } })'
+            . '<script>fetch(' . json_encode($putBaze) . ', { cache: \'no-store\', headers: { Range: \'bytes=0-15\' } })'
             . '.then(function (r) { return r.ok ? r.text() : \'\'; }).then(function (t) { if (t.indexOf(\'SQLite format 3\') === 0) document.getElementById(\'izlozeno\').classList.remove(\'d-none\'); }).catch(function () {});</script>';
     }
     if ($dupl > 0) {

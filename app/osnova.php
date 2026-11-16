@@ -5,7 +5,7 @@
  */
 declare(strict_types=1);
 
-const VERZIJA = '1.76.0';
+const VERZIJA = '1.77.0';
 const KONTAKT_EMAIL = 'daxemann@googlemail.com';
 const PODRSKA_PAYPAL = 'darko.bakic@freenet.de'; // dobrovoljna podrška razvoju (Pomoć i kontakt)
 const PROJEKT_URL = 'https://github.com/daxemann/lovacka-evidencija';
@@ -1414,9 +1414,13 @@ function javna_adresa(): string
 /** Adresa kojom je aplikacija upravo otvorena (bez obzira na postavku). */
 function trenutna_adresa(): string
 {
-    $https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https');
     $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
-    return ($https ? 'https' : 'http') . '://' . $host . bazni_put();
+    return (je_https() ? 'https' : 'http') . '://' . $host . bazni_put();
+}
+/** Je li program otvoren preko HTTPS-a (i iza posrednika, npr. Tailscale Funnel)? */
+function je_https(): bool
+{
+    return (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https');
 }
 /** Je li adresa dostupna samo lokalno / u privatnoj mreži (LAN, Tailscale IP 100.64–127.x)? *.ts.net s Funnelom je javna. */
 function adresa_privatna(string $adr): bool
