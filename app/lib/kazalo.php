@@ -83,7 +83,7 @@ function kazalo_stavke(): array
         ['sustav/oglasnik', '🛒 Sustav → Oglasnik lovaca', 'oglasnik moderacija', P_SUSTAV, 'oglasnik'],
         ['sustav/uvoz', '📥 Sustav → Uvoz (Google kontakti)', 'uvoz google kontakti csv', P_SUSTAV, null],
         ['sustav/duplikati', '🔍 Sustav → Provjera duplikata', 'duplikati dvostruko', P_SUSTAV, null],
-        ['sustav/kopije', '💾 Sustav → Sigurnosne kopije', 'kopija backup sigurnosna kopija zip lozinka kopije', P_SUSTAV, null],
+        ['sustav/kopije', '💾 Sustav → Sigurnosne kopije', 'kopija backup sigurnosna kopija zip lozinka kopije podsjetnik zadnja kopija', P_SUSTAV, null],
         ['sustav/azuriranje', '🔄 Sustav → Ažuriranje programa', 'azuriranje update nova verzija', P_SUSTAV, null],
         ['sustav/dnevnik', '🧾 Sustav → Dnevnik promjena', 'dnevnik promjena log tko je sto promijenio', P_SUSTAV, null],
         ['sustav/reset', '🧹 Sustav → Reset nakon testiranja', 'reset brisanje probnih upisa test', P_SUSTAV, null],

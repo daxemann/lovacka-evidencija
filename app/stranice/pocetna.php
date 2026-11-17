@@ -17,6 +17,7 @@ if ($pregled !== null) {
 }
 if ($pregled === null) {
     echo php2shell_obavijest();
+    echo kopija_podsjetnik_html(); // administratori: kopija izvan poslužitelja
 }
 echo pocetna_html($k, $blokovi);
 if (in_array('danas_popis', $blokovi, true)) {

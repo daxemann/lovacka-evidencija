@@ -93,6 +93,13 @@ if (je_post()) {
                 poruka('Vraćanje nije uspjelo: ' . e($e->getMessage()), 'danger');
             }
         }
+    } elseif ($radnja === 'podsjetnik') {
+        $d = (int) ($_POST['dana'] ?? KOPIJA_PODSJETNIK_ZADANO);
+        if (array_key_exists($d, KOPIJA_PODSJETNIK_IZBOR)) {
+            spremi_postavku('Kopije.PodsjetnikDana', (string) $d);
+            dnevnik('Podsjetnik za kompletnu kopiju', null, null, KOPIJA_PODSJETNIK_IZBOR[$d]);
+            poruka('Podsjetnik je spremljen.');
+        }
     } elseif ($radnja === 'obrisi') {
         $ime = basename((string) ($_POST['ime'] ?? ''));
         if (preg_match('/^evidencija-.*\.db$/', $ime)) {
@@ -167,6 +174,16 @@ if ($zahtjev && ($zahtjev['do'] < time() || $zahtjev['korisnik'] !== (int) koris
         <?= kopija_aes_zip() ? 'Datoteka je ZIP šifriran AES-256 – bez programa se otvara 7-Zipom s istom lozinkom.' : 'Ovaj poslužitelj nema AES-ZIP, pa je kopija u formatu <b>.evk</b> – otvara se samo u evidenciji (vraćanje kopije).' ?></div>
 </form>
 <?php endif; ?>
+<?php $zadnjaKopija = kopija_zadnje_preuzimanje(); $podsjetnik = kopija_podsjetnik_dana(); ?>
+<form method="post" action="<?= e(url('sustav/kopije')) ?>" class="d-flex flex-wrap align-items-center gap-2 small mb-2" style="max-width:700px"><?= csrf() ?><input type="hidden" name="radnja" value="podsjetnik">
+    <span class="me-auto">💾 Zadnja preuzeta kompletna kopija:
+        <b><?= $zadnjaKopija ? e(date('d.m.Y.', strtotime($zadnjaKopija)) . ' (' . kopija_prije_dana((int) floor((time() - strtotime($zadnjaKopija)) / 86400)) . ')') : 'još nijedna' ?></b></span>
+    <label for="podsjetnik-dana">Podsjetnik na početnoj</label>
+    <select name="dana" id="podsjetnik-dana" class="form-select form-select-sm" style="width:auto">
+        <?php foreach (KOPIJA_PODSJETNIK_IZBOR as $d => $opis): ?><option value="<?= $d ?>"<?= $d === $podsjetnik ? ' selected' : '' ?>><?= e($opis) ?></option><?php endforeach; ?>
+    </select>
+    <button class="btn btn-sm btn-outline-secondary">Spremi</button>
+</form>
 <p class="small text-muted" style="max-width:700px">Kompletna kopija sadrži bazu, sve fotografije i ključeve (npr. šifriranu lozinku e-pošte). Služi za preseljenje na drugi poslužitelj: tamo se kod prvog pokretanja odabere „Vrati iz kompletne kopije“ i upiše lozinka kopije.</p>
 <div class="card border-danger mb-4" style="max-width:700px">
     <div class="card-header text-danger">Vrati kompletnu kopiju (ZIP)</div>

@@ -172,6 +172,56 @@ function kopija_pocisti_zakljucavanje(): void
     }
 }
 
+// ---------- Podsjetnik: preuzmite kompletnu kopiju (početna, samo administratori) ----------
+// Kopije na poslužitelju nestaju zajedno s poslužiteljem – zato podsjetnik na kopiju izvan poslužitelja.
+const KOPIJA_PODSJETNIK_ZADANO = 30; // dana
+const KOPIJA_PODSJETNIK_IZBOR = [14 => 'nakon 14 dana', 30 => 'nakon 30 dana', 60 => 'nakon 60 dana', 90 => 'nakon 90 dana', 0 => 'isključen'];
+
+/** Nakon koliko dana bez preuzete kompletne kopije podsjetiti (0 = nikad). */
+function kopija_podsjetnik_dana(): int
+{
+    $d = (int) postavka('Kopije.PodsjetnikDana', (string) KOPIJA_PODSJETNIK_ZADANO);
+    return array_key_exists($d, KOPIJA_PODSJETNIK_IZBOR) ? $d : KOPIJA_PODSJETNIK_ZADANO;
+}
+
+/** Kada je zadnji put preuzeta kompletna kopija (iz dnevnika rada – radi i za kopije prije ove verzije). Null = nikad. */
+function kopija_zadnje_preuzimanje(): ?string
+{
+    $v = vrijednost("SELECT MAX(Vrijeme) FROM Dnevnik WHERE Radnja LIKE 'Preuzeta kompletna kopija%'");
+    return $v ? (string) $v : null;
+}
+
+/** „prije 1 dan“, „prije 2 dana“, „prije 21 dan“ … */
+function kopija_prije_dana(int $n): string
+{
+    return 'prije ' . $n . ' ' . ($n % 10 === 1 && $n % 100 !== 11 ? 'dan' : 'dana');
+}
+
+/** Podsjetnik na početnoj za administratore. Prazno ako je sve u redu, isključeno, demo ili preuzimanje zaključano. */
+function kopija_podsjetnik_html(): string
+{
+    $dana = kopija_podsjetnik_dana();
+    if (!ima(P_SUSTAV) || je_demo() || $dana === 0 || kopija_zakljucano_do()) {
+        return '';
+    }
+    if (!kopija_lozinka_postavljena()) {
+        $tekst = '🔒 <b>Lozinka kopije još nije postavljena.</b> Bez nje se ne može preuzeti nijedna kopija – ako poslužitelj nestane, nestaju i podaci.';
+        $gumb = 'Postavi lozinku';
+    } else {
+        $zadnja = kopija_zadnje_preuzimanje();
+        $prije = $zadnja ? (int) floor((time() - strtotime($zadnja)) / 86400) : null;
+        if ($prije !== null && $prije < $dana) {
+            return '';
+        }
+        $tekst = '💾 ' . ($prije === null ? '<b>Još niste preuzeli nijednu kompletnu kopiju.</b>'
+                : 'Zadnja preuzeta kompletna kopija: <b>' . e(kopija_prije_dana($prije)) . '</b> (' . e(date('d.m.Y.', strtotime($zadnja))) . ').')
+            . ' Kopije na poslužitelju nestaju zajedno s njim – spremite novu na računalo ili USB.';
+        $gumb = 'Preuzmi kopiju';
+    }
+    return '<div class="alert alert-warning d-flex flex-wrap align-items-center gap-2 no-print"><span class="me-auto">' . $tekst . '</span>'
+        . '<a class="btn btn-sm btn-warning" href="' . e(url('sustav/kopije')) . '">' . $gumb . '</a></div>';
+}
+
 /** Podržava li PHP na ovom poslužitelju AES-256 ZIP (otvara se i 7-Zipom)? */
 function kopija_aes_zip(): bool
 {

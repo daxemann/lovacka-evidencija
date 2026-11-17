@@ -1,5 +1,9 @@
 # Promjene
 
+## 1.78.0 – 2026-11
+- **💾 Podsjetnik na kompletnu kopiju**: administratori (pravo „Sustav“) na početnoj vide podsjetnik kad zadnja preuzeta **kompletna kopija** ima više od 30 dana ili još nijedna nije preuzeta – s gumbom ravno na preuzimanje. Kopije na poslužitelju nestaju zajedno s njim, zato je važna kopija na računalu ili USB-u. Ako **lozinka kopije** još nije postavljena, podsjetnik prvo traži nju.
+- **Sustav → Sigurnosne kopije**: prikaz datuma zadnje preuzete kompletne kopije; podsjetnik nakon 14, 30, 60 ili 90 dana ili isključen. Datum se čita iz dnevnika rada – vrijedi i za kopije preuzete prije ove verzije. U demo verziji podsjetnika nema.
+
 ## 1.77.0 – 2026-11
 - **🔒 Javno dostupna baza – program se zaključava**: ako poslužitelj ne štiti mapu `podaci` (npr. nginx ne poštuje datoteku `.htaccess`) pa se baza može preuzeti s interneta, program se **zaključa za sve** i prikaže upute administratoru – umjesto dosadašnjeg upozorenja koje se moglo previdjeti. Program sam provjerava svakih 6 sati; nakon popravka otključa se za pola minute. Kad je mapa s podacima izvan javne mape weba, provjera se ne radi.
 - **🛡️ Zaštitna zaglavlja**: program se više ne može ugraditi u tuđu stranicu (zaštita od *clickjackinga* – lažnih gumba preko programa); preglednik ne pogađa vrstu datoteka; poveznice s tokenima ne odaju adresu drugim stranicama; kamera i GPS dopušteni samo programu, mikrofon nikome; uz HTTPS preglednik 180 dana koristi samo HTTPS.
