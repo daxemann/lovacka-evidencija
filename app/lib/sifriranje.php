@@ -293,6 +293,46 @@ function sifriranje_iskljuci(array $racun, string $lozinka, string $kod2fa): voi
     }
 }
 
+// ---------- Čišćenje nešifriranih kopija na poslužitelju ----------
+/**
+ * Dok je šifriranje uključeno, briše nešifrirane kopije baze u podaci/kopije (npr. stare kopije koje je drugi poslužitelj
+ * donio sa sobom). Jednom dnevno, pri prvom zahtjevu – radi i bez prijave.
+ */
+function sifriranje_pocisti_kopije(): void
+{
+    if (sifriranje_stanje() !== 'ukljuceno') {
+        return;
+    }
+    $oznaka = podaci('kopije/.sif-ocisceno');
+    if (is_file($oznaka) && file_get_contents($oznaka) === date('Y-m-d')) {
+        return;
+    }
+    @file_put_contents($oznaka, date('Y-m-d'));
+    $obrisano = [];
+    foreach (glob(podaci('kopije/*.db')) ?: [] as $f) {
+        if (kopija_je_sifrirana($f) === false && @unlink($f)) {
+            @unlink($f . '-wal'); // pomoćne datoteke SQLite-a
+            @unlink($f . '-shm');
+            $obrisano[] = basename($f);
+        }
+    }
+    if ($obrisano) {
+        dnevnik('Šifriranje: obrisane nešifrirane kopije na poslužitelju', null, null, count($obrisano) . ': ' . implode(', ', $obrisano));
+    }
+}
+/** Je li kopija nastala dok je šifriranje bilo uključeno? null = ne može se pročitati (tada se ne briše). */
+function kopija_je_sifrirana(string $datoteka): ?bool
+{
+    try {
+        $pdo = new PDO('sqlite:' . $datoteka, null, null, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::SQLITE_ATTR_OPEN_FLAGS => PDO::SQLITE_OPEN_READONLY]);
+        $sifrirana = $pdo->query("SELECT Vrijednost FROM Postavke WHERE Kljuc='Sifriranje.Stanje'")->fetchColumn() === 'ukljuceno';
+        $pdo = null; // zatvoriti prije brisanja (Windows ne briše otvorenu datoteku)
+        return $sifrirana;
+    } catch (Throwable) {
+        return null;
+    }
+}
+
 /** Početna (administratori): prebacivanje je u tijeku – nastavlja se otvaranjem Sigurnosnih kopija. */
 function sifriranje_obavijest_html(): string
 {

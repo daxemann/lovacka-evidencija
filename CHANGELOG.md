@@ -1,5 +1,8 @@
 # Promjene
 
+## 1.79.1 – 2026-11
+- **🔐 Šifriranje – čišćenje starih kopija**: dok je šifriranje uključeno, program jednom dnevno sam briše **nešifrirane kopije baze** u mapi `kopije` na poslužitelju (npr. stare kopije koje je drugi poslužitelj donio sa sobom). Šifrirane kopije i datoteke koje se ne mogu pročitati ostaju. Radi i bez prijave; svako brisanje se bilježi u dnevnik rada.
+
 ## 1.79.0 – 2026-11
 - **🔐 Šifriranje podataka članova** (Sustav → Sigurnosne kopije, zadano **isključeno**): adresa, telefoni, e-mail, OIB, datum i mjesto rođenja, broj lovačke iskaznice i diplome, napomena, registarske oznake (i u knjizi dezinfekcije), brojevi oružnih listova i dokumenata te podaci gostiju spremaju se **šifrirano (AES-256)**. Tko dođe do datoteke baze ili kopije s poslužitelja, ne može ih pročitati – **u programu se sve vidi i radi kao i prije** (pretraga, sortiranje, PDF-ovi, uvoz). Imena, GPS i poruke se ne šifriraju.
 - Uključuje se tek kad je postavljena **lozinka kopije** i preuzeta **kompletna kopija u zadnja 24 h**. Prebacivanje ide u obrocima s trakom napretka; prekid je bezopasan (nastavlja se kasnije). Nakon šifriranja stare kopije na poslužitelju (nešifrirane) se brišu i nastaje nova, šifrirana; datoteka baze se prepisuje bez ostataka.
