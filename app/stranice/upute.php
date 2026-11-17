@@ -236,7 +236,8 @@ if (ima(P_SUSTAV)) {
 <li><b>Sekcije, vrste radnih akcija</b> (osnovni bodovi i bodovi dodatne opreme – samo ovdje), <b>predlošci poruka, vrste u kalendaru, uplatnica (IBAN).</b></li>
 <li><b>Oglasnik lovaca:</b> udruga se jednim klikom prijavi u zajednički Oglasnik (zahtjev odobrava administrator Oglasnika), zatim ga uključite za članove i odredite pravila (samo interno ili i javno, vidljivost telefona, odobravanje javnih oglasa). Dok nije uključen, radi interni oglasnik udruge.</li>
 <li><b>Uvoz (Google kontakti)</b> i <b>Provjera duplikata</b> – ništa se ne sprema bez vaše potvrde.</li>
-<li><b>Sigurnosne kopije:</b> dnevna kopija ide sama; <b>kompletna kopija (ZIP)</b> povremeno spremite i izvan poslužitelja. Ako je zadnja preuzeta kompletna kopija starija od 30 dana (ili lozinka kopije nije postavljena), na početnoj se pojavi <b>💾 podsjetnik</b> – razmak se mijenja ili isključuje u Sustav → Sigurnosne kopije.</li>'
+<li><b>Sigurnosne kopije:</b> dnevna kopija ide sama; <b>kompletna kopija (ZIP)</b> povremeno spremite i izvan poslužitelja. Ako je zadnja preuzeta kompletna kopija starija od 30 dana (ili lozinka kopije nije postavljena), na početnoj se pojavi <b>💾 podsjetnik</b> – razmak se mijenja ili isključuje u Sustav → Sigurnosne kopije.</li>
+<li><b>🔐 Šifriranje podataka članova</b> (Sustav → Sigurnosne kopije): adresa, telefoni, e-mail, OIB, datum rođenja, brojevi iskaznica, oružnih listova i dokumenata, registarske oznake i napomene spremaju se šifrirano – tko dođe do datoteke baze ili kopije, ne može ih pročitati. U programu se sve vidi kao i prije. Uključuje se nakon što je postavljena lozinka kopije i preuzeta svježa kompletna kopija; isključuje se lozinkom za prijavu i 2FA kodom.</li>'
     . (smije_azurirati() ? '
 <li><b>Ažuriranje programa:</b> kad piše „Dostupna je nova verzija“ – jedan klik; prije toga se sama radi kopija baze.</li>' : '') . '
 <li><b>Dnevnik promjena:</b> tko je što i kada promijenio.</li>

@@ -313,15 +313,46 @@ function oznaka_uloge(): array
     return [$k['Uloge'][0] ?? 'Admin', 'bg-success'];
 }
 
-// ---------- Šifriranje (lozinka SMTP-a) ----------
+// ---------- Šifriranje (tajne i osjetljivi podaci članova) ----------
+/**
+ * Datoteka s ključem. Zadano podaci/kljuc.php; sigurnije izvan javne mape weba: config.php → 'kljuc' => '/putanja/kljuc.php'
+ * (tada ključ i baza nisu na istom mjestu). Postojeći ključ se pri prvoj upotrebi sam premjesti na novo mjesto.
+ */
+function kljuc_datoteka(): string
+{
+    $stari = podaci('kljuc.php');
+    $novi = (string) cfg('kljuc', '');
+    if ($novi === '' || $novi === $stari) {
+        return $stari;
+    }
+    if (!is_file($novi) && is_file($stari)) {
+        @mkdir(dirname($novi), 0700, true);
+        if (@copy($stari, $novi) && @file_get_contents($novi) === @file_get_contents($stari)) {
+            @chmod($novi, 0600);
+            @unlink($stari); // ključ više ne smije biti uz bazu
+        } else {
+            return $stari; // premještanje nije uspjelo – radi i dalje sa starim mjestom
+        }
+    }
+    return $novi;
+}
+/** Je li ključ izvan mape s podacima (preporuka za webhosting)? */
+function kljuc_odvojen(): bool
+{
+    return kljuc_datoteka() !== podaci('kljuc.php');
+}
 function tajni_kljuc(): string
 {
-    $dat = podaci('kljuc.php');
+    static $kljuc = null; // jednom po zahtjevu – šifriranje stupaca ga treba za svaki redak
+    if ($kljuc !== null) {
+        return $kljuc;
+    }
+    $dat = kljuc_datoteka();
     if (!is_file($dat)) {
         file_put_contents($dat, "<?php return '" . base64_encode(random_bytes(32)) . "';\n");
         @chmod($dat, 0600);
     }
-    return base64_decode((string) require $dat);
+    return $kljuc = base64_decode((string) require $dat);
 }
 function sifriraj(string $tekst): string
 {

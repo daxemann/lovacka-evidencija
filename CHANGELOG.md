@@ -1,5 +1,12 @@
 # Promjene
 
+## 1.79.0 – 2026-11
+- **🔐 Šifriranje podataka članova** (Sustav → Sigurnosne kopije, zadano **isključeno**): adresa, telefoni, e-mail, OIB, datum i mjesto rođenja, broj lovačke iskaznice i diplome, napomena, registarske oznake (i u knjizi dezinfekcije), brojevi oružnih listova i dokumenata te podaci gostiju spremaju se **šifrirano (AES-256)**. Tko dođe do datoteke baze ili kopije s poslužitelja, ne može ih pročitati – **u programu se sve vidi i radi kao i prije** (pretraga, sortiranje, PDF-ovi, uvoz). Imena, GPS i poruke se ne šifriraju.
+- Uključuje se tek kad je postavljena **lozinka kopije** i preuzeta **kompletna kopija u zadnja 24 h**. Prebacivanje ide u obrocima s trakom napretka; prekid je bezopasan (nastavlja se kasnije). Nakon šifriranja stare kopije na poslužitelju (nešifrirane) se brišu i nastaje nova, šifrirana; datoteka baze se prepisuje bez ostataka.
+- **Isključivanje** samo lozinkom za prijavu + 2FA kodom; svi administratori dobivaju e-mail, sve se bilježi u dnevnik rada.
+- **Ključ izvan mape s podacima**: u `config.php` → `'kljuc' => '/putanja/izvan/weba/kljuc.php'` – program ga sam premjesti. Kompletna kopija i dalje sadrži ključ (šifriran lozinkom kopije).
+- Kopije baze (dnevna i kompletna) sada se uvijek rade sažeto, bez ostataka obrisanih podataka.
+
 ## 1.78.0 – 2026-11
 - **💾 Podsjetnik na kompletnu kopiju**: administratori (pravo „Sustav“) na početnoj vide podsjetnik kad zadnja preuzeta **kompletna kopija** ima više od 30 dana ili još nijedna nije preuzeta – s gumbom ravno na preuzimanje. Kopije na poslužitelju nestaju zajedno s njim, zato je važna kopija na računalu ili USB-u. Ako **lozinka kopije** još nije postavljena, podsjetnik prvo traži nju.
 - **Sustav → Sigurnosne kopije**: prikaz datuma zadnje preuzete kompletne kopije; podsjetnik nakon 14, 30, 60 ili 90 dana ili isključen. Datum se čita iz dnevnika rada – vrijedi i za kopije preuzete prije ove verzije. U demo verziji podsjetnika nema.

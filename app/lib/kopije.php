@@ -367,7 +367,7 @@ function napravi_kopiju(string $oznaka = 'rucno'): string
     $ime = 'evidencija-' . date('Y-m-d_His') . '-' . preg_replace('/[^a-z0-9\-]/', '', $oznaka) . '.db';
     $put = podaci('kopije/' . $ime);
     try {
-        q('VACUUM INTO ' . db()->quote($put));
+        baza_kopija_u($put); // zasebna veza – radi i kad je šifriranje uključeno
     } catch (Throwable) {
         copy(podaci('evidencija.db'), $put); // stariji SQLite
     }
@@ -424,7 +424,7 @@ function napravi_kompletnu_kopiju(string $lozinka): array
     $tmpDb = tempnam(sys_get_temp_dir(), 'evdb');
     @unlink($tmpDb);
     try {
-        q('VACUUM INTO ' . db()->quote($tmpDb));
+        baza_kopija_u($tmpDb); // zasebna veza – radi i kad je šifriranje uključeno
     } catch (Throwable) {
         copy(podaci('evidencija.db'), $tmpDb);
     }
@@ -542,7 +542,7 @@ function vrati_kompletnu_kopiju_zip(string $zipPut, string $lozinka): void
             if ($m[1] === 'kljucevi' && $m[2] === 'php-kljuc.txt') {
                 $k = base64_decode(trim((string) $sadrzaj), true);
                 if ($k !== false && strlen($k) === 32) {
-                    file_put_contents(podaci('kljuc.php'), "<?php return '" . base64_encode($k) . "';\n");
+                    file_put_contents(kljuc_datoteka(), "<?php return '" . base64_encode($k) . "';\n"); // i kad je ključ izvan mape podaci
                 }
                 continue;
             }

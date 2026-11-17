@@ -93,6 +93,20 @@ if (je_post()) {
                 poruka('Vraćanje nije uspjelo: ' . e($e->getMessage()), 'danger');
             }
         }
+    } elseif ($radnja === 'sifriranje_ukljuci') {
+        try {
+            sifriranje_ukljuci();
+            poruka('🔐 Šifriranje je pokrenuto – ostavite ovu stranicu otvorenom dok traka ne dođe do kraja.');
+        } catch (Throwable $e) {
+            poruka(e($e->getMessage()), 'warning');
+        }
+    } elseif ($radnja === 'sifriranje_iskljuci') {
+        try {
+            sifriranje_iskljuci(red('SELECT * FROM Korisnici WHERE Id=?', [(int) korisnik()['Id']]) ?? [], (string) ($_POST['moja'] ?? ''), (string) ($_POST['kod2fa'] ?? ''));
+            poruka('🔓 Isključivanje je pokrenuto – ostavite ovu stranicu otvorenom dok traka ne dođe do kraja. Svi administratori su obaviješteni.');
+        } catch (Throwable $e) {
+            poruka(e($e->getMessage()), 'danger');
+        }
     } elseif ($radnja === 'podsjetnik') {
         $d = (int) ($_POST['dana'] ?? KOPIJA_PODSJETNIK_ZADANO);
         if (array_key_exists($d, KOPIJA_PODSJETNIK_IZBOR)) {
@@ -164,6 +178,71 @@ if ($zahtjev && ($zahtjev['do'] < time() || $zahtjev['korisnik'] !== (int) koris
             <div class="col-12"><button class="btn btn-outline-primary btn-sm"><?= kopija_treba_email() ? 'Dalje – pošalji kod e-poštom' : 'Spremi lozinku kopije' ?></button>
                 <?php if ($imaLoz): ?><span class="small text-muted ms-2">Već preuzete kopije i dalje se otvaraju starom lozinkom.</span><?php endif; ?></div>
         </form></details>
+    </div>
+</div>
+<?php
+// ---------- Šifriranje podataka članova ----------
+$sifStanje = sifriranje_stanje();
+$sifPrepreka = $sifStanje === '' ? sifriranje_prepreka() : '';
+$sifPreostalo = in_array($sifStanje, ['sifriram', 'desifriram'], true) ? sifriranje_preostalo($sifStanje) : 0;
+?>
+<div class="card mb-3" style="max-width:700px" id="sifriranje">
+    <div class="card-header">🔐 Šifriranje podataka članova</div>
+    <div class="card-body small">
+        <p class="mb-2">Adresa, telefoni, e-mail, OIB, datum i mjesto rođenja, broj lovačke iskaznice i diplome, napomena, registarske oznake,
+            brojevi oružnih listova i dokumenata te podaci gostiju spremaju se <b>šifrirano (AES-256)</b>. Tko dođe do datoteke baze ili kopije
+            s poslužitelja, ne može ih pročitati. <b>U programu se sve vidi i radi kao i prije.</b> Imena, GPS i poruke se ne šifriraju.</p>
+        <?php if ($sifStanje === 'ukljuceno'): ?>
+            <div class="text-success mb-2">✓ <b>Šifriranje je uključeno.</b></div>
+        <?php elseif ($sifStanje !== ''): ?>
+            <div class="mb-1"><?= $sifStanje === 'sifriram' ? '🔐 Šifriram' : '🔓 Dešifriram' ?> … preostalo <b id="sif-preostalo"><?= $sifPreostalo ?></b> vrijednosti. Ostavite ovu stranicu otvorenom – program za to vrijeme radi normalno.</div>
+            <div class="progress mb-2" style="height:22px"><div class="progress-bar progress-bar-striped progress-bar-animated" id="sif-traka" style="width:5%"></div></div>
+            <div class="text-danger d-none" id="sif-greska"></div>
+            <script>
+            (function () {
+                var pocetak = <?= max(1, $sifPreostalo) ?>, traka = document.getElementById('sif-traka'), broj = document.getElementById('sif-preostalo'), greska = document.getElementById('sif-greska');
+                function korak() {
+                    fetch(<?= json_encode(url('api/sifriranje')) ?>, { method: 'POST', headers: { 'X-CSRF': <?= json_encode(csrf_token()) ?> }, credentials: 'same-origin' })
+                        .then(function (r) { return r.json(); })
+                        .then(function (d) {
+                            if (d.greska) { greska.textContent = d.greska; greska.classList.remove('d-none'); setTimeout(korak, 5000); return; }
+                            if (d.stanje !== 'sifriram' && d.stanje !== 'desifriram') { traka.style.width = '100%'; location.reload(); return; }
+                            broj.textContent = d.preostalo;
+                            traka.style.width = Math.max(5, Math.round(100 * (1 - d.preostalo / pocetak))) + '%';
+                            korak();
+                        })
+                        .catch(function () { setTimeout(korak, 5000); });
+                }
+                korak();
+            })();
+            </script>
+        <?php else: ?>
+            <div class="mb-2">Šifriranje je <b>isključeno</b>.</div>
+            <ul class="list-unstyled mb-2">
+                <li><?= kopija_lozinka_postavljena() ? '✅' : '⬜' ?> Lozinka kopije je postavljena</li>
+                <li><?php $zk = kopija_zadnje_preuzimanje(); echo $zk && strtotime($zk) >= time() - SIFRIRANJE_KOPIJA_SATI * 3600 ? '✅' : '⬜'; ?> Kompletna kopija preuzeta u zadnja <?= SIFRIRANJE_KOPIJA_SATI ?> h (i spremljena izvan poslužitelja)</li>
+            </ul>
+            <p class="text-muted mb-2">Pri uključivanju se stare kopije na poslužitelju (nešifrirane) brišu i odmah nastaje nova, šifrirana. Prebacivanje traje od nekoliko sekundi do par minuta.</p>
+            <?php if ($sifPrepreka !== ''): ?>
+                <div class="alert alert-secondary py-2 mb-0"><?= e($sifPrepreka) ?></div>
+            <?php else: ?>
+                <form method="post" action="<?= e(url('sustav/kopije')) ?>"><?= csrf() ?><input type="hidden" name="radnja" value="sifriranje_ukljuci">
+                    <button class="btn btn-primary btn-sm" data-potvrda="Uključiti šifriranje podataka članova? Stare kopije na poslužitelju se brišu, nastaje nova šifrirana.">🔐 Uključi šifriranje</button></form>
+            <?php endif; ?>
+        <?php endif; ?>
+        <?php if ($sifStanje !== '' && !kljuc_odvojen() && baza_javni_put() !== null): ?>
+            <div class="alert alert-warning py-2 mt-2 mb-0">Ključ je u mapi <code>podaci</code> unutar javne mape weba – uz bazu. Sigurnije je premjestiti ga izvan weba:
+                u <code>config.php</code> upišite <code>'kljuc' =&gt; '/putanja/izvan/weba/kljuc.php'</code> (program ga sam premjesti). Prije toga preuzmite kompletnu kopiju – u njoj je i ključ.</div>
+        <?php endif; ?>
+        <?php if ($sifStanje === 'ukljuceno'): ?>
+        <details class="mt-2"><summary>Isključi šifriranje</summary>
+            <p class="text-muted my-2">Podaci se ponovno spremaju nešifrirano. Potrebna je lozinka za prijavu<?= dvofaktor_ukljucen() ? ' i <b>2FA kod</b>' : '' ?>; svi administratori dobivaju e-mail.</p>
+            <form method="post" action="<?= e(url('sustav/kopije')) ?>" class="row g-2"><?= csrf() ?><input type="hidden" name="radnja" value="sifriranje_iskljuci">
+                <div class="col-sm-<?= dvofaktor_ukljucen() ? '7' : '12' ?>"><label class="form-label small mb-0">Vaša lozinka za prijavu</label><input name="moja" type="password" class="form-control form-control-sm" required autocomplete="current-password"></div>
+                <?php if (dvofaktor_ukljucen()): ?><div class="col-sm-5"><label class="form-label small mb-0">2FA kod</label><input name="kod2fa" class="form-control form-control-sm" required inputmode="numeric" autocomplete="one-time-code" maxlength="9" placeholder="123456"></div><?php endif; ?>
+                <div class="col-12"><button class="btn btn-outline-danger btn-sm" data-potvrda="Stvarno isključiti šifriranje? Podaci će biti spremljeni nešifrirano.">Isključi šifriranje</button></div>
+            </form></details>
+        <?php endif; ?>
     </div>
 </div>
 <?php if ($smijePreuzeti): ?>

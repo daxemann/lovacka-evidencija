@@ -10,6 +10,11 @@ return [
     // (zaštićena datotekom .htaccess).
     'podaci' => __DIR__ . '/podaci',
 
+    // Ključ za šifriranje (lozinka e-pošte, 2FA, šifrirani podaci članova). Zadano: podaci/kljuc.php – uz bazu.
+    // Sigurnije IZVAN javne mape weba, npr. '/home/korisnik/evidencija-kljuc/kljuc.php' – program ga sam premjesti.
+    // Prije promjene preuzmite kompletnu kopiju (u njoj je i ključ). Bez ključa se šifrirani podaci ne mogu pročitati!
+    // 'kljuc' => '/putanja/izvan/weba/kljuc.php',
+
     // Javna adresa aplikacije (za poveznice u pozivnicama i e-pošti).
     // Može se postaviti i u aplikaciji: Sustav → E-pošta i adresa.
     'javna_adresa' => '',
