@@ -5,7 +5,7 @@
  */
 declare(strict_types=1);
 
-const VERZIJA = '1.79.1';
+const VERZIJA = '1.79.2';
 const KONTAKT_EMAIL = 'daxemann@googlemail.com';
 const PODRSKA_PAYPAL = 'darko.bakic@freenet.de'; // dobrovoljna podrška razvoju (Pomoć i kontakt)
 const PROJEKT_URL = 'https://github.com/daxemann/lovacka-evidencija';
@@ -1126,7 +1126,11 @@ SQL);
 
 function q(string $sql, array $p = []): PDOStatement
 {
-    $st = db()->prepare($sql);
+    $pdo = db();
+    if (sifriranje_sloj()) {
+        $sql = sifriranje_prepisi_sql($sql); // šifriranje uključeno: pisanje ide u pravu tablicu, osjetljivo šifrirano
+    }
+    $st = $pdo->prepare($sql);
     $st->execute($p);
     return $st;
 }
@@ -1146,14 +1150,8 @@ function vrijednost(string $sql, array $p = []): mixed
 }
 function umetni(string $tablica, array $polja): int
 {
-    // šifrirane tablice: izravno u pravu tablicu (preko pogleda bi Id novog retka bio pogrešan)
-    $cilj = '"' . $tablica . '"';
-    if (sifriranje_tablica($tablica)) {
-        $polja = sifriraj_polja($tablica, $polja);
-        $cilj = 'main.' . $cilj;
-    }
     $k = array_keys($polja);
-    $sql = 'INSERT INTO ' . $cilj . ' ("' . implode('","', $k) . '") VALUES (' . implode(',', array_fill(0, count($k), '?')) . ')';
+    $sql = 'INSERT INTO "' . $tablica . '" ("' . implode('","', $k) . '") VALUES (' . implode(',', array_fill(0, count($k), '?')) . ')';
     q($sql, array_values($polja));
     return (int) db()->lastInsertId();
 }

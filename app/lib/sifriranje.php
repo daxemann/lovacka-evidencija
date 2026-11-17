@@ -3,9 +3,10 @@
  * Šifriranje osjetljivih podataka članova u bazi (AES-256-GCM, ključ = tajni_kljuc()).
  *
  * „Prozirni sloj“: dok je šifriranje uključeno, za svaku tablicu iz SIFRIRANE_KOLONE na svakoj vezi nastaje
- * privremeni pogled (TEMP VIEW) istog imena – pri čitanju sam dešifrira, pri pisanju okidači (TRIGGER) šifriraju.
- * Zato pretraga, sortiranje i prikaz u ostatku programa rade bez promjene.
- *  - umetni() u te tablice piše izravno u pravu tablicu (main.) – preko pogleda bi Id novog retka bio pogrešan.
+ * privremeni pogled (TEMP VIEW) istog imena – pri čitanju sam dešifrira. Zato pretraga, sortiranje i prikaz u ostatku
+ * programa rade bez promjene.
+ *  - Pisanje: q() preusmjerava INSERT/UPDATE/DELETE na te tablice u pravu tablicu (main.) i šifrira osjetljive vrijednosti
+ *    (sifriranje_prepisi_sql()). Bez okidača (TRIGGER) – starije verzije SQLite-a (npr. 3.40) u okidačima ne dopuštaju main.
  *  - Pogledi nastaju tek nakon migracija baze (ALTER TABLE ne radi na pogledu).
  *  - Nešifrirane vrijednosti čitaju se normalno → (de)šifriranje ide u obrocima, i prekid je bezopasan.
  * Stanje (Postavke „Sifriranje.Stanje“): '' isključeno · 'sifriram' · 'ukljuceno' · 'desifriram'.
@@ -72,11 +73,21 @@ function desif_vrijednost(mixed $v): mixed
 }
 
 // ---------- Prozirni sloj (na svakoj vezi) ----------
-/** Poziva db() nakon migracija: SQL funkcije, a dok šifriranje nije isključeno i pogledi + okidači. */
+/** Ima li trenutna veza na bazu poglede (tj. treba li q() preusmjeravati pisanje)? Postavlja sifriranje_pripremi(). */
+function sifriranje_sloj(?bool $novo = null): bool
+{
+    static $aktivan = false;
+    if ($novo !== null) {
+        $aktivan = $novo;
+    }
+    return $aktivan;
+}
+/** Poziva db() nakon migracija: SQL funkcije, a dok šifriranje nije isključeno i pogledi za čitanje. */
 function sifriranje_pripremi(PDO $pdo): void
 {
     $pdo->sqliteCreateFunction('sif_e', 'sif_vrijednost', 1);
     $pdo->sqliteCreateFunction('sif_d', 'desif_vrijednost', 1);
+    sifriranje_sloj(false);
     if (sifriranje_stanje($pdo) === '') {
         return;
     }
@@ -86,35 +97,70 @@ function sifriranje_pripremi(PDO $pdo): void
         if (!$stupci) {
             continue;
         }
-        $citaj = $upisi = $vrijednosti = $postavi = [];
-        foreach ($stupci as $s) {
-            $q = '"' . $s . '"';
-            $tajno = in_array($s, $sif, true);
-            $citaj[] = $tajno ? "sif_d($q) AS $q" : $q;
-            $upisi[] = $q;
-            $vrijednosti[] = $tajno ? "sif_e(NEW.$q)" : "NEW.$q";
-            // nepromijenjeni stupac ostaje točno kakav je bio (nema ponovnog šifriranja ni gubitka)
-            $postavi[] = $tajno ? "$q = CASE WHEN NEW.$q IS OLD.$q THEN $q ELSE sif_e(NEW.$q) END" : "$q = NEW.$q";
-        }
+        $citaj = array_map(fn($s) => in_array($s, $sif, true) ? "sif_d(\"$s\") AS \"$s\"" : "\"$s\"", $stupci);
         $pdo->exec("CREATE TEMP VIEW \"$t\" AS SELECT " . implode(', ', $citaj) . " FROM main.\"$t\"");
-        $pdo->exec("CREATE TEMP TRIGGER \"{$t}_sif_ins\" INSTEAD OF INSERT ON \"$t\" BEGIN INSERT INTO main.\"$t\" (" . implode(', ', $upisi) . ') VALUES (' . implode(', ', $vrijednosti) . '); END');
-        $pdo->exec("CREATE TEMP TRIGGER \"{$t}_sif_upd\" INSTEAD OF UPDATE ON \"$t\" BEGIN UPDATE main.\"$t\" SET " . implode(', ', $postavi) . ' WHERE "Id" = OLD."Id"; END');
-        $pdo->exec("CREATE TEMP TRIGGER \"{$t}_sif_del\" INSTEAD OF DELETE ON \"$t\" BEGIN DELETE FROM main.\"$t\" WHERE \"Id\" = OLD.\"Id\"; END");
     }
+    sifriranje_sloj(true);
 }
-/** Ide li umetni() u ovu tablicu izravno u main. (s šifriranjem u PHP-u)? */
-function sifriranje_tablica(string $tablica): bool
+
+/**
+ * Pisanje u šifrirane tablice (poziva q()): cilj → main."Tablica", vrijednosti osjetljivih stupaca → sif_e(?).
+ * Podržava oblike koje program koristi: INSERT INTO T (a,b) VALUES (?,?), UPDATE T SET a=?, b=… WHERE …, DELETE FROM T ….
+ * Nepodržan oblik s osjetljivim stupcem baca iznimku – bolje greška nego nešifriran podatak.
+ */
+function sifriranje_prepisi_sql(string $sql): string
 {
-    return isset(SIFRIRANE_KOLONE[$tablica]) && sifriranje_stanje() !== '';
-}
-function sifriraj_polja(string $tablica, array $polja): array
-{
-    foreach (SIFRIRANE_KOLONE[$tablica] ?? [] as $s) {
-        if (array_key_exists($s, $polja)) {
-            $polja[$s] = sif_vrijednost($polja[$s]);
+    $tablice = implode('|', array_keys(SIFRIRANE_KOLONE));
+    if (!preg_match('/^\s*(UPDATE|DELETE\s+FROM|INSERT(?:\s+OR\s+\w+)?\s+INTO|REPLACE\s+INTO)\s+"?(' . $tablice . ')"?(?=[\s(]|$)/i', $sql, $m)) {
+        return $sql;
+    }
+    [$cijeli, $naredba, $t] = $m;
+    $sql = preg_replace('/"?' . $t . '"?$/', 'main."' . $t . '"', $cijeli, 1) . substr($sql, strlen($cijeli));
+    $sif = SIFRIRANE_KOLONE[$t];
+    $naredba = strtoupper(strtok($naredba, " \t\n"));
+    if ($naredba === 'DELETE') {
+        return $sql;
+    }
+    if ($naredba === 'UPDATE') {
+        // samo SET dio (do WHERE): stupac = ? → stupac = sif_e(?)
+        if (!preg_match('/\bSET\b(.*?)(\bWHERE\b|$)/is', $sql, $s, PREG_OFFSET_CAPTURE)) {
+            return $sql;
+        }
+        $set = $s[1][0];
+        foreach ($sif as $st) {
+            $set = preg_replace('/("?)\b' . $st . '\b\1\s*=\s*\?/', '"' . $st . '" = sif_e(?)', $set, -1, $n);
+            if (preg_match('/(?<![.\w])"?' . $st . '"?\s*=(?!\s*sif_e\(\?\))(?!\s*NULL\b)/i', $set)) {
+                throw new LogicException("Šifriranje: nepodržan UPDATE stupca $t.$st");
+            }
+        }
+        $kraj = $s[2][1] >= 0 && $s[2][0] !== '' ? substr($sql, $s[2][1]) : '';
+        foreach ($sif as $st) { // uvjet po osjetljivom stupcu ne bi radio nad šifratom
+            if ($kraj !== '' && preg_match('/(?<![.\w])"?' . $st . '"?\s*(=|<>|!=|\bLIKE\b|\bIN\b)/i', $kraj)) {
+                throw new LogicException("Šifriranje: WHERE po šifriranom stupcu $t.$st nije podržan");
+            }
+        }
+        return substr($sql, 0, $s[1][1]) . $set . $kraj;
+    }
+    // INSERT / REPLACE: (stupci) VALUES (?, ?, …)
+    if (!preg_match('/\(([^)]*)\)\s*VALUES\s*\(([^)]*)\)\s*$/is', $sql, $v, PREG_OFFSET_CAPTURE)) {
+        foreach ($sif as $st) {
+            if (preg_match('/\b' . $st . '\b/', $sql)) {
+                throw new LogicException("Šifriranje: nepodržan INSERT u $t");
+            }
+        }
+        return $sql;
+    }
+    $stupci = array_map(fn($x) => trim($x, " \t\n\"`"), explode(',', $v[1][0]));
+    $mjesta = array_map('trim', explode(',', $v[2][0]));
+    foreach ($stupci as $i => $st) {
+        if (in_array($st, $sif, true) && isset($mjesta[$i])) {
+            if ($mjesta[$i] !== '?' && strtoupper($mjesta[$i]) !== 'NULL') {
+                throw new LogicException("Šifriranje: nepodržana vrijednost za $t.$st");
+            }
+            $mjesta[$i] = $mjesta[$i] === '?' ? 'sif_e(?)' : $mjesta[$i];
         }
     }
-    return $polja;
+    return substr($sql, 0, $v[2][1]) . implode(', ', $mjesta) . substr($sql, $v[2][1] + strlen($v[2][0]));
 }
 
 // ---------- Prebacivanje u obrocima ----------

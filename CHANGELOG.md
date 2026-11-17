@@ -1,5 +1,8 @@
 # Promjene
 
+## 1.79.2 – 2026-11
+- **🔐 Šifriranje radi i sa starijim SQLite-om**: na nekim poslužiteljima (starija verzija SQLite-a) uključivanje šifriranja javljalo je grešku *„qualified table names are not allowed … within triggers“*. Program više ne koristi okidače (*triggere*) – zapisivanje šifriranih polja sada ide izravno kroz program. Za korisnike se ništa ne mijenja; tko je dobio grešku, može šifriranje ponovno uključiti.
+
 ## 1.79.1 – 2026-11
 - **🔐 Šifriranje – čišćenje starih kopija**: dok je šifriranje uključeno, program jednom dnevno sam briše **nešifrirane kopije baze** u mapi `kopije` na poslužitelju (npr. stare kopije koje je drugi poslužitelj donio sa sobom). Šifrirane kopije i datoteke koje se ne mogu pročitati ostaju. Radi i bez prijave; svako brisanje se bilježi u dnevnik rada.
 
