@@ -53,7 +53,7 @@ function kazalo_stavke(): array
         ['inventura', '📦 Inventura', 'inventura popis stanje manjak visak treba stvarno', P_INVENTURA, 'inventura'],
         // ---------- Članovi i uprava ----------
         ['clanovi', '👥 Članovi', 'clanovi clan popis novi clan arhiva sekcija uredi clana pozivnica', P_CLANOVI_CITAJ, null],
-        ['clanovi', '👥 Članovi → član → Funkcije', 'funkcija funkcije lovnik tajnik predsjednik godisnje obveze', P_CLANOVI_CITAJ, null],
+        ['clanovi', '👥 Članovi → član → Funkcije', 'funkcija funkcije lovnik tajnik predsjednik godisnje obveze bodovi za funkciju dvije funkcije dvostruki bodovi samo jednom', P_CLANOVI_CITAJ, null],
         ['clanovi', '👥 Članovi → član → Lovački psi', 'pas psi bodovi za psa ukljuci bodove ispit', P_CLANOVI_CITAJ, 'psi'],
         ['clanovi', '👥 Članovi → član → Pristup i uloge', 'pristup racun uloga prava korisnik lozinka reset', P_SUSTAV, null],
         ['clanarina', '💶 Članarina', 'clanarina uplata rata dug placeno zaduzenje', P_CLANARINA_CITAJ, 'clanarina'],

@@ -123,6 +123,17 @@ if (je_post()) {
             $treba(P_CLANOVI_UREDI);
             q('DELETE FROM ClanFunkcije WHERE Id=? AND ClanId=?', [(int) $_POST['fid'], $id]);
             $natrag('funkcije');
+        case 'funkcija-bodovi':
+            // 🏅 bodovi za ovu funkciju da / ne (npr. dvije slične funkcije – bodovi samo jednom); već upisani bodovi ostaju
+            $treba(P_CLANOVI_UREDI);
+            $cf = red('SELECT cf.*, f.Naziv FROM ClanFunkcije cf JOIN Funkcije f ON f.Id=cf.FunkcijaId WHERE cf.Id=? AND cf.ClanId=?', [(int) $_POST['fid'], $id]);
+            if ($cf) {
+                $bez = !empty($_POST['bez']) ? 1 : 0;
+                azuriraj('ClanFunkcije', (int) $cf['Id'], ['BezBodova' => $bez]);
+                dnevnik($bez ? 'Bodovi za funkciju isključeni' : 'Bodovi za funkciju uključeni', 'Clan', $id, puno_ime($clan) . ': ' . $cf['Naziv']);
+                poruka(e($cf['Naziv'] . ': ' . ($bez ? 'bez bodova od sljedećeg upisa – već upisani bodovi ostaju.' : 'bodovi ponovno uključeni.')));
+            }
+            $natrag('funkcije');
         // ---------- godišnje obveze (bodovi 1× godišnje) ----------
         case 'obveza-dodaj':
         case 'obveza-ukljuci':

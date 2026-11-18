@@ -98,7 +98,7 @@ function upisi_bodove_funkcije(array $f, int $g, ?array $k = null): int
         return 0;
     }
     $clanovi = redovi('SELECT DISTINCT cf.ClanId FROM ClanFunkcije cf JOIN Clanovi c ON c.Id=cf.ClanId
-        WHERE cf.FunkcijaId=? AND c.Status=0 AND (cf.Od IS NULL OR substr(cf.Od,1,10)<=?) AND (cf.Do IS NULL OR substr(cf.Do,1,10)>=?)
+        WHERE cf.FunkcijaId=? AND c.Status=0 AND cf.BezBodova=0 AND (cf.Od IS NULL OR substr(cf.Od,1,10)<=?) AND (cf.Do IS NULL OR substr(cf.Do,1,10)>=?)
           AND NOT EXISTS (SELECT 1 FROM FunkcijaBodovi b WHERE b.ClanId=cf.ClanId AND b.FunkcijaId=cf.FunkcijaId AND b.Godina=?)',
         [(int) $f['Id'], $datum, $datum, $g]);
     $n = 0;

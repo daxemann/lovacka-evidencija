@@ -1,5 +1,9 @@
 # Promjene
 
+## 1.82.0 – 2026-11
+- **🏅 Bodovi za funkciju – po članu isključivo**: na kartici člana → Funkcije kod svake funkcije s bodovima kvačica **„🏅 bodovi“** (zadano uključeno, kao dosad). Ima li član dvije slične funkcije, a u udruzi bodovi vrijede samo jednom, kod suvišne se kvačica makne – od sljedećeg upisa za nju nema bodova, **već upisani bodovi ostaju**. Mijenja tko ima pravo „Članovi – uređivanje“; svaka promjena u dnevniku rada.
+- **Žuto upozorenje** na kartici člana kad ima više aktivnih funkcija s bodovima – da se ne plaća dvaput nehotice.
+
 ## 1.81.1 – 2026-11
 - **🦌 Ručni upis bodova radi i bez modula**: polja *„Oduzmi lovcu: staro … · novo …“* u obrascu **Upis odstrela** sada se vide i kad je modul „Bodovi za odstrel“ **isključen** (prazno = bodovi se ne mijenjaju). Modul uključuje samo **automatski popis iznosa** po vrsti i kategoriji (Sustav → Bodovi). Kod izmjene odstrela već oduzeti bodovi stoje u poljima. Kvačica „Minus prenesi u novu godinu“ dostupna je i bez modula.
 

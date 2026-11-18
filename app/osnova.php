@@ -5,7 +5,7 @@
  */
 declare(strict_types=1);
 
-const VERZIJA = '1.81.1';
+const VERZIJA = '1.82.0';
 const KONTAKT_EMAIL = 'daxemann@googlemail.com';
 const PODRSKA_PAYPAL = 'darko.bakic@freenet.de'; // dobrovoljna podrška razvoju (Pomoć i kontakt)
 const PROJEKT_URL = 'https://github.com/daxemann/lovacka-evidencija';
@@ -193,7 +193,7 @@ function db(bool $novo = false): PDO
  * Dodatne tablice PHP verzije (PRAGMA user_version). .NET verzija ih ne poznaje i zanemaruje,
  * pa baza i dalje radi u oba smjera.
  */
-const SHEMA_PHP = 52;
+const SHEMA_PHP = 53;
 function nadogradi_bazu(PDO $pdo): void
 {
     if ((int) $pdo->query('PRAGMA user_version')->fetchColumn() >= SHEMA_PHP) {
@@ -1134,6 +1134,10 @@ CREATE TABLE IF NOT EXISTS "OdstrelBodovi" (
 CREATE INDEX IF NOT EXISTS "IX_OdstrelBodovi_Akcija" ON "OdstrelBodovi" ("AkcijaId");
 INSERT OR IGNORE INTO "Postavke" ("Kljuc", "Vrijednost") VALUES ('Modul.bodovi_odstrel', '0');
 SQL);
+    }
+    if ($v < 53) {
+        // bodovi za funkciju: po članu i funkciji isključivo (npr. dvije slične funkcije, a bodovi samo jednom)
+        $pdo->exec('ALTER TABLE "ClanFunkcije" ADD COLUMN "BezBodova" INTEGER NOT NULL DEFAULT 0');
     }
 }
 

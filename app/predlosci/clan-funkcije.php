@@ -1,19 +1,32 @@
 <?php
 /** Kartica Funkcije. Varijable iz uredi.php: $id, $clan */
 $moze = $uredi; // Članovi – upis i uređivanje za sekciju člana
-$fun = redovi('SELECT cf.*, f.Naziv, f.OslobodjenClanarine, s.Naziv AS Sekcija FROM ClanFunkcije cf JOIN Funkcije f ON f.Id=cf.FunkcijaId
+$fun = redovi('SELECT cf.*, f.Naziv, f.OslobodjenClanarine, f.Bodovi AS FBodovi, f.BodoviDatum, s.Naziv AS Sekcija FROM ClanFunkcije cf JOIN Funkcije f ON f.Id=cf.FunkcijaId
                LEFT JOIN Sekcije s ON s.Id=cf.SekcijaId WHERE cf.ClanId=? ORDER BY (cf.Do IS NOT NULL), f.Redoslijed, cf.Od DESC', [$id]);
 $akcija = fn(string $r, int $fid, string $tekst, string $klasa, string $potvrda = '') =>
     '<form method="post" class="d-inline" action="' . e(url('clanovi/uredi', ['id' => $id])) . '">' . csrf() . '<input type="hidden" name="radnja" value="' . $r . '"><input type="hidden" name="fid" value="' . $fid . '">'
     . '<button class="btn btn-sm ' . $klasa . '"' . ($potvrda ? ' data-potvrda="' . e($potvrda) . '"' : '') . '>' . $tekst . '</button></form>';
+// 🏅 funkcije koje nose bodove; više aktivnih s bodovima → upozorenje (možda bi trebalo samo jednom)
+$imaBodove = fn(array $f) => !empty($f['BodoviDatum']) && (float) ($f['FBodovi'] ?? 0) > 0;
+$sBodovima = array_unique(array_map(fn($f) => (int) $f['FunkcijaId'], array_filter($fun, fn($f) => !$f['Do'] && !$f['BezBodova'] && $imaBodove($f))));
 ?>
+<?php if (count($sBodovima) > 1): ?>
+<div class="alert alert-warning py-2 small">🏅 <b><?= count($sBodovima) ?> funkcije s bodovima</b> – član dobiva bodove za svaku. Ako u vašoj udruzi vrijede samo jednom, kod suvišne funkcije maknite kvačicu „🏅 bodovi“.</div>
+<?php endif; ?>
 <div class="table-responsive">
 <table class="table align-middle">
     <thead><tr><th>Funkcija</th><th>Jedinica / sekcija</th><th>Od</th><th>Do</th><th></th></tr></thead>
     <tbody>
     <?php foreach ($fun as $f): ?>
         <tr class="<?= $f['Do'] ? 'text-muted' : '' ?>">
-            <td><?= e($f['Naziv']) ?><?php if ($f['OslobodjenClanarine']): ?> <span class="badge bg-info text-dark ms-1">ne plaća članarinu</span><?php endif; ?></td>
+            <td><?= e($f['Naziv']) ?><?php if ($f['OslobodjenClanarine']): ?> <span class="badge bg-info text-dark ms-1">ne plaća članarinu</span><?php endif; ?>
+                <?php if ($imaBodove($f)): ?><div class="small">
+                    <?php if ($moze): ?><form method="post" class="d-inline" action="<?= e(url('clanovi/uredi', ['id' => $id])) ?>"><?= csrf() ?><input type="hidden" name="radnja" value="funkcija-bodovi"><input type="hidden" name="fid" value="<?= (int) $f['Id'] ?>">
+                        <input type="hidden" name="bez" value="<?= $f['BezBodova'] ? '' : '1' ?>">
+                        <label class="d-inline-flex align-items-center gap-1 mb-0 text-nowrap" title="Bodovi za ovu funkciju (<?= e(broj((float) $f['FBodovi'], 2)) ?> b. svake godine <?= e(bodovi_dan_prikaz($f['BodoviDatum'])) ?>)">
+                            <input type="checkbox" class="form-check-input m-0"<?= chk(!$f['BezBodova']) ?> onchange="this.form.submit()"> 🏅 bodovi <span class="text-muted">· <?= e(broj((float) $f['FBodovi'], 2)) ?> b.</span></label></form>
+                    <?php else: ?><span class="<?= $f['BezBodova'] ? 'text-muted' : '' ?>">🏅 <?= $f['BezBodova'] ? 'bez bodova' : e(broj((float) $f['FBodovi'], 2)) . ' b.' ?></span><?php endif; ?>
+                </div><?php endif; ?></td>
             <td><?= e($f['Sekcija'] ?? '') ?></td>
             <td><?= e(datum($f['Od'])) ?></td>
             <td><?= e(datum($f['Do'])) ?></td>
