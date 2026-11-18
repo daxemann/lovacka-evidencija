@@ -5,7 +5,7 @@
  */
 declare(strict_types=1);
 
-const VERZIJA = '1.79.2';
+const VERZIJA = '1.80.0';
 const KONTAKT_EMAIL = 'daxemann@googlemail.com';
 const PODRSKA_PAYPAL = 'darko.bakic@freenet.de'; // dobrovoljna podrška razvoju (Pomoć i kontakt)
 const PROJEKT_URL = 'https://github.com/daxemann/lovacka-evidencija';
@@ -193,7 +193,7 @@ function db(bool $novo = false): PDO
  * Dodatne tablice PHP verzije (PRAGMA user_version). .NET verzija ih ne poznaje i zanemaruje,
  * pa baza i dalje radi u oba smjera.
  */
-const SHEMA_PHP = 51;
+const SHEMA_PHP = 52;
 function nadogradi_bazu(PDO $pdo): void
 {
     if ((int) $pdo->query('PRAGMA user_version')->fetchColumn() >= SHEMA_PHP) {
@@ -1120,6 +1120,19 @@ CREATE TABLE IF NOT EXISTS "ObvezaBodovi" (
     "AkcijaId" INTEGER NULL,
     PRIMARY KEY ("ObvezaClanId", "Godina")
 );
+SQL);
+    }
+    if ($v < 52) {
+        // bodovi za odstrel: veza odstrel ↔ radna akcija s oduzetim bodovima (staro / novo); modul je zadano isključen
+        $pdo->exec(<<<'SQL'
+CREATE TABLE IF NOT EXISTS "OdstrelBodovi" (
+    "OdstrelId" INTEGER NOT NULL PRIMARY KEY REFERENCES "Odstrel" ("Id") ON DELETE CASCADE,
+    "AkcijaId" INTEGER NULL,
+    "Staro" TEXT NOT NULL DEFAULT '0',
+    "Novo" TEXT NOT NULL DEFAULT '0'
+);
+CREATE INDEX IF NOT EXISTS "IX_OdstrelBodovi_Akcija" ON "OdstrelBodovi" ("AkcijaId");
+INSERT OR IGNORE INTO "Postavke" ("Kljuc", "Vrijednost") VALUES ('Modul.bodovi_odstrel', '0');
 SQL);
     }
 }

@@ -10,8 +10,8 @@ const RESET_SKUPINE = [
     'loviste' => ['🗺️', 'Lovište – zauzeća i lovački dnevnik', 'zauzimanja čeka, lovački dnevnik, obavijesti lovočuvarima', ['LovackiDnevnik', 'RevirZauzeca', 'RevirObavijesti', 'RevirProcitano'], true,
         'lovne naprave, granice, vrste i idealni vjetar ostaju'],
     'kvarovi' => ['🔧', 'Kvarovi na napravama', 'sve prijave kvarova', ['RevirKvarovi'], true, ''],
-    'akcije' => ['🔨', 'Radne akcije i bodovi', 'sve radne akcije, bodovi (i bodovi za pse)', ['PsiBodovi', 'FunkcijaBodovi', 'ObvezaBodovi', 'BodoviPrijenos', 'RadneAkcije'], true, 'vrste akcija, bodovi i dodatna oprema u postavkama ostaju'],
-    'odstrel' => ['🦌', 'Odstrel i plan odstrela', 'svi upisi odstrela, planovi i zaliha markica', ['OdstrelMarkice', 'Odstrel', 'OdstrelPlan'], true, ''],
+    'akcije' => ['🔨', 'Radne akcije i bodovi', 'sve radne akcije, bodovi (i bodovi za pse)', ['PsiBodovi', 'FunkcijaBodovi', 'ObvezaBodovi', 'BodoviPrijenos', 'OdstrelBodovi', 'RadneAkcije'], true, 'vrste akcija, bodovi i dodatna oprema u postavkama ostaju'],
+    'odstrel' => ['🦌', 'Odstrel i plan odstrela', 'svi upisi odstrela, planovi i zaliha markica', ['OdstrelBodovi', 'OdstrelMarkice', 'Odstrel', 'OdstrelPlan'], true, 'oduzeti bodovi za odstrel se vraćaju'],
     'skupni' => ['🎯', 'Skupni lov', 'lovovi, popisi sudionika, dodatni zapisnici (brojevi lova kreću od 0001)', ['GrupniLovZapisnik', 'GrupniLovPopis', 'GrupniLovSudionici', 'GrupniLov'], true, ''],
     'kalendar' => ['📅', 'Kalendar', 'termini, odgovori „Dolazim“ i pozvani gosti', ['DogadjajGosti', 'DogadjajOdgovori', 'DogadjajSekcije', 'Dogadjaji'], true, 'vrste termina ostaju'],
     'domovi' => ['🏡', 'Rezervacije lovačkih domova', 'sve rezervacije i zahtjevi', ['DomRezervacije'], true, 'domovi ostaju'],
@@ -21,7 +21,7 @@ const RESET_SKUPINE = [
     'dnevnik' => ['🧾', 'Dnevnik promjena', 'zapis tko je što mijenjao (ostaje samo zapis o ovom resetu)', ['Dnevnik'], false, ''],
 ];
 // pomoćne tablice (oznake pročitanog, veze) – brišu se, ali se ne broje kao upisi
-const RESET_POMOCNE = ['RevirProcitano', 'DezSkeneri', 'PsiBodovi', 'FunkcijaBodovi', 'ObvezaBodovi', 'BodoviPrijenos', 'GrupniLovSudionici', 'DogadjajSekcije', 'SkriveniRazgovori', 'ObavijestPrimatelji', 'OglasSlike', 'ClanarinaRate'];
+const RESET_POMOCNE = ['RevirProcitano', 'DezSkeneri', 'PsiBodovi', 'FunkcijaBodovi', 'ObvezaBodovi', 'BodoviPrijenos', 'OdstrelBodovi', 'GrupniLovSudionici', 'DogadjajSekcije', 'SkriveniRazgovori', 'ObavijestPrimatelji', 'OglasSlike', 'ClanarinaRate'];
 if (je_post()) {
     if (je_demo()) {
         poruka('U demo verziji reset nije moguć (sve se ionako vraća svake noći).', 'warning');
@@ -40,6 +40,9 @@ if (je_post()) {
         $kopija = napravi_kopiju('prije-reseta');
         $obrisano = [];
         transakcija(function () use ($odabrano, &$obrisano) {
+            if (in_array('odstrel', $odabrano, true) && vrijednost("SELECT 1 FROM sqlite_master WHERE type='table' AND name='OdstrelBodovi'")) {
+                q('DELETE FROM RadneAkcije WHERE Id IN (SELECT AkcijaId FROM OdstrelBodovi)'); // oduzeti bodovi za odstrel se vraćaju
+            }
             foreach ($odabrano as $s) {
                 $n = 0;
                 foreach (RESET_SKUPINE[$s][3] as $t) {

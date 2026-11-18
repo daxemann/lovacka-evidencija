@@ -13,7 +13,8 @@ foreach ($akcije as $a) {
 ?>
 <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
     <div>Bodovi u tekućoj <?= bodovna_godina_rijec() ?> (<?= $lg->format('d.m.Y.') ?> – <?= $kraj->format('d.m.Y.') ?>): <b class="fs-5"><?= broj($bodovi, 2) ?></b>
-        <a class="small ms-2 no-print" href="<?= e(url('akcije/bodovi', ['clan' => $id])) ?>">📚 po godinama</a></div>
+        <a class="small ms-2 no-print" href="<?= e(url('akcije/bodovi', ['clan' => $id])) ?>">📚 po godinama</a>
+        <?php $stanje = bodovi_stanje((int) $id, bodovna_godina()); if (abs($stanje['staro']) > 0.001 || bodovi_odstrel_ukljuceno()): ?><div class="small"><?= bodovi_stanje_html($stanje) ?></div><?php endif; ?></div>
     <?php if (moze_clana(P_AKCIJE_UNOS, $clan) || moze_clana(P_AKCIJE_ODOBRI, $clan)): ?><a href="<?= e(url('akcije/nova', ['clan' => $id])) ?>" class="btn btn-sm btn-primary ms-auto no-print">+ Upiši radnu akciju</a><?php endif; ?>
 </div>
 <div class="table-responsive">
@@ -23,7 +24,7 @@ foreach ($akcije as $a) {
     <?php foreach ($akcije as $a): ?>
         <tr>
             <td class="text-nowrap"><?= e(datum($a['Datum'])) ?></td>
-            <td><?= e($a['VrstaNaziv'] ?? $a['VrstaSlobodno'] ?? '—') ?></td>
+            <td><?= e($a['VrstaNaziv'] ?? $a['VrstaSlobodno'] ?? '—') ?><?= bodovi_oznaka_html($a) ?></td>
             <td><?= e(broj($a['Sati'])) ?></td>
             <td class="small"><?= !empty($a['Oprema']) ? '<div>' . oprema_html($a['Oprema']) . '</div>' : '' ?><?= e($a['Opis']) ?><?php if ((int) $a['Status'] === AKCIJA_ODBIJENO && $a['RazlogOdbijanja']): ?><div class="text-danger">Razlog: <?= e($a['RazlogOdbijanja']) ?></div><?php endif; ?></td>
             <td><?= status_akcije_oznaka((int) $a['Status']) ?></td>

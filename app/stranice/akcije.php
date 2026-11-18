@@ -118,7 +118,9 @@ if (je_post() && $moze) {
         }
     } elseif (isset($_POST['vrati'])) {
         $a = $akcija((int) $_POST['vrati']);
-        if ($a) {
+        if ($a && je_akcija_odstrela((int) $a['Id'])) {
+            poruka('Bodovi oduzeti za odstrel mijenjaju se samo preko upisa odstrela.', 'warning');
+        } elseif ($a) {
             azuriraj('RadneAkcije', (int) $a['Id'], ['Status' => AKCIJA_CEKA, 'OdlucioKorisnikId' => null, 'OdlucioIme' => null, 'Odluceno' => null]);
             dnevnik('Radna akcija vraćena na čekanje', 'RadnaAkcija', (int) $a['Id'], prezime_ime($a));
         }
@@ -192,7 +194,7 @@ ob_start(); ?>
                         <?php endforeach; ?>
                     </select>
                 <?php else: ?>
-                    <?= e($a['VrstaNaziv'] ?? $a['VrstaSlobodno'] ?? '—') ?><?php if ($vlastita && $a['VrstaSlobodno']): ?><span class="badge bg-light text-dark border ms-1">vlastita</span><?php endif; ?>
+                    <?= e($a['VrstaNaziv'] ?? $a['VrstaSlobodno'] ?? '—') ?><?php if ($oznaka = bodovi_oznaka_html($a)): ?><?= $oznaka ?><?php elseif ($vlastita && $a['VrstaSlobodno']): ?><span class="badge bg-light text-dark border ms-1">vlastita</span><?php endif; ?>
                 <?php endif; ?>
             </td>
             <td><?= e(broj($a['Sati'])) ?></td>
@@ -218,7 +220,7 @@ ob_start(); ?>
                         <input name="razlog[<?= $aid ?>]" class="form-control" placeholder="Razlog odbijanja">
                         <button class="btn btn-danger" name="odbij" value="<?= $aid ?>">Potvrdi</button>
                     </div>
-                <?php elseif ($moze): ?>
+                <?php elseif ($moze && !str_starts_with((string) $a['VrstaSlobodno'], '🦌 Odstrel')): ?>
                     <button class="btn btn-sm btn-link" name="vrati" value="<?= $aid ?>">Vrati na čekanje</button>
                 <?php endif; ?>
             </td>

@@ -63,7 +63,10 @@ Svaka lovna jedinica vidi samo sebe. Uprava vidi sve.
 Jednokratno ili 1–12 rata s vlastitim iznosom i datumom. Član vidi samo svoju uplatnicu – ispis ili kod na mobitelu za banku. Diskretan podsjetnik kad rata dospije.
 
 #### 🛠️ Radne akcije i bodovi
-Voditelj upiše akciju jednom za sve, članovi prijavljuju sami s fotografijom, uprava odobrava. Izvještaji po lovnoj godini (1.4.–31.3.).
+Voditelj upiše akciju jednom za sve, članovi prijavljuju sami s fotografijom, uprava odobrava. Izvještaji po lovnoj godini (1.4.–31.3.). Prijenos u novu godinu (staro / novo), po želji **oduzimanje bodova za odstrel** (npr. jelen 300 starih + 300 novih).
+
+#### 🦌 Odstrel
+Upis s markicom, plan odstrela, zaliha markica, PDF. **Po lovcu:** tko je što odstrijelio – za dan, mjesec ili lovnu godinu.
 
 #### 🐕 Lovački psi
 Pas uz lovca, bodovi za psa.

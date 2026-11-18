@@ -1,5 +1,12 @@
 # Promjene
 
+## 1.80.0 – 2026-11
+- **🦌 Bodovi za odstrel** (novi modul, zadano **isključen** – Sustav → Moduli): pri upisu odstrela lovcu se bodovi **oduzimaju automatski**. U Sustav → Bodovi po vrsti i kategoriji upišete koliko se oduzima iz **starih** (prenesenih) i koliko iz **novih** bodova – npr. jelen: 300 starih + 300 novih. Bez podjele sve upišete u „novo“.
+- Ako lovac nema dovoljno, bodovi idu **u minus**, a upisivač vidi upozorenje – odstrel se uvijek sprema. Izmjena odstrela (vrsta, kategorija, lovac) odmah ispravlja bodove, brisanje ih vraća. Gost i odstrel upisan prije uključivanja – bez oduzimanja. Svako oduzimanje u dnevniku rada; ručno se ne može vratiti na čekanje.
+- **Prijenos**: oduzeti bodovi se ne prenose, ostatak po pravilu prijenosa. Nova kvačica *„Minus (dug) prenesi u novu godinu“* (zadano: novi početak od 0).
+- **Staro / novo**: u Moje radne akcije i na kartici člana *„Staro: 300 · Novo: 250 · Ukupno: 550“* – staro crveno. Prenesene stavke imaju oznaku **staro**, oduzete **🦌 odstrel**. Arhiva bodova (i PDF) sa stupcima Staro / Funkcije / Radne akcije / Odstrel / Novo / Ukupno.
+- **🦌 Odstrel → 👤 Po lovcu**: tko je što odstrijelio – broj po vrstama, ukupno i oduzeti bodovi, za **dan, mjesec ili lovnu godinu** (◀ ▶), po sekcijama, pretraga i sortiranje po imenu ili broju, klik na broj otvara upise, PDF. Na mobitelu samo ime, ukupno i bodovi.
+
 ## 1.79.2 – 2026-11
 - **🔐 Šifriranje radi i sa starijim SQLite-om**: na nekim poslužiteljima (starija verzija SQLite-a) uključivanje šifriranja javljalo je grešku *„qualified table names are not allowed … within triggers“*. Program više ne koristi okidače (*triggere*) – zapisivanje šifriranih polja sada ide izravno kroz program. Za korisnike se ništa ne mijenja; tko je dobio grešku, može šifriranje ponovno uključiti.
 

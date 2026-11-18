@@ -169,7 +169,9 @@ ob_start(); ?>
     </div>
 </div>
 <p class="small text-muted">Ti upisuješ što si napravio – bodove dodjeljuje i akciju odobrava administrator.</p>
-<p class="mb-2">Bodovi u tekućoj <?= bodovna_godina_rijec() ?>: <b class="fs-5"><?= e(broj($bodoviLg, 2)) ?></b> <a class="small ms-2" href="<?= e(url('akcije/bodovi')) ?>">📚 po godinama</a></p>
+<?php $stanje = bodovi_stanje((int) $cid, bodovna_godina()); ?>
+<p class="mb-2">Bodovi u tekućoj <?= bodovna_godina_rijec() ?>: <b class="fs-5"><?= e(broj($bodoviLg, 2)) ?></b> <a class="small ms-2" href="<?= e(url('akcije/bodovi')) ?>">📚 po godinama</a>
+    <?php if (abs($stanje['staro']) > 0.001 || bodovi_odstrel_ukljuceno()): ?><br><span class="small"><?= bodovi_stanje_html($stanje) ?></span><?php endif; ?></p>
 <?php foreach ($lista as $a): ?>
     <div class="card mb-2"><div class="card-body py-2">
         <div class="d-flex align-items-center gap-2 flex-wrap">
@@ -178,7 +180,7 @@ ob_start(); ?>
             <span class="ms-auto d-flex gap-1 align-items-center"><?= status_akcije_oznaka((int) $a['Status']) ?>
                 <?php if ($a['Bodovi'] !== null): ?><span class="badge bg-light <?= (int) $a['Status'] === AKCIJA_ODOBRENO ? 'text-dark' : 'text-muted' ?> border"<?= (int) $a['Status'] === AKCIJA_CEKA ? ' title="predloženo – vrijedi nakon odobrenja"' : '' ?>><?= e(broj($a['Bodovi'], 2)) ?> b.<?= (int) $a['Status'] === AKCIJA_CEKA ? ' ?' : '' ?></span><?php endif; ?></span>
         </div>
-        <div class="fw-semibold"><?= e($a['VrstaNaziv'] ?? $a['VrstaSlobodno'] ?? '—') ?><?php if ($a['PasIme'] && !str_contains((string) $a['Opis'], (string) $a['PasIme'])): ?> <span class="fw-normal small">🐕 <?= e($a['PasIme']) ?></span><?php endif; ?></div>
+        <div class="fw-semibold"><?= e($a['VrstaNaziv'] ?? $a['VrstaSlobodno'] ?? '—') ?><?= bodovi_oznaka_html($a) ?><?php if ($a['PasIme'] && !str_contains((string) $a['Opis'], (string) $a['PasIme'])): ?> <span class="fw-normal small">🐕 <?= e($a['PasIme']) ?></span><?php endif; ?></div>
         <?php if ($a['Oprema']): ?><div class="small mt-1"><?= oprema_html($a['Oprema']) ?></div><?php endif; ?>
         <?php if ($a['Opis']): ?><div class="small mt-1"><?= e($a['Opis']) ?></div><?php endif; ?>
         <?php if ($a['FotoDatoteka']): ?><div class="small mt-1"><a href="<?= e(foto_url($a['FotoDatoteka'])) ?>" target="_blank">fotografija</a></div><?php endif; ?>

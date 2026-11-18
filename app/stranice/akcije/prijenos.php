@@ -34,7 +34,7 @@ $clanovi = redovi('SELECT c.Id, c.Ime, c.Prezime, s.Naziv AS Sekcija FROM Clanov
 ob_start(); ?>
 <h1 class="h3 mb-1">↪️ Prijenos bodova</h1>
 <p class="text-muted" style="max-width:820px">Iz <b><?= e(bodovna_godina_naziv($g - 1)) ?></b> u <b><?= e(bodovna_godina_naziv($g)) ?></b> (upisuje se na <?= e(datum(bodovna_godina_raspon($g)[0])) ?>, odmah odobreno).
-    Pravilo: <b><?= e(BODOVI_PRIJENOS[$pr['nacin']]) ?><?= in_array($pr['nacin'], ['max', 'fiksno'], true) ? ' ' . e(broj($pr['broj'], 2)) : '' ?></b>
+    Pravilo: <b><?= e(BODOVI_PRIJENOS[$pr['nacin']]) ?><?= in_array($pr['nacin'], ['max', 'fiksno'], true) ? ' ' . e(broj($pr['broj'], 2)) : '' ?><?= $pr['minus'] ? ', minus se prenosi' : '' ?></b>
     – <a href="<?= e(url('sustav/bodovi')) ?>">promijeni</a>. Prijenos se može ponoviti – stari iznos se zamijeni.</p>
 <form method="get" action="<?= e(url()) ?>" class="d-flex flex-wrap gap-2 mb-3"><input type="hidden" name="p" value="akcije/prijenos">
     <select name="g" class="form-select form-select-sm w-auto" onchange="this.form.submit()">
@@ -55,7 +55,7 @@ ob_start(); ?>
             <td class="d-none d-md-table-cell small"><?= e($c['Sekcija'] ?? '') ?></td>
             <td class="text-end"><?= e(broj($u, 2)) ?></td>
             <td class="text-end text-muted"><?= e(broj($prij, 2)) ?></td>
-            <td><input name="b[<?= $cid ?>]" type="number" step="0.5" min="0" inputmode="decimal" class="form-control form-control-sm" value="<?= e((string) (float) ($p ? $p['Bodovi'] : $prij)) ?>"
+            <td><input name="b[<?= $cid ?>]" type="number" step="0.5"<?= $pr['minus'] ? '' : ' min="0"' ?> inputmode="decimal" class="form-control form-control-sm" value="<?= e((string) (float) ($p ? $p['Bodovi'] : $prij)) ?>"
                        oninput="this.closest('tr').querySelector('.pr-o').checked=true"></td>
             <td class="small"><?= $p ? '<span class="text-success">✓ ' . e(broj((float) $p['Bodovi'], 2)) . '</span>' : '<span class="text-muted">—</span>' ?></td></tr>
     <?php endforeach; ?>

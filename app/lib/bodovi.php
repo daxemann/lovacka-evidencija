@@ -132,14 +132,18 @@ function funkcija_dospjela(array $f, int $g): ?string
 function bodovi_prijenos_pravilo(): array
 {
     $m = (string) postavka('Bodovi.Prijenos', 'nista');
-    return ['nacin' => isset(BODOVI_PRIJENOS[$m]) ? $m : 'nista', 'broj' => (float) (postavka('Bodovi.PrijenosBroj', '0') ?: 0), 'auto' => postavka('Bodovi.PrijenosAuto') === '1'];
+    return ['nacin' => isset(BODOVI_PRIJENOS[$m]) ? $m : 'nista', 'broj' => (float) (postavka('Bodovi.PrijenosBroj', '0') ?: 0), 'auto' => postavka('Bodovi.PrijenosAuto') === '1',
+        'minus' => postavka('Bodovi.PrijenosMinus') === '1'];
 }
 
-/** Prijedlog prijenosa iz ukupnih bodova prošle godine po pravilu. */
+/** Prijedlog prijenosa iz ukupnih bodova prošle godine po pravilu. Minus (dug) se prenosi samo ako je tako postavljeno. */
 function bodovi_prijenos_prijedlog(float $ukupno, ?array $pr = null): float
 {
     $pr ??= bodovi_prijenos_pravilo();
-    $u = max(0.0, $ukupno);
+    if ($ukupno < 0) {
+        return !empty($pr['minus']) ? round($ukupno, 2) : 0.0;
+    }
+    $u = $ukupno;
     return match ($pr['nacin']) {
         'sve' => $u,
         'max' => min($u, max(0.0, $pr['broj'])),
@@ -155,17 +159,17 @@ function bodovi_godine(int $g): array
     return array_map('floatval', array_column(redovi('SELECT ClanId, SUM(CAST(Bodovi AS REAL)) AS B FROM RadneAkcije WHERE Status=1 AND substr(Datum,1,10) BETWEEN ? AND ? GROUP BY ClanId', [$od, $do]), 'B', 'ClanId'));
 }
 
-/** Upisuje / mijenja prijenos člana u bodovnu godinu $g (0 = bez bodova, ali označeno kao preneseno). */
+/** Upisuje / mijenja prijenos člana u bodovnu godinu $g (0 = bez bodova, ali označeno kao preneseno; minus samo ako je dopušten). */
 function bodovi_prenesi(int $clanId, int $g, float $bodovi, ?array $k = null): void
 {
-    $bodovi = max(0.0, round($bodovi, 2));
+    $bodovi = round(bodovi_prijenos_pravilo()['minus'] ? $bodovi : max(0.0, $bodovi), 2);
     $postoji = red('SELECT * FROM BodoviPrijenos WHERE ClanId=? AND Godina=?', [$clanId, $g]);
     $aid = $postoji['AkcijaId'] ?? null;
     if ($aid && !vrijednost('SELECT 1 FROM RadneAkcije WHERE Id=?', [(int) $aid])) {
         $aid = null;
     }
-    if ($bodovi > 0) {
-        $polja = ['Bodovi' => dec($bodovi), 'Opis' => 'Preneseni bodovi iz ' . bodovna_godina_naziv($g - 1), 'Odluceno' => sada(), 'OdlucioIme' => $k['Naziv'] ?? 'automatski'];
+    if ($bodovi != 0) {
+        $polja = ['Bodovi' => dec($bodovi), 'Opis' => ($bodovi < 0 ? 'Preneseni minus iz ' : 'Preneseni bodovi iz ') . bodovna_godina_naziv($g - 1), 'Odluceno' => sada(), 'OdlucioIme' => $k['Naziv'] ?? 'automatski'];
         if ($aid) {
             azuriraj('RadneAkcije', (int) $aid, $polja);
         } else {
@@ -237,24 +241,161 @@ function bodovi_dnevno(): void
 }
 
 /**
- * Arhiva: bodovi po članu za bodovnu godinu $g, razdvojeno na preneseno / funkcije / radne akcije.
- * $uvjet = dodatni SQL uvjet za člana (alias c). Vraća retke sa stupcima Preneseno, Funkcije, Akcije, Ukupno.
+ * Arhiva: bodovi po članu za bodovnu godinu $g, razdvojeno na preneseno / funkcije / radne akcije / oduzeto za odstrel.
+ * $uvjet = dodatni SQL uvjet za člana (alias c). Vraća retke sa stupcima Preneseno, Funkcije, Akcije, Odstrel, Ukupno
+ * te Staro (preneseno umanjeno za oduzeto iz starih) i Novo (ostatak).
  */
 function bodovi_arhiva(int $g, string $uvjet = '1=1', array $p = []): array
 {
     [$od, $do] = bodovna_godina_raspon($g);
-    return redovi("SELECT c.Id, c.Ime, c.Prezime, c.Status, s.Naziv AS Sekcija,
+    $r = redovi("SELECT c.Id, c.Ime, c.Prezime, c.Status, s.Naziv AS Sekcija,
             COALESCE(SUM(CASE WHEN bp.AkcijaId IS NOT NULL THEN CAST(a.Bodovi AS REAL) END),0) AS Preneseno,
             COALESCE(SUM(CASE WHEN fb.AkcijaId IS NOT NULL THEN CAST(a.Bodovi AS REAL) END),0) AS Funkcije,
-            COALESCE(SUM(CASE WHEN bp.AkcijaId IS NULL AND fb.AkcijaId IS NULL THEN CAST(a.Bodovi AS REAL) END),0) AS Akcije,
+            COALESCE(SUM(CASE WHEN ob.AkcijaId IS NOT NULL THEN CAST(a.Bodovi AS REAL) END),0) AS Odstrel,
+            COALESCE(SUM(CASE WHEN ob.AkcijaId IS NOT NULL THEN CAST(ob.Staro AS REAL) END),0) AS OdstrelStaro,
+            COALESCE(SUM(CASE WHEN bp.AkcijaId IS NULL AND fb.AkcijaId IS NULL AND ob.AkcijaId IS NULL THEN CAST(a.Bodovi AS REAL) END),0) AS Akcije,
             COALESCE(SUM(CAST(a.Bodovi AS REAL)),0) AS Ukupno
         FROM Clanovi c LEFT JOIN Sekcije s ON s.Id=c.SekcijaId
         LEFT JOIN RadneAkcije a ON a.ClanId=c.Id AND a.Status=1 AND substr(a.Datum,1,10) BETWEEN ? AND ?
         LEFT JOIN BodoviPrijenos bp ON bp.AkcijaId=a.Id
         LEFT JOIN FunkcijaBodovi fb ON fb.AkcijaId=a.Id
+        LEFT JOIN OdstrelBodovi ob ON ob.AkcijaId=a.Id
         WHERE $uvjet
         GROUP BY c.Id HAVING c.Status=0 OR COUNT(a.Id)>0
         ORDER BY Ukupno DESC, c.Prezime, c.Ime", array_merge([$od, $do], $p));
+    foreach ($r as &$x) {
+        $x['Staro'] = (float) $x['Preneseno'] - (float) $x['OdstrelStaro'];
+        $x['Novo'] = (float) $x['Ukupno'] - $x['Staro'];
+    }
+    return $r;
+}
+
+/** Stanje bodova člana u bodovnoj godini $g: ['staro' => …, 'novo' => …, 'ukupno' => …]; $bezOdstrela = ne računaj oduzimanje tog odstrela. */
+function bodovi_stanje(int $clanId, int $g, ?int $bezOdstrela = null): array
+{
+    $r = bodovi_arhiva($g, 'c.Id=?', [$clanId])[0] ?? ['Staro' => 0.0, 'Novo' => 0.0, 'Ukupno' => 0.0];
+    $s = ['staro' => (float) $r['Staro'], 'novo' => (float) $r['Novo'], 'ukupno' => (float) $r['Ukupno']];
+    $ob = $bezOdstrela ? red('SELECT ob.Staro, ob.Novo FROM OdstrelBodovi ob JOIN RadneAkcije a ON a.Id=ob.AkcijaId AND a.Status=1 WHERE ob.OdstrelId=? AND a.ClanId=?', [$bezOdstrela, $clanId]) : null;
+    if ($ob && bodovna_godina((string) vrijednost('SELECT Datum FROM Odstrel WHERE Id=?', [$bezOdstrela])) === $g) {
+        $s['staro'] += (float) $ob['Staro'];
+        $s['novo'] += (float) $ob['Novo'];
+        $s['ukupno'] += (float) $ob['Staro'] + (float) $ob['Novo'];
+    }
+    return $s;
+}
+
+/** „Staro: 300 · Novo: 250 · Ukupno: 550“ – staro crveno, novo crno. */
+function bodovi_stanje_html(array $s): string
+{
+    return '<span class="text-danger">Staro: <b>' . e(broj($s['staro'], 2)) . '</b></span> · <span class="text-body">Novo: <b>' . e(broj($s['novo'], 2)) . '</b></span>'
+        . ' · Ukupno: <b>' . e(broj($s['ukupno'], 2)) . '</b>';
+}
+
+/** Oznaka posebnih upisa u popisu bodova: preneseno (staro) i oduzeto za odstrel. */
+function bodovi_oznaka_html(array $a): string
+{
+    $v = (string) ($a['VrstaSlobodno'] ?? '');
+    return match (true) {
+        str_starts_with($v, '↪️ Preneseno') => ' <span class="badge text-bg-danger">staro</span>',
+        str_starts_with($v, '🦌 Odstrel') => ' <span class="badge text-bg-dark">🦌 odstrel</span>',
+        default => '',
+    };
+}
+
+// ---------- Bodovi za odstrel ----------
+
+/** Oduzimanje bodova za odstrel uključeno (modul + Odstrel + Radne akcije)? */
+function bodovi_odstrel_ukljuceno(): bool
+{
+    return modul('bodovi_odstrel') && modul('odstrel') && modul('akcije');
+}
+
+/** Iznosi po vrsti i kategoriji: ['Vrsta|Kategorija' => ['staro' => …, 'novo' => …]] (prazna kategorija = cijela vrsta). */
+function bodovi_odstrel_iznosi(): array
+{
+    $j = json_decode((string) postavka('Bodovi.Odstrel', ''), true);
+    $out = [];
+    foreach (is_array($j) ? $j : [] as $kljuc => $v) {
+        $s = max(0.0, (float) ($v['staro'] ?? 0));
+        $n = max(0.0, (float) ($v['novo'] ?? 0));
+        if ($s > 0 || $n > 0) {
+            $out[(string) $kljuc] = ['staro' => $s, 'novo' => $n];
+        }
+    }
+    return $out;
+}
+
+/** Iznos za vrstu i kategoriju (točna kategorija, inače cijela vrsta) ili null. */
+function bodovi_odstrel_iznos(string $vrsta, ?string $kategorija): ?array
+{
+    $iz = bodovi_odstrel_iznosi();
+    return $iz[$vrsta . '|' . (string) $kategorija] ?? $iz[$vrsta . '|'] ?? null;
+}
+
+/**
+ * Nakon upisa / izmjene odstrela: oduzima (ili ispravlja) bodove lovca. Odstrel upisan prije uključivanja se ne dira.
+ * Bodovi mogu otići u minus – tada vraća upozorenje za upisivača (odstrel se uvijek sprema).
+ */
+function bodovi_odstrel_obracunaj(array $o, bool $novi, ?array $k = null): ?string
+{
+    $oid = (int) $o['Id'];
+    $veza = red('SELECT * FROM OdstrelBodovi WHERE OdstrelId=?', [$oid]);
+    if (!$veza && (!$novi || !bodovi_odstrel_ukljuceno())) {
+        return null; // stari upis ili isključeno: ostaje kako je bio
+    }
+    $clanId = !$o['Gost'] && $o['ClanId'] ? (int) $o['ClanId'] : 0;
+    $iznos = $clanId ? bodovi_odstrel_iznos((string) $o['Vrsta'], $o['Spol']) : null;
+    $aid = $veza && $veza['AkcijaId'] && vrijednost('SELECT 1 FROM RadneAkcije WHERE Id=?', [(int) $veza['AkcijaId']]) ? (int) $veza['AkcijaId'] : null;
+    $upozorenje = null;
+    if ($iznos) {
+        $ukupno = $iznos['staro'] + $iznos['novo'];
+        $stanje = bodovi_stanje($clanId, bodovna_godina((string) $o['Datum']), $oid);
+        $manjka = array_filter(['starih' => [$stanje['staro'], $iznos['staro']], 'novih' => [$stanje['novo'], $iznos['novo']]], fn($x) => $x[1] > 0 && $x[0] < $x[1]);
+        if ($manjka) {
+            $upozorenje = 'Pažnja: ' . e((string) $o['Lovac']) . ' ima premalo bodova (' . implode(', ', array_map(fn($n, $x) => $n . ' ' . broj($x[0], 2) . ' od ' . broj($x[1], 2), array_keys($manjka), $manjka))
+                . ') – bodovi idu u minus.';
+        }
+        $polja = [
+            'ClanId' => $clanId, 'Datum' => (string) $o['Datum'], 'Bodovi' => dec(-$ukupno),
+            'VrstaSlobodno' => '🦌 Odstrel: ' . $o['Vrsta'] . ($o['Spol'] ? ' – ' . $o['Spol'] : ''),
+            'Opis' => trim(($o['Markica'] ? 'markica ' . $o['Markica'] . ' · ' : '') . 'oduzeto staro ' . broj($iznos['staro'], 2) . ' + novo ' . broj($iznos['novo'], 2)),
+            'Odluceno' => sada(), 'OdlucioIme' => 'automatski (odstrel)',
+        ];
+        if ($aid) {
+            azuriraj('RadneAkcije', $aid, $polja);
+        } else {
+            $aid = umetni('RadneAkcije', $polja + ['VrstaAkcijeId' => null, 'Sati' => null, 'Status' => AKCIJA_ODOBRENO, 'RazlogOdbijanja' => null, 'FotoDatoteka' => null,
+                'UnioKorisnikId' => $k['Id'] ?? null, 'Kreirano' => sada(), 'OdlucioKorisnikId' => $k['Id'] ?? null]);
+        }
+        dnevnik('Bodovi za odstrel oduzeti', 'Odstrel', $oid, $o['Lovac'] . ': −' . broj($ukupno, 2) . ' b. (staro ' . broj($iznos['staro'], 2) . ', novo ' . broj($iznos['novo'], 2) . ')');
+    } elseif ($aid) {
+        q('DELETE FROM RadneAkcije WHERE Id=?', [$aid]);
+        $aid = null;
+        dnevnik('Bodovi za odstrel vraćeni', 'Odstrel', $oid, (string) $o['Lovac'] . ' (nema iznosa za ' . $o['Vrsta'] . ')');
+    }
+    q('INSERT OR REPLACE INTO OdstrelBodovi (OdstrelId, AkcijaId, Staro, Novo) VALUES (?,?,?,?)',
+        [$oid, $aid, dec($iznos['staro'] ?? 0.0), dec($iznos['novo'] ?? 0.0)]);
+    return $upozorenje;
+}
+
+/** Prije brisanja odstrela: vraća oduzete bodove (briše radnu akciju i vezu). */
+function bodovi_odstrel_ukloni(int $odstrelId): void
+{
+    $veza = red('SELECT * FROM OdstrelBodovi WHERE OdstrelId=?', [$odstrelId]);
+    if (!$veza) {
+        return;
+    }
+    if ($veza['AkcijaId']) {
+        q('DELETE FROM RadneAkcije WHERE Id=?', [(int) $veza['AkcijaId']]);
+        dnevnik('Bodovi za odstrel vraćeni', 'Odstrel', $odstrelId, 'odstrel obrisan');
+    }
+    q('DELETE FROM OdstrelBodovi WHERE OdstrelId=?', [$odstrelId]);
+}
+
+/** Je li radna akcija oduzimanje za odstrel (ne smije se ručno mijenjati)? */
+function je_akcija_odstrela(int $akcijaId): bool
+{
+    return (bool) vrijednost('SELECT 1 FROM OdstrelBodovi WHERE AkcijaId=?', [$akcijaId]);
 }
 
 /** Bodovne godine od prve radne akcije do tekuće (silazno). */

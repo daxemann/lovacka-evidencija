@@ -19,6 +19,7 @@ if (je_post()) {
     if ($radnja === 'obrisi' && $o) {
         odstrel_markica_povezi((int) $o['Id'], $o['Markica'], null); // markica iz zalihe opet slobodna
         obrisi_sliku($o['Foto']);
+        bodovi_odstrel_ukloni((int) $o['Id']); // oduzeti bodovi se vraćaju lovcu
         q('DELETE FROM Odstrel WHERE Id=?', [$o['Id']]);
         dnevnik('Odstrel obrisan', 'Odstrel', (int) $o['Id'], $o['Vrsta'] . ($o['Markica'] ? ', markica ' . $o['Markica'] : ''));
         poruka('Upis obrisan.');
@@ -98,6 +99,9 @@ if (je_post()) {
         dnevnik('Odstrel upisan', 'Odstrel', $nid, $vrsta . ($polja['Markica'] ? ', markica ' . $polja['Markica'] : ''));
     }
     if ($upoz = odstrel_markica_povezi($nid, $o['Markica'] ?? null, $polja)) {
+        poruka($upoz, 'warning');
+    }
+    if ($upoz = bodovi_odstrel_obracunaj(odstrel_red($nid), $o === null, $k)) {
         poruka($upoz, 'warning');
     }
     poruka('Spremljeno: ' . e($vrsta) . ($polja['Markica'] ? ', markica ' . e($polja['Markica']) : '') . '.');

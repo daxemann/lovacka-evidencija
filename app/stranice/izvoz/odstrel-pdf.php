@@ -56,6 +56,32 @@ if ($jePlan) {
         $par[] = "%$q%";
     }
     $order = ul('sort', '') === 'markica' ? "Markica IS NULL OR Markica='', CAST(Markica AS INTEGER), Markica, Datum" : 'Datum, Vrijeme, Id';
+}
+if (!$jePlan && ul('prikaz', '') === 'lovci') {
+    // 👤 po lovcu: isti filtar kao na stranici, razdoblje dan / mjesec / lovna godina
+    $rz = odstrel_razdoblje((string) ul('r', 'lg'), $g, (string) ul('d', ''), (string) ul('m', ''));
+    $w[0] = $rz['sql'];
+    [$vrsteL, $lovci] = odstrel_po_lovcu($w, array_merge($rz['par'], array_slice($par, 1)), ul('sortl', '') === 'ukupno' ? 'ukupno' : 'ime');
+    $bodoviL = bodovi_odstrel_ukljuceno() || array_filter($lovci, fn($l) => $l['oduzeto'] != 0);
+    $redovi = '';
+    foreach ($lovci as $i => $l) {
+        $redovi .= '<tr><td>' . ($i + 1) . '.</td><td>' . e($l['lovac']) . ($l['gost'] ? ' <small>(gost)</small>' : '') . '</td>';
+        foreach ($vrsteL as $v) {
+            $redovi .= '<td class="b">' . (isset($l['vrste'][$v]) ? (int) $l['vrste'][$v] : '') . '</td>';
+        }
+        $redovi .= '<td class="b"><b>' . (int) $l['ukupno'] . '</b></td>' . ($bodoviL ? '<td class="b">' . ($l['oduzeto'] ? e(broj($l['oduzeto'], 2)) : '') . '</td>' : '') . '</tr>';
+    }
+    $uk = '<tr class="uk"><td></td><td>Ukupno</td>';
+    foreach ($vrsteL as $v) {
+        $uk .= '<td class="b">' . array_sum(array_map(fn($l) => $l['vrste'][$v] ?? 0, $lovci)) . '</td>';
+    }
+    $uk .= '<td class="b">' . array_sum(array_column($lovci, 'ukupno')) . '</td>' . ($bodoviL ? '<td class="b">' . e(broj(array_sum(array_column($lovci, 'oduzeto')), 2)) . '</td>' : '') . '</tr>';
+    $zag = '<th style="width:7mm">Rb.</th><th>Lovac</th>' . implode('', array_map(fn($v) => '<th class="b">' . e($v) . '</th>', $vrsteL)) . '<th class="b">Ukupno</th>' . ($bodoviL ? '<th class="b">Bodovi oduzeto</th>' : '');
+    $tijelo = '<table class="t"><thead><tr>' . $zag . '</tr></thead><tbody>'
+        . ($redovi ? $redovi . $uk : '<tr><td colspan="' . (count($vrsteL) + 3 + ($bodoviL ? 1 : 0)) . '" style="color:#888">Nema upisa.</td></tr>') . '</tbody></table>';
+    $podnaslov = 'Odstrel po lovcu · ' . $rz['naziv'] . ' · ' . $opsegNaziv . ' · ' . array_sum(array_column($lovci, 'ukupno')) . ' grla, ' . count($lovci) . ' lovaca';
+    $ime = 'odstrel-po-lovcu';
+} elseif (!$jePlan) {
     $lista = redovi('SELECT * FROM Odstrel WHERE ' . implode(' AND ', $w) . ' ORDER BY ' . $order . ' LIMIT 3000', $par);
     $naprave = modul('revir') ? array_column(redovi('SELECT Id, Broj, Naziv FROM RevirNaprave'), null, 'Id') : [];
     $redovi = '';

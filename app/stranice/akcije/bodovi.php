@@ -10,7 +10,7 @@ if (!ima(P_AKCIJE_CITAJ)) {
     $cid = (int) $k['ClanId'];
 }
 $godine = bodovne_godine_popis();
-$stupci = ['Preneseno' => '↪️ Preneseno', 'Funkcije' => '🏅 Funkcije', 'Akcije' => '🔨 Radne akcije', 'Ukupno' => 'Ukupno'];
+$stupci = ['Staro' => '↪️ Staro', 'Funkcije' => '🏅 Funkcije', 'Akcije' => '🔨 Radne akcije', 'Odstrel' => '🦌 Odstrel', 'Novo' => 'Novo', 'Ukupno' => 'Ukupno'];
 
 if ($cid) {
     $c = clan_ili_kraj($cid);
@@ -18,7 +18,7 @@ if ($cid) {
     $redovi = [];
     foreach ($godine as $g) {
         $r = bodovi_arhiva($g, 'c.Id=?', [$cid])[0] ?? null;
-        $redovi[] = ['Naziv' => bodovna_godina_naziv($g), 'g' => $g] + ($r ?: ['Preneseno' => 0, 'Funkcije' => 0, 'Akcije' => 0, 'Ukupno' => 0]);
+        $redovi[] = ['Naziv' => bodovna_godina_naziv($g), 'g' => $g] + ($r ?: ['Staro' => 0, 'Funkcije' => 0, 'Akcije' => 0, 'Odstrel' => 0, 'Novo' => 0, 'Ukupno' => 0]);
     }
     $prvi = 'Bodovna godina';
 } else {
@@ -37,6 +37,10 @@ $zbroj = [];
 foreach (array_keys($stupci) as $s) {
     $zbroj[$s] = array_sum(array_map(fn($r) => (float) $r[$s], $redovi));
 }
+if (!bodovi_odstrel_ukljuceno() && abs($zbroj['Odstrel']) < 0.001) {
+    unset($stupci['Odstrel']); // stupac samo kad se bodovi za odstrel koriste
+}
+$boja = fn(string $s) => $s === 'Staro' ? ' text-danger' : '';
 
 if (($_GET['pdf'] ?? '') === '1') {
     $t = '<h2>' . e($naslov) . '</h2>' . (!$cid ? '<div style="color:#666;margin-bottom:6px">' . e(datum($od)) . ' – ' . e(datum($do)) . '</div>' : '')
@@ -48,7 +52,7 @@ if (($_GET['pdf'] ?? '') === '1') {
     foreach ($redovi as $r) {
         $t .= '<tr><td>' . e($r['Naziv']) . '</td>' . (!$cid ? '<td>' . e($r['Sekcija'] ?? '') . '</td>' : '');
         foreach (array_keys($stupci) as $s) {
-            $t .= '<td class="d"' . ($s === 'Ukupno' ? ' style="font-weight:bold"' : '') . '>' . e(broj((float) $r[$s], 2)) . '</td>';
+            $t .= '<td class="d"' . ($s === 'Ukupno' ? ' style="font-weight:bold"' : ($s === 'Staro' ? ' style="color:#b02a37"' : '')) . '>' . e(broj((float) $r[$s], 2)) . '</td>';
         }
         $t .= '</tr>';
     }
@@ -103,14 +107,14 @@ ob_start(); ?>
 <?php endif; ?>
 <div class="table-responsive" style="max-width:860px"><table class="table table-sm table-hover align-middle">
     <thead><tr><th><?= e($prvi) ?></th><?php if (!$cid): ?><th class="d-none d-md-table-cell">Sekcija</th><?php endif; ?>
-        <?php foreach ($stupci as $s => $n): ?><th class="text-end<?= $s === 'Ukupno' ? '' : ' d-none d-sm-table-cell' ?>"><?= e($n) ?></th><?php endforeach; ?></tr></thead>
+        <?php foreach ($stupci as $s => $n): ?><th class="text-end<?= $boja($s) ?><?= $s === 'Ukupno' ? '' : ' d-none d-sm-table-cell' ?>"><?= e($n) ?></th><?php endforeach; ?></tr></thead>
     <tbody>
     <?php foreach ($redovi as $r): ?>
         <tr<?= !$cid && (int) $r['Status'] !== 0 ? ' class="text-muted"' : '' ?>>
             <td><?php if ($cid): ?><a href="<?= e(url(ima(P_AKCIJE_CITAJ) ? 'akcije/bodovi' : 'moje-akcije', ima(P_AKCIJE_CITAJ) ? ['g' => $r['g']] : [])) ?>"><?= e($r['Naziv']) ?></a>
                 <?php else: ?><a href="<?= e(url('akcije/bodovi', ['clan' => $r['Id']])) ?>"><?= e($r['Naziv']) ?></a><?= (int) $r['Status'] !== 0 ? ' <span class="small">(arhiviran)</span>' : '' ?><?php endif; ?></td>
             <?php if (!$cid): ?><td class="d-none d-md-table-cell small"><?= e($r['Sekcija'] ?? '') ?></td><?php endif; ?>
-            <?php foreach (array_keys($stupci) as $s): ?><td class="text-end<?= $s === 'Ukupno' ? ' fw-semibold' : ' d-none d-sm-table-cell' ?>"><?= (float) $r[$s] ? e(broj((float) $r[$s], 2)) : '<span class="text-muted">0</span>' ?></td><?php endforeach; ?>
+            <?php foreach (array_keys($stupci) as $s): ?><td class="text-end<?= $boja($s) ?><?= $s === 'Ukupno' ? ' fw-semibold' : ' d-none d-sm-table-cell' ?>"><?= (float) $r[$s] ? e(broj((float) $r[$s], 2)) : '<span class="text-muted">0</span>' ?></td><?php endforeach; ?>
         </tr>
     <?php endforeach; ?>
     <?php if (!$redovi): ?><tr><td colspan="6" class="text-muted">Nema bodova.</td></tr><?php endif; ?>
@@ -118,4 +122,5 @@ ob_start(); ?>
     <?php if (!$cid && $redovi): ?><tfoot><tr class="fw-semibold"><td>Ukupno (<?= count($redovi) ?>)</td><td class="d-none d-md-table-cell"></td>
         <?php foreach (array_keys($stupci) as $s): ?><td class="text-end<?= $s === 'Ukupno' ? '' : ' d-none d-sm-table-cell' ?>"><?= e(broj($zbroj[$s], 2)) ?></td><?php endforeach; ?></tr></tfoot><?php endif; ?>
 </table></div>
+<p class="small text-muted" style="max-width:860px"><span class="text-danger">Staro</span> = bodovi preneseni iz prošle godine<?= isset($stupci['Odstrel']) ? ' (umanjeni za ono što je za odstrel oduzeto iz starih)' : '' ?>. Novo = sve ostalo u toj godini. Ukupno = staro + novo.</p>
 <?php stranica('Arhiva bodova', ob_get_clean());

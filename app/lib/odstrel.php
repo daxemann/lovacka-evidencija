@@ -506,3 +506,62 @@ function odstrel_slobodne_markice(array $grupe, int $godina): array
     }
     return $out;
 }
+
+// ---------- Odstrel po lovcu ----------
+
+const ODSTREL_RAZDOBLJA = ['dan' => 'Dan', 'mj' => 'Mjesec', 'lg' => 'Lovna godina'];
+
+/**
+ * Razdoblje za prikaz po lovcu: 'dan' (d = Y-m-d), 'mj' (m = Y-m) ili 'lg' (lovna godina $g).
+ * Vraća ['r', 'sql', 'par', 'naziv', 'prije' => [parametri], 'poslije' => [parametri ili null], 'g' => lovna godina].
+ */
+function odstrel_razdoblje(string $r, int $g, string $d, string $m): array
+{
+    $r = isset(ODSTREL_RAZDOBLJA[$r]) ? $r : 'lg';
+    if ($r === 'dan') {
+        $d = preg_match('/^\d{4}-\d{2}-\d{2}$/', $d) && strtotime($d) ? $d : danas();
+        $x = new DateTimeImmutable($d);
+        $iduci = $x->modify('+1 day')->format('Y-m-d');
+        return ['r' => 'dan', 'sql' => 'Datum=?', 'par' => [$d], 'naziv' => datum($d), 'g' => odstrel_lovna_godina($d),
+            'prije' => ['r' => 'dan', 'd' => $x->modify('-1 day')->format('Y-m-d')], 'poslije' => $iduci <= danas() ? ['r' => 'dan', 'd' => $iduci] : null];
+    }
+    if ($r === 'mj') {
+        $m = preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $m) ? $m : date('Y-m');
+        $x = new DateTimeImmutable($m . '-01');
+        $iduci = $x->modify('+1 month')->format('Y-m');
+        return ['r' => 'mj', 'sql' => 'substr(Datum,1,7)=?', 'par' => [$m], 'naziv' => $x->format('m') . '/' . $x->format('Y'), 'g' => odstrel_lovna_godina($m . '-01'),
+            'prije' => ['r' => 'mj', 'm' => $x->modify('-1 month')->format('Y-m')], 'poslije' => $iduci <= date('Y-m') ? ['r' => 'mj', 'm' => $iduci] : null];
+    }
+    return ['r' => 'lg', 'sql' => 'LovnaGodina=?', 'par' => [$g], 'naziv' => 'lovna godina ' . odstrel_lg_naziv($g), 'g' => $g,
+        'prije' => ['r' => 'lg', 'g' => $g - 1], 'poslije' => $g < odstrel_lovna_godina() ? ['r' => 'lg', 'g' => $g + 1] : null];
+}
+
+/**
+ * Odstrel zbrojen po lovcu (uvjeti $w nad tablicom Odstrel). Vraća [vrste (redoslijed), redovi], redak:
+ * ['lovac', 'clanId', 'gost', 'vrste' => [vrsta => broj], 'ukupno', 'oduzeto' (bodovi, negativno ili 0)].
+ */
+function odstrel_po_lovcu(array $w, array $par, string $sort = 'ime'): array
+{
+    $sve = redovi('SELECT Id, ClanId, Lovac, Gost, Vrsta,
+            (SELECT CAST(a.Bodovi AS REAL) FROM OdstrelBodovi ob JOIN RadneAkcije a ON a.Id=ob.AkcijaId WHERE ob.OdstrelId=Odstrel.Id) AS Oduzeto
+        FROM Odstrel WHERE ' . implode(' AND ', $w) . ' LIMIT 5000', $par);
+    $po = [];
+    $vrste = [];
+    foreach ($sve as $o) {
+        $kl = $o['ClanId'] && !$o['Gost'] ? 'c' . $o['ClanId'] : 'g' . mb_strtolower(trim((string) $o['Lovac']));
+        $po[$kl] ??= ['lovac' => (string) $o['Lovac'], 'clanId' => $o['ClanId'] && !$o['Gost'] ? (int) $o['ClanId'] : null, 'gost' => (bool) $o['Gost'], 'vrste' => [], 'ukupno' => 0, 'oduzeto' => 0.0];
+        $po[$kl]['vrste'][$o['Vrsta']] = ($po[$kl]['vrste'][$o['Vrsta']] ?? 0) + 1;
+        $po[$kl]['ukupno']++;
+        $po[$kl]['oduzeto'] += (float) $o['Oduzeto'];
+        $vrste[$o['Vrsta']] = true;
+    }
+    // vrste redom kao u postavkama odstrela, ostale na kraju
+    $red = array_flip(array_keys(odstrel_vrste()));
+    $vrste = array_keys($vrste);
+    usort($vrste, fn($a, $b) => [$red[$a] ?? 999, $a] <=> [$red[$b] ?? 999, $b]);
+    $po = array_values($po);
+    $coll = class_exists('Collator') ? new Collator('hr_HR') : null;
+    $ime = fn($a, $b) => $coll ? $coll->compare($a['lovac'], $b['lovac']) : strcmp(mb_strtolower($a['lovac']), mb_strtolower($b['lovac']));
+    usort($po, $sort === 'ukupno' ? fn($a, $b) => [$b['ukupno']] <=> [$a['ukupno']] ?: $ime($a, $b) : $ime);
+    return [$vrste, $po];
+}

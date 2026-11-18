@@ -25,6 +25,9 @@ Bodovi vrijede tek kad akciju odobri uprava (do tada uz bodove stoji „?“). D
 <li>Akcije koje je za vas upisala uprava (npr. zajednička košnja) vidite na istom popisu – njih ne možete mijenjati ni brisati.</li>
 <li><b>Dodatna oprema:</b> kod nekih vrsta (npr. Košnja) kvačicom označite što ste donijeli – traktor, trimer, motorna pila… Svaka oprema donosi dodatne bodove – koliko, određuje uprava u postavkama.</li>
 <li><b>Rad psa</b> (potraga – krvni trag, pogon, sitna divljač, ptičarenje, izgon iz šikare, jazbina, donošenje) prijavljuje se u Moje radne akcije uz odabir psa – nude se samo radovi koje vaš pas radi (Moj profil → Što pas radi). Bodove određuje uprava.</li>
+<li><b><span class="text-danger">Staro</span> i novo:</b> bodovi preneseni iz prošle godine su <span class="text-danger">staro</span> (crveno, oznaka „staro“), sve ostalo je novo.</li>'
+    . (bodovi_odstrel_ukljuceno() ? '
+<li><b>🦌 Bodovi za odstrel:</b> kad se upiše vaš odstrel, bodovi se sami oduzmu (koliko starih, a koliko novih, određuje uprava). Vidite to u Moje radne akcije s oznakom „🦌 odstrel“. Ako je odstrel ispravljen ili obrisan, bodovi se sami isprave.</li>' : '') . '
 <li><b>Moj profil:</b> fotografija, kontakt, <b>što drugi vide u Imeniku</b> (mobitel, e-mail, adresa – vi odlučujete), <b>moja vozila</b> (reg. oznake za dezinfekciju) i <b>moji lovački psi</b> s ispitima.</li>'
     . (uplatnica_za_clanove() ? '
 <li><b>Moja uplatnica:</b> uplatnica za članarinu s 2D kodom. Kod skenirajte u mobilnom bankarstvu ili ga pokažite na šalteru; može se i ispisati (PDF). Vidite samo svoju.</li>' : '') . '
@@ -191,6 +194,14 @@ if (ima(P_AKCIJE_CITAJ) || ima(P_AKCIJE_ODOBRI)) {
         . '<li><b>📅 Godišnje obveze</b> (npr. držanje lovačkog psa, hranilište, čeka): bodovi 1× godišnje na zadani dan, <b>odmah odobreno</b>. Obveze, bodove i dan određuje admin (Sustav → Bodovi). Članove uključuje / isključuje osoba s pravom „Godišnje obveze – dodjela“ – na kartici člana → Funkcije (psi: kartica Lovački psi → ✅ uključi bodove) ili u Radne akcije → 📅 Godišnje obveze. Uključen kasnije → bodovi odmah; svaki najviše jednom godišnje.</li>'
         . '<li><b>✏️ Uredi</b> kod akcije na čekanju: tko odobrava može prije odobrenja ispraviti datum, sate, opis, vrstu i dodatnu opremu.</li>'
         . '<li><b>Dodatna oprema</b> (Sustav → Vrste radnih akcija): uz vrstu upišite opremu s bodovima (npr. Košnja: Traktor +5, Trimer +2). Kod nove akcije uz svakog člana kvačicom označite što je donio – bodovi se zbrajaju sami iz postavki i u akciji se ne mijenjaju. Kod odobravanja bodove ručno mijenja samo admin; ostali odobravaju bodove iz postavki.</li>';
+}
+if (bodovi_odstrel_ukljuceno() && (ima(P_AKCIJE_CITAJ) || ima(P_SUSTAV))) {
+    $udruga .= '<li><b>🦌 Bodovi za odstrel:</b> u Sustav → Bodovi po vrsti i kategoriji upišete koliko se oduzima iz <span class="text-danger">starih</span> (prenesenih), a koliko iz novih bodova (npr. jelen 300 + 300). '
+        . 'Pri upisu odstrela bodovi se oduzmu sami; ako lovac nema dovoljno, idu u minus (upisivač vidi upozorenje). Izmjena ili brisanje odstrela odmah ispravlja bodove; gost i odstrel upisan prije uključivanja – bez oduzimanja. '
+        . 'Oduzeti bodovi se ne prenose; ostatak po pravilu prijenosa, minus samo ako je tako postavljeno.</li>';
+}
+if (modul('odstrel') && odstrel_sekcije()) {
+    $udruga .= '<li><b>🦌 Odstrel → 👤 Po lovcu:</b> koliko je koji lovac odstrijelio – po vrstama, za dan, mjesec ili lovnu godinu (◀ ▶), po sekcijama, s pretragom po imenu i PDF-om. Klik na broj otvara te upise.</li>';
 }
 if (ima(P_IZVJESTAJI)) {
     $udruga .= '<li><b>Izvještaj radnih akcija:</b> razdoblje (i lovna godina), grupiranje po članu/mjesecu/vrsti/sekciji, ispis, PDF, slanje e-poštom – član dobiva samo svoje.</li>';

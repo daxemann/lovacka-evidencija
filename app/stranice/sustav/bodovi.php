@@ -24,6 +24,21 @@ if (je_post() && ($_POST['radnja'] ?? '') === 'psi' && modul('psi')) {
     poruka('Spremljeno.' . ($n ? " Upisano odmah: $n × bodovi za psa (odobreno)." : ''));
     preusmjeri('sustav/bodovi');
 }
+if (je_post() && ($_POST['radnja'] ?? '') === 'odstrel' && bodovi_odstrel_ukljuceno()) {
+    $iz = [];
+    foreach ((array) ($_POST['iz'] ?? []) as $r) {
+        $kljuc = (string) ($r['k'] ?? '');
+        $s = max(0.0, u_broj($r['s'] ?? '') ?? 0.0);
+        $n = max(0.0, u_broj($r['n'] ?? '') ?? 0.0);
+        if (str_contains($kljuc, '|') && ($s > 0 || $n > 0)) {
+            $iz[$kljuc] = ['staro' => $s, 'novo' => $n];
+        }
+    }
+    spremi_postavku('Bodovi.Odstrel', $iz ? json_encode($iz, JSON_UNESCAPED_UNICODE) : null);
+    dnevnik('Bodovi za odstrel – postavke', null, null, $iz ? implode(', ', array_map(fn($kl, $v) => str_replace('|', ' ', rtrim($kl, '|')) . ' ' . broj($v['staro'], 2) . '+' . broj($v['novo'], 2), array_keys($iz), $iz)) : 'bez oduzimanja');
+    poruka('Spremljeno. Vrijedi za odstrel upisan od sada – već upisani odstrel se ne mijenja.');
+    preusmjeri('sustav/bodovi');
+}
 if (je_post() && ($_POST['radnja'] ?? '') === 'obveze') {
     $g = (int) date('Y');
     $n = 0;
@@ -75,11 +90,13 @@ if (je_post()) {
     spremi_postavku('Bodovi.Prijenos', $nacin === 'nista' ? null : $nacin);
     spremi_postavku('Bodovi.PrijenosBroj', in_array($nacin, ['max', 'fiksno'], true) ? dec($broj) : null);
     spremi_postavku('Bodovi.PrijenosAuto', $auto ? '1' : null);
+    $minus = isset($_POST['Minus']) && $nacin !== 'nista' && bodovi_odstrel_ukljuceno();
+    spremi_postavku('Bodovi.PrijenosMinus', $minus ? '1' : null);
     if ($auto && !$bioAuto) {
         // automatski tek od sljedeće bodovne godine – za tekuću je ručni prijenos
         spremi_postavku('Bodovi.Preneseno', (string) bodovna_godina());
     }
-    dnevnik('Bodovi – postavke', null, null, 'reset ' . bodovi_dan_prikaz($dan) . ', prijenos: ' . BODOVI_PRIJENOS[$nacin] . (in_array($nacin, ['max', 'fiksno'], true) ? ' ' . broj($broj, 2) : '') . ($auto ? ', automatski' : ''));
+    dnevnik('Bodovi – postavke', null, null, 'reset ' . bodovi_dan_prikaz($dan) . ', prijenos: ' . BODOVI_PRIJENOS[$nacin] . (in_array($nacin, ['max', 'fiksno'], true) ? ' ' . broj($broj, 2) : '') . ($auto ? ', automatski' : '') . ($minus ? ', minus se prenosi' : ''));
     poruka('Spremljeno.');
     preusmjeri('sustav/bodovi');
 }
@@ -122,6 +139,13 @@ ob_start(); ?>
             <label class="form-check-label" for="auto">Prenesi automatski na dan resetiranja</label>
             <div class="form-text">Bez kvačice prenosite ručno (<a href="<?= e(url('akcije/prijenos')) ?>">Prijenos u novu godinu</a>) i možete svakom članu promijeniti iznos.</div>
         </div>
+        <?php if (bodovi_odstrel_ukljuceno()): ?>
+        <div class="form-check mt-2">
+            <input class="form-check-input" type="checkbox" name="Minus" id="minus" value="1"<?= chk($pr['minus']) ?>>
+            <label class="form-check-label" for="minus">Minus (dug) prenesi u novu godinu</label>
+            <div class="form-text">Bez kvačice lovac koji je zbog odstrela u minusu kreće od 0. S kvačicom minus ide u novu godinu kao <span class="text-danger">staro</span> i prvo se mora odraditi.</div>
+        </div>
+        <?php endif; ?>
     </div>
     <div class="card-footer"><button class="btn btn-primary">Spremi</button></div>
 </form>
@@ -129,6 +153,36 @@ ob_start(); ?>
     var c = this.querySelector('[name=Prijenos]:checked'), i = c ? this.querySelector('[data-za="' + c.value + '"]') : null;
     document.getElementById('PrijenosBroj').value = i ? i.value : '';
 });</script>
+
+<?php if (bodovi_odstrel_ukljuceno()): $iz = bodovi_odstrel_iznosi(); $i = 0; ?>
+<form method="post" class="card mb-4" id="odstrel" style="max-width:760px"><?= csrf() ?><input type="hidden" name="radnja" value="odstrel">
+    <div class="card-header">🦌 Bodovi za odstrel <span class="text-muted small">(oduzimaju se automatski pri upisu odstrela)</span></div>
+    <div class="card-body">
+        <p class="small text-muted">Koliko se bodova lovcu oduzme za odstrel – odvojeno iz <span class="text-danger fw-semibold">starih</span> (prenesenih iz prošle godine) i <b>novih</b> bodova.
+            Npr. jelen: staro 300 + novo 300 = oduzima se 600. Bez podjele na staro/novo upišite sve u „novo“. Prazno ili 0 = ne oduzima se.
+            Redak „cijela vrsta“ vrijedi za kategorije bez vlastitog iznosa. Ako lovac nema dovoljno, bodovi idu u minus (upisivač vidi upozorenje). Gost i već upisani odstrel – bez oduzimanja.</p>
+        <div class="table-responsive"><table class="table table-sm align-middle mb-0">
+            <thead><tr class="small"><th>Vrsta / kategorija</th><th style="width:7rem" class="text-danger">Staro</th><th style="width:7rem">Novo</th></tr></thead>
+            <tbody>
+            <?php foreach (odstrel_vrste() as $vrsta => $kategorije): ?>
+                <?php foreach (array_merge([''], $kategorije) as $kat): $kl = $vrsta . '|' . $kat; $v = $iz[$kl] ?? null; $i++; ?>
+                <tr<?= $kat === '' ? ' class="table-light"' : '' ?>>
+                    <td><?= $kat === '' ? '<b>' . e($vrsta) . '</b> <span class="small text-muted">cijela vrsta</span>' : '<span class="ms-3">' . e($kat) . '</span>' ?>
+                        <input type="hidden" name="iz[<?= $i ?>][k]" value="<?= e($kl) ?>"></td>
+                    <td><input name="iz[<?= $i ?>][s]" type="number" step="0.5" min="0" inputmode="decimal" class="form-control form-control-sm text-danger" value="<?= $v && $v['staro'] ? e((string) $v['staro']) : '' ?>"></td>
+                    <td><input name="iz[<?= $i ?>][n]" type="number" step="0.5" min="0" inputmode="decimal" class="form-control form-control-sm" value="<?= $v && $v['novo'] ? e((string) $v['novo']) : '' ?>"></td>
+                </tr>
+                <?php endforeach; ?>
+            <?php endforeach; ?>
+            </tbody>
+        </table></div>
+        <div class="small text-muted mt-2">Vrste i kategorije su iz Sustav → Odstrel. Promjena vrijedi za odstrel upisan od sada; izmjena ili brisanje odstrela odmah ispravlja oduzete bodove.</div>
+    </div>
+    <div class="card-footer"><button class="btn btn-primary">Spremi</button></div>
+</form>
+<?php elseif (modul('odstrel')): ?>
+<p class="small text-muted" style="max-width:760px">🦌 Oduzimanje bodova za odstrel: uključuje se u <a href="<?= e(url('sustav/moduli')) ?>">Sustav → Moduli → Bodovi za odstrel</a>.</p>
+<?php endif; ?>
 
 <div class="card" style="max-width:760px">
     <div class="card-header">🏅 Bodovi za funkciju (jednom godišnje, odmah odobreno)</div>
