@@ -26,8 +26,8 @@ Bodovi vrijede tek kad akciju odobri uprava (do tada uz bodove stoji „?“). D
 <li><b>Dodatna oprema:</b> kod nekih vrsta (npr. Košnja) kvačicom označite što ste donijeli – traktor, trimer, motorna pila… Svaka oprema donosi dodatne bodove – koliko, određuje uprava u postavkama.</li>
 <li><b>Rad psa</b> (potraga – krvni trag, pogon, sitna divljač, ptičarenje, izgon iz šikare, jazbina, donošenje) prijavljuje se u Moje radne akcije uz odabir psa – nude se samo radovi koje vaš pas radi (Moj profil → Što pas radi). Bodove određuje uprava.</li>
 <li><b><span class="text-danger">Staro</span> i novo:</b> bodovi preneseni iz prošle godine su <span class="text-danger">staro</span> (crveno, oznaka „staro“), sve ostalo je novo.</li>'
-    . (bodovi_odstrel_ukljuceno() ? '
-<li><b>🦌 Bodovi za odstrel:</b> kad se upiše vaš odstrel, bodovi se sami oduzmu (koliko starih, a koliko novih, određuje uprava). Vidite to u Moje radne akcije s oznakom „🦌 odstrel“. Ako je odstrel ispravljen ili obrisan, bodovi se sami isprave.</li>' : '') . '
+    . (bodovi_odstrel_moguce() ? '
+<li><b>🦌 Bodovi za odstrel:</b> uz upis vašeg odstrela uprava vam može oduzeti bodove (koliko starih, a koliko novih, određuje uprava). Vidite to u Moje radne akcije s oznakom „🦌 odstrel“. Ako je odstrel ispravljen ili obrisan, bodovi se sami isprave.</li>' : '') . '
 <li><b>Moj profil:</b> fotografija, kontakt, <b>što drugi vide u Imeniku</b> (mobitel, e-mail, adresa – vi odlučujete), <b>moja vozila</b> (reg. oznake za dezinfekciju) i <b>moji lovački psi</b> s ispitima.</li>'
     . (uplatnica_za_clanove() ? '
 <li><b>Moja uplatnica:</b> uplatnica za članarinu s 2D kodom. Kod skenirajte u mobilnom bankarstvu ili ga pokažite na šalteru; može se i ispisati (PDF). Vidite samo svoju.</li>' : '') . '
@@ -195,9 +195,9 @@ if (ima(P_AKCIJE_CITAJ) || ima(P_AKCIJE_ODOBRI)) {
         . '<li><b>✏️ Uredi</b> kod akcije na čekanju: tko odobrava može prije odobrenja ispraviti datum, sate, opis, vrstu i dodatnu opremu.</li>'
         . '<li><b>Dodatna oprema</b> (Sustav → Vrste radnih akcija): uz vrstu upišite opremu s bodovima (npr. Košnja: Traktor +5, Trimer +2). Kod nove akcije uz svakog člana kvačicom označite što je donio – bodovi se zbrajaju sami iz postavki i u akciji se ne mijenjaju. Kod odobravanja bodove ručno mijenja samo admin; ostali odobravaju bodove iz postavki.</li>';
 }
-if (bodovi_odstrel_ukljuceno() && (ima(P_AKCIJE_CITAJ) || ima(P_SUSTAV))) {
-    $udruga .= '<li><b>🦌 Bodovi za odstrel:</b> u Sustav → Bodovi po vrsti i kategoriji upišete koliko se oduzima iz <span class="text-danger">starih</span> (prenesenih), a koliko iz novih bodova (npr. jelen 300 + 300). '
-        . 'Pri upisu odstrela bodovi se oduzmu sami; ako za vrstu nema iznosa, u obrascu „Upis odstrela“ upišete koliko oduzeti (staro / novo) – prazno = ništa. Ako lovac nema dovoljno, bodovi idu u minus (upisivač vidi upozorenje).Izmjena ili brisanje odstrela odmah ispravlja bodove; gost i odstrel upisan prije uključivanja – bez oduzimanja. '
+if (bodovi_odstrel_moguce() && (ima(P_AKCIJE_CITAJ) || ima(P_SUSTAV) || ima(P_ODSTREL))) {
+    $udruga .= '<li><b>🦌 Bodovi za odstrel:</b> u obrascu <b>Upis odstrela</b> upišete koliko bodova lovcu oduzeti – iz <span class="text-danger">starih</span> (prenesenih) i iz novih; prazno = ništa. '
+        . 'Uz modul „Bodovi za odstrel“ (Sustav → Moduli) iznosi se upisuju jednom u Sustav → Bodovi po vrsti i kategoriji (npr. jelen 300 + 300) i oduzimaju se sami; za vrstu bez iznosa ostaje ručni upis. Ako lovac nema dovoljno, bodovi idu u minus (upisivač vidi upozorenje). Izmjena ili brisanje odstrela odmah ispravlja bodove; gost i odstrel upisan prije verzije 1.80 – bez oduzimanja. '
         . 'Oduzeti bodovi se ne prenose; ostatak po pravilu prijenosa, minus samo ako je tako postavljeno.</li>';
 }
 if (modul('odstrel') && odstrel_sekcije()) {

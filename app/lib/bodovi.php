@@ -304,10 +304,22 @@ function bodovi_oznaka_html(array $a): string
 
 // ---------- Bodovi za odstrel ----------
 
-/** Oduzimanje bodova za odstrel uključeno (modul + Odstrel + Radne akcije)? */
+/** Automatsko oduzimanje po popisu iznosa uključeno (modul „Bodovi za odstrel“ + Odstrel + Radne akcije)? */
 function bodovi_odstrel_ukljuceno(): bool
 {
-    return modul('bodovi_odstrel') && modul('odstrel') && modul('akcije');
+    return modul('bodovi_odstrel') && bodovi_odstrel_moguce();
+}
+
+/** Bodovi za odstrel uopće mogući (Odstrel + Radne akcije) – ručni upis u obrascu radi i bez modula. */
+function bodovi_odstrel_moguce(): bool
+{
+    return modul('odstrel') && modul('akcije');
+}
+
+/** Iznos iz popisa samo dok je modul uključen (isključen modul = popis ne vrijedi, samo ručni upis). */
+function bodovi_odstrel_iznos_aktivan(string $vrsta, ?string $kategorija): ?array
+{
+    return bodovi_odstrel_ukljuceno() ? bodovi_odstrel_iznos($vrsta, $kategorija) : null;
 }
 
 /** Iznosi po vrsti i kategoriji: ['Vrsta|Kategorija' => ['staro' => …, 'novo' => …]] (prazna kategorija = cijela vrsta). */
@@ -333,22 +345,22 @@ function bodovi_odstrel_iznos(string $vrsta, ?string $kategorija): ?array
 }
 
 /**
- * Nakon upisa / izmjene odstrela: oduzima (ili ispravlja) bodove lovca. Odstrel upisan prije uključivanja se ne dira.
- * Iznos iz postavki (Sustav → Bodovi); ako ga za vrstu/kategoriju nema, vrijedi ručni upis iz obrasca ($rucno, prazno = ništa).
+ * Nakon upisa / izmjene odstrela: oduzima (ili ispravlja) bodove lovca. Odstrel upisan prije ove funkcije (bez veze) se ne dira.
+ * Iznos iz popisa (Sustav → Bodovi, samo dok je modul uključen); inače ručni upis iz obrasca ($rucno, prazno = ništa).
  * Bodovi mogu otići u minus – tada vraća upozorenje za upisivača (odstrel se uvijek sprema).
  */
 function bodovi_odstrel_obracunaj(array $o, bool $novi, ?array $k = null, ?array $rucno = null): ?string
 {
     $oid = (int) $o['Id'];
     $veza = red('SELECT * FROM OdstrelBodovi WHERE OdstrelId=?', [$oid]);
-    if (!bodovi_odstrel_ukljuceno() || (!$veza && !$novi)) {
-        return null; // modul isključen ili stari upis: bodovi ostaju kakvi jesu (brisanje odstrela ih i dalje vraća)
+    if (!bodovi_odstrel_moguce() || (!$veza && !$novi)) {
+        return null; // nema Odstrela / Radnih akcija ili stari upis: bodovi ostaju kakvi jesu
     }
     $clanId = !$o['Gost'] && $o['ClanId'] ? (int) $o['ClanId'] : 0;
-    $iznos = $clanId ? bodovi_odstrel_iznos((string) $o['Vrsta'], $o['Spol']) : null;
-    if ($clanId && !$iznos && $rucno && bodovi_odstrel_ukljuceno()) {
+    $iznos = $clanId ? bodovi_odstrel_iznos_aktivan((string) $o['Vrsta'], $o['Spol']) : null;
+    if ($clanId && !$iznos) {
         $r = ['staro' => max(0.0, (float) ($rucno['staro'] ?? 0)), 'novo' => max(0.0, (float) ($rucno['novo'] ?? 0))];
-        $iznos = $r['staro'] > 0 || $r['novo'] > 0 ? $r : null; // ručni upis u obrascu (nema iznosa u postavkama)
+        $iznos = $r['staro'] > 0 || $r['novo'] > 0 ? $r : null; // ručni upis u obrascu
     }
     $aid = $veza && $veza['AkcijaId'] && vrijednost('SELECT 1 FROM RadneAkcije WHERE Id=?', [(int) $veza['AkcijaId']]) ? (int) $veza['AkcijaId'] : null;
     $upozorenje = null;

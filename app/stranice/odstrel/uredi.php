@@ -132,12 +132,13 @@ $oruzje = array_column(redovi('SELECT DISTINCT Oruzje FROM ClanOruzniListovi WHE
 $kalibri = array_column(redovi('SELECT DISTINCT Kalibar FROM Odstrel WHERE Kalibar IS NOT NULL ORDER BY Kalibar'), 'Kalibar');
 // 🦌 bodovi za odstrel: novi upis ili upis koji već ima vezu s bodovima (stari upisi ostaju bez)
 $veza = $o ? red('SELECT * FROM OdstrelBodovi WHERE OdstrelId=?', [(int) $o['Id']]) : null;
-$bodBlok = bodovi_odstrel_ukljuceno() && (!$o || $veza);
+$bodBlok = bodovi_odstrel_moguce() && (!$o || $veza); // ručni upis uvijek; popis iznosa samo dok je modul uključen
 $bodRucno = ['staro' => '', 'novo' => ''];
-if ($veza && $veza['AkcijaId'] && !bodovi_odstrel_iznos((string) $o['Vrsta'], $o['Spol'])) {
+if ($veza && $veza['AkcijaId'] && !bodovi_odstrel_iznos_aktivan((string) $o['Vrsta'], $o['Spol'])) {
+    // već oduzeto (ručno ili po starom popisu): vrijednosti u polja, da se izmjenom ne izgube
     $bodRucno = ['staro' => (float) $veza['Staro'] ? (string) (float) $veza['Staro'] : '', 'novo' => (float) $veza['Novo'] ? (string) (float) $veza['Novo'] : ''];
 }
-$cfg = ['bodovi' => $bodBlok ? bodovi_odstrel_iznosi() : null, 'vrste' => odstrel_vrste(), 'grupe' => array_combine(array_map('strval', array_keys($uredive)), array_map(fn($x) => odstrel_grupa($x ?: null), array_keys($uredive))),
+$cfg = ['bodovi' => $bodBlok ? (bodovi_odstrel_ukljuceno() ? bodovi_odstrel_iznosi() : new stdClass()) : null, 'vrste' => odstrel_vrste(), 'grupe' => array_combine(array_map('strval', array_keys($uredive)), array_map(fn($x) => odstrel_grupa($x ?: null), array_keys($uredive))),
     'markice' => odstrel_slobodne_markice(odstrel_sekcije(true), odstrel_lovna_godina((string) $v['Datum'])), 'markicaSad' => (string) $v['Markica'], 'clanovi' => $clanoviPoSek, 'naprave' => $napravePoSek, 'clan' => $v['ClanId'] !== null ? (int) $v['ClanId'] : 0, 'naprava' => (int) $v['NapravaId'], 'spol' => (string) $v['Spol']];
 ob_start(); ?>
 <div class="d-flex align-items-center gap-2 mb-3">
@@ -204,7 +205,7 @@ ob_start(); ?>
                         <div class="col-6"><label class="form-label small mb-0">novo</label>
                             <input name="bod_novo" type="number" step="0.5" min="0" inputmode="decimal" class="form-control form-control-sm" value="<?= e($bodRucno['novo']) ?>"></div>
                     </div>
-                    <div class="small text-muted mt-1">Za ovu vrstu nema iznosa u Sustav → Bodovi. Prazno = bodovi se ne mijenjaju.</div>
+                    <div class="small text-muted mt-1">Prazno = bodovi se ne mijenjaju.<?= bodovi_odstrel_ukljuceno() ? ' Za ovu vrstu nema iznosa u Sustav → Bodovi.' : '' ?></div>
                 </div>
             </div>
         </div>
@@ -298,7 +299,7 @@ ob_start(); ?>
     function bodovi() {
         if (!bodEl) return;
         var iz = cfg.bodovi || {}, v = iz[vrstaEl.value + '|' + spolEl.value] || iz[vrstaEl.value + '|'];
-        bodEl.hidden = !clanEl.value || clanEl.value === '0' || !vrstaEl.value;
+        bodEl.hidden = !clanEl.value || clanEl.value === '0';
         bodEl.querySelector('[data-od-bod-auto]').hidden = !v;
         bodEl.querySelector('[data-od-bod-rucno]').hidden = !!v;
         bodEl.querySelectorAll('[data-od-bod-rucno] input').forEach(function (i) { i.disabled = !!v; });

@@ -90,7 +90,7 @@ if (je_post()) {
     spremi_postavku('Bodovi.Prijenos', $nacin === 'nista' ? null : $nacin);
     spremi_postavku('Bodovi.PrijenosBroj', in_array($nacin, ['max', 'fiksno'], true) ? dec($broj) : null);
     spremi_postavku('Bodovi.PrijenosAuto', $auto ? '1' : null);
-    $minus = isset($_POST['Minus']) && $nacin !== 'nista' && bodovi_odstrel_ukljuceno();
+    $minus = isset($_POST['Minus']) && $nacin !== 'nista' && bodovi_odstrel_moguce();
     spremi_postavku('Bodovi.PrijenosMinus', $minus ? '1' : null);
     if ($auto && !$bioAuto) {
         // automatski tek od sljedeće bodovne godine – za tekuću je ručni prijenos
@@ -139,7 +139,7 @@ ob_start(); ?>
             <label class="form-check-label" for="auto">Prenesi automatski na dan resetiranja</label>
             <div class="form-text">Bez kvačice prenosite ručno (<a href="<?= e(url('akcije/prijenos')) ?>">Prijenos u novu godinu</a>) i možete svakom članu promijeniti iznos.</div>
         </div>
-        <?php if (bodovi_odstrel_ukljuceno()): ?>
+        <?php if (bodovi_odstrel_moguce()): ?>
         <div class="form-check mt-2">
             <input class="form-check-input" type="checkbox" name="Minus" id="minus" value="1"<?= chk($pr['minus']) ?>>
             <label class="form-check-label" for="minus">Minus (dug) prenesi u novu godinu</label>
@@ -180,8 +180,8 @@ ob_start(); ?>
     </div>
     <div class="card-footer"><button class="btn btn-primary">Spremi</button></div>
 </form>
-<?php elseif (modul('odstrel')): ?>
-<p class="small text-muted" style="max-width:760px">🦌 Oduzimanje bodova za odstrel: uključuje se u <a href="<?= e(url('sustav/moduli')) ?>">Sustav → Moduli → Bodovi za odstrel</a>.</p>
+<?php elseif (bodovi_odstrel_moguce()): ?>
+<p class="small text-muted" style="max-width:760px">🦌 Bodovi za odstrel: kod <b>Upisa odstrela</b> upisivač može ručno upisati koliko bodova oduzeti (staro / novo, prazno = ništa). Automatski popis iznosa po vrsti uključuje se u <a href="<?= e(url('sustav/moduli')) ?>">Sustav → Moduli → Bodovi za odstrel</a>.</p>
 <?php endif; ?>
 
 <div class="card" style="max-width:760px">

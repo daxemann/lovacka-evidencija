@@ -28,7 +28,7 @@ function moduli(): array
             0, []],
         'odstrel' => ['🦌', 'Odstrel i plan odstrela', 'Upis odstrela s brojem markice po sekcijama (ili zajednički / spojene sekcije), plan odstrela (planirano / ostvareno) po lovnoj godini, zaliha evidencijskih markica, podaci za obrasce, upozorenja (SLE, markice), PDF.',
             P_ODSTREL | P_ODSTREL_CITAJ | P_ODSTREL_UPOZ | P_ODSTREL_MARKICE, ['odstrel', 'odstrel/', 'izvoz/odstrel-pdf', 'izvoz/markice-pdf', 'sustav/odstrel']],
-        'bodovi_odstrel' => ['🦌', 'Bodovi za odstrel', 'Za upisani odstrel lovcu se automatski oduzimaju bodovi (iznos po vrsti i kategoriji, odvojeno iz starih – prenesenih – i novih bodova). Postavke u Sustav → Bodovi. Treba module Odstrel i Radne akcije.',
+        'bodovi_odstrel' => ['🦌', 'Bodovi za odstrel', 'Popis iznosa po vrsti i kategoriji (Sustav → Bodovi): za upisani odstrel bodovi se oduzimaju automatski, odvojeno iz starih (prenesenih) i novih. Bez modula upisivač u Upisu odstrela iznos upisuje ručno (prazno = ništa). Treba module Odstrel i Radne akcije.',
             0, []],
         'mojidok' => ['📄', 'Moji dokumenti', 'Član sprema svoje dokumente (lovačka iskaznica, dozvola za lov, oružni list, osiguranje …) kao fotografiju i/ili upis s brojem i rokom; vide ih samo on i tko smije vidjeti člana.',
             0, ['moji-dokumenti']],

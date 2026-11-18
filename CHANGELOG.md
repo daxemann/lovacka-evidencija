@@ -1,5 +1,8 @@
 # Promjene
 
+## 1.81.1 – 2026-11
+- **🦌 Ručni upis bodova radi i bez modula**: polja *„Oduzmi lovcu: staro … · novo …“* u obrascu **Upis odstrela** sada se vide i kad je modul „Bodovi za odstrel“ **isključen** (prazno = bodovi se ne mijenjaju). Modul uključuje samo **automatski popis iznosa** po vrsti i kategoriji (Sustav → Bodovi). Kod izmjene odstrela već oduzeti bodovi stoje u poljima. Kvačica „Minus prenesi u novu godinu“ dostupna je i bez modula.
+
 ## 1.81.0 – 2026-11
 - **🦌 Bodovi za odstrel – ručni upis**: popis iznosa u Sustav → Bodovi više nije obavezan. Ako za vrstu / kategoriju nema iznosa, u obrascu **Upis odstrela** pojave se polja *„Oduzmi lovcu: staro … · novo …“* – upisivač sam upiše koliko oduzeti, **prazno = bodovi se ne mijenjaju**. Ako iznos postoji, obrazac ga samo prikazuje i oduzima automatski kao dosad. Za gosta nema polja.
 - Kad je modul isključen, već oduzeti bodovi ostaju kakvi jesu i kod izmjene odstrela (brisanje odstrela ih i dalje vraća).
