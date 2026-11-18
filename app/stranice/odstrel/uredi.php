@@ -101,7 +101,8 @@ if (je_post()) {
     if ($upoz = odstrel_markica_povezi($nid, $o['Markica'] ?? null, $polja)) {
         poruka($upoz, 'warning');
     }
-    if ($upoz = bodovi_odstrel_obracunaj(odstrel_red($nid), $o === null, $k)) {
+    $rucno = ['staro' => u_broj($_POST['bod_staro'] ?? '') ?? 0.0, 'novo' => u_broj($_POST['bod_novo'] ?? '') ?? 0.0]; // samo ako vrsta nema iznos u postavkama
+    if ($upoz = bodovi_odstrel_obracunaj(odstrel_red($nid), $o === null, $k, $rucno)) {
         poruka($upoz, 'warning');
     }
     poruka('Spremljeno: ' . e($vrsta) . ($polja['Markica'] ? ', markica ' . e($polja['Markica']) : '') . '.');
@@ -129,7 +130,14 @@ if (modul('revir')) {
 }
 $oruzje = array_column(redovi('SELECT DISTINCT Oruzje FROM ClanOruzniListovi WHERE Oruzje IS NOT NULL AND Oruzje<>\'\' UNION SELECT DISTINCT Oruzje FROM Odstrel WHERE Oruzje IS NOT NULL'), 'Oruzje');
 $kalibri = array_column(redovi('SELECT DISTINCT Kalibar FROM Odstrel WHERE Kalibar IS NOT NULL ORDER BY Kalibar'), 'Kalibar');
-$cfg = ['vrste' => odstrel_vrste(), 'grupe' => array_combine(array_map('strval', array_keys($uredive)), array_map(fn($x) => odstrel_grupa($x ?: null), array_keys($uredive))),
+// 🦌 bodovi za odstrel: novi upis ili upis koji već ima vezu s bodovima (stari upisi ostaju bez)
+$veza = $o ? red('SELECT * FROM OdstrelBodovi WHERE OdstrelId=?', [(int) $o['Id']]) : null;
+$bodBlok = bodovi_odstrel_ukljuceno() && (!$o || $veza);
+$bodRucno = ['staro' => '', 'novo' => ''];
+if ($veza && $veza['AkcijaId'] && !bodovi_odstrel_iznos((string) $o['Vrsta'], $o['Spol'])) {
+    $bodRucno = ['staro' => (float) $veza['Staro'] ? (string) (float) $veza['Staro'] : '', 'novo' => (float) $veza['Novo'] ? (string) (float) $veza['Novo'] : ''];
+}
+$cfg = ['bodovi' => $bodBlok ? bodovi_odstrel_iznosi() : null, 'vrste' => odstrel_vrste(), 'grupe' => array_combine(array_map('strval', array_keys($uredive)), array_map(fn($x) => odstrel_grupa($x ?: null), array_keys($uredive))),
     'markice' => odstrel_slobodne_markice(odstrel_sekcije(true), odstrel_lovna_godina((string) $v['Datum'])), 'markicaSad' => (string) $v['Markica'], 'clanovi' => $clanoviPoSek, 'naprave' => $napravePoSek, 'clan' => $v['ClanId'] !== null ? (int) $v['ClanId'] : 0, 'naprava' => (int) $v['NapravaId'], 'spol' => (string) $v['Spol']];
 ob_start(); ?>
 <div class="d-flex align-items-center gap-2 mb-3">
@@ -182,6 +190,25 @@ ob_start(); ?>
             <datalist id="od-kalibri"><?php foreach ($kalibri as $x): ?><option value="<?= e($x) ?>"><?php endforeach; ?></datalist></div>
         <div class="col-6 col-md-4"><label class="form-label small mb-0">Udaljenost (m)</label>
             <input name="udaljenost" class="form-control" inputmode="numeric" value="<?= e($v['Udaljenost'] !== null ? (string) $v['Udaljenost'] : '') ?>"></div>
+
+        <?php if ($bodBlok): ?>
+        <div class="col-12" data-od-bodovi hidden>
+            <div class="border rounded p-2 bg-light">
+                <div class="small fw-semibold mb-1">🦌 Bodovi za odstrel</div>
+                <div class="small" data-od-bod-auto hidden></div>
+                <div data-od-bod-rucno>
+                    <div class="small mb-1">Oduzmi lovcu bodova:</div>
+                    <div class="row g-2" style="max-width:20rem">
+                        <div class="col-6"><label class="form-label small mb-0 text-danger">staro</label>
+                            <input name="bod_staro" type="number" step="0.5" min="0" inputmode="decimal" class="form-control form-control-sm text-danger" value="<?= e($bodRucno['staro']) ?>"></div>
+                        <div class="col-6"><label class="form-label small mb-0">novo</label>
+                            <input name="bod_novo" type="number" step="0.5" min="0" inputmode="decimal" class="form-control form-control-sm" value="<?= e($bodRucno['novo']) ?>"></div>
+                    </div>
+                    <div class="small text-muted mt-1">Za ovu vrstu nema iznosa u Sustav → Bodovi. Prazno = bodovi se ne mijenjaju.</div>
+                </div>
+            </div>
+        </div>
+        <?php endif; ?>
 
         <?php if ($poljaObr || $sle): ?>
         <div class="col-12"><hr class="my-2"><b class="small text-uppercase text-muted">Obrasci<?= $sle ? ' i SLE' : '' ?></b>
@@ -265,7 +292,21 @@ ob_start(); ?>
     vrstaEl.addEventListener('input', spol); vrstaEl.addEventListener('change', spol);
     if (sekEl.tagName === 'SELECT') sekEl.addEventListener('change', sekcija);
     clanEl.addEventListener('change', gost);
-    spol(); sekcija(); markice();
+    // 🦌 bodovi za odstrel: iznos iz postavki (samo info) ili ručni upis; gost – ništa
+    var bodEl = f.querySelector('[data-od-bodovi]');
+    function broj(x) { return String(x).replace('.', ','); }
+    function bodovi() {
+        if (!bodEl) return;
+        var iz = cfg.bodovi || {}, v = iz[vrstaEl.value + '|' + spolEl.value] || iz[vrstaEl.value + '|'];
+        bodEl.hidden = !clanEl.value || clanEl.value === '0' || !vrstaEl.value;
+        bodEl.querySelector('[data-od-bod-auto]').hidden = !v;
+        bodEl.querySelector('[data-od-bod-rucno]').hidden = !!v;
+        bodEl.querySelectorAll('[data-od-bod-rucno] input').forEach(function (i) { i.disabled = !!v; });
+        if (v) bodEl.querySelector('[data-od-bod-auto]').innerHTML = 'Oduzima se automatski (Sustav → Bodovi): <b class="text-danger">staro ' + broj(v.staro) + '</b> + <b>novo ' + broj(v.novo) + '</b>';
+    }
+    [vrstaEl, spolEl, clanEl].forEach(function (x) { x.addEventListener('change', bodovi); x.addEventListener('input', bodovi); });
+    if (sekEl.tagName === 'SELECT') sekEl.addEventListener('change', bodovi);
+    spol(); sekcija(); markice(); bodovi();
 })();
 </script>
 <?php stranica($o ? 'Izmjena odstrela' : 'Upis odstrela', ob_get_clean());

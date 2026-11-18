@@ -159,7 +159,7 @@ ob_start(); ?>
     <div class="card-header">🦌 Bodovi za odstrel <span class="text-muted small">(oduzimaju se automatski pri upisu odstrela)</span></div>
     <div class="card-body">
         <p class="small text-muted">Koliko se bodova lovcu oduzme za odstrel – odvojeno iz <span class="text-danger fw-semibold">starih</span> (prenesenih iz prošle godine) i <b>novih</b> bodova.
-            Npr. jelen: staro 300 + novo 300 = oduzima se 600. Bez podjele na staro/novo upišite sve u „novo“. Prazno ili 0 = ne oduzima se.
+            Npr. jelen: staro 300 + novo 300 = oduzima se 600. Bez podjele na staro/novo upišite sve u „novo“. Prazno = nema stalnog iznosa: pri upisu odstrela upisivač sam upiše koliko oduzeti (ili ništa).
             Redak „cijela vrsta“ vrijedi za kategorije bez vlastitog iznosa. Ako lovac nema dovoljno, bodovi idu u minus (upisivač vidi upozorenje). Gost i već upisani odstrel – bez oduzimanja.</p>
         <div class="table-responsive"><table class="table table-sm align-middle mb-0">
             <thead><tr class="small"><th>Vrsta / kategorija</th><th style="width:7rem" class="text-danger">Staro</th><th style="width:7rem">Novo</th></tr></thead>

@@ -197,7 +197,7 @@ if (ima(P_AKCIJE_CITAJ) || ima(P_AKCIJE_ODOBRI)) {
 }
 if (bodovi_odstrel_ukljuceno() && (ima(P_AKCIJE_CITAJ) || ima(P_SUSTAV))) {
     $udruga .= '<li><b>🦌 Bodovi za odstrel:</b> u Sustav → Bodovi po vrsti i kategoriji upišete koliko se oduzima iz <span class="text-danger">starih</span> (prenesenih), a koliko iz novih bodova (npr. jelen 300 + 300). '
-        . 'Pri upisu odstrela bodovi se oduzmu sami; ako lovac nema dovoljno, idu u minus (upisivač vidi upozorenje). Izmjena ili brisanje odstrela odmah ispravlja bodove; gost i odstrel upisan prije uključivanja – bez oduzimanja. '
+        . 'Pri upisu odstrela bodovi se oduzmu sami; ako za vrstu nema iznosa, u obrascu „Upis odstrela“ upišete koliko oduzeti (staro / novo) – prazno = ništa. Ako lovac nema dovoljno, bodovi idu u minus (upisivač vidi upozorenje).Izmjena ili brisanje odstrela odmah ispravlja bodove; gost i odstrel upisan prije uključivanja – bez oduzimanja. '
         . 'Oduzeti bodovi se ne prenose; ostatak po pravilu prijenosa, minus samo ako je tako postavljeno.</li>';
 }
 if (modul('odstrel') && odstrel_sekcije()) {

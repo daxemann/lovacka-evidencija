@@ -1,5 +1,9 @@
 # Promjene
 
+## 1.81.0 – 2026-11
+- **🦌 Bodovi za odstrel – ručni upis**: popis iznosa u Sustav → Bodovi više nije obavezan. Ako za vrstu / kategoriju nema iznosa, u obrascu **Upis odstrela** pojave se polja *„Oduzmi lovcu: staro … · novo …“* – upisivač sam upiše koliko oduzeti, **prazno = bodovi se ne mijenjaju**. Ako iznos postoji, obrazac ga samo prikazuje i oduzima automatski kao dosad. Za gosta nema polja.
+- Kad je modul isključen, već oduzeti bodovi ostaju kakvi jesu i kod izmjene odstrela (brisanje odstrela ih i dalje vraća).
+
 ## 1.80.0 – 2026-11
 - **🦌 Bodovi za odstrel** (novi modul, zadano **isključen** – Sustav → Moduli): pri upisu odstrela lovcu se bodovi **oduzimaju automatski**. U Sustav → Bodovi po vrsti i kategoriji upišete koliko se oduzima iz **starih** (prenesenih) i koliko iz **novih** bodova – npr. jelen: 300 starih + 300 novih. Bez podjele sve upišete u „novo“.
 - Ako lovac nema dovoljno, bodovi idu **u minus**, a upisivač vidi upozorenje – odstrel se uvijek sprema. Izmjena odstrela (vrsta, kategorija, lovac) odmah ispravlja bodove, brisanje ih vraća. Gost i odstrel upisan prije uključivanja – bez oduzimanja. Svako oduzimanje u dnevniku rada; ručno se ne može vratiti na čekanje.

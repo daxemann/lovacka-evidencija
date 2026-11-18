@@ -334,17 +334,22 @@ function bodovi_odstrel_iznos(string $vrsta, ?string $kategorija): ?array
 
 /**
  * Nakon upisa / izmjene odstrela: oduzima (ili ispravlja) bodove lovca. Odstrel upisan prije uključivanja se ne dira.
+ * Iznos iz postavki (Sustav → Bodovi); ako ga za vrstu/kategoriju nema, vrijedi ručni upis iz obrasca ($rucno, prazno = ništa).
  * Bodovi mogu otići u minus – tada vraća upozorenje za upisivača (odstrel se uvijek sprema).
  */
-function bodovi_odstrel_obracunaj(array $o, bool $novi, ?array $k = null): ?string
+function bodovi_odstrel_obracunaj(array $o, bool $novi, ?array $k = null, ?array $rucno = null): ?string
 {
     $oid = (int) $o['Id'];
     $veza = red('SELECT * FROM OdstrelBodovi WHERE OdstrelId=?', [$oid]);
-    if (!$veza && (!$novi || !bodovi_odstrel_ukljuceno())) {
-        return null; // stari upis ili isključeno: ostaje kako je bio
+    if (!bodovi_odstrel_ukljuceno() || (!$veza && !$novi)) {
+        return null; // modul isključen ili stari upis: bodovi ostaju kakvi jesu (brisanje odstrela ih i dalje vraća)
     }
     $clanId = !$o['Gost'] && $o['ClanId'] ? (int) $o['ClanId'] : 0;
     $iznos = $clanId ? bodovi_odstrel_iznos((string) $o['Vrsta'], $o['Spol']) : null;
+    if ($clanId && !$iznos && $rucno && bodovi_odstrel_ukljuceno()) {
+        $r = ['staro' => max(0.0, (float) ($rucno['staro'] ?? 0)), 'novo' => max(0.0, (float) ($rucno['novo'] ?? 0))];
+        $iznos = $r['staro'] > 0 || $r['novo'] > 0 ? $r : null; // ručni upis u obrascu (nema iznosa u postavkama)
+    }
     $aid = $veza && $veza['AkcijaId'] && vrijednost('SELECT 1 FROM RadneAkcije WHERE Id=?', [(int) $veza['AkcijaId']]) ? (int) $veza['AkcijaId'] : null;
     $upozorenje = null;
     if ($iznos) {
