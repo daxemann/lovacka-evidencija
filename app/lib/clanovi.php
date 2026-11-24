@@ -426,7 +426,7 @@ function potpis_korisnika(int $korisnikId): ?string
 function potpis_datauri(int $korisnikId): ?string
 {
     $f = potpis_korisnika($korisnikId);
-    return $f ? 'data:image/png;base64,' . base64_encode((string) file_get_contents(podaci('foto/' . $f))) : null;
+    return $f ? foto_datauri($f) : null;
 }
 /** Sprema potpis (crtež data:image/png ili učitana slika) za korisnika. */
 function potpis_spremi(int $korisnikId, string $crtez, array $datoteka): void
@@ -493,12 +493,10 @@ function potpis_clana(int $clanId): ?string
 /** Sprema kopiju datoteke potpisa kao trajni potpis člana (račun → Moj profil; bez računa → kod člana). */
 function potpis_clana_spremi_kopiju(int $clanId, string $datoteka): void
 {
-    $izvor = podaci('foto/' . basename($datoteka));
-    if (!is_file($izvor)) {
+    $novo = 'potpis-' . bin2hex(random_bytes(8)) . '.png';
+    if (!foto_kopiraj($datoteka, $novo)) {
         return;
     }
-    $novo = 'potpis-' . bin2hex(random_bytes(8)) . '.png';
-    copy($izvor, podaci('foto/' . $novo));
     $kl = ($kid = korisnik_clana($clanId)) ? 'K' . $kid : 'C' . $clanId;
     obrisi_sliku(postavka('Potpis.' . $kl));
     spremi_postavku('Potpis.' . $kl, $novo);

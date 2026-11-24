@@ -178,7 +178,7 @@ i otvorite http://localhost:8080
 - pristup samo uz pozivnicu ili samoprijavu – uvijek uz odobrenje administratora
 - dvofaktorska prijava (Google Authenticator) za administratore
 - lozinke šifrirane, zaključavanje nakon 5 pogrešnih pokušaja, zaštita od CSRF-a
-- šifriranje osjetljivih podataka članova u bazi (adresa, kontakt, OIB, iskaznice…) – uključuje se u Sustav → Sigurnosne kopije
+- šifriranje osjetljivih podataka članova u bazi (adresa, kontakt, OIB, iskaznice…) te fotografija dokumenata i potpisa – uključuje se u Sustav → Sigurnosne kopije
 - automatske dnevne sigurnosne kopije, kompletna kopija (ZIP) za preseljenje
 - dnevnik promjena – tko je što promijenio
 

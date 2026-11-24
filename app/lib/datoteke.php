@@ -5,7 +5,8 @@ declare(strict_types=1);
 const SLIKA_MAX_MP = 60;          // veće slike se odbijaju (memorija poslužitelja)
 const SLIKA_MAX_ORIGINAL_MB = 4;  // bez smanjivanja (nema GD) sprema se samo do ove veličine
 
-function posalji_datoteku(string $put, int $cache = 0, ?string $ime = null, ?string $tip = null): never
+/** $sadrzaj = već pročitan (dešifriran) sadržaj; inače se šalje datoteka s diska. */
+function posalji_datoteku(string $put, int $cache = 0, ?string $ime = null, ?string $tip = null, ?string $sadrzaj = null): never
 {
     $tip ??= match (strtolower(pathinfo($put, PATHINFO_EXTENSION))) {
         'jpg', 'jpeg' => 'image/jpeg', 'png' => 'image/png', 'webp' => 'image/webp', 'gif' => 'image/gif',
@@ -13,13 +14,17 @@ function posalji_datoteku(string $put, int $cache = 0, ?string $ime = null, ?str
         'db' => 'application/octet-stream', default => 'application/octet-stream',
     };
     header('Content-Type: ' . $tip);
-    header('Content-Length: ' . filesize($put));
+    header('Content-Length: ' . ($sadrzaj === null ? filesize($put) : strlen($sadrzaj)));
     header('X-Content-Type-Options: nosniff');
     header($cache > 0 ? 'Cache-Control: private, max-age=' . $cache : 'Cache-Control: no-store');
     if ($ime) {
         header('Content-Disposition: attachment; filename="' . str_replace('"', '', $ime) . '"');
     }
-    readfile($put);
+    if ($sadrzaj === null) {
+        readfile($put);
+    } else {
+        echo $sadrzaj;
+    }
     exit;
 }
 
@@ -59,7 +64,6 @@ function spremi_sliku(array $f, string $prefiks, int $max = 1600, bool $png = fa
     }
     $ext = $png ? 'png' : 'jpg';
     $ime = $prefiks . bin2hex(random_bytes(6)) . '.' . $ext;
-    $cilj = podaci('foto/' . $ime);
     if (function_exists('imagecreatefromstring')) {
         $src = @imagecreatefromstring((string) file_get_contents($f['tmp_name']));
         if ($src) {
@@ -81,8 +85,10 @@ function spremi_sliku(array $f, string $prefiks, int $max = 1600, bool $png = fa
                 imagefill($dst, 0, 0, imagecolorallocate($dst, 255, 255, 255));
             }
             imagecopyresampled($dst, $src, 0, 0, 0, 0, $nw, $nh, $w, $h);
-            $ok = $png ? imagepng($dst, $cilj, 6) : imagejpeg($dst, $cilj, 85);
-            if ($ok) {
+            ob_start();
+            $ok = $png ? imagepng($dst, null, 6) : imagejpeg($dst, null, 85);
+            $sadrzaj = (string) ob_get_clean();
+            if ($ok && $sadrzaj !== '' && foto_zapisi($ime, $sadrzaj)) { // osjetljive se spremaju šifrirano
                 return $ime;
             }
         }
@@ -93,8 +99,7 @@ function spremi_sliku(array $f, string $prefiks, int $max = 1600, bool $png = fa
     }
     $ext = image_type_to_extension($info[2], false) === 'jpeg' ? 'jpg' : image_type_to_extension($info[2], false);
     $ime = $prefiks . bin2hex(random_bytes(6)) . '.' . $ext;
-    $ok = is_uploaded_file($f['tmp_name']) ? move_uploaded_file($f['tmp_name'], podaci('foto/' . $ime)) : copy($f['tmp_name'], podaci('foto/' . $ime));
-    if (!$ok) {
+    if (!foto_zapisi($ime, (string) file_get_contents($f['tmp_name']))) {
         throw new RuntimeException('Slika se ne može spremiti (prava na mapu podaci/foto).');
     }
     return $ime;

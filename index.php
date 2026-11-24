@@ -41,6 +41,7 @@ if (!dopusti_trazilice()) {
 pokreni_sesiju();
 zakljucaj_ako_je_baza_izlozena((string) ($_GET['p'] ?? '')); // nginx i sl.: baza se može preuzeti s interneta → program zaključan
 sifriranje_pocisti_kopije(); // šifriranje uključeno: nešifrirane kopije na poslužitelju se brišu (jednom dnevno, i bez prijave)
+datoteke_sifriraj_ostatke(); // šifriranje datoteka uključeno: preostale nešifrirane fotografije dokumenata i potpisi (jednom dnevno)
 provjeri_csrf();
 if (je_demo()) {
     demo_odrzavanje();

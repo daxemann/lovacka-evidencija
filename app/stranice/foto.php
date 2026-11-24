@@ -56,4 +56,12 @@ if (!$dozvoljeno) {
     http_response_code(403);
     exit;
 }
-posalji_datoteku($dat, 3600);
+if (!foto_osjetljiva($ime)) {
+    posalji_datoteku($dat, 3600);
+}
+$sadrzaj = foto_sadrzaj($ime); // fotografije dokumenata i potpisi mogu biti šifrirani
+if ($sadrzaj === null) {
+    http_response_code(404);
+    exit;
+}
+posalji_datoteku($dat, 3600, null, null, $sadrzaj);

@@ -566,7 +566,7 @@ ob_start(); ?>
         <div class="form-text">Brojevi oružnih listova ispisuju se na popisu sudionika skupnog lova.</div>
         <?php if ($pf = potpis_clana($id)): ?>
         <div class="d-flex flex-wrap align-items-center gap-2 border-top pt-2 mt-2"><span class="small text-muted">✍ Spremljeni potpis:</span>
-            <img src="data:image/png;base64,<?= base64_encode((string) file_get_contents(podaci('foto/' . $pf))) ?>" alt="potpis" class="dez-potpis-slika">
+            <img src="<?= e(foto_datauri($pf) ?? '') ?>" alt="potpis" class="dez-potpis-slika">
             <?php if ($uredi): ?><form method="post" action="<?= $ourl ?>" class="ms-auto"><?= csrf() ?><input type="hidden" name="radnja" value="potpis-obrisi">
                 <button class="btn btn-sm btn-outline-danger" data-potvrda="Obrisati spremljeni potpis člana?">Obriši</button></form><?php endif; ?></div>
         <?php endif; ?>

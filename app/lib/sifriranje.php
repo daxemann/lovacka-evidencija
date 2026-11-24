@@ -282,6 +282,11 @@ function sifriranje_prepreka(): string
     if (sifriranje_stanje() !== '') {
         return 'Šifriranje je već uključeno ili je prebacivanje u tijeku.';
     }
+    return sifriranje_prepreka_kopija();
+}
+/** Uvjet za svako uključivanje: lozinka kopije i svježa kompletna kopija – '' = ispunjen. */
+function sifriranje_prepreka_kopija(): string
+{
     if (!kopija_lozinka_postavljena()) {
         return 'Prvo postavite lozinku kopije.';
     }
@@ -301,14 +306,20 @@ function sifriranje_ukljuci(): void
     sifriranje_postavi_stanje('sifriram');
     dnevnik('Šifriranje podataka članova: pokrenuto', null, null, 'kopija prije: ' . $kopija);
 }
-/** Isključivanje: lozinka za prijavu + 2FA. E-mail svima s pravom „Sustav“. */
-function sifriranje_iskljuci(array $racun, string $lozinka, string $kod2fa): void
+/**
+ * Isključivanje: lozinka za prijavu + 2FA. E-mail svima s pravom „Sustav“.
+ * $samoDatoteke = samo fotografije dokumenata i potpisi; inače sve (podaci u bazi i datoteke).
+ */
+function sifriranje_iskljuci(array $racun, string $lozinka, string $kod2fa, bool $samoDatoteke = false): void
 {
     if (je_demo()) {
         throw new RuntimeException('U demo verziji šifriranje se ne može mijenjati.');
     }
-    if (sifriranje_stanje() !== 'ukljuceno') {
+    if (($samoDatoteke ? datoteke_stanje() : sifriranje_stanje()) !== 'ukljuceno') {
         throw new RuntimeException('Šifriranje nije uključeno.');
+    }
+    if (!$samoDatoteke && datoteke_u_tijeku()) {
+        throw new RuntimeException('Prebacivanje datoteka je u tijeku – pričekajte da završi.');
     }
     if (!provjeri_lozinku((string) $racun['LozinkaHash'], $lozinka)) {
         usleep(500000);
@@ -323,11 +334,17 @@ function sifriranje_iskljuci(array $racun, string $lozinka, string $kod2fa): voi
         dnevnik('Šifriranje: isključivanje – pogrešan 2FA kod');
         throw new RuntimeException('2FA kod nije točan (ili je već iskorišten).');
     }
-    sifriranje_postavi_stanje('desifriram');
+    if (datoteke_stanje() === 'ukljuceno') {
+        datoteke_postavi_stanje('desifriram');
+    }
+    if (!$samoDatoteke) {
+        sifriranje_postavi_stanje('desifriram');
+    }
+    $sto = $samoDatoteke ? 'datoteka (fotografije dokumenata i potpisi)' : 'podataka članova';
     $ime = kopija_ime_korisnika($racun);
     $ip = (string) ($_SERVER['REMOTE_ADDR'] ?? '');
-    dnevnik('Šifriranje podataka članova: isključivanje pokrenuto', null, null, 'IP ' . $ip);
-    $tijelo = '<p>Šifriranje podataka članova za <b>' . e(udruga_kratko()) . '</b> je <b>isključio/la ' . e($ime) . '</b> ('
+    dnevnik('Šifriranje ' . $sto . ': isključivanje pokrenuto', null, null, 'IP ' . $ip);
+    $tijelo = '<p>Šifriranje ' . $sto . ' za <b>' . e(udruga_kratko()) . '</b> je <b>isključio/la ' . e($ime) . '</b> ('
         . e(date('d.m.Y. H:i')) . ', IP ' . e($ip) . '). Podaci se ponovno spremaju nešifrirano.</p>'
         . '<p>Ako to niste bili vi ili ne znate za tu promjenu, prijavite se i u <b>Sustav → Sigurnosne kopije</b> ponovno uključite šifriranje, zatim promijenite lozinke za prijavu.</p>';
     foreach (kopija_admini_emailovi() as $em) {
@@ -382,10 +399,10 @@ function kopija_je_sifrirana(string $datoteka): ?bool
 /** Početna (administratori): prebacivanje je u tijeku – nastavlja se otvaranjem Sigurnosnih kopija. */
 function sifriranje_obavijest_html(): string
 {
-    if (!ima(P_SUSTAV) || !sifriranje_u_tijeku()) {
+    if (!ima(P_SUSTAV) || (!sifriranje_u_tijeku() && !datoteke_u_tijeku())) {
         return '';
     }
-    $tekst = sifriranje_stanje() === 'sifriram' ? '🔐 <b>Šifriranje podataka članova je u tijeku.</b>' : '🔓 <b>Dešifriranje podataka članova je u tijeku.</b>';
+    $tekst = in_array('sifriram', [sifriranje_stanje(), datoteke_stanje()], true) ? '🔐 <b>Šifriranje podataka članova je u tijeku.</b>' : '🔓 <b>Dešifriranje podataka članova je u tijeku.</b>';
     return '<div class="alert alert-info d-flex flex-wrap align-items-center gap-2 no-print"><span class="me-auto">' . $tekst
         . ' Program radi normalno; prebacivanje se nastavlja dok je otvorena stranica Sigurnosne kopije.</span>'
         . '<a class="btn btn-sm btn-info" href="' . e(url('sustav/kopije')) . '#sifriranje">Nastavi</a></div>';

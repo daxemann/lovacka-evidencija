@@ -100,9 +100,16 @@ if (je_post()) {
         } catch (Throwable $e) {
             poruka(e($e->getMessage()), 'warning');
         }
-    } elseif ($radnja === 'sifriranje_iskljuci') {
+    } elseif ($radnja === 'datoteke_ukljuci') {
         try {
-            sifriranje_iskljuci(red('SELECT * FROM Korisnici WHERE Id=?', [(int) korisnik()['Id']]) ?? [], (string) ($_POST['moja'] ?? ''), (string) ($_POST['kod2fa'] ?? ''));
+            datoteke_ukljuci();
+            poruka('🔐 Šifriranje datoteka je pokrenuto – ostavite ovu stranicu otvorenom dok traka ne dođe do kraja.');
+        } catch (Throwable $e) {
+            poruka(e($e->getMessage()), 'warning');
+        }
+    } elseif ($radnja === 'sifriranje_iskljuci' || $radnja === 'datoteke_iskljuci') {
+        try {
+            sifriranje_iskljuci(red('SELECT * FROM Korisnici WHERE Id=?', [(int) korisnik()['Id']]) ?? [], (string) ($_POST['moja'] ?? ''), (string) ($_POST['kod2fa'] ?? ''), $radnja === 'datoteke_iskljuci');
             poruka('🔓 Isključivanje je pokrenuto – ostavite ovu stranicu otvorenom dok traka ne dođe do kraja. Svi administratori su obaviješteni.');
         } catch (Throwable $e) {
             poruka(e($e->getMessage()), 'danger');
@@ -184,7 +191,22 @@ if ($zahtjev && ($zahtjev['do'] < time() || $zahtjev['korisnik'] !== (int) koris
 // ---------- Šifriranje podataka članova ----------
 $sifStanje = sifriranje_stanje();
 $sifPrepreka = $sifStanje === '' ? sifriranje_prepreka() : '';
-$sifPreostalo = in_array($sifStanje, ['sifriram', 'desifriram'], true) ? sifriranje_preostalo($sifStanje) : 0;
+$datStanje = datoteke_stanje();
+$datPrepreka = $datStanje === '' ? datoteke_prepreka() : '';
+// traka napretka: najprije datoteke, zatim baza
+$sifUTijeku = datoteke_u_tijeku() ? $datStanje : (sifriranje_u_tijeku() ? $sifStanje : '');
+$sifPreostalo = (sifriranje_u_tijeku() ? sifriranje_preostalo($sifStanje) : 0) + (datoteke_u_tijeku() ? count(datoteke_preostale($datStanje)) : 0);
+$datNesifrirane = $datStanje === 'ukljuceno' ? count(datoteke_preostale('sifriram')) : 0;
+// obrazac za isključivanje (lozinka za prijavu + 2FA) – isti za podatke i za datoteke
+$sifIskljuci = function (string $radnja, string $naslov, string $opis) { ?>
+        <details class="mt-2"><summary><?= e($naslov) ?></summary>
+            <p class="text-muted my-2"><?= e($opis) ?> Potrebna je lozinka za prijavu<?= dvofaktor_ukljucen() ? ' i <b>2FA kod</b>' : '' ?>; svi administratori dobivaju e-mail.</p>
+            <form method="post" action="<?= e(url('sustav/kopije')) ?>" class="row g-2"><?= csrf() ?><input type="hidden" name="radnja" value="<?= e($radnja) ?>">
+                <div class="col-sm-<?= dvofaktor_ukljucen() ? '7' : '12' ?>"><label class="form-label small mb-0">Vaša lozinka za prijavu</label><input name="moja" type="password" class="form-control form-control-sm" required autocomplete="current-password"></div>
+                <?php if (dvofaktor_ukljucen()): ?><div class="col-sm-5"><label class="form-label small mb-0">2FA kod</label><input name="kod2fa" class="form-control form-control-sm" required inputmode="numeric" autocomplete="one-time-code" maxlength="9" placeholder="123456"></div><?php endif; ?>
+                <div class="col-12"><button class="btn btn-outline-danger btn-sm" data-potvrda="<?= e($naslov) ?>? <?= e($opis) ?>"><?= e($naslov) ?></button></div>
+            </form></details>
+<?php };
 ?>
 <div class="card mb-3" style="max-width:700px" id="sifriranje">
     <div class="card-header">🔐 Šifriranje podataka članova</div>
@@ -194,8 +216,9 @@ $sifPreostalo = in_array($sifStanje, ['sifriram', 'desifriram'], true) ? sifrira
             s poslužitelja, ne može ih pročitati. <b>U programu se sve vidi i radi kao i prije.</b> Imena, GPS i poruke se ne šifriraju.</p>
         <?php if ($sifStanje === 'ukljuceno'): ?>
             <div class="text-success mb-2">✓ <b>Šifriranje je uključeno.</b></div>
-        <?php elseif ($sifStanje !== ''): ?>
-            <div class="mb-1"><?= $sifStanje === 'sifriram' ? '🔐 Šifriram' : '🔓 Dešifriram' ?> … preostalo <b id="sif-preostalo"><?= $sifPreostalo ?></b> vrijednosti. Ostavite ovu stranicu otvorenom – program za to vrijeme radi normalno.</div>
+        <?php endif; ?>
+        <?php if ($sifUTijeku !== ''): ?>
+            <div class="mb-1"><?= $sifUTijeku === 'sifriram' ? '🔐 Šifriram' : '🔓 Dešifriram' ?> … preostalo <b id="sif-preostalo"><?= $sifPreostalo ?></b> <?= datoteke_u_tijeku() ? 'datoteka' : 'vrijednosti' ?>. Ostavite ovu stranicu otvorenom – program za to vrijeme radi normalno.</div>
             <div class="progress mb-2" style="height:22px"><div class="progress-bar progress-bar-striped progress-bar-animated" id="sif-traka" style="width:5%"></div></div>
             <div class="text-danger d-none" id="sif-greska"></div>
             <script>
@@ -216,7 +239,7 @@ $sifPreostalo = in_array($sifStanje, ['sifriram', 'desifriram'], true) ? sifrira
                 korak();
             })();
             </script>
-        <?php else: ?>
+        <?php elseif ($sifStanje === ''): ?>
             <div class="mb-2">Šifriranje je <b>isključeno</b>.</div>
             <ul class="list-unstyled mb-2">
                 <li><?= kopija_lozinka_postavljena() ? '✅' : '⬜' ?> Lozinka kopije je postavljena</li>
@@ -235,13 +258,26 @@ $sifPreostalo = in_array($sifStanje, ['sifriram', 'desifriram'], true) ? sifrira
                 u <code>config.php</code> upišite <code>'kljuc' =&gt; '/putanja/izvan/weba/kljuc.php'</code> (program ga sam premjesti). Prije toga preuzmite kompletnu kopiju – u njoj je i ključ.</div>
         <?php endif; ?>
         <?php if ($sifStanje === 'ukljuceno'): ?>
-        <details class="mt-2"><summary>Isključi šifriranje</summary>
-            <p class="text-muted my-2">Podaci se ponovno spremaju nešifrirano. Potrebna je lozinka za prijavu<?= dvofaktor_ukljucen() ? ' i <b>2FA kod</b>' : '' ?>; svi administratori dobivaju e-mail.</p>
-            <form method="post" action="<?= e(url('sustav/kopije')) ?>" class="row g-2"><?= csrf() ?><input type="hidden" name="radnja" value="sifriranje_iskljuci">
-                <div class="col-sm-<?= dvofaktor_ukljucen() ? '7' : '12' ?>"><label class="form-label small mb-0">Vaša lozinka za prijavu</label><input name="moja" type="password" class="form-control form-control-sm" required autocomplete="current-password"></div>
-                <?php if (dvofaktor_ukljucen()): ?><div class="col-sm-5"><label class="form-label small mb-0">2FA kod</label><input name="kod2fa" class="form-control form-control-sm" required inputmode="numeric" autocomplete="one-time-code" maxlength="9" placeholder="123456"></div><?php endif; ?>
-                <div class="col-12"><button class="btn btn-outline-danger btn-sm" data-potvrda="Stvarno isključiti šifriranje? Podaci će biti spremljeni nešifrirano.">Isključi šifriranje</button></div>
-            </form></details>
+        <div class="border-top pt-2 mt-2" id="sifriranje-datoteke">
+            <p class="mb-2"><b>📷 Fotografije dokumenata i potpisi</b> – slike iz <i>Moji dokumenti</i> i svi potpisi spremaju se šifrirano, i u kompletnoj kopiji.
+                U programu i na PDF-ovima se vide kao i prije. Fotografije članova i ostale slike se ne šifriraju.</p>
+            <?php if ($datStanje === 'ukljuceno'): ?>
+                <div class="text-success">✓ <b>Šifriranje datoteka je uključeno.</b></div>
+                <?php if ($datNesifrirane): ?><div class="text-danger">⚠ Još nešifrirano: <?= $datNesifrirane ?> – program pokušava ponovno jednom dnevno.</div><?php endif; ?>
+                <?php $sifIskljuci('datoteke_iskljuci', 'Isključi šifriranje datoteka', 'Fotografije dokumenata i potpisi ponovno se spremaju nešifrirano.'); ?>
+            <?php elseif ($datStanje === ''): ?>
+                <div class="mb-2">Šifriranje datoteka je <b>isključeno</b>.</div>
+                <?php if ($datPrepreka !== ''): ?>
+                    <div class="alert alert-secondary py-2 mb-0"><?= e($datPrepreka) ?></div>
+                <?php else: ?>
+                    <form method="post" action="<?= e(url('sustav/kopije')) ?>"><?= csrf() ?><input type="hidden" name="radnja" value="datoteke_ukljuci">
+                        <button class="btn btn-primary btn-sm" data-potvrda="Uključiti šifriranje fotografija dokumenata i potpisa? Starija verzija programa (prije 1.83.0) ih ne može prikazati.">🔐 Uključi šifriranje datoteka</button></form>
+                <?php endif; ?>
+            <?php endif; ?>
+        </div>
+        <?php if ($sifUTijeku === '') {
+            $sifIskljuci('sifriranje_iskljuci', 'Isključi šifriranje', 'Podaci' . ($datStanje !== '' ? ', fotografije dokumenata i potpisi' : '') . ' ponovno se spremaju nešifrirano.');
+        } ?>
         <?php endif; ?>
     </div>
 </div>

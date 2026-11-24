@@ -1,5 +1,11 @@
 # Promjene
 
+## 1.83.0 – 2026-11
+- **🔐 Šifriranje fotografija dokumenata i potpisa** (Sustav → Sigurnosne kopije, zadano **isključeno**): slike iz **Moji dokumenti** (iskaznica, oružni list, dozvole …) i svi **potpisi** (osobni, sa skupnog lova, dezinfekcija) spremaju se **šifrirano (AES-256)** – tko dođe do datoteka na poslužitelju, ne može ih otvoriti. **U programu i na PDF-ovima se sve vidi kao i prije.** Fotografije članova i ostale slike zasad se ne šifriraju.
+- Uključuje se zasebno, tek kad je uključeno šifriranje podataka članova, uz lozinku kopije i kompletnu kopiju preuzetu u zadnja 24 h. Prebacivanje ide u obrocima s trakom napretka; prekid je bezopasan. Nove slike spremaju se odmah šifrirano, a zaostale (npr. nakon vraćanja starije kopije) program jednom dnevno šifrira sam.
+- U **kompletnoj kopiji** te slike ostaju šifrirane – vide se nakon vraćanja u program (ključ je u kopiji, kopija je zaštićena lozinkom kopije).
+- **Isključivanje** samo lozinkom za prijavu + 2FA kodom; svi administratori dobivaju e-mail. Napomena: verzije prije 1.83.0 ne mogu prikazati šifrirane slike.
+
 ## 1.82.0 – 2026-11
 - **🏅 Bodovi za funkciju – po članu isključivo**: na kartici člana → Funkcije kod svake funkcije s bodovima kvačica **„🏅 bodovi“** (zadano uključeno, kao dosad). Ima li član dvije slične funkcije, a u udruzi bodovi vrijede samo jednom, kod suvišne se kvačica makne – od sljedećeg upisa za nju nema bodova, **već upisani bodovi ostaju**. Mijenja tko ima pravo „Članovi – uređivanje“; svaka promjena u dnevniku rada.
 - **Žuto upozorenje** na kartici člana kad ima više aktivnih funkcija s bodovima – da se ne plaća dvaput nehotice.

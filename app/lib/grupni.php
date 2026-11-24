@@ -957,8 +957,8 @@ function gl_popis_ukloni(array $lov, int $id): void
 /** Potpis sudionika (gost se potpisao na mobitelu) za PDF. */
 function gl_potpis_img(?string $f): string
 {
-    $put = $f ? podaci('foto/' . basename($f)) : null;
-    return $put && is_file($put) ? '<img src="data:image/png;base64,' . base64_encode((string) file_get_contents($put)) . '" style="height:6mm;max-width:30mm">' : '';
+    $slika = $f ? foto_datauri($f) : null;
+    return $slika ? '<img src="' . $slika . '" style="height:6mm;max-width:30mm">' : '';
 }
 
 /** Postavke PDF-ova skupnog lova (Sustav → Skupni lov – PDF). */
@@ -1099,7 +1099,7 @@ function gl_pdf_potpis_voditelja(array $lov): string
     if (!gl_aktivan($lov)) {
         // spremljeni potpis voditelja (Moj profil ili potpisan pri skupnom lovu); stari lovovi bez voditelja-člana: tko je pokrenuo
         $f = ($vc = (int) ($lov['VoditeljClanId'] ?? 0)) ? potpis_clana($vc) : null;
-        $pot = $f ? 'data:image/png;base64,' . base64_encode((string) file_get_contents(podaci('foto/' . $f)))
+        $pot = $f ? foto_datauri($f)
             : (!$vc && $lov['KreiraoKorisnikId'] ? potpis_datauri((int) $lov['KreiraoKorisnikId']) : null);
     }
     $potpis = $pot ? '<img src="' . $pot . '" style="height:14mm;vertical-align:middle"><br><span style="font-size:7pt;color:#777">elektronički generirano iz evidencije</span>'

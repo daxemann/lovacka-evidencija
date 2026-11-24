@@ -755,8 +755,7 @@ function dez_potpis_datauri_kl(string $kl): ?string
     if ($kl === 'P' && postavka('Dez.PotpisIme.P') !== $ime) {
         return null;
     }
-    $put = podaci('foto/' . basename($p));
-    return is_file($put) ? 'data:image/png;base64,' . base64_encode((string) file_get_contents($put)) : null;
+    return foto_datauri($p);
 }
 /** Blok potpisa za PDF: jedan po sekciji stanica u ispisu. */
 function dez_potpis_pdf_html(array $stanice): string
@@ -1019,13 +1018,15 @@ function dez_prenesi_stare_potpise(): int
         $kl = substr($r['Kljuc'], strlen('Dez.Potpis.'));
         $ime = postavka('Dez.PotpisIme.' . $kl) ?: dez_odgovorna_kl($kl);
         $kid = korisnik_po_imenu($ime);
-        $f = podaci('foto/' . basename((string) postavka('Dez.Potpis.' . $kl)));
-        if (!$kid || !is_file($f)) {
+        $f = (string) postavka('Dez.Potpis.' . $kl);
+        if (!$kid || foto_sadrzaj($f) === null) {
             continue;
         }
         if (!potpis_korisnika($kid)) {
             $novo = 'potpis-' . bin2hex(random_bytes(8)) . '.png';
-            copy($f, podaci('foto/' . $novo));
+            if (!foto_kopiraj($f, $novo)) {
+                continue;
+            }
             spremi_postavku('Potpis.K' . $kid, $novo);
             spremi_postavku('Potpis.Datum.K' . $kid, sada());
             dnevnik('Potpis prenesen u osobni profil (automatski)', 'Korisnik', $kid, (string) $ime, ['Id' => null, 'KorisnickoIme' => 'sustav']);
